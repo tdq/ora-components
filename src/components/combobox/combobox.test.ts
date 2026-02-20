@@ -1,5 +1,5 @@
 import { BehaviorSubject } from 'rxjs';
-import { ComboBoxBuilder, ComboBoxStyle } from './combobox';
+import { ComboBoxBuilder, ComboBoxStyle } from './combobox-builder';
 import { fireEvent, screen } from '@testing-library/dom';
 
 describe('ComboBoxBuilder', () => {
@@ -293,5 +293,21 @@ describe('ComboBoxBuilder', () => {
         // Check if second item is highlighted
         expect(options[1]).toHaveClass('bg-on-surface/12');
         expect(options[0]).not.toHaveClass('bg-on-surface/12');
+    });
+
+    test('should verify visibility: withVisible should toggle hidden class', () => {
+        const visible$ = new BehaviorSubject(true);
+        const container = builder
+            .withVisible(visible$)
+            .build();
+        document.body.appendChild(container);
+
+        expect(container).not.toHaveClass('hidden');
+
+        visible$.next(false);
+        expect(container).toHaveClass('hidden');
+
+        visible$.next(true);
+        expect(container).not.toHaveClass('hidden');
     });
 });

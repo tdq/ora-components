@@ -16,7 +16,8 @@ export enum SlotSize {
     HALF = 'HALF',
     TWO_THIRDS = 'TWO_THIRDS',
     THREE_QUARTERS = 'THREE_QUARTERS',
-    FULL = 'FULL'
+    FULL = 'FULL',
+    FIT = 'FIT'
 }
 
 function cn(...inputs: ClassValue[]) {
@@ -37,6 +38,7 @@ const SIZE_MAP: Record<SlotSize, string> = {
     [SlotSize.TWO_THIRDS]: 'basis-2/3',
     [SlotSize.THREE_QUARTERS]: 'basis-3/4',
     [SlotSize.FULL]: 'basis-full',
+    [SlotSize.FIT]: 'flex-none',
 };
 
 export interface SlotBuilder {

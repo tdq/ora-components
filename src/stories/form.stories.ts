@@ -1,9 +1,7 @@
-import { TextFieldBuilder, TextFieldStyle } from '../components/text-field';
+import { TextFieldStyle } from '../components/text-field';
 import { BehaviorSubject, combineLatest, of, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { LayoutBuilder, LayoutGap } from '../components/layout';
-import { LabelBuilder, LabelSize } from '../components/label';
-import { ButtonBuilder, ButtonStyle } from '../components/button';
+import { FormBuilder } from '../components/form';
 
 export default {
     title: 'Examples/Forms',
@@ -69,81 +67,49 @@ export const PersonInformationForm = () => {
         phone$.next('');
     });
 
-    // Build layout
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.EXTRA_LARGE);
+    const form = new FormBuilder()
+        .withCaption(of('Person Information'));
 
-    // Title
-    layout.addSlot().withContent(
-        new LabelBuilder()
-            .withCaption(of('Person Information'))
-            .withSize(LabelSize.LARGE)
-    );
+    const fields = form.withFields();
+    fields.addTextField()
+        .withLabel(of('First Name'))
+        .withPlaceholder(of('Enter your first name'))
+        .withValue(firstName$)
+        .withError(firstNameError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    // First Name
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('First Name'))
-            .withPlaceholder(of('Enter your first name'))
-            .withValue(firstName$)
-            .withError(firstNameError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
+    fields.addTextField()
+        .withLabel(of('Last Name'))
+        .withPlaceholder(of('Enter your last name'))
+        .withValue(lastName$)
+        .withError(lastNameError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    // Last Name
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Last Name'))
-            .withPlaceholder(of('Enter your last name'))
-            .withValue(lastName$)
-            .withError(lastNameError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
+    fields.addTextField()
+        .withLabel(of('Email'))
+        .withPlaceholder(of('example@domain.com'))
+        .withValue(email$)
+        .withError(emailError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    // Email
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Email'))
-            .withPlaceholder(of('example@domain.com'))
-            .withValue(email$)
-            .withError(emailError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
+    fields.addTextField()
+        .withLabel(of('Phone (Optional)'))
+        .withPlaceholder(of('+1 (555) 123-4567'))
+        .withValue(phone$)
+        .withError(phoneError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    // Phone (optional)
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Phone (Optional)'))
-            .withPlaceholder(of('+1 (555) 123-4567'))
-            .withValue(phone$)
-            .withError(phoneError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
+    const toolbar = form.withToolbar();
+    toolbar.addSecondaryButton()
+        .withCaption(of('Reset'))
+        .withClick(resetClick$);
+    
+    toolbar.withPrimaryButton()
+        .withCaption(of('Submit'))
+        .withEnabled(isFormValid$)
+        .withClick(submitClick$);
 
-    // Buttons
-    const buttonLayout = new LayoutBuilder()
-        .asHorizontal()
-        .withGap(LayoutGap.MEDIUM);
-
-    buttonLayout.addSlot().withContent(
-        new ButtonBuilder()
-            .withCaption(of('Submit'))
-            .withStyle(of(ButtonStyle.FILLED))
-            .withEnabled(isFormValid$)
-            .withClick(submitClick$)
-    );
-
-    buttonLayout.addSlot().withContent(
-        new ButtonBuilder()
-            .withCaption(of('Reset'))
-            .withStyle(of(ButtonStyle.OUTLINED))
-            .withClick(resetClick$)
-    );
-
-    layout.addSlot().withContent(buttonLayout);
-
-    const container = layout.build();
+    const container = form.build();
     container.classList.add('p-4', 'max-w-md');
 
     return container;
@@ -212,101 +178,57 @@ export const AddressForm = () => {
         country$.next('');
     });
 
-    // Build layout
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.EXTRA_LARGE);
+    const form = new FormBuilder()
+        .withCaption(of('Address Information'));
 
-    // Title
-    layout.addSlot().withContent(
-        new LabelBuilder()
-            .withCaption(of('Address Information'))
-            .withSize(LabelSize.LARGE)
-    );
+    const fields = form.withFields(2);
+    
+    fields.addTextField(1, 2)
+        .withLabel(of('Street Address'))
+        .withPlaceholder(of('123 Main Street'))
+        .withValue(street$)
+        .withError(streetError$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
 
-    // Street Address
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Street Address'))
-            .withPlaceholder(of('123 Main Street'))
-            .withValue(street$)
-            .withError(streetError$)
-            .withStyle(of(TextFieldStyle.OUTLINED))
-    );
+    fields.addTextField(1, 1)
+        .withLabel(of('City'))
+        .withPlaceholder(of('New York'))
+        .withValue(city$)
+        .withError(cityError$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
 
-    // City and State row
-    const cityStateLayout = new LayoutBuilder()
-        .asHorizontal()
-        .withGap(LayoutGap.MEDIUM);
+    fields.addTextField(2, 1)
+        .withLabel(of('State/Province'))
+        .withPlaceholder(of('NY'))
+        .withValue(state$)
+        .withError(stateError$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
 
-    cityStateLayout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('City'))
-            .withPlaceholder(of('New York'))
-            .withValue(city$)
-            .withError(cityError$)
-            .withStyle(of(TextFieldStyle.OUTLINED))
-    );
+    fields.addTextField(1, 1)
+        .withLabel(of('ZIP/Postal Code'))
+        .withPlaceholder(of('10001'))
+        .withValue(zipCode$)
+        .withError(zipCodeError$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
 
-    cityStateLayout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('State/Province'))
-            .withPlaceholder(of('NY'))
-            .withValue(state$)
-            .withError(stateError$)
-            .withStyle(of(TextFieldStyle.OUTLINED))
-    );
+    fields.addTextField(2, 1)
+        .withLabel(of('Country'))
+        .withPlaceholder(of('United States'))
+        .withValue(country$)
+        .withError(countryError$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
 
-    layout.addSlot().withContent(cityStateLayout);
+    const toolbar = form.withToolbar();
+    toolbar.addTextButton()
+        .withCaption(of('Clear'))
+        .withClick(clearClick$);
+    
+    toolbar.withPrimaryButton()
+        .withCaption(of('Save Address'))
+        .withEnabled(isFormValid$)
+        .withClick(submitClick$);
 
-    // ZIP and Country row
-    const zipCountryLayout = new LayoutBuilder()
-        .asHorizontal()
-        .withGap(LayoutGap.MEDIUM);
-
-    zipCountryLayout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('ZIP/Postal Code'))
-            .withPlaceholder(of('10001'))
-            .withValue(zipCode$)
-            .withError(zipCodeError$)
-            .withStyle(of(TextFieldStyle.OUTLINED))
-    );
-
-    zipCountryLayout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Country'))
-            .withPlaceholder(of('United States'))
-            .withValue(country$)
-            .withError(countryError$)
-            .withStyle(of(TextFieldStyle.OUTLINED))
-    );
-
-    layout.addSlot().withContent(zipCountryLayout);
-
-    // Buttons
-    const buttonLayout = new LayoutBuilder()
-        .asHorizontal()
-        .withGap(LayoutGap.MEDIUM);
-
-    buttonLayout.addSlot().withContent(
-        new ButtonBuilder()
-            .withCaption(of('Save Address'))
-            .withStyle(of(ButtonStyle.FILLED))
-            .withEnabled(isFormValid$)
-            .withClick(submitClick$)
-    );
-
-    buttonLayout.addSlot().withContent(
-        new ButtonBuilder()
-            .withCaption(of('Clear'))
-            .withStyle(of(ButtonStyle.TEXT))
-            .withClick(clearClick$)
-    );
-
-    layout.addSlot().withContent(buttonLayout);
-
-    const container = layout.build();
+    const container = form.build();
     container.classList.add('p-4', 'max-w-2xl');
 
     return container;
@@ -371,120 +293,64 @@ export const CombinedForm = () => {
         alert(`Complete Form Submitted!\n\nPerson:\n${firstName$.value} ${lastName$.value}\n${email$.value}\n\nAddress:\n${street$.value}\n${city$.value}, ${zipCode$.value}`);
     });
 
-    // Main layout
-    const mainLayout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.EXTRA_LARGE);
+    const form = new FormBuilder()
+        .withCaption(of('Registration Form'));
 
-    // Title
-    mainLayout.addSlot().withContent(
-        new LabelBuilder()
-            .withCaption(of('Registration Form'))
-            .withSize(LabelSize.LARGE)
-    );
+    const fields = form.withFields(2);
+    
+    fields.addHeading(1, 2).withCaption(of('Personal Information'));
 
-    // Person section
-    const personSection = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
+    fields.addTextField(1, 1)
+        .withLabel(of('First Name'))
+        .withPlaceholder(of('John'))
+        .withValue(firstName$)
+        .withError(firstNameError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    personSection.addSlot().withContent(
-        new LabelBuilder()
-            .withCaption(of('Personal Information'))
-            .withSize(LabelSize.MEDIUM)
-    );
+    fields.addTextField(2, 1)
+        .withLabel(of('Last Name'))
+        .withPlaceholder(of('Doe'))
+        .withValue(lastName$)
+        .withError(lastNameError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    const nameRow = new LayoutBuilder()
-        .asHorizontal()
-        .withGap(LayoutGap.MEDIUM);
+    fields.addTextField(1, 2)
+        .withLabel(of('Email'))
+        .withPlaceholder(of('john.doe@example.com'))
+        .withValue(email$)
+        .withError(emailError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    nameRow.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('First Name'))
-            .withPlaceholder(of('John'))
-            .withValue(firstName$)
-            .withError(firstNameError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
+    fields.addHeading(1, 2).withCaption(of('Address'));
 
-    nameRow.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Last Name'))
-            .withPlaceholder(of('Doe'))
-            .withValue(lastName$)
-            .withError(lastNameError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
+    fields.addTextField(1, 2)
+        .withLabel(of('Street Address'))
+        .withPlaceholder(of('123 Main St'))
+        .withValue(street$)
+        .withError(streetError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    personSection.addSlot().withContent(nameRow);
+    fields.addTextField(1, 1)
+        .withLabel(of('City'))
+        .withPlaceholder(of('New York'))
+        .withValue(city$)
+        .withError(cityError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    personSection.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Email'))
-            .withPlaceholder(of('john.doe@example.com'))
-            .withValue(email$)
-            .withError(emailError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
+    fields.addTextField(2, 1)
+        .withLabel(of('ZIP Code'))
+        .withPlaceholder(of('10001'))
+        .withValue(zipCode$)
+        .withError(zipCodeError$)
+        .withStyle(of(TextFieldStyle.FILLED));
 
-    mainLayout.addSlot().withContent(personSection);
+    const toolbar = form.withToolbar();
+    toolbar.withPrimaryButton()
+        .withCaption(of('Complete Registration'))
+        .withEnabled(isFormValid$)
+        .withClick(submitClick$);
 
-    // Address section
-    const addressSection = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
-
-    addressSection.addSlot().withContent(
-        new LabelBuilder()
-            .withCaption(of('Address'))
-            .withSize(LabelSize.MEDIUM)
-    );
-
-    addressSection.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Street Address'))
-            .withPlaceholder(of('123 Main St'))
-            .withValue(street$)
-            .withError(streetError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
-
-    const cityZipRow = new LayoutBuilder()
-        .asHorizontal()
-        .withGap(LayoutGap.MEDIUM);
-
-    cityZipRow.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('City'))
-            .withPlaceholder(of('New York'))
-            .withValue(city$)
-            .withError(cityError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
-
-    cityZipRow.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('ZIP Code'))
-            .withPlaceholder(of('10001'))
-            .withValue(zipCode$)
-            .withError(zipCodeError$)
-            .withStyle(of(TextFieldStyle.FILLED))
-    );
-
-    addressSection.addSlot().withContent(cityZipRow);
-
-    mainLayout.addSlot().withContent(addressSection);
-
-    // Submit button
-    mainLayout.addSlot().withContent(
-        new ButtonBuilder()
-            .withCaption(of('Complete Registration'))
-            .withStyle(of(ButtonStyle.FILLED))
-            .withEnabled(isFormValid$)
-            .withClick(submitClick$)
-    );
-
-    const container = mainLayout.build();
+    const container = form.build();
     container.classList.add('p-4', 'max-w-2xl');
 
     return container;

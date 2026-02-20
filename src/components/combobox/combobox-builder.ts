@@ -20,6 +20,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
     private enabled$?: Observable<boolean>;
     private style$?: Observable<ComboBoxStyle>;
     private className$?: Observable<string>;
+    private visible$?: Observable<boolean>;
     private isGlass$ = new BehaviorSubject<boolean>(false);
 
     withItems(items: Observable<ITEM[]>): ComboBoxBuilder<ITEM> {
@@ -74,6 +75,11 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
     withClass(className: Observable<string>): ComboBoxBuilder<ITEM> {
         this.className$ = className;
+        return this;
+    }
+
+    withVisible(visible: Observable<boolean>): ComboBoxBuilder<ITEM> {
+        this.visible$ = visible;
         return this;
     }
 
@@ -189,6 +195,10 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         subs.push(this.className$?.subscribe(cls => {
             // We apply extra classes to the container
             container.className = cn('flex flex-col gap-px-4 w-full relative', cls);
+        }));
+
+        subs.push(this.visible$?.subscribe(visible => {
+            container.classList.toggle('hidden', !visible);
         }));
 
         let currentItems: ITEM[] = [];

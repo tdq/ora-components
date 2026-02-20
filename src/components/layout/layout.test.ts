@@ -48,6 +48,15 @@ describe('LayoutBuilder', () => {
         expect(slot.classList.contains('basis-1/2')).toBe(true);
     });
 
+    it('should apply FIT slot size', () => {
+        const builder = new LayoutBuilder();
+        builder.addSlot().withSize(SlotSize.FIT);
+
+        const layout = builder.build();
+        const slot = layout.children[0] as HTMLElement;
+        expect(slot.classList.contains('flex-none')).toBe(true);
+    });
+
     it('should handle slot visibility', () => {
         const visible$ = new BehaviorSubject(true);
         const builder = new LayoutBuilder();
