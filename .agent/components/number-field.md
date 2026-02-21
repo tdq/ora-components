@@ -24,3 +24,4 @@ Numbers are right aligned but placeholder is on the left.
 Style according to Material Design 3 
 Error and label are small text.
 Border should be defined as outline so changing its size is not affecting size of the input.
+Height is 48px

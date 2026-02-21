@@ -28,6 +28,7 @@ It has the following methods:
 - **States**: Hover/focus effects for input and day cells (`hover:bg-primary-container`).
 - **Glass Effect**: Applies `backdrop-blur-md`, `bg-white/10`, and `border-white/20`.
 - **Transitions**: Smooth transitions (150-200ms) for popup entry and day selection.
+Height is 48px
 
 ## 5. Accessibility Requirements
 

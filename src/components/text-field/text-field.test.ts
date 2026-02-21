@@ -1,4 +1,4 @@
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { TextFieldBuilder, TextFieldStyle } from './text-field';
 
 describe('TextFieldBuilder', () => {
@@ -61,13 +61,13 @@ describe('TextFieldBuilder', () => {
     test('should handle style updates reactively', () => {
         const style$ = new BehaviorSubject(TextFieldStyle.TONAL);
         const container = builder.withStyle(style$).build();
-        const input = container.querySelector('input') as HTMLInputElement;
+        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
 
-        expect(input.classList.contains('bg-surface-variant')).toBe(true);
+        expect(inputWrapper.classList.contains('bg-surface-variant')).toBe(true);
 
         style$.next(TextFieldStyle.OUTLINED);
-        expect(input.classList.contains('bg-surface-variant')).toBe(false);
-        expect(input.classList.contains('bg-transparent')).toBe(true);
+        expect(inputWrapper.classList.contains('bg-surface-variant')).toBe(false);
+        expect(inputWrapper.classList.contains('bg-transparent')).toBe(true);
     });
 
     test('should update label reactively and use label element', () => {
@@ -87,29 +87,29 @@ describe('TextFieldBuilder', () => {
     test('should update error reactively and set ARIA attributes', () => {
         const error$ = new BehaviorSubject('');
         const container = builder.withError(error$).build();
-        const errorEl = container.querySelector('span:last-child') as HTMLElement;
+        const supportText = container.querySelector('div:last-child span:first-child') as HTMLElement;
         const input = container.querySelector('input') as HTMLInputElement;
 
-        expect(errorEl.classList.contains('hidden')).toBe(true);
+        expect(supportText.classList.contains('hidden')).toBe(true);
         expect(input.getAttribute('aria-invalid')).toBe('false');
 
         error$.next('Invalid input');
-        expect(errorEl.textContent).toBe('Invalid input');
-        expect(errorEl.classList.contains('hidden')).toBe(false);
+        expect(supportText.textContent).toBe('Invalid input');
+        expect(supportText.classList.contains('hidden')).toBe(false);
         expect(input.getAttribute('aria-invalid')).toBe('true');
-        expect(input.getAttribute('aria-describedby')).toBe(errorEl.id);
+        expect(input.getAttribute('aria-describedby')).toContain(supportText.id);
     });
 
     test('should apply custom class reactively', () => {
         const class$ = new BehaviorSubject('custom-class');
         const container = builder.withClass(class$).build();
-        const input = container.querySelector('input') as HTMLInputElement;
+        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
 
-        expect(input.classList.contains('custom-class')).toBe(true);
+        expect(inputWrapper.classList.contains('custom-class')).toBe(true);
 
         class$.next('another-class');
-        expect(input.classList.contains('custom-class')).toBe(false);
-        expect(input.classList.contains('another-class')).toBe(true);
+        expect(inputWrapper.classList.contains('custom-class')).toBe(false);
+        expect(inputWrapper.classList.contains('another-class')).toBe(true);
     });
 
     test('should support password mode', () => {
@@ -152,10 +152,10 @@ describe('TextFieldBuilder', () => {
 
     test('should apply glass effect classes', () => {
         const container = builder.asGlass().build();
-        const input = container.querySelector('input') as HTMLInputElement;
+        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
 
-        expect(input.classList.contains('bg-white/10')).toBe(true);
-        expect(input.classList.contains('backdrop-blur-md')).toBe(true);
+        expect(inputWrapper.classList.contains('bg-white/10')).toBe(true);
+        expect(inputWrapper.classList.contains('backdrop-blur-md')).toBe(true);
     });
 
     test('should validate value and display error', () => {
@@ -165,17 +165,17 @@ describe('TextFieldBuilder', () => {
             .withValidator(v => v.length < 3 ? 'Too short' : null)
             .build();
         const input = container.querySelector('input') as HTMLInputElement;
-        const errorEl = container.querySelector('span:last-child') as HTMLElement;
+        const supportText = container.querySelector('div:last-child span:first-child') as HTMLElement;
 
         input.value = 'hi';
         input.dispatchEvent(new Event('input'));
-        expect(errorEl.textContent).toBe('Too short');
-        expect(errorEl.classList.contains('hidden')).toBe(false);
+        expect(supportText.textContent).toBe('Too short');
+        expect(supportText.classList.contains('hidden')).toBe(false);
 
         input.value = 'hello';
         input.dispatchEvent(new Event('input'));
-        expect(errorEl.textContent).toBe('');
-        expect(errorEl.classList.contains('hidden')).toBe(true);
+        expect(supportText.textContent).toBe('');
+        expect(supportText.classList.contains('hidden')).toBe(true);
     });
 
     test('should validate email format', () => {
@@ -185,14 +185,77 @@ describe('TextFieldBuilder', () => {
             .withEmailValidation('Invalid email')
             .build();
         const input = container.querySelector('input') as HTMLInputElement;
-        const errorEl = container.querySelector('span:last-child') as HTMLElement;
+        const supportText = container.querySelector('div:last-child span:first-child') as HTMLElement;
 
         input.value = 'invalid-email';
         input.dispatchEvent(new Event('input'));
-        expect(errorEl.textContent).toBe('Invalid email');
+        expect(supportText.textContent).toBe('Invalid email');
 
         input.value = 'test@example.com';
         input.dispatchEvent(new Event('input'));
-        expect(errorEl.textContent).toBe('');
+        expect(supportText.textContent).toBe('');
     });
+
+    test('should support helper text', () => {
+        const helper$ = new BehaviorSubject('Helper text');
+        const container = builder.withHelperText(helper$).build();
+        const supportText = container.querySelector('div:last-child span:first-child') as HTMLElement;
+
+        expect(supportText.textContent).toBe('Helper text');
+        expect(supportText.classList.contains('hidden')).toBe(false);
+    });
+
+    test('should support leading and trailing icons', () => {
+        const leading$ = new BehaviorSubject('<span>leading</span>');
+        const trailing$ = new BehaviorSubject('<span>trailing</span>');
+        const container = builder
+            .withLeadingIcon(leading$)
+            .withTrailingIcon(trailing$)
+            .build();
+
+        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
+        expect(inputWrapper.innerHTML).toContain('leading');
+        expect(inputWrapper.innerHTML).toContain('trailing');
+    });
+
+    test('should support prefix and suffix', () => {
+        const container = builder
+            .withPrefix(of('$'))
+            .withSuffix(of('USD'))
+            .build();
+
+        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
+        expect(inputWrapper.textContent).toContain('$');
+        expect(inputWrapper.textContent).toContain('USD');
+    });
+
+    test('should handle character counter', () => {
+        const value$ = new BehaviorSubject('');
+        const container = builder
+            .withValue(value$)
+            .withMaxLength(10)
+            .withCharacterCounter()
+            .build();
+        const charCounter = container.querySelector('div:last-child span:last-child') as HTMLElement;
+
+        expect(charCounter.textContent).toBe('0 / 10');
+
+        value$.next('hello');
+        expect(charCounter.textContent).toBe('5 / 10');
+    });
+
+    test('should toggle password visibility', () => {
+        const container = builder.withPasswordToggle().build();
+        const input = container.querySelector('input') as HTMLInputElement;
+        const toggleBtn = container.querySelector('button') as HTMLButtonElement;
+
+        expect(input.type).toBe('password');
+        
+        toggleBtn.click();
+        expect(input.type).toBe('text');
+
+        toggleBtn.click();
+        expect(input.type).toBe('password');
+    });
+
 });

@@ -22,3 +22,4 @@ At password mode it should display "*" symbols instead of actual text.
 Style according to Material Design 3 
 Error and label are small text.
 Border should be defined as outline so changing its size is not affecting size of the input.
+Height is 48px

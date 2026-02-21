@@ -43,3 +43,4 @@ Popup with items should have limited height.
 Hovered item in popup should be highlighted with darker background.
 Currently selected item also should be highlighted in popup by using bold text style.
 Clicking the dropdown icon should focus the input.
+Height is 48px

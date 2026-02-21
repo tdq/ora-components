@@ -1,8 +1,9 @@
-import { Observable, Subject, BehaviorSubject, combineLatest, of } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, combineLatest, of, Subscription } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '@/core/destroyable-element';
+import { clamp, roundToStep, formatNumber } from '@/utils/number';
 
 export enum NumberFieldStyle {
     TONAL = 'tonal',
@@ -19,7 +20,7 @@ const STYLE_MAP: Record<NumberFieldStyle, string> = {
 };
 
 export class NumberFieldBuilder implements ComponentBuilder {
-    private value$?: Subject<number>;
+    private value$?: Subject<number | null>;
     private placeholder$?: Observable<string>;
     private enabled$?: Observable<boolean>;
     private style$?: Observable<NumberFieldStyle>;
@@ -27,9 +28,13 @@ export class NumberFieldBuilder implements ComponentBuilder {
     private label$?: Observable<string>;
     private className$?: Observable<string>;
     private format$?: Observable<string>;
+    private precision$?: Observable<number>;
     private min$?: Observable<number>;
     private max$?: Observable<number>;
     private step$?: Observable<number>;
+    private locale$?: Observable<string>;
+    private prefix$ = of('');
+    private suffix$ = of('');
     private isGlass: boolean = false;
 
     asGlass(isGlass: boolean = true): this {
@@ -37,7 +42,7 @@ export class NumberFieldBuilder implements ComponentBuilder {
         return this;
     }
 
-    withValue(value: Subject<number>): this {
+    withValue(value: Subject<number | null>): this {
         this.value$ = value;
         return this;
     }
@@ -77,6 +82,16 @@ export class NumberFieldBuilder implements ComponentBuilder {
         return this;
     }
 
+    withPrecision(precision: Observable<number>): this {
+        this.precision$ = precision;
+        return this;
+    }
+
+    withLocale(locale: Observable<string>): this {
+        this.locale$ = locale;
+        return this;
+    }
+
     withMinValue(min: Observable<number>): this {
         this.min$ = min;
         return this;
@@ -92,175 +107,285 @@ export class NumberFieldBuilder implements ComponentBuilder {
         return this;
     }
 
-    private parseValue(val: string): number {
-        const parsed = parseFloat(val);
-        return isNaN(parsed) ? 0 : parsed;
+    withPrefix(text: Observable<string>): this {
+        this.prefix$ = text;
+        return this;
     }
 
-    private formatValue(val: number, format: string): string {
-        if (format === 'integer') {
-            return Math.round(val).toString();
-        }
-        if (format.includes('.')) {
-            const decimalPlaces = format.split('.')[1].length;
-            return val.toFixed(decimalPlaces);
-        }
-        // Default to up to 2 decimal places
-        return Number(val.toFixed(2)).toString();
+    withSuffix(text: Observable<string>): this {
+        this.suffix$ = text;
+        return this;
+    }
+
+    private parseValue(val: string): number | null {
+        if (!val.trim()) return null;
+        const normalized = val.replace(',', '.');
+        const parsed = parseFloat(normalized);
+        return isNaN(parsed) ? null : parsed;
     }
 
     build(): HTMLElement {
+        const id = `number-field-${Math.random().toString(36).substring(2, 9)}`;
+        const errorId = `${id}-error`;
+
         const container = document.createElement('div');
         container.className = 'flex flex-col gap-px-4 w-full';
 
-        const label = document.createElement('span');
+        const label = document.createElement('label');
+        label.setAttribute('for', id);
         label.className = 'md-label-small text-on-surface-variant px-px-16 hidden';
         container.appendChild(label);
 
+        // Input Wrapper (for prefix/suffix and MD3 states)
+        const inputWrapper = document.createElement('div');
+        inputWrapper.className = 'relative flex items-center px-px-16 transition-all duration-200';
+        container.appendChild(inputWrapper);
+
+        // Prefix
+        const prefix = document.createElement('span');
+        prefix.className = 'body-large text-on-surface-variant select-none mr-2 hidden';
+        inputWrapper.appendChild(prefix);
+
         const input = document.createElement('input');
+        input.id = id;
         input.type = 'text';
         input.inputMode = 'decimal';
         input.setAttribute('role', 'spinbutton');
+        input.setAttribute('aria-describedby', errorId);
         input.className = cn(
-            'px-px-16 py-px-12 w-full outline-none transition-all body-large placeholder:text-on-surface-variant placeholder:text-left text-on-surface text-right',
+            'flex-1 min-w-0 py-px-12 bg-transparent outline-none transition-all body-large placeholder:text-on-surface-variant placeholder:text-left text-on-surface text-right',
             'disabled:opacity-38 disabled:cursor-not-allowed'
         );
-        container.appendChild(input);
+        inputWrapper.appendChild(input);
+
+        // Suffix
+        const suffix = document.createElement('span');
+        suffix.className = 'body-large text-on-surface-variant select-none ml-2 hidden';
+        inputWrapper.appendChild(suffix);
 
         const error = document.createElement('span');
+        error.id = errorId;
         error.className = 'md-label-small text-error px-px-16 hidden';
         container.appendChild(error);
 
-        // State variables for blur handling
-        let currentFormat = '0.##';
-        let currentMin = -Infinity;
-        let currentMax = Infinity;
-        let currentStep: number | undefined;
+        const subscriptions = new Subscription();
 
-        const formatSub = this.format$?.subscribe(f => {
-            currentFormat = f;
-            // Update current display value if needed
-            if (this.value$ instanceof BehaviorSubject) {
-                input.value = this.formatValue(this.value$.value, currentFormat);
-            }
-        });
-
-        const minSub = this.min$?.subscribe(m => {
-            currentMin = m;
-            input.setAttribute('aria-valuemin', m.toString());
-        });
-
-        const maxSub = this.max$?.subscribe(m => {
-            currentMax = m;
-            input.setAttribute('aria-valuemax', m.toString());
-        });
-
-        const stepSub = this.step$?.subscribe(s => {
-            currentStep = s;
-            input.setAttribute('aria-valuestep', s.toString());
-        });
-
-        const placeholderSub = this.placeholder$?.subscribe(placeholder => {
-            input.placeholder = placeholder;
-        });
-
-        const enabledSub = this.enabled$?.subscribe(enabled => {
-            input.disabled = !enabled;
-        });
-
+        // Consolidated State
         const style$ = this.style$ || of(NumberFieldStyle.TONAL);
         const className$ = this.className$ || of('');
         const error$ = this.error$ || of('');
+        const label$ = this.label$ || of('');
+        const placeholder$ = this.placeholder$ || of('');
+        const enabled$ = this.enabled$ || of(true);
+        const format$ = this.format$ || of('');
+        const precision$ = this.precision$ || of(undefined);
+        const min$ = this.min$ || of(-Infinity);
+        const max$ = this.max$ || of(Infinity);
+        const step$ = this.step$ || of(1);
+        const locale$ = this.locale$ || of(undefined);
 
-        const combinedSub = combineLatest([style$, className$, error$]).subscribe(([style, extraClass, errorText]) => {
-            const BASE_INPUT_CLASSES = 'px-px-16 py-px-12 w-full outline-none transition-all body-large placeholder:text-on-surface-variant placeholder:text-left text-on-surface text-right disabled:opacity-38 disabled:cursor-not-allowed';
-            
-            input.className = cn(
-                BASE_INPUT_CLASSES,
-                extraClass,
-                !!errorText && 'ring-error focus:ring-error shadow-[inset_0_-1px_0_0_var(--md-sys-color-error)] focus:shadow-[inset_0_-2px_0_0_var(--md-sys-color-primary)]'
-            );
+        let currentMin = -Infinity;
+        let currentMax = Infinity;
+        let currentStep = 1;
+        let currentFormat = '';
+        let currentPrecision: number | undefined;
+        let currentLocale: string | undefined;
 
-            error.textContent = errorText;
-            error.classList.toggle('hidden', !errorText);
-            input.setAttribute('aria-invalid', (!!errorText).toString());
+        subscriptions.add(
+            combineLatest([
+                style$, className$, error$, label$, placeholder$, enabled$,
+                format$, precision$, min$, max$, step$, locale$,
+                this.prefix$, this.suffix$
+            ]).subscribe(([
+                style, extraClass, errorText, labelText, placeholder, enabled,
+                format, precision, min, max, step, locale,
+                prefixText, suffixText
+            ]) => {
+                currentMin = min;
+                currentMax = max;
+                currentStep = step;
+                currentFormat = format;
+                currentPrecision = precision;
+                currentLocale = locale;
 
-            if (this.isGlass) {
-                input.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus:bg-white/20');
-                if (style === NumberFieldStyle.OUTLINED) {
-                    input.classList.add('rounded-small');
+                // Prefix/Suffix
+                prefix.textContent = prefixText;
+                prefix.classList.toggle('hidden', !prefixText);
+                suffix.textContent = suffixText;
+                suffix.classList.toggle('hidden', !suffixText);
+
+                const BASE_WRAPPER_CLASSES = 'relative flex items-center px-px-16 transition-all duration-200';
+                
+                inputWrapper.className = cn(
+                    BASE_WRAPPER_CLASSES,
+                    extraClass,
+                    !!errorText && 'ring-error focus-within:ring-error shadow-[inset_0_-1px_0_0_var(--md-sys-color-error)] focus-within:shadow-[inset_0_-2px_0_0_var(--md-sys-color-primary)]'
+                );
+
+                error.textContent = errorText;
+                error.classList.toggle('hidden', !errorText);
+                input.setAttribute('aria-invalid', (!!errorText).toString());
+
+                label.textContent = labelText;
+                label.classList.toggle('hidden', !labelText);
+
+                input.placeholder = placeholder;
+                input.disabled = !enabled;
+
+                input.setAttribute('aria-valuemin', min.toString());
+                input.setAttribute('aria-valuemax', max.toString());
+                input.setAttribute('aria-valuestep', step.toString());
+
+                // Reset styles
+                inputWrapper.classList.remove('bg-surface-variant', 'bg-transparent', 'rounded-small', 'rounded-t-small', 'shadow-[inset_0_-1px_0_0_var(--md-sys-color-outline-variant)]', 'focus-within:shadow-[inset_0_-2px_0_0_var(--md-sys-color-primary)]', 'ring-1', 'ring-inset', 'ring-outline', 'focus-within:ring-2', 'focus-within:ring-primary', 'bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus-within:bg-white/20');
+
+                if (this.isGlass) {
+                    inputWrapper.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus-within:bg-white/20');
+                    if (style === NumberFieldStyle.OUTLINED) {
+                        inputWrapper.classList.add('rounded-small');
+                    } else {
+                        inputWrapper.classList.add('rounded-t-small');
+                    }
                 } else {
-                    input.classList.add('rounded-t-small');
+                    const styles = STYLE_MAP[style].split(' ');
+                    // Replace focus: with focus-within:
+                    styles.forEach(c => {
+                        const adaptedClass = c.replace('focus:', 'focus-within:');
+                        inputWrapper.classList.add(adaptedClass);
+                    });
                 }
-            } else {
-                STYLE_MAP[style].split(' ').forEach(c => input.classList.add(c));
-            }
-        });
 
-        const valueSub = this.value$?.subscribe(val => {
-            const formatted = this.formatValue(val, currentFormat);
+                // Update display value if already set
+                if (this.value$ instanceof BehaviorSubject) {
+                    const val = this.value$.value;
+                    const formatted = formatNumber(val, {
+                        format: currentFormat,
+                        precision: currentPrecision,
+                        step: currentStep,
+                        locale: currentLocale
+                    });
+                    if (this.parseValue(input.value) !== val || input.value === '') {
+                        input.value = formatted;
+                    }
+                }
+            })
+        );
+
+        subscriptions.add(this.value$?.subscribe(val => {
+            const formatted = formatNumber(val, {
+                format: currentFormat,
+                precision: currentPrecision,
+                step: currentStep,
+                locale: currentLocale
+            });
             if (this.parseValue(input.value) !== val || input.value === '') {
                  input.value = formatted;
             }
-            input.setAttribute('aria-valuenow', val.toString());
-        });
-
-        const labelSub = this.label$?.subscribe(text => {
-            label.textContent = text;
-            label.classList.toggle('hidden', !text);
-        });
+            if (val !== null) {
+                input.setAttribute('aria-valuenow', val.toString());
+            } else {
+                input.removeAttribute('aria-valuenow');
+            }
+        }));
 
         // Input Filtering
         input.oninput = (e) => {
             const target = e.target as HTMLInputElement;
             let val = target.value;
 
-            // Allow only numbers, one decimal separator (if allowed), and one minus sign at the start
+            // Allow only numbers, decimal separators (.,), and one minus sign at the start
             const allowDecimal = currentFormat !== 'integer';
             
             // Regex to match valid partial numeric input
-            // Allows: "", "-", "1", "-1", "1.", "1.2", "-1.2"
-            let filtered = val.replace(/[^0-9.-]/g, '');
+            // Allows: "", "-", "1", "-1", "1.", "1,2", "-1.2"
+            let filtered = val.replace(/[^0-9.,-]/g, '');
             
             // Ensure only one minus at the beginning
             const hasMinusAtStart = filtered.startsWith('-');
             filtered = (hasMinusAtStart ? '-' : '') + filtered.replace(/-/g, '');
             
-            // Ensure only one decimal point
+            // Ensure only one decimal point (either . or ,)
             if (allowDecimal) {
-                const parts = filtered.split('.');
+                const parts = filtered.split(/[.,]/);
                 if (parts.length > 2) {
-                    filtered = parts[0] + '.' + parts.slice(1).join('');
+                    // Keep the first separator's type if possible, or default to .
+                    const firstSepIndex = filtered.search(/[.,]/);
+                    const sep = filtered[firstSepIndex];
+                    filtered = parts[0] + sep + parts.slice(1).join('');
                 }
             } else {
-                filtered = filtered.replace(/\./g, '');
+                filtered = filtered.replace(/[.,]/g, '');
             }
 
             if (val !== filtered) {
                 target.value = filtered;
             }
 
-            // Update value subject
-            const parsed = parseFloat(filtered);
+            // Update value subject - normalize to . for parseFloat
+            const normalized = filtered.replace(',', '.');
+            const parsed = parseFloat(normalized);
             if (!isNaN(parsed)) {
                 this.value$?.next(parsed);
             }
         };
 
-        // Blur Handling (Clamping, Stepping, Formatting)
-        input.onblur = () => {
-            let val = this.parseValue(input.value);
+        // Keyboard Handling
+        input.onkeydown = (e) => {
+            if (input.disabled) return;
 
-            // Clamp
-            val = Math.max(currentMin, Math.min(currentMax, val));
+            let newValue = this.parseValue(input.value) ?? 0;
+            let handled = true;
 
-            // Step
-            if (currentStep !== undefined && currentStep > 0) {
-                val = Math.round(val / currentStep) * currentStep;
+            switch (e.key) {
+                case 'ArrowUp':
+                    newValue += currentStep;
+                    break;
+                case 'ArrowDown':
+                    newValue -= currentStep;
+                    break;
+                case 'PageUp':
+                    newValue += currentStep * 10;
+                    break;
+                case 'PageDown':
+                    newValue -= currentStep * 10;
+                    break;
+                case 'Home':
+                    if (currentMin !== -Infinity) newValue = currentMin;
+                    else handled = false;
+                    break;
+                case 'End':
+                    if (currentMax !== Infinity) newValue = currentMax;
+                    else handled = false;
+                    break;
+                default:
+                    handled = false;
             }
 
+            if (handled) {
+                e.preventDefault();
+                const clamped = clamp(roundToStep(newValue, currentStep), currentMin, currentMax);
+                this.value$?.next(clamped);
+            }
+        };
+
+        // Blur Handling (Clamping, Stepping, Formatting)
+        input.onblur = () => {
+            const parsed = this.parseValue(input.value);
+            if (parsed === null) {
+                this.value$?.next(null);
+                input.value = '';
+                return;
+            }
+
+            const val = clamp(roundToStep(parsed, currentStep), currentMin, currentMax);
+
             // Re-format
-            const formatted = this.formatValue(val, currentFormat);
+            const formatted = formatNumber(val, {
+                format: currentFormat,
+                precision: currentPrecision,
+                step: currentStep,
+                locale: currentLocale
+            });
             input.value = formatted;
 
             // Push final value
@@ -268,15 +393,7 @@ export class NumberFieldBuilder implements ComponentBuilder {
         };
 
         registerDestroy(container, () => {
-            formatSub?.unsubscribe();
-            minSub?.unsubscribe();
-            maxSub?.unsubscribe();
-            stepSub?.unsubscribe();
-            placeholderSub?.unsubscribe();
-            enabledSub?.unsubscribe();
-            combinedSub.unsubscribe();
-            valueSub?.unsubscribe();
-            labelSub?.unsubscribe();
+            subscriptions.unsubscribe();
         });
 
         return container;

@@ -91,21 +91,62 @@ export const Formats = () => {
         new NumberFieldBuilder()
             .withLabel(of('Integer Only'))
             .withFormat(of('integer'))
-            .withValue(new BehaviorSubject(42))
+            .withValue(new BehaviorSubject<number | null>(42))
     );
 
     layout.addSlot().withContent(
         new NumberFieldBuilder()
             .withLabel(of('Decimal (2 places)'))
             .withFormat(of('0.00'))
-            .withValue(new BehaviorSubject(123.456))
+            .withValue(new BehaviorSubject<number | null>(123.456))
     );
 
     layout.addSlot().withContent(
         new NumberFieldBuilder()
             .withLabel(of('Decimal (4 places)'))
             .withFormat(of('0.0000'))
-            .withValue(new BehaviorSubject(Math.PI))
+            .withValue(new BehaviorSubject<number | null>(Math.PI))
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+    return container;
+};
+
+export const PrefixSuffixAndPrecision = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    // Currency
+    layout.addSlot().withContent(
+        new NumberFieldBuilder()
+            .withLabel(of('Price (Currency)'))
+            .withPrefix(of('$'))
+            .withPrecision(of(2))
+            .withPlaceholder(of('0.00'))
+            .withValue(new BehaviorSubject<number | null>(99.99))
+    );
+
+    // Percentage
+    layout.addSlot().withContent(
+        new NumberFieldBuilder()
+            .withLabel(of('Discount (Percentage)'))
+            .withSuffix(of('%'))
+            .withPrecision(of(1))
+            .withMinValue(of(0))
+            .withMaxValue(of(100))
+            .withValue(new BehaviorSubject<number | null>(15.5))
+    );
+
+    // Mass
+    layout.addSlot().withContent(
+        new NumberFieldBuilder()
+            .withLabel(of('Weight (High Precision)'))
+            .withSuffix(of('kg'))
+            .withPrecision(of(3))
+            .withStep(of(0.005))
+            .withValue(new BehaviorSubject<number | null>(75.125))
     );
 
     const container = layout.build();
@@ -124,7 +165,7 @@ export const Constraints = () => {
             .withMinValue(of(0))
             .withMaxValue(of(100))
             .withStep(of(10))
-            .withValue(new BehaviorSubject(50))
+            .withValue(new BehaviorSubject<number | null>(50))
     );
 
     layout.addSlot().withContent(
@@ -149,7 +190,7 @@ export const States = () => {
         new NumberFieldBuilder()
             .withLabel(of('Togglable Field'))
             .withEnabled(enabled$)
-            .withValue(new BehaviorSubject(100))
+            .withValue(new BehaviorSubject<number | null>(100))
     );
 
     // Controls
@@ -179,9 +220,9 @@ export const States = () => {
 };
 
 export const Errors = () => {
-    const value$ = new BehaviorSubject<number>(0);
+    const value$ = new BehaviorSubject<number | null>(0);
     const error$ = value$.pipe(
-        map(val => val < 0 ? 'Negative numbers are not allowed' : (val > 1000 ? 'Value too large' : ''))
+        map(val => (val !== null && val < 0) ? 'Negative numbers are not allowed' : ((val !== null && val > 1000) ? 'Value too large' : ''))
     );
 
     const layout = new LayoutBuilder()

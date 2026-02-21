@@ -1,4 +1,4 @@
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 import { NumberFieldBuilder, NumberFieldStyle } from './number-field';
 
 describe('NumberFieldBuilder', () => {
@@ -22,37 +22,57 @@ describe('NumberFieldBuilder', () => {
 
     describe('2. Reactive property updates', () => {
         test('should update value reactively', () => {
-            const value$ = new BehaviorSubject(10);
-            const container = builder.withValue(value$).build();
+            const value$ = new BehaviorSubject<number | null>(10);
+            // Set step to 0.1 to allow one decimal place in formatting
+            const container = builder.withValue(value$).withStep(of(0.1)).build();
             const input = container.querySelector('input') as HTMLInputElement;
 
-            // Default format '0.##' results in 2 fixed decimal places if dot is present in format
-            expect(input.value).toBe('10.00');
+            expect(input.value).toBe('10.0');
             expect(input.getAttribute('aria-valuenow')).toBe('10');
 
             value$.next(25.5);
-            expect(input.value).toBe('25.50');
+            expect(input.value).toBe('25.5');
             expect(input.getAttribute('aria-valuenow')).toBe('25.5');
+        });
+
+        test('should handle null values', () => {
+            const value$ = new BehaviorSubject<number | null>(null);
+            const container = builder.withValue(value$).build();
+            const input = container.querySelector('input') as HTMLInputElement;
+
+            expect(input.value).toBe('');
+            expect(input.hasAttribute('aria-valuenow')).toBe(false);
+
+            value$.next(42);
+            expect(input.value).toBe('42');
+            expect(input.getAttribute('aria-valuenow')).toBe('42');
+
+            value$.next(null);
+            expect(input.value).toBe('');
+            expect(input.hasAttribute('aria-valuenow')).toBe(false);
         });
 
         test('should update label reactively', () => {
             const label$ = new BehaviorSubject('');
             const container = builder.withLabel(label$).build();
-            const labelEl = container.querySelector('span:first-child') as HTMLElement;
+            const labelEl = container.querySelector('label') as HTMLElement;
 
             expect(labelEl.classList.contains('hidden')).toBe(true);
 
             label$.next('Amount');
             expect(labelEl.textContent).toBe('Amount');
             expect(labelEl.classList.contains('hidden')).toBe(false);
+            expect(labelEl.getAttribute('for')).toBe(container.querySelector('input')?.id);
         });
 
         test('should update error reactively', () => {
             const error$ = new BehaviorSubject('');
             const container = builder.withError(error$).build();
             const input = container.querySelector('input') as HTMLInputElement;
-            const errorEl = container.querySelector('span:last-child') as HTMLElement;
+            // The error element is the last child of the main container
+            const errorEl = container.lastElementChild as HTMLElement;
 
+            expect(errorEl.tagName).toBe('SPAN');
             expect(errorEl.classList.contains('hidden')).toBe(true);
             expect(input.getAttribute('aria-invalid')).toBe('false');
 
@@ -60,7 +80,10 @@ describe('NumberFieldBuilder', () => {
             expect(errorEl.textContent).toBe('Value too high');
             expect(errorEl.classList.contains('hidden')).toBe(false);
             expect(input.getAttribute('aria-invalid')).toBe('true');
-            expect(input.classList.contains('ring-error')).toBe(true);
+            
+            // Error styles are on the wrapper
+            const wrapper = input.parentElement as HTMLElement;
+            expect(wrapper.classList.contains('ring-error')).toBe(true);
         });
 
         test('should handle placeholder and enabled states', () => {
@@ -82,8 +105,8 @@ describe('NumberFieldBuilder', () => {
 
     describe('3. Input filtering', () => {
         test('should allow only valid numeric characters', () => {
-            const value$ = new Subject<number>();
-            let lastValue: number | undefined;
+            const value$ = new Subject<number | null>();
+            let lastValue: number | null | undefined;
             value$.subscribe(v => lastValue = v);
 
             const container = builder.withValue(value$).build();
@@ -118,7 +141,7 @@ describe('NumberFieldBuilder', () => {
 
     describe('4. Blur logic', () => {
         test('should clamp value on blur', () => {
-            const value$ = new BehaviorSubject(10);
+            const value$ = new BehaviorSubject<number | null>(10);
             const min$ = new BehaviorSubject(0);
             const max$ = new BehaviorSubject(20);
             const container = builder
@@ -130,17 +153,17 @@ describe('NumberFieldBuilder', () => {
 
             input.value = '30';
             input.dispatchEvent(new Event('blur'));
-            expect(input.value).toBe('20.00');
+            expect(input.value).toBe('20');
             expect(value$.value).toBe(20);
 
             input.value = '-10';
             input.dispatchEvent(new Event('blur'));
-            expect(input.value).toBe('0.00');
+            expect(input.value).toBe('0');
             expect(value$.value).toBe(0);
         });
 
         test('should round to step on blur', () => {
-            const value$ = new BehaviorSubject(10);
+            const value$ = new BehaviorSubject<number | null>(10);
             const step$ = new BehaviorSubject(5);
             const container = builder
                 .withValue(value$)
@@ -150,44 +173,50 @@ describe('NumberFieldBuilder', () => {
 
             input.value = '12';
             input.dispatchEvent(new Event('blur'));
-            expect(input.value).toBe('10.00');
+            expect(input.value).toBe('10');
             expect(value$.value).toBe(10);
 
             input.value = '13';
             input.dispatchEvent(new Event('blur'));
-            expect(input.value).toBe('15.00');
+            expect(input.value).toBe('15');
             expect(value$.value).toBe(15);
         });
 
-        test('should format value based on format string on blur', () => {
-            const value$ = new BehaviorSubject(10);
-            const format$ = new BehaviorSubject('0.00');
+        test('should handle floating point precision in stepping', () => {
+            const value$ = new BehaviorSubject<number | null>(0);
+            const step$ = new BehaviorSubject(0.1);
             const container = builder
                 .withValue(value$)
-                .withFormat(format$)
+                .withStep(step$)
                 .build();
             const input = container.querySelector('input') as HTMLInputElement;
 
-            input.value = '12.345';
-            input.dispatchEvent(new Event('blur'));
-            expect(input.value).toBe('12.35');
-            expect(value$.value).toBe(12.345);
+            input.value = '0.2';
+            input.dispatchEvent(new Event('input'));
+            
+            // Simulate ArrowUp (0.2 + 0.1)
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+            expect(value$.value).toBe(0.3);
+            expect(input.value).toBe('0.3');
         });
     });
 
     describe('5. Accessibility', () => {
-        test('should have correct ARIA attributes', () => {
+        test('should have correct ARIA attributes and linkages', () => {
             const min$ = new BehaviorSubject(0);
             const max$ = new BehaviorSubject(100);
             const step$ = new BehaviorSubject(1);
-            const value$ = new BehaviorSubject(50);
+            const value$ = new BehaviorSubject<number | null>(50);
             const container = builder
                 .withMinValue(min$)
                 .withMaxValue(max$)
                 .withStep(step$)
                 .withValue(value$)
+                .withLabel(of('Test Label'))
                 .build();
             const input = container.querySelector('input') as HTMLInputElement;
+            const label = container.querySelector('label') as HTMLLabelElement;
+            const error = container.lastElementChild as HTMLElement;
 
             expect(input.getAttribute('role')).toBe('spinbutton');
             expect(input.getAttribute('aria-valuemin')).toBe('0');
@@ -195,8 +224,59 @@ describe('NumberFieldBuilder', () => {
             expect(input.getAttribute('aria-valuestep')).toBe('1');
             expect(input.getAttribute('aria-valuenow')).toBe('50');
 
+            // ID Linkage
+            expect(input.id).toBeTruthy();
+            expect(label.getAttribute('for')).toBe(input.id);
+            expect(input.getAttribute('aria-describedby')).toBe(error.id);
+
             min$.next(-10);
             expect(input.getAttribute('aria-valuemin')).toBe('-10');
+        });
+    });
+
+    describe('6. Keyboard Navigation', () => {
+        let value$: BehaviorSubject<number | null>;
+        let input: HTMLInputElement;
+
+        beforeEach(() => {
+            value$ = new BehaviorSubject<number | null>(10);
+            const container = builder
+                .withValue(value$)
+                .withStep(of(1))
+                .withMinValue(of(0))
+                .withMaxValue(of(100))
+                .build();
+            input = container.querySelector('input') as HTMLInputElement;
+        });
+
+        test('ArrowUp should increment by step', () => {
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+            expect(value$.value).toBe(11);
+        });
+
+        test('ArrowDown should decrement by step', () => {
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+            expect(value$.value).toBe(9);
+        });
+
+        test('PageUp should increment by step * 10', () => {
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageUp' }));
+            expect(value$.value).toBe(20);
+        });
+
+        test('PageDown should decrement by step * 10', () => {
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageDown' }));
+            expect(value$.value).toBe(0);
+        });
+
+        test('Home should set to min', () => {
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home' }));
+            expect(value$.value).toBe(0);
+        });
+
+        test('End should set to max', () => {
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'End' }));
+            expect(value$.value).toBe(100);
         });
     });
 
@@ -206,15 +286,47 @@ describe('NumberFieldBuilder', () => {
                 .asGlass()
                 .withStyle(new BehaviorSubject(NumberFieldStyle.OUTLINED))
                 .build();
-            const input = container.querySelector('input') as HTMLInputElement;
+            // Styles are now applied to the wrapper div (parent of input)
+            const wrapper = container.querySelector('input')?.parentElement as HTMLElement;
 
-            expect(input.classList.contains('backdrop-blur-md')).toBe(true);
-            expect(input.classList.contains('rounded-small')).toBe(true);
+            expect(wrapper.classList.contains('backdrop-blur-md')).toBe(true);
+            expect(wrapper.classList.contains('rounded-small')).toBe(true);
+        });
+    });
+
+    describe('7. Prefix and Suffix', () => {
+        test('should render prefix and suffix when provided', () => {
+            const prefix$ = new BehaviorSubject('Pre');
+            const suffix$ = new BehaviorSubject('Suf');
+            const container = builder
+                .withPrefix(prefix$)
+                .withSuffix(suffix$)
+                .build();
+
+            const inputWrapper = container.querySelector('input')?.parentElement as HTMLElement;
+            // First child of wrapper is prefix, input, then suffix
+            const prefixEl = inputWrapper.firstElementChild as HTMLElement;
+            const suffixEl = inputWrapper.lastElementChild as HTMLElement;
+
+            expect(prefixEl.tagName).toBe('SPAN');
+            expect(prefixEl.textContent).toBe('Pre');
+            expect(prefixEl.classList.contains('hidden')).toBe(false);
+
+            expect(suffixEl.tagName).toBe('SPAN');
+            expect(suffixEl.textContent).toBe('Suf');
+            expect(suffixEl.classList.contains('hidden')).toBe(false);
+
+            // Update observables
+            prefix$.next('');
+            expect(prefixEl.classList.contains('hidden')).toBe(true);
+            
+            suffix$.next('New Suffix');
+            expect(suffixEl.textContent).toBe('New Suffix');
         });
     });
 
     test('should clean up subscriptions on destroy', async () => {
-        const value$ = new BehaviorSubject(10);
+        const value$ = new BehaviorSubject<number | null>(10);
         const container = builder.withValue(value$).build();
         const input = container.querySelector('input') as HTMLInputElement;
 
@@ -225,6 +337,6 @@ describe('NumberFieldBuilder', () => {
         await new Promise(resolve => setTimeout(resolve, 0));
 
         value$.next(20);
-        expect(input.value).toBe('10.00'); // Should not have updated
+        expect(input.value).toBe('10'); // Should not have updated
     });
 });

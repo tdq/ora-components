@@ -1,80 +1,93 @@
 # Plan: TextField Component Improvements
 
-Based on the analysis of [`src/components/text-field/text-field.ts`](src/components/text-field/text-field.ts), this plan outlines the necessary changes to fix bugs, improve code quality, and align with the specification.
+This plan outlines the enhancements for the `TextField` component to align it with Material Design 3 (MD3) standards, improve code quality, and add missing features.
 
-## 1. Architectural Changes
+## 1. Architectural Improvements
 
-### Reactive Class Management
-- **Issue**: Mixing `cn()` and `classList.add()` in subscriptions leads to inconsistent state and bugs.
-- **Solution**: Derive all classes through a single `combineLatest` stream. The `input.className` should be updated once per emission, ensuring that the visual state is always a pure function of the component's properties.
+### Reactive Class & Attribute Management
+- **Centralized Stream**: Consolidate all reactive state (style, error, enabled, glass, etc.) into a single `combineLatest` stream.
+- **Pure Functional Styles**: Deriving all classes and attributes within this stream ensures the visual state is always a pure function of the component's properties.
+- **Consistent Subscription**: Use a single RxJS `Subscription` object to manage all subscriptions and ensure clean disposal in `registerDestroy`.
 
 ### Validation Logic
-- **Issue**: Email validation is hardcoded inside the `build()` method.
-- **Solution**: Move validation logic to a separate utility or allow users to provide custom validation observables. The `TextFieldBuilder` should focus on orchestration.
+- **Decoupling**: Move validation logic (like email regex) to a separate utility file.
+- **Standard Validators**: Implement a set of standard validators (required, minLength, maxLength, pattern, email).
 
-### Memory Management
-- **Issue**: Event listeners are added directly (e.g., `input.oninput`).
-- **Solution**: Use `fromEvent` from RxJS for event handling and ensure all subscriptions are cleaned up via `registerDestroy`.
+### Component Structure
+- **Container Refactor**: Ensure the container correctly handles leading/trailing slots for icons and prefix/suffix text.
+- **Input Wrapper**: Introduce a wrapper around the `<input>` to manage the MD3 "filled" bottom line and focus states.
 
-## 2. Specific Fixes
+## 2. New Features
 
-### Enum Mismatch & Style Naming
-- Update `TextFieldStyle` enum:
-  - `FILLED` -> `TONAL` ('tonal')
-  - `OUTLINED` -> `OUTLINED` ('outlined')
-- Update `STYLE_MAP` to reflect the correct Material Design 3 tonal/outlined styles.
+### Icons and Slots
+- `withLeadingIcon(icon: Observable<HTMLElement | string>)`: Add support for leading icons.
+- `withTrailingIcon(icon: Observable<HTMLElement | string>)`: Add support for trailing icons (e.g., clear button, password toggle).
+- `withPrefix(text: Observable<string>)`: Add prefix text support.
+- `withSuffix(text: Observable<string>)`: Add suffix text support.
 
-### Tailwind Classes
-- Fix typos and "magic" classes:
-  - `px-px-16` -> `px-4`
-  - `py-px-12` -> `py-3`
-  - `gap-px-4` -> `gap-1`
-- Ensure standard Tailwind spacing scale is used.
+### Helper and Error Text
+- `withHelperText(text: Observable<string>)`: Add support for persistent helper text below the field.
+- **Priority Logic**: Error text should override helper text when present.
 
-### Mutually Exclusive Types
-- Replace `isPassword` and `isEmail` flags with a more flexible `type$` observable (defaulting to 'text').
-- Ensure `asPassword()` and `asEmail()` set this type correctly.
+### Character Counter
+- `withCharacterCounter(enabled: boolean = true)`: Show current/max character count if `maxLength` attribute is set.
 
-### Password Symbols
-- The specification mentions "display '*' symbols". 
-- **Implementation**: If strict compliance is needed, we will implement a custom masking logic that updates the display value with `*` while keeping the real value in the background, or use `-webkit-text-security: disc` (or similar) if CSS is enough. *Preferred: Use a custom masking approach or clarify if `type="password"` bullets are acceptable.*
+### Password Visibility Toggle
+- `withPasswordToggle()`: Helper to automatically add a trailing icon that toggles between `type="password"` and `type="text"`.
 
-### Accessibility
-- Use a `<label>` element instead of a `<span>` for the label.
-- Generate a unique ID for the input and associate it with the label's `for` attribute.
-- Add `aria-invalid` and `aria-describedby` when an error is present.
+### Variants
+- **Dense Variant**: Add a `dense$` property to reduce padding and font size for compact layouts.
 
-## 3. New Properties and Methods
+## 3. Accessibility (A11y)
 
-| Method | Description |
-|--------|-------------|
-| `withName(name: string)` | Sets the `name` attribute for form integration. |
-| `withRequired(required: Observable<boolean>)` | Sets the `required` attribute. |
-| `withReadOnly(readOnly: Observable<boolean>)` | Sets the `readonly` attribute. |
-| `withPlaceholder(placeholder: Observable<string>)` | Sets the `placeholder` attribute (existing, but ensure reactive). |
-| `withAutocomplete(value: string)` | Sets the `autocomplete` attribute. |
-| `onFocus(): Observable<FocusEvent>` | Returns an observable for focus events. |
-| `onBlur(): Observable<FocusEvent>` | Returns an observable for blur events. |
-| `onChange(): Observable<Event>` | Returns an observable for change events. |
+- **Aria Attributes**:
+    - Ensure `aria-describedby` links to both helper text and error text correctly.
+    - Add `aria-required` when the field is required.
+    - Ensure leading/trailing icons are `aria-hidden="true"` if decorative.
+- **Labeling**: Maintain the `<label>` association with `htmlFor`.
+- **Keyboard Navigation**: Ensure custom toggles (like password visibility) are keyboard-accessible.
 
-## 4. Implementation Steps
+## 4. Styling & MD3 Alignment
 
-1.  **Refactor Constants & Enums**:
-    - Update `TextFieldStyle` and `STYLE_MAP`.
-    - Define `BASE_INPUT_CLASSES` as a constant outside the builder.
-2.  **State Management**:
-    - Convert `isGlass`, `isPassword`, `isEmail` into reactive streams or consolidate them into a configuration object.
-3.  **Refactor `build()` Method**:
-    - Create the container, label (as `<label>`), input, and error elements.
-    - Setup a single `combineLatest` to handle classes for the input.
-    - Setup subscriptions for attributes (`placeholder`, `disabled`, `readonly`, `required`, `type`, `name`, `id`).
-    - Implement `aria-*` attribute updates based on error state.
-4.  **Event Handling**:
-    - Use `fromEvent(input, 'input')` to update `value$`.
-    - Expose `focus`, `blur`, `change` observables.
-5.  **Validation Extraction**:
-    - Move email validation logic to a dedicated helper.
-6.  **Password Masking (if required)**:
-    - Implement the `*` symbol display logic if `type="password"` is deemed insufficient.
-7.  **Cleanup**:
-    - Ensure `registerDestroy` covers all created subscriptions.
+- **Tonal (Filled) Style**: 
+    - Add the "active indicator" (bottom border) that expands on focus.
+    - Ensure correct background color (`surface-variant`).
+- **Outlined Style**: 
+    - Ensure correct border color and focus thickness.
+- **State Layers**: Add hover and focus state layers to the input container.
+- **Glass Effect**: Refine glass styles to be consistent with the design system while maintaining readability.
+- **Transitions**: Smoothly animate the label, bottom line, and error message appearance.
+
+## 5. Implementation Checklist
+
+### Phase 1: Refactoring & Cleanup
+- [ ] Create `Subscription` manager for all internal observers.
+- [ ] Move validation logic to `src/utils/validators.ts` (if it doesn't exist).
+- [ ] Refactor `build()` to use a single `visualState$` stream for all DOM updates.
+- [ ] Extract `BASE_INPUT_CLASSES` and `STYLE_MAP` updates.
+
+### Phase 2: Core Enhancements
+- [ ] Implement `withHelperText` and update `aria-describedby` logic.
+- [ ] Add `withName`, `withRequired`, `withReadOnly`, `withAutocomplete` (Verify/Refine existing).
+- [ ] Implement `dense` variant support.
+
+### Phase 3: Slots & Icons
+- [ ] Update DOM structure to support leading/trailing icon slots.
+- [ ] Implement `withLeadingIcon` and `withTrailingIcon`.
+- [ ] Implement `withPrefix` and `withSuffix`.
+- [ ] Implement `withPasswordToggle`.
+
+### Phase 4: MD3 Styling & Polish
+- [ ] Update `TONAL` style with active indicator (bottom border).
+- [ ] Update `OUTLINED` style.
+- [ ] Refine glass effect styles.
+- [ ] Add transitions for focus and error states.
+
+### Phase 5: Character Counter & Final Validation
+- [ ] Implement character counter logic.
+- [ ] Ensure `withEmailValidation` uses the new utility.
+
+### Phase 6: Testing
+- [ ] Update `text-field.test.ts` to cover new features (icons, helper text, dense variant).
+- [ ] Add accessibility tests (ARIA attributes).
+- [ ] Verify reactive updates for all new properties.
