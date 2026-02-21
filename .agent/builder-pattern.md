@@ -7,6 +7,18 @@ export interface ComponentBuilder {
 }
 ```
 
+Popups are special components. They are displayed not as a page content, but as panel ontop of it with higher zIndex (1000).
+Popups are implementing "PopupBuilder" interface.
+
+```typescript
+export interface PopupBuilder {
+    show()
+    close()
+}
+```
+
+On "show" call popup builds its content and displays itself. On "close" it removes itself.
+
 The main feature of builders is that methods can be called in any order. and only in "build" method HTMLElement is created.
 "build" method should be called as last method for constructing component. All "with", "add", "as" methods are setting properties and parameters according to which component will be constructed in "build" method.
 

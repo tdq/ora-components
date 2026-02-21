@@ -3,7 +3,6 @@ import { NumberFieldBuilder } from '../number-field/number-field';
 import { ComboBoxBuilder } from '../combobox';
 import { DatePickerBuilder } from '../date-picker';
 import { CheckboxBuilder } from '../checkbox';
-import { ButtonBuilder } from '../button/button';
 
 export interface IFieldsBuilder {
     addTextField(column?: number, colspan?: number): TextFieldBuilder;
@@ -15,9 +14,3 @@ export interface IFieldsBuilder {
 }
 
 import { LabelBuilder } from '../label';
-
-export interface IToolbarBuilder {
-    withPrimaryButton(): ButtonBuilder;
-    addSecondaryButton(): ButtonBuilder;
-    addTextButton(): ButtonBuilder;
-}

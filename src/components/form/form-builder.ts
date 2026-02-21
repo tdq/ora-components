@@ -2,7 +2,7 @@ import { Observable, of, map } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { LayoutBuilder, LayoutGap } from '../layout/layout';
 import { LabelBuilder, LabelSize } from '../label/label';
-import { ToolbarBuilder } from './toolbar-builder';
+import { ToolbarBuilder } from '../toolbar';
 import { FieldsBuilder } from './fields-builder';
 import { FORM_STYLES } from './styles';
 

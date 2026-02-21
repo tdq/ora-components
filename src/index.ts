@@ -8,3 +8,5 @@ export * from './components/panel';
 export * from './components/text-field';
 export * from './components/number-field';
 export * from './components/form';
+export * from './components/toolbar';
+export * from './components/dialog';

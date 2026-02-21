@@ -1,4 +1,4 @@
-import { Observable, Subject, BehaviorSubject, combineLatest, map, distinctUntilChanged, of, Subscription } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, combineLatest, map, distinctUntilChanged, Subscription } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '@/core/destroyable-element';
 import { ComboBoxStyle } from './types';

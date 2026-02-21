@@ -8,16 +8,6 @@ It has the folowing methods:
 - withToolbar(): ToolbarBuilder - defines toolbar in the form.
 - withFields(columnsAmount?: number): FieldsBuilder - defines fields which are displayed in the form.
 
-## ToolbarBuilder
-Is a custom component which allows to build panel with buttons for the form.
-It has the folowing methods:
-- withPrimaryButton(): ButtonBuilder - provides primary button for the toolbar in filled style only. Should always be on the right side.
-- addSecondaryButton(): ButtonBuilder - provides secondary button for the toolbar in outlined style. Should be on the right side, but before primary button.
-- addTextButton(): ButtonBuilder - provides button in text style. Should be on the left side.
-
-It should have 2 layouts internally: leftLayout and rightLayout. create both layouts only if there is a need to display buttons on both sides: left and right.
-Place text buttons in leftLayout and primary, secondary buttons in rightLayout.
-
 ## FieldsBuilder
 Defines which fields should be displayed in the form.
 It has the folowing methods:
@@ -34,9 +24,8 @@ It has the folowing methods:
 Style according to Material Design 3 
 Error and description are small text.
 Caption is a big text.
-ToolbarBuilder and FormBuilder should use LayoutBuilder as a basis.
+FormBuilder should use LayoutBuilder as a basis.
 LayoutBuilder should have large gap.
 Form error message should be displayed above toolbar.
 Toolbar should be on the bottom of the form.
-Primary ans secondary buttons should be right aligned in toolbar and text button should be left aligned.
-Glass effect applied only for fields and toolbar buttons. Form itself is not affected by glass effect.
+Glass effect applied only for fields and toolbar. Form itself is not affected by glass effect.

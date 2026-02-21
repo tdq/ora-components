@@ -1,9 +1,10 @@
 import { Observable, of } from 'rxjs';
 import { ButtonBuilder, ButtonStyle } from '../button/button';
 import { LayoutBuilder, LayoutGap, SlotSize, Alignment } from '../layout/layout';
-import { IToolbarBuilder } from './types';
+import { TOOLBAR_STYLES } from './styles';
+import { ComponentBuilder } from '@/core/component-builder';
 
-export class ToolbarBuilder implements IToolbarBuilder {
+export class ToolbarBuilder implements ComponentBuilder {
     private primaryButton?: ButtonBuilder;
     private secondaryButtons: ButtonBuilder[] = [];
     private textButtons: ButtonBuilder[] = [];
@@ -43,7 +44,8 @@ export class ToolbarBuilder implements IToolbarBuilder {
 
         if (hasLeft && hasRight) {
             const layout = new LayoutBuilder()
-                .asHorizontal();
+                .asHorizontal()
+                .withClass(of(TOOLBAR_STYLES.container));
 
             const leftLayout = new LayoutBuilder()
                 .asHorizontal()
@@ -71,7 +73,8 @@ export class ToolbarBuilder implements IToolbarBuilder {
         if (hasLeft) {
             const leftLayout = new LayoutBuilder()
                 .asHorizontal()
-                .withGap(LayoutGap.MEDIUM);
+                .withGap(LayoutGap.MEDIUM)
+                .withClass(of(TOOLBAR_STYLES.container));
             this.textButtons.forEach(btn => this.addButtonToLayout(btn, leftLayout, Alignment.LEFT, this.isGlass));
             return leftLayout.build();
         }
@@ -80,7 +83,8 @@ export class ToolbarBuilder implements IToolbarBuilder {
             const rightLayout = new LayoutBuilder()
                 .asHorizontal()
                 .withGap(LayoutGap.MEDIUM)
-                .withAlignment(of(Alignment.RIGHT));
+                .withAlignment(of(Alignment.RIGHT))
+                .withClass(of(TOOLBAR_STYLES.container));
             this.secondaryButtons.forEach(btn => this.addButtonToLayout(btn, rightLayout, Alignment.RIGHT, this.isGlass ));
             if (this.primaryButton) {
                 this.addButtonToLayout(this.primaryButton, rightLayout, Alignment.RIGHT, this.isGlass);
@@ -88,7 +92,10 @@ export class ToolbarBuilder implements IToolbarBuilder {
             return rightLayout.build();
         }
 
-        return new LayoutBuilder().asHorizontal().build();
+        return new LayoutBuilder()
+            .asHorizontal()
+            .withClass(of(TOOLBAR_STYLES.container))
+            .build();
     }
 
     private addButtonToLayout(btn: ButtonBuilder, layout: LayoutBuilder, alignment: Alignment, isGlass: boolean ): void {

@@ -1,0 +1,31 @@
+Button component is a custom popup that is used to display dialog.
+It has the following methods:
+- withCaption(caption: Observable<string>): this - sets caption of the dialog.
+- withDescription(description: Observable<string>): this - sets description of the dialog.
+- withClass(className: Observable<string>): this - sets class css name of the dialog.
+- withContent(content: ComponentBuilder): this - sets content of the dialog.
+- withSize(size: DialogSize): this - sets size of the dialog.
+- asScrollable(): this - sets content of the dialog scrollable.
+- withHeight(height: Observable<number>): this - if defined then limits height of the dialog. Otherwise height is defined by the content.
+- withToolbar(): ToolbarBuilder - defines toolbar in the dialog.
+
+DialogSize is an enum with values:
+- SMALL. 30vw
+- MEDIUM. 50vw
+- LARGE. 75vw
+- EXTRA_LARGE. 90vw
+
+## Requirements
+Dialogs are draggable by pressing mouse button on header.
+It uses existing components: layout, label
+Use HTML <dialog> tag for implementation.
+Always display dialog as modal.
+
+## Style
+Style according to Material Design 3 
+Description are small text.
+Caption is a big text.
+Toolbar should be on the bottom of the dialog.
+Only content is scrollable.
+Dialog drops large shadow.
+Dialog border radius is rounded-large.
