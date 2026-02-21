@@ -1,4 +1,4 @@
-import { Observable, Subject, BehaviorSubject, combineLatest } from 'rxjs';
+import { Observable, Subject, combineLatest, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -26,10 +26,10 @@ export class TextFieldBuilder implements ComponentBuilder {
     private error$?: Observable<string>;
     private label$?: Observable<string>;
     private className$?: Observable<string>;
-    private isGlass$ = new BehaviorSubject<boolean>(false);
+    private isGlass: boolean = false;
 
-    asGlass(): TextFieldBuilder {
-        this.isGlass$.next(true);
+    asGlass(isGlass: boolean = true): TextFieldBuilder {
+        this.isGlass = isGlass;
         return this;
     }
 
@@ -88,9 +88,6 @@ export class TextFieldBuilder implements ComponentBuilder {
         error.className = 'md-label-small text-error px-px-16 hidden';
         container.appendChild(error);
 
-        // Default style
-        STYLE_MAP[TextFieldStyle.FILLED].split(' ').forEach(c => input.classList.add(c));
-
         const placeholderSub = this.placeholder$?.subscribe(placeholder => {
             input.placeholder = placeholder;
         });
@@ -99,17 +96,23 @@ export class TextFieldBuilder implements ComponentBuilder {
             input.disabled = !enabled;
         });
 
-        const style$ = this.style$ || new BehaviorSubject<TextFieldStyle>(TextFieldStyle.FILLED);
-        const styleSub = combineLatest([style$, this.isGlass$]).subscribe(([style, isGlass]) => {
-            Object.values(STYLE_MAP).forEach(cls => {
-                cls.split(' ').forEach(c => input.classList.remove(c));
-            });
+        const style$ = this.style$ || of(TextFieldStyle.FILLED);
+        const className$ = this.className$ || of('');
+        const error$ = this.error$ || of('');
 
-            // Remove glass classes
-            const glassClasses = ['bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus:bg-white/20', 'rounded-small', 'rounded-t-small'];
-            glassClasses.forEach(c => input.classList.remove(c));
+        const combinedSub = combineLatest([style$, className$, error$]).subscribe(([style, extraClass, errorText]) => {
+            const BASE_INPUT_CLASSES = 'px-px-16 py-px-12 w-full outline-none transition-all body-large placeholder:text-on-surface-variant text-on-surface disabled:opacity-38 disabled:cursor-not-allowed';
+            
+            input.className = cn(
+                BASE_INPUT_CLASSES,
+                extraClass,
+                !!errorText && 'ring-error focus:ring-error shadow-[inset_0_-1px_0_0_var(--md-sys-color-error)] focus:shadow-[inset_0_-2px_0_0_var(--md-sys-color-error)]'
+            );
 
-            if (isGlass) {
+            error.textContent = errorText;
+            error.classList.toggle('hidden', !errorText);
+
+            if (this.isGlass) {
                 input.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus:bg-white/20');
                 if (style === TextFieldStyle.OUTLINED) {
                     input.classList.add('rounded-small');
@@ -132,41 +135,6 @@ export class TextFieldBuilder implements ComponentBuilder {
             label.classList.toggle('hidden', !text);
         });
 
-        const errorSub = this.error$?.subscribe(text => {
-            error.textContent = text;
-            error.classList.toggle('hidden', !text);
-            input.classList.toggle('ring-error', !!text);
-            input.classList.toggle('focus:ring-error', !!text);
-            input.classList.toggle('shadow-[inset_0_-1px_0_0_var(--md-sys-color-error)]', !!text);
-            input.classList.toggle('focus:shadow-[inset_0_-2px_0_0_var(--md-sys-color-error)]', !!text);
-        });
-
-
-        const classSub = this.className$?.subscribe(cls => {
-            const BASE_INPUT_CLASSES = 'px-px-16 py-px-12 w-full outline-none transition-all body-large placeholder:text-on-surface-variant text-on-surface disabled:opacity-38 disabled:cursor-not-allowed';
-            input.className = cn(BASE_INPUT_CLASSES, cls);
-
-            // Re-apply style and glass
-            const isGlass = this.isGlass$.value;
-            let style = TextFieldStyle.FILLED;
-            if (this.style$ && (this.style$ as any).value) {
-                style = (this.style$ as any).value;
-            } else {
-                style = input.classList.contains('rounded-small') ? TextFieldStyle.OUTLINED : TextFieldStyle.FILLED;
-            }
-
-            if (isGlass) {
-                input.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus:bg-white/20');
-                if (style === TextFieldStyle.OUTLINED) {
-                    input.classList.add('rounded-small');
-                } else {
-                    input.classList.add('rounded-t-small');
-                }
-            } else {
-                STYLE_MAP[style].split(' ').forEach(c => input.classList.add(c));
-            }
-        });
-
         if (this.value$) {
             input.oninput = (e) => {
                 const target = e.target as HTMLInputElement;
@@ -177,14 +145,11 @@ export class TextFieldBuilder implements ComponentBuilder {
         registerDestroy(container, () => {
             placeholderSub?.unsubscribe();
             enabledSub?.unsubscribe();
-            styleSub?.unsubscribe();
+            combinedSub.unsubscribe();
             valueSub?.unsubscribe();
             labelSub?.unsubscribe();
-            errorSub?.unsubscribe();
-            classSub?.unsubscribe();
         });
 
         return container;
     }
 }
-

@@ -1,6 +1,7 @@
 import { BehaviorSubject } from 'rxjs';
 import { ComboBoxBuilder, ComboBoxStyle } from './combobox-builder';
-import { fireEvent, screen } from '@testing-library/dom';
+import { fireEvent, screen, waitFor } from '@testing-library/dom';
+import '@testing-library/jest-dom';
 
 describe('ComboBoxBuilder', () => {
     let builder: ComboBoxBuilder<string>;
@@ -27,7 +28,7 @@ describe('ComboBoxBuilder', () => {
         expect(listbox).toHaveClass('hidden');
     });
 
-    test('should verify filtering: typing in the input should update the list of displayed options', () => {
+    test('should verify filtering: typing in the input should update the list of displayed options', async () => {
         const items$ = new BehaviorSubject(items);
         const container = builder
             .withItems(items$)
@@ -41,9 +42,11 @@ describe('ComboBoxBuilder', () => {
         const listbox = screen.getByRole('listbox');
         expect(listbox).not.toHaveClass('hidden');
 
-        const options = screen.getAllByRole('option');
-        expect(options).toHaveLength(1);
-        expect(options[0].textContent).toBe('Apple');
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options).toHaveLength(1);
+            expect(options[0].textContent).toBe('Apple');
+        });
     });
 
     test('should verify selection: clicking an option should update the bound Subject', () => {
@@ -66,7 +69,7 @@ describe('ComboBoxBuilder', () => {
         expect(screen.getByRole('listbox', { hidden: true })).toHaveClass('hidden');
     });
 
-    test('should verify keyboard navigation: ArrowUp/Down should highlight items, Enter should select', () => {
+    test('should verify keyboard navigation: ArrowUp/Down should highlight items, Enter should select', async () => {
         const items$ = new BehaviorSubject(items);
         const value$ = new BehaviorSubject<string | null>(null);
         const container = builder
@@ -83,14 +86,18 @@ describe('ComboBoxBuilder', () => {
         expect(screen.getByRole('listbox')).not.toHaveClass('hidden');
         
         // After first ArrowDown, it opens and already highlights the first item
-        let options = screen.getAllByRole('option');
-        expect(options[0]).toHaveClass('bg-on-surface/12');
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options[0]).toHaveClass('bg-on-surface/12');
+        });
 
         // ArrowDown again to highlight second
         fireEvent.keyDown(input, { key: 'ArrowDown' });
-        options = screen.getAllByRole('option'); // Refresh options reference
-        expect(options[1]).toHaveClass('bg-on-surface/12');
-        expect(options[0]).not.toHaveClass('bg-on-surface/12');
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options[1]).toHaveClass('bg-on-surface/12');
+            expect(options[0]).not.toHaveClass('bg-on-surface/12');
+        });
 
         // Enter to select
         fireEvent.keyDown(input, { key: 'Enter' });
@@ -126,7 +133,7 @@ describe('ComboBoxBuilder', () => {
         expect(listbox).toHaveClass('hidden');
     });
 
-    test('should verify reactive updates: changing the items$ or value$ Subjects from outside should update the UI', () => {
+    test('should verify reactive updates: changing the items$ or value$ Subjects from outside should update the UI', async () => {
         const items$ = new BehaviorSubject(items);
         const value$ = new BehaviorSubject<string | null>(null);
         const container = builder
@@ -147,12 +154,15 @@ describe('ComboBoxBuilder', () => {
         // Change items$ from outside
         items$.next(['New Item']);
         fireEvent.click(input); // Open to see new items
-        const options = screen.getAllByRole('option');
-        expect(options).toHaveLength(1);
-        expect(options[0].textContent).toBe('New Item');
+        
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options).toHaveLength(1);
+            expect(options[0].textContent).toBe('New Item');
+        });
     });
 
-    test('should verify accessibility: check for appropriate ARIA roles and attributes', () => {
+    test('should verify accessibility: check for appropriate ARIA roles and attributes', async () => {
         const items$ = new BehaviorSubject(items);
         const container = builder
             .withItems(items$)
@@ -171,8 +181,10 @@ describe('ComboBoxBuilder', () => {
         expect(input).toHaveAttribute('aria-expanded', 'true');
         
         // When opened, the first item is already highlighted
-        const options = screen.getAllByRole('option');
-        expect(input).toHaveAttribute('aria-activedescendant', options[0].id);
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(input).toHaveAttribute('aria-activedescendant', options[0].id);
+        });
     });
 
     test('should apply glass styling when asGlass is called', () => {
@@ -186,7 +198,7 @@ describe('ComboBoxBuilder', () => {
         expect(inputContainer).toHaveClass('backdrop-blur-md');
     });
 
-    test('should highlight selected item when dropdown opens', () => {
+    test('should highlight selected item when dropdown opens', async () => {
         const items$ = new BehaviorSubject(items);
         const value$ = new BehaviorSubject<string | null>('Cherry');
         const container = builder
@@ -199,9 +211,11 @@ describe('ComboBoxBuilder', () => {
         const input = screen.getByRole('combobox');
         fireEvent.click(input); // Open dropdown
 
-        const options = screen.getAllByRole('option');
-        expect(options[2]).toHaveClass('bg-on-surface/12');
-        expect(options[2].textContent).toBe('Cherry');
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options[2]).toHaveClass('bg-on-surface/12');
+            expect(options[2].textContent).toBe('Cherry');
+        });
     });
 
     test('should have bg-surface background for listbox in OUTLINED style', () => {
@@ -271,7 +285,7 @@ describe('ComboBoxBuilder', () => {
         expect(listbox.id).toMatch(/^cb-.*-listbox$/);
     });
 
-    test('should update focusedIndex on mouse hover', () => {
+    test('should update focusedIndex on mouse hover', async () => {
         const items$ = new BehaviorSubject(items);
         const container = builder
             .withItems(items$)
@@ -282,17 +296,22 @@ describe('ComboBoxBuilder', () => {
         const input = screen.getByRole('combobox');
         fireEvent.click(input); // Open dropdown
 
-        const options = screen.getAllByRole('option');
-        
         // Initial focus is 0
-        expect(options[0]).toHaveClass('bg-on-surface/12');
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options[0]).toHaveClass('bg-on-surface/12');
+        });
 
         // Hover second item
+        const options = screen.getAllByRole('option');
         fireEvent.mouseEnter(options[1]);
         
         // Check if second item is highlighted
-        expect(options[1]).toHaveClass('bg-on-surface/12');
-        expect(options[0]).not.toHaveClass('bg-on-surface/12');
+        await waitFor(() => {
+            const currentOptions = screen.getAllByRole('option');
+            expect(currentOptions[1]).toHaveClass('bg-on-surface/12');
+            expect(currentOptions[0]).not.toHaveClass('bg-on-surface/12');
+        });
     });
 
     test('should verify visibility: withVisible should toggle hidden class', () => {

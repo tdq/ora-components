@@ -8,7 +8,6 @@ export default {
 export const RegistrationForm = () => {
     const firstName$ = new BehaviorSubject('');
     const lastName$ = new BehaviorSubject('');
-    const isGlass$ = new BehaviorSubject(false);
     const enabled$ = new BehaviorSubject(true);
     const error$ = new BehaviorSubject('');
 
@@ -17,8 +16,6 @@ export const RegistrationForm = () => {
         .withDescription(of('Please fill out the form below to create your account.'))
         .withEnabled(enabled$)
         .withError(error$);
-
-    if (isGlass$.value) form.asGlass();
 
     const fields = form.withFields(2);
     
@@ -32,22 +29,14 @@ export const RegistrationForm = () => {
     toolbar.withPrimaryButton().withCaption(of('Submit')).withClick(new Subject<void>());
 
     const container = document.createElement('div');
-    container.className = 'p-px-24 flex flex-col gap-px-24';
+    container.className = 'p-px-48 min-h-screen -m-px-16 flex flex-col gap-px-24 transition-all duration-1000';
 
     // Controls for the story
     const controls = document.createElement('div');
-    controls.className = 'flex gap-px-16 mb-px-24 p-px-16 bg-surface-variant rounded-small';
+    controls.className = 'flex gap-px-16 mb-px-24 p-px-16 bg-surface-variant/50 backdrop-blur-sm rounded-small border border-outline/20 self-start';
     
-    const glassBtn = document.createElement('button');
-    glassBtn.textContent = 'Toggle Glass';
-    glassBtn.onclick = () => {
-        isGlass$.next(!isGlass$.value);
-        // Form needs to be re-built or we need to handle dynamic asGlass
-        alert('Re-render needed for glass effect toggle in this story');
-    };
-    controls.appendChild(glassBtn);
-
     const errorBtn = document.createElement('button');
+    errorBtn.className = 'px-px-16 py-px-8 rounded-small bg-secondary text-on-secondary hover:elevation-1 transition-all';
     errorBtn.textContent = 'Toggle Error';
     errorBtn.onclick = () => {
         error$.next(error$.value ? '' : 'There are some errors in the form.');
@@ -55,6 +44,7 @@ export const RegistrationForm = () => {
     controls.appendChild(errorBtn);
 
     const disableBtn = document.createElement('button');
+    disableBtn.className = 'px-px-16 py-px-8 rounded-small bg-surface-variant text-on-surface-variant hover:elevation-1 transition-all';
     disableBtn.textContent = 'Toggle Enabled';
     disableBtn.onclick = () => {
         enabled$.next(!enabled$.value);

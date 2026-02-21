@@ -57,8 +57,11 @@ describe('CheckboxBuilder', () => {
             .asGlass()
             .build();
 
-        expect(checkbox).toHaveClass('bg-white/10');
-        expect(checkbox).toHaveClass('backdrop-blur-md');
+        // The glass effect should be applied to the box, not the root label
+        const input = checkbox.querySelector('input') as HTMLInputElement;
+        const box = input.nextElementSibling;
+        expect(box).toHaveClass('bg-white/10');
+        expect(box).toHaveClass('backdrop-blur-md');
     });
 
     it('should apply custom class reactively', () => {

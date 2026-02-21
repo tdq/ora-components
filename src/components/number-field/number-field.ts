@@ -1,4 +1,4 @@
-import { Observable, Subject, BehaviorSubject, combineLatest } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, combineLatest, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -30,10 +30,10 @@ export class NumberFieldBuilder implements ComponentBuilder {
     private min$?: Observable<number>;
     private max$?: Observable<number>;
     private step$?: Observable<number>;
-    private isGlass$ = new BehaviorSubject<boolean>(false);
+    private isGlass: boolean = false;
 
-    asGlass(): this {
-        this.isGlass$.next(true);
+    asGlass(isGlass: boolean = true): this {
+        this.isGlass = isGlass;
         return this;
     }
 
@@ -168,16 +168,24 @@ export class NumberFieldBuilder implements ComponentBuilder {
             input.disabled = !enabled;
         });
 
-        const style$ = this.style$ || new BehaviorSubject<NumberFieldStyle>(NumberFieldStyle.TONAL);
-        const styleSub = combineLatest([style$, this.isGlass$]).subscribe(([style, isGlass]) => {
-            Object.values(STYLE_MAP).forEach(cls => {
-                cls.split(' ').forEach(c => input.classList.remove(c));
-            });
+        const style$ = this.style$ || of(NumberFieldStyle.TONAL);
+        const className$ = this.className$ || of('');
+        const error$ = this.error$ || of('');
 
-            const glassClasses = ['bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus:bg-white/20', 'rounded-small', 'rounded-t-small'];
-            glassClasses.forEach(c => input.classList.remove(c));
+        const combinedSub = combineLatest([style$, className$, error$]).subscribe(([style, extraClass, errorText]) => {
+            const BASE_INPUT_CLASSES = 'px-px-16 py-px-12 w-full outline-none transition-all body-large placeholder:text-on-surface-variant placeholder:text-left text-on-surface text-right disabled:opacity-38 disabled:cursor-not-allowed';
+            
+            input.className = cn(
+                BASE_INPUT_CLASSES,
+                extraClass,
+                !!errorText && 'ring-error focus:ring-error shadow-[inset_0_-1px_0_0_var(--md-sys-color-error)] focus:shadow-[inset_0_-2px_0_0_var(--md-sys-color-primary)]'
+            );
 
-            if (isGlass) {
+            error.textContent = errorText;
+            error.classList.toggle('hidden', !errorText);
+            input.setAttribute('aria-invalid', (!!errorText).toString());
+
+            if (this.isGlass) {
                 input.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus:bg-white/20');
                 if (style === NumberFieldStyle.OUTLINED) {
                     input.classList.add('rounded-small');
@@ -200,39 +208,6 @@ export class NumberFieldBuilder implements ComponentBuilder {
         const labelSub = this.label$?.subscribe(text => {
             label.textContent = text;
             label.classList.toggle('hidden', !text);
-        });
-
-        const errorSub = this.error$?.subscribe(text => {
-            error.textContent = text;
-            error.classList.toggle('hidden', !text);
-            input.setAttribute('aria-invalid', (!!text).toString());
-            
-            // Apply error styles
-            input.classList.toggle('ring-error', !!text);
-            input.classList.toggle('focus:ring-error', !!text);
-            input.classList.toggle('shadow-[inset_0_-1px_0_0_var(--md-sys-color-error)]', !!text);
-            input.classList.toggle('focus:shadow-[inset_0_-2px_0_0_var(--md-sys-color-error)]', !!text);
-        });
-
-        const classSub = this.className$?.subscribe(cls => {
-            const BASE_INPUT_CLASSES = 'px-px-16 py-px-12 w-full outline-none transition-all body-large placeholder:text-on-surface-variant placeholder:text-left text-on-surface text-right disabled:opacity-38 disabled:cursor-not-allowed';
-            input.className = cn(BASE_INPUT_CLASSES, cls);
-            
-            // Re-apply style and glass (similar to TextField logic)
-            // Note: This logic might need more robust style preservation if classes change frequently
-            const isGlass = this.isGlass$.value;
-            const currentStyle = input.classList.contains('rounded-small') ? NumberFieldStyle.OUTLINED : NumberFieldStyle.TONAL;
-
-            if (isGlass) {
-                input.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus:bg-white/20');
-                if (currentStyle === NumberFieldStyle.OUTLINED) {
-                    input.classList.add('rounded-small');
-                } else {
-                    input.classList.add('rounded-t-small');
-                }
-            } else {
-                STYLE_MAP[currentStyle].split(' ').forEach(c => input.classList.add(c));
-            }
         });
 
         // Input Filtering
@@ -269,11 +244,6 @@ export class NumberFieldBuilder implements ComponentBuilder {
             const parsed = parseFloat(filtered);
             if (!isNaN(parsed)) {
                 this.value$?.next(parsed);
-            } else if (filtered === '' || filtered === '-') {
-                // Handle empty or just minus sign - maybe set to 0 or null? 
-                // Spec says update value subject after parsing. 
-                // If we want to allow empty input in state, we might need Subject<number | null>
-                // For now, let's keep it as number and not push invalid values
             }
         };
 
@@ -304,11 +274,9 @@ export class NumberFieldBuilder implements ComponentBuilder {
             stepSub?.unsubscribe();
             placeholderSub?.unsubscribe();
             enabledSub?.unsubscribe();
-            styleSub?.unsubscribe();
+            combinedSub.unsubscribe();
             valueSub?.unsubscribe();
             labelSub?.unsubscribe();
-            errorSub?.unsubscribe();
-            classSub?.unsubscribe();
         });
 
         return container;

@@ -79,5 +79,32 @@ describe('ButtonBuilder', () => {
         expect(button.classList.contains('custom-class')).toBe(false);
         expect(button.classList.contains('another-class')).toBe(true);
     });
-});
 
+    it('should apply glass style to PRIMARY button', () => {
+        const button = new ButtonBuilder()
+            .withCaption(new BehaviorSubject('Glass'))
+            .asGlass()
+            .build();
+
+        expect(button).toHaveClass('bg-white/10');
+        expect(button).toHaveClass('backdrop-blur-md');
+        expect(button).toHaveClass('text-on-primary'); // Kept from primary style
+    });
+
+    it('should NOT apply glass style to TEXT button', () => {
+        const style$ = new BehaviorSubject(ButtonStyle.TEXT);
+        const button = new ButtonBuilder()
+            .withCaption(new BehaviorSubject('Text Glass'))
+            .withStyle(style$)
+            .asGlass()
+            .build();
+
+        // Should NOT have glass classes
+        expect(button).not.toHaveClass('bg-white/10');
+        expect(button).not.toHaveClass('backdrop-blur-md');
+        
+        // Should have text style classes
+        expect(button).toHaveClass('bg-transparent');
+        expect(button).toHaveClass('text-primary');
+    });
+});

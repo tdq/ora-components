@@ -1,4 +1,4 @@
-import { Observable, Subject, BehaviorSubject, distinctUntilChanged } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, distinctUntilChanged, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '@/core/destroyable-element';
 import { formatDate, parseDate, isValidDate } from './date-utils';
@@ -15,7 +15,7 @@ export class DatePickerBuilder implements ComponentBuilder {
     private error$?: Observable<string>;
     private style$?: Observable<DatePickerStyle>;
     private className$?: Observable<string>;
-    private isGlass$ = new BehaviorSubject<boolean>(false);
+    private isGlass: boolean = false;
 
     withValue(value: Subject<Date | null>): this {
         this.value$ = value;
@@ -62,8 +62,8 @@ export class DatePickerBuilder implements ComponentBuilder {
         return this;
     }
 
-    asGlass(): this {
-        this.isGlass$.next(true);
+    asGlass(isGlass: boolean = true): this {
+        this.isGlass = isGlass;
         return this;
     }
 
@@ -217,12 +217,13 @@ export class DatePickerBuilder implements ComponentBuilder {
             container.classList.toggle('pointer-events-none', !enabled);
         }));
 
-        subs.push(this.isGlass$.subscribe(isGlass => {
-            if (isGlass) {
-                inputWrapper.classList.add('backdrop-blur-md', 'bg-white/10', 'border-white/20');
-                popup.classList.add('backdrop-blur-md', 'bg-white/10', 'border-white/20');
-            }
-        }));
+        if (this.isGlass) {
+            inputWrapper.classList.remove('bg-surface-variant', 'border-b', 'border-outline-variant', 'rounded-t-small');
+            inputWrapper.classList.add('backdrop-blur-md', 'bg-white/10', 'border', 'border-white/20', 'rounded-small');
+            
+            popup.classList.remove('bg-surface', 'border-outline');
+            popup.classList.add('backdrop-blur-md', 'bg-white/10', 'border-white/20');
+        }
 
         subs.push(isExpanded$.subscribe(expanded => {
             popup.classList.toggle('hidden', !expanded);

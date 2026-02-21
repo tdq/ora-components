@@ -1,4 +1,4 @@
-import { Observable, Subject, Subscription } from 'rxjs';
+import { Observable, Subject, Subscription, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -13,7 +13,7 @@ export class CheckboxBuilder implements ComponentBuilder {
     private enabled$?: Observable<boolean>;
     private className$?: Observable<string>;
     private value$?: Subject<boolean>;
-    private isGlass = false;
+    private isGlass: boolean = false;
 
     withCaption(caption: Observable<string>): this {
         this.caption$ = caption;
@@ -35,18 +35,15 @@ export class CheckboxBuilder implements ComponentBuilder {
         return this;
     }
 
-    asGlass(): this {
-        this.isGlass = true;
+    asGlass(isGlass: boolean = true): this {
+        this.isGlass = isGlass;
         return this;
     }
 
     build(): HTMLElement {
         const root = document.createElement('label');
         const BASE_ROOT_CLASSES = 'inline-flex items-center gap-px-8 cursor-pointer group select-none';
-        root.className = cn(
-            BASE_ROOT_CLASSES,
-            this.isGlass && 'bg-white/10 backdrop-blur-md border border-white/20 p-px-8 rounded-medium'
-        );
+        root.className = cn(BASE_ROOT_CLASSES);
 
         const container = document.createElement('div');
         container.className = 'relative flex items-center justify-center w-[18px] h-[18px]';
@@ -56,13 +53,17 @@ export class CheckboxBuilder implements ComponentBuilder {
         input.className = 'sr-only peer';
 
         const box = document.createElement('div');
-        box.className = cn(
-            'w-full h-full border-2 rounded-small transition-all',
-            'peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
-            'peer-checked:bg-primary peer-checked:border-primary',
-            'peer-disabled:opacity-38 peer-disabled:cursor-not-allowed',
-            'border-outline'
-        );
+        const updateBoxClasses = (isGlass: boolean) => {
+            box.className = cn(
+                'w-full h-full rounded-small transition-all',
+                'peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
+                'peer-checked:bg-primary peer-checked:border-primary',
+                'peer-disabled:opacity-38 peer-disabled:cursor-not-allowed',
+                isGlass
+                    ? 'bg-white/10 backdrop-blur-md border border-white/20'
+                    : 'border-2 border-outline'
+            );
+        };
 
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('class', 'absolute inset-0 w-full h-full text-on-primary scale-0 transition-transform peer-checked:scale-100');
@@ -101,6 +102,8 @@ export class CheckboxBuilder implements ComponentBuilder {
             }));
         }
 
+        updateBoxClasses(this.isGlass);
+
         if (this.enabled$) {
             subscriptions.add(this.enabled$.subscribe(enabled => {
                 input.disabled = !enabled;
@@ -118,7 +121,6 @@ export class CheckboxBuilder implements ComponentBuilder {
             subscriptions.add(this.className$.subscribe(className => {
                 root.className = cn(
                     BASE_ROOT_CLASSES,
-                    this.isGlass && 'bg-white/10 backdrop-blur-md border border-white/20 p-px-8 rounded-medium',
                     className
                 );
             }));

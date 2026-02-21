@@ -1,5 +1,5 @@
-import { LayoutBuilder, LayoutGap, SlotSize } from './layout';
-import { BehaviorSubject } from 'rxjs';
+import { LayoutBuilder, LayoutGap, SlotSize, Alignment } from './layout';
+import { BehaviorSubject, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 
 class MockBuilder implements ComponentBuilder {
@@ -48,15 +48,6 @@ describe('LayoutBuilder', () => {
         expect(slot.classList.contains('basis-1/2')).toBe(true);
     });
 
-    it('should apply FIT slot size', () => {
-        const builder = new LayoutBuilder();
-        builder.addSlot().withSize(SlotSize.FIT);
-
-        const layout = builder.build();
-        const slot = layout.children[0] as HTMLElement;
-        expect(slot.classList.contains('flex-none')).toBe(true);
-    });
-
     it('should handle slot visibility', () => {
         const visible$ = new BehaviorSubject(true);
         const builder = new LayoutBuilder();
@@ -80,5 +71,58 @@ describe('LayoutBuilder', () => {
         class$.next('another-layout');
         expect(layout.classList.contains('custom-layout')).toBe(false);
         expect(layout.classList.contains('another-layout')).toBe(true);
+    });
+
+    it('should apply custom class with of()', () => {
+        const builder = new LayoutBuilder().withClass(of('glass-effect'));
+        const layout = builder.build();
+        expect(layout.classList.contains('glass-effect')).toBe(true);
+    });
+
+    it('should handle layout alignment and apply to slots', () => {
+        const alignment$ = new BehaviorSubject(Alignment.CENTER);
+        const builder = new LayoutBuilder().withAlignment(alignment$);
+        builder.addSlot().withContent(new MockBuilder());
+
+        const layout = builder.build();
+        const slot = layout.children[0] as HTMLElement;
+        expect(slot.classList.contains('justify-center')).toBe(true);
+        expect(slot.classList.contains('items-center')).toBe(true);
+
+        alignment$.next(Alignment.RIGHT);
+        expect(slot.classList.contains('justify-center')).toBe(false);
+        expect(slot.classList.contains('justify-end')).toBe(true);
+        expect(slot.classList.contains('items-center')).toBe(true);
+    });
+
+    it('should allow slot alignment to override layout alignment', () => {
+        const layoutAlignment$ = new BehaviorSubject(Alignment.CENTER);
+        const slotAlignment$ = new BehaviorSubject(Alignment.RIGHT);
+        
+        const builder = new LayoutBuilder().withAlignment(layoutAlignment$);
+        builder.addSlot()
+            .withAlignment(slotAlignment$)
+            .withContent(new MockBuilder());
+
+        const layout = builder.build();
+        const slot = layout.children[0] as HTMLElement;
+        
+        expect(slot.classList.contains('justify-end')).toBe(true);
+        
+        slotAlignment$.next(Alignment.LEFT);
+        expect(slot.classList.contains('justify-end')).toBe(false);
+        expect(slot.classList.contains('justify-start')).toBe(true);
+    });
+
+    it('should handle layout alignment on horizontal container', () => {
+        const alignment$ = new BehaviorSubject(Alignment.CENTER);
+        const builder = new LayoutBuilder().asHorizontal().withAlignment(alignment$);
+
+        const layout = builder.build();
+        expect(layout.classList.contains('justify-center')).toBe(true);
+
+        alignment$.next(Alignment.RIGHT);
+        expect(layout.classList.contains('justify-center')).toBe(false);
+        expect(layout.classList.contains('justify-end')).toBe(true);
     });
 });

@@ -109,6 +109,15 @@ describe('TextFieldBuilder', () => {
         expect(input.classList.contains('another-class')).toBe(true);
     });
 
+    test('should apply glass effect classes when asGlass is called', () => {
+        const container = builder.asGlass().build();
+        const input = container.querySelector('input') as HTMLInputElement;
+
+        expect(input.classList.contains('bg-white/10')).toBe(true);
+        expect(input.classList.contains('backdrop-blur-md')).toBe(true);
+        expect(input.classList.contains('border-white/20')).toBe(true);
+    });
+
     test('should clean up subscriptions on destroy', async () => {
         const placeholder$ = new BehaviorSubject('Initial');
         const container = builder.withPlaceholder(placeholder$).build();

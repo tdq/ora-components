@@ -1,7 +1,6 @@
 Form is a custom component which allows to build forms by combining different fields.
 It has the folowing methods:
 - withEnabled(enabled: Observable<boolean>): this - sets enabled state of the whole form.
-- withStyle(style: Observable<FormStyle>): this - sets style of the whole form.
 - withError(error: Observable<string>): this - sets error of the whole form.
 - withCaption(caption: Observable<string>): this - sets label of the form.
 - withDescription(description: Observable<string>): this - sets description of the form.
@@ -15,6 +14,9 @@ It has the folowing methods:
 - withPrimaryButton(): ButtonBuilder - provides primary button for the toolbar in filled style only. Should always be on the right side.
 - addSecondaryButton(): ButtonBuilder - provides secondary button for the toolbar in outlined style. Should be on the right side, but before primary button.
 - addTextButton(): ButtonBuilder - provides button in text style. Should be on the left side.
+
+It should have 2 layouts internally: leftLayout and rightLayout. create both layouts only if there is a need to display buttons on both sides: left and right.
+Place text buttons in leftLayout and primary, secondary buttons in rightLayout.
 
 ## FieldsBuilder
 Defines which fields should be displayed in the form.
@@ -37,3 +39,4 @@ LayoutBuilder should have large gap.
 Form error message should be displayed above toolbar.
 Toolbar should be on the bottom of the form.
 Primary ans secondary buttons should be right aligned in toolbar and text button should be left aligned.
+Glass effect applied only for fields and toolbar buttons. Form itself is not affected by glass effect.

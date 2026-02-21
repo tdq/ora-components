@@ -2,9 +2,31 @@ import { TextFieldStyle } from '../components/text-field';
 import { BehaviorSubject, combineLatest, of, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { FormBuilder } from '../components/form';
+import { PanelBuilder, PanelGap } from '../components/panel';
+import { ButtonStyle } from '../components/button';
+import { LayoutBuilder } from '../components/layout';
 
 export default {
     title: 'Examples/Forms',
+};
+
+const withExampleControls = (form: FormBuilder, maxWidthClass: string = 'max-w-md', isGlass: boolean = false) => {
+    const panel = new PanelBuilder()
+        .withGap(PanelGap.LARGE)
+        .withContent(form)
+        .asGlass(isGlass)
+        .withClass(of(`w-full ${maxWidthClass}`));
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withClass(of(isGlass
+            ? 'p-px-48 min-h-screen -m-px-16 items-center justify-center gap-px-24 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500'
+            : 'p-px-48 min-h-screen -m-px-16 gap-px-24 bg-surface'
+        ));
+
+    layout.addSlot().withContent(panel);
+
+    return layout.build();
 };
 
 export const PersonInformationForm = () => {
@@ -109,10 +131,7 @@ export const PersonInformationForm = () => {
         .withEnabled(isFormValid$)
         .withClick(submitClick$);
 
-    const container = form.build();
-    container.classList.add('p-4', 'max-w-md');
-
-    return container;
+    return withExampleControls(form, 'max-w-md');
 };
 
 export const AddressForm = () => {
@@ -228,10 +247,7 @@ export const AddressForm = () => {
         .withEnabled(isFormValid$)
         .withClick(submitClick$);
 
-    const container = form.build();
-    container.classList.add('p-4', 'max-w-2xl');
-
-    return container;
+    return withExampleControls(form, 'max-w-2xl');
 };
 
 export const CombinedForm = () => {
@@ -350,8 +366,118 @@ export const CombinedForm = () => {
         .withEnabled(isFormValid$)
         .withClick(submitClick$);
 
-    const container = form.build();
-    container.classList.add('p-4', 'max-w-2xl');
+    return withExampleControls(form, 'max-w-2xl');
+};
 
-    return container;
+export const GlassLoginForm = () => {
+    const email$ = new BehaviorSubject('');
+    const password$ = new BehaviorSubject('');
+    const isLoading$ = new BehaviorSubject(false);
+
+    const emailError$ = email$.pipe(
+        map(val => {
+            if (val.trim() === '') return '';
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return 'Invalid email';
+            return '';
+        })
+    );
+
+    const isFormValid$ = combineLatest([email$, password$, emailError$]).pipe(
+        map(([email, password, error]) => email.length > 0 && password.length > 0 && error === '')
+    );
+
+    const submitClick$ = new Subject<void>();
+    submitClick$.subscribe(() => {
+        isLoading$.next(true);
+        setTimeout(() => {
+            isLoading$.next(false);
+            alert(`Logged in as ${email$.value}`);
+        }, 2000);
+    });
+
+    const form = new FormBuilder()
+        .asGlass()
+        .withCaption(of('Sign In'))
+        .withDescription(of('Enter your credentials to access your account'));
+
+    const fields = form.withFields();
+    fields.addTextField()
+        .withLabel(of('Email'))
+        .withPlaceholder(of('your@email.com'))
+        .withValue(email$)
+        .withError(emailError$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
+
+    fields.addTextField()
+        .withLabel(of('Password'))
+        .withPlaceholder(of('••••••••'))
+        .withValue(password$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
+
+    const toolbar = form.withToolbar();
+    toolbar.withPrimaryButton()
+        .withCaption(isLoading$.pipe(map(loading => loading ? 'Signing in...' : 'Sign In')))
+        .withEnabled(combineLatest([isFormValid$, isLoading$]).pipe(map(([valid, loading]) => valid && !loading)))
+        .withClick(submitClick$);
+
+    return withExampleControls(form, 'max-w-md', true);
+};
+
+export const GlassSignupForm = () => {
+    const name$ = new BehaviorSubject('');
+    const email$ = new BehaviorSubject('');
+    const password$ = new BehaviorSubject('');
+    const confirmPassword$ = new BehaviorSubject('');
+
+    const passwordError$ = combineLatest([password$, confirmPassword$]).pipe(
+        map(([p, c]) => (c.length > 0 && p !== c) ? 'Passwords do not match' : '')
+    );
+
+    const isFormValid$ = combineLatest([name$, email$, password$, confirmPassword$, passwordError$]).pipe(
+        map(([n, e, p, c, err]) => n.length > 0 && e.includes('@') && p.length >= 8 && p === c && err === '')
+    );
+
+    const form = new FormBuilder()
+        .asGlass()
+        .withCaption(of('Create Account'))
+        .withDescription(of('Join our community today'));
+
+    const fields = form.withFields(2);
+    
+    fields.addTextField(1, 2)
+        .withLabel(of('Full Name'))
+        .withPlaceholder(of('John Doe'))
+        .withValue(name$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
+
+    fields.addTextField(1, 2)
+        .withLabel(of('Email Address'))
+        .withPlaceholder(of('john@example.com'))
+        .withValue(email$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
+
+    fields.addTextField(1, 1)
+        .withLabel(of('Password'))
+        .withPlaceholder(of('Min. 8 characters'))
+        .withValue(password$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
+
+    fields.addTextField(2, 1)
+        .withLabel(of('Confirm'))
+        .withPlaceholder(of('Repeat password'))
+        .withValue(confirmPassword$)
+        .withError(passwordError$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
+
+    const toolbar = form.withToolbar();
+    
+    toolbar.addTextButton()
+        .withCaption(of('Sign In Instead'))
+        .withStyle(of(ButtonStyle.TEXT));
+
+    toolbar.withPrimaryButton()
+        .withCaption(of('Create Account'))
+        .withEnabled(isFormValid$);
+
+    return withExampleControls(form, 'max-w-xl', true);
 };

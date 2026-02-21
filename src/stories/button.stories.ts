@@ -137,7 +137,7 @@ export const Glass = () => {
     });
 
     const container = layout.build();
-    container.classList.add('flex-wrap', 'p-8', 'bg-gradient-to-br', 'from-blue-500', 'to-purple-600', 'min-h-[200px]');
+    container.classList.add('flex-wrap', 'p-8', 'bg-gradient-to-br', 'from-blue-500', 'to-purple-600');
 
     return container;
 };

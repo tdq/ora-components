@@ -1,30 +1,23 @@
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, of, map } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { LayoutBuilder, LayoutGap } from '../layout/layout';
+import { LabelBuilder, LabelSize } from '../label/label';
 import { ToolbarBuilder } from './toolbar-builder';
 import { FieldsBuilder } from './fields-builder';
-import { FormStyle } from './types';
 import { FORM_STYLES } from './styles';
-import { registerDestroy } from '@/core/destroyable-element';
 
 export class FormBuilder implements ComponentBuilder {
     private enabled$?: Observable<boolean>;
-    private style$?: Observable<FormStyle>;
     private error$?: Observable<string>;
     private caption$?: Observable<string>;
     private description$?: Observable<string>;
-    private isGlass$ = new BehaviorSubject<boolean>(false);
+    private isGlass: boolean = false;
     
     private toolbarBuilder?: ToolbarBuilder;
     private fieldsBuilder?: FieldsBuilder;
 
     withEnabled(enabled: Observable<boolean>): this {
         this.enabled$ = enabled;
-        return this;
-    }
-
-    withStyle(style: Observable<FormStyle>): this {
-        this.style$ = style;
         return this;
     }
 
@@ -43,8 +36,8 @@ export class FormBuilder implements ComponentBuilder {
         return this;
     }
 
-    asGlass(): this {
-        this.isGlass$.next(true);
+    asGlass(isGlass: boolean = true): this {
+        this.isGlass = isGlass;
         return this;
     }
 
@@ -59,94 +52,63 @@ export class FormBuilder implements ComponentBuilder {
     }
 
     build(): HTMLElement {
-        const root = document.createElement('div');
-        root.className = FORM_STYLES.container;
+        // Prepare container classes and reactivity
+        const layout = new LayoutBuilder()
+            .asVertical()
+            .withGap(LayoutGap.EXTRA_LARGE);
 
-        const layout = new LayoutBuilder().asVertical().withGap(LayoutGap.LARGE);
-        
         // 1. Header (Caption & Description)
-        const header = document.createElement('div');
-        header.className = FORM_STYLES.header;
+        const headerLayout = new LayoutBuilder()
+            .asVertical()
+            .withGap(LayoutGap.SMALL)
+            .withClass(of(FORM_STYLES.header));
         
-        const caption = document.createElement('h2');
-        caption.className = FORM_STYLES.caption;
-        header.appendChild(caption);
+        if (this.caption$) {
+            headerLayout.addSlot()
+                .withContent(new LabelBuilder()
+                    .withCaption(this.caption$)
+                    .withClass(of(FORM_STYLES.caption)))
+                .withVisible(this.caption$.pipe(map(text => !!text)));
+        }
+
+        if (this.description$) {
+            headerLayout.addSlot()
+                .withContent(new LabelBuilder()
+                    .withCaption(this.description$)
+                    .withClass(of(FORM_STYLES.description)))
+                .withVisible(this.description$.pipe(map(text => !!text)));
+        }
         
-        const description = document.createElement('p');
-        description.className = FORM_STYLES.description;
-        header.appendChild(description);
-        
-        layout.addSlot().withContent({ build: () => header });
+        layout.addSlot().withContent(headerLayout);
 
         // 2. Fields
         if (this.fieldsBuilder) {
             if (this.enabled$) this.fieldsBuilder.withEnabled(this.enabled$);
-            if (this.isGlass$.value) this.fieldsBuilder.asGlass();
+            this.fieldsBuilder.asGlass(this.isGlass);
             layout.addSlot().withContent(this.fieldsBuilder);
         }
 
         // 3. Error message
-        const error = document.createElement('div');
-        error.className = FORM_STYLES.error;
-        layout.addSlot().withContent({ build: () => error });
+        if (this.error$) {
+            layout.addSlot()
+                .withContent(new LabelBuilder()
+                    .withCaption(this.error$)
+                    .withSize(LabelSize.SMALL)
+                    .withClass(of(FORM_STYLES.error)))
+                .withVisible(this.error$.pipe(map(text => !!text)));
+        }
 
         // 4. Toolbar
         if (this.toolbarBuilder) {
             if (this.enabled$) this.toolbarBuilder.withEnabled(this.enabled$);
-            if (this.isGlass$.value) this.toolbarBuilder.asGlass();
+
+            if(this.isGlass) {
+                this.toolbarBuilder.asGlass();
+            }
+
             layout.addSlot().withContent(this.toolbarBuilder);
         }
 
-        const container = layout.build();
-        root.appendChild(container);
-
-        // Subscriptions
-        const subs: any[] = [];
-
-        if (this.caption$) {
-            subs.push(this.caption$.subscribe(text => {
-                caption.textContent = text;
-                caption.classList.toggle('hidden', !text);
-            }));
-        }
-
-        if (this.description$) {
-            subs.push(this.description$.subscribe(text => {
-                description.textContent = text;
-                description.classList.toggle('hidden', !text);
-            }));
-        }
-
-        if (this.error$) {
-            subs.push(this.error$.subscribe(text => {
-                error.textContent = text;
-                error.classList.toggle('hidden', !text);
-            }));
-        }
-
-        subs.push(this.isGlass$.subscribe(glass => {
-            if (glass) {
-                container.classList.add(...FORM_STYLES.glass.split(' '));
-            } else {
-                container.classList.remove(...FORM_STYLES.glass.split(' '));
-            }
-        }));
-
-        if (this.style$) {
-            subs.push(this.style$.subscribe(style => {
-                if (style === FormStyle.COMPACT) {
-                    layout.withGap(LayoutGap.SMALL);
-                    // Re-build layout if needed? Actually LayoutBuilder.build() is called already.
-                    // This might be a limitation of our current LayoutBuilder implementation.
-                    // But MD3 usually implies static build.
-                }
-            }));
-        }
-
-        registerDestroy(root, () => {
-            subs.forEach(s => s.unsubscribe());
-        });
-
-        return root;
+        return layout.build();
     }
 }

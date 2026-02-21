@@ -15,4 +15,5 @@ Button style is an enum with the following values:
 - text
 
 ## Style
-Style according to Material Design 3 
+Style according to Material Design 3
+Glass effect is not applied for text button background because it should not have any background.

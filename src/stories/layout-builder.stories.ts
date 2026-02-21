@@ -1,5 +1,5 @@
 import { ButtonBuilder, ButtonStyle } from '@/components/button';
-import { LayoutBuilder, LayoutGap, SlotSize } from '../components/layout';
+import { LayoutBuilder, LayoutGap, SlotSize, Alignment } from '../components/layout';
 import { createPlaceholder } from './placeholder';
 import { BehaviorSubject, of, Subject } from 'rxjs';
 
@@ -79,4 +79,36 @@ export const ConditionalVisibility = () => {
     outerLayout.addSlot().withContent(innerLayout);
 
     return outerLayout.build();
+};
+
+export const AlignmentStory = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.MEDIUM);
+
+    layout.addSlot()
+        .withAlignment(of(Alignment.LEFT))
+        .withContent(createPlaceholder('Left Aligned Slot', '#FEE2E2'));
+
+    layout.addSlot()
+        .withAlignment(of(Alignment.CENTER))
+        .withContent(createPlaceholder('Center Aligned Slot', '#FEF3C7'));
+
+    layout.addSlot()
+        .withAlignment(of(Alignment.RIGHT))
+        .withContent(createPlaceholder('Right Aligned Slot', '#D1FAE5'));
+
+    return layout.build();
+};
+
+export const LayoutAlignmentStory = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.MEDIUM)
+        .withAlignment(of(Alignment.CENTER));
+
+    layout.addSlot().withContent(createPlaceholder('Aligned via Layout 1', '#FEE2E2'));
+    layout.addSlot().withContent(createPlaceholder('Aligned via Layout 2', '#FEF3C7'));
+
+    return layout.build();
 };

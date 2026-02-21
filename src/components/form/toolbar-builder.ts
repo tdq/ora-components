@@ -1,6 +1,6 @@
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { ButtonBuilder, ButtonStyle } from '../button/button';
-import { LayoutBuilder, LayoutGap, SlotSize } from '../layout/layout';
+import { LayoutBuilder, LayoutGap, SlotSize, Alignment } from '../layout/layout';
 import { IToolbarBuilder } from './types';
 
 export class ToolbarBuilder implements IToolbarBuilder {
@@ -8,21 +8,21 @@ export class ToolbarBuilder implements IToolbarBuilder {
     private secondaryButtons: ButtonBuilder[] = [];
     private textButtons: ButtonBuilder[] = [];
     private enabled$?: Observable<boolean>;
-    private isGlass$ = new BehaviorSubject<boolean>(false);
+    private isGlass: boolean = false;
 
     withPrimaryButton(): ButtonBuilder {
-        this.primaryButton = new ButtonBuilder().withStyle(new BehaviorSubject(ButtonStyle.FILLED));
+        this.primaryButton = new ButtonBuilder().withStyle(of(ButtonStyle.FILLED));
         return this.primaryButton;
     }
 
     addSecondaryButton(): ButtonBuilder {
-        const btn = new ButtonBuilder().withStyle(new BehaviorSubject(ButtonStyle.OUTLINED));
+        const btn = new ButtonBuilder().withStyle(of(ButtonStyle.OUTLINED));
         this.secondaryButtons.push(btn);
         return btn;
     }
 
     addTextButton(): ButtonBuilder {
-        const btn = new ButtonBuilder().withStyle(new BehaviorSubject(ButtonStyle.TEXT));
+        const btn = new ButtonBuilder().withStyle(of(ButtonStyle.TEXT));
         this.textButtons.push(btn);
         return btn;
     }
@@ -33,51 +33,76 @@ export class ToolbarBuilder implements IToolbarBuilder {
     }
 
     asGlass(): this {
-        this.isGlass$.next(true);
+        this.isGlass = true;
         return this;
     }
 
     build(): HTMLElement {
-        const layout = new LayoutBuilder().asHorizontal().withGap(LayoutGap.MEDIUM);
+        const hasLeft = this.textButtons.length > 0;
+        const hasRight = this.secondaryButtons.length > 0 || !!this.primaryButton;
 
-        // Text buttons on the left
-        this.textButtons.forEach(btn => {
-            if (this.enabled$) btn.withEnabled(this.enabled$);
-            if (this.isGlass$.value) btn.asGlass();
+        if (hasLeft && hasRight) {
+            const layout = new LayoutBuilder()
+                .asHorizontal();
+
+            const leftLayout = new LayoutBuilder()
+                .asHorizontal()
+                .withGap(LayoutGap.MEDIUM);
+            
+            this.textButtons.forEach(btn => this.addButtonToLayout(btn, leftLayout, Alignment.LEFT, this.isGlass));
+            layout.addSlot().withContent(leftLayout);
+
+            const rightLayout = new LayoutBuilder()
+                .asHorizontal()
+                .withGap(LayoutGap.MEDIUM)
+                .withAlignment(of(Alignment.RIGHT));
+
+            this.secondaryButtons.forEach(btn => this.addButtonToLayout(btn, rightLayout, Alignment.RIGHT, this.isGlass));
+            if (this.primaryButton) {
+                this.addButtonToLayout(this.primaryButton, rightLayout, Alignment.RIGHT, this.isGlass);
+            }
             layout.addSlot()
-                .withSize(SlotSize.FIT)
-                .withContent(btn);
-        });
+                .withAlignment(of(Alignment.RIGHT))
+                .withContent(rightLayout);
 
-        // Spacer to push remaining buttons to the right
-        // No size specified means it will be flex-1 in horizontal layout
-        layout.addSlot().withContent({
-            build: () => document.createElement('div')
-        });
+            return layout.build();
+        }
 
-        // Secondary buttons and then primary button on the right
-        const rightLayout = new LayoutBuilder().asHorizontal().withGap(LayoutGap.MEDIUM);
+        if (hasLeft) {
+            const leftLayout = new LayoutBuilder()
+                .asHorizontal()
+                .withGap(LayoutGap.MEDIUM);
+            this.textButtons.forEach(btn => this.addButtonToLayout(btn, leftLayout, Alignment.LEFT, this.isGlass));
+            return leftLayout.build();
+        }
+
+        if (hasRight) {
+            const rightLayout = new LayoutBuilder()
+                .asHorizontal()
+                .withGap(LayoutGap.MEDIUM)
+                .withAlignment(of(Alignment.RIGHT));
+            this.secondaryButtons.forEach(btn => this.addButtonToLayout(btn, rightLayout, Alignment.RIGHT, this.isGlass ));
+            if (this.primaryButton) {
+                this.addButtonToLayout(this.primaryButton, rightLayout, Alignment.RIGHT, this.isGlass);
+            }
+            return rightLayout.build();
+        }
+
+        return new LayoutBuilder().asHorizontal().build();
+    }
+
+    private addButtonToLayout(btn: ButtonBuilder, layout: LayoutBuilder, alignment: Alignment, isGlass: boolean ): void {
+        if (this.enabled$) {
+            btn.withEnabled(this.enabled$);
+        }
         
-        this.secondaryButtons.forEach(btn => {
-            if (this.enabled$) btn.withEnabled(this.enabled$);
-            if (this.isGlass$.value) btn.asGlass();
-            rightLayout.addSlot()
-                .withSize(SlotSize.FIT)
-                .withContent(btn);
-        });
-
-        if (this.primaryButton) {
-            if (this.enabled$) this.primaryButton.withEnabled(this.enabled$);
-            if (this.isGlass$.value) this.primaryButton.asGlass();
-            rightLayout.addSlot()
-                .withSize(SlotSize.FIT)
-                .withContent(this.primaryButton);
+        if (isGlass) {
+            btn.asGlass();
         }
 
         layout.addSlot()
+            .withAlignment(of(alignment))
             .withSize(SlotSize.FIT)
-            .withContent(rightLayout);
-
-        return layout.build();
+            .withContent(btn);
     }
 }

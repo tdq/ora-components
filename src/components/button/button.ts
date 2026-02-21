@@ -1,4 +1,4 @@
-import { Observable, Subject, BehaviorSubject, combineLatest } from 'rxjs';
+import { Observable, Subject, combineLatest, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -30,10 +30,10 @@ export class ButtonBuilder implements ComponentBuilder {
     private click$?: Subject<void>;
     private style$?: Observable<ButtonStyle>;
     private className$?: Observable<string>;
-    private isGlass$ = new BehaviorSubject<boolean>(false);
+    private isGlass: boolean = false;
 
-    asGlass(): ButtonBuilder {
-        this.isGlass$.next(true);
+    asGlass(isGlass: boolean = true): ButtonBuilder {
+        this.isGlass = isGlass;
         return this;
     }
 
@@ -68,9 +68,6 @@ export class ButtonBuilder implements ComponentBuilder {
 
         button.className = cn(BASE_CLASSES);
 
-        // Default style if none provided
-        STYLE_MAP[ButtonStyle.FILLED].split(' ').forEach(c => button.classList.add(c));
-
         const captionSub = this.caption$ ? this.caption$.subscribe(caption => {
             button.textContent = caption;
         }) : null;
@@ -79,18 +76,13 @@ export class ButtonBuilder implements ComponentBuilder {
             button.disabled = !enabled;
         }) : null;
 
-        const style$ = this.style$ || new BehaviorSubject<ButtonStyle>(ButtonStyle.FILLED);
-        const styleSub = combineLatest([style$, this.isGlass$]).subscribe(([style, isGlass]) => {
-            // Remove existing style classes before adding new one
-            Object.values(STYLE_MAP).forEach(cls => {
-                cls.split(' ').forEach(c => button.classList.remove(c));
-            });
+        const style$ = this.style$ || of(ButtonStyle.FILLED);
+        const className$ = this.className$ || of('');
 
-            // Remove glass classes
-            const glassClasses = ['bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'hover:bg-white/20'];
-            glassClasses.forEach(c => button.classList.remove(c));
+        const styleSub = combineLatest([style$, className$]).subscribe(([style, extraClass]) => {
+            button.className = cn(BASE_CLASSES, extraClass);
 
-            if (isGlass) {
+            if (this.isGlass && style !== ButtonStyle.TEXT) {
                 // Apply glass effect
                 button.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'hover:bg-white/20');
                 // Keep the text color and focus ring from the original style if possible
@@ -105,35 +97,6 @@ export class ButtonBuilder implements ComponentBuilder {
             }
         });
 
-        const classSub = this.className$ ? this.className$.subscribe(cls => {
-            button.className = cn(BASE_CLASSES, cls);
-
-            // Re-apply style and glass classes
-            const isGlass = this.isGlass$.value;
-            // Get current style from style$ if possible, otherwise find applied
-            let style = ButtonStyle.FILLED;
-            if (this.style$ && (this.style$ as any).value) {
-                style = (this.style$ as any).value;
-            } else {
-                // Heuristic to find applied style
-                style = (Object.entries(STYLE_MAP).find(([_, classes]) =>
-                    classes.split(' ').every(c => button.classList.contains(c))
-                )?.[0] as ButtonStyle) || ButtonStyle.FILLED;
-            }
-
-            if (isGlass) {
-                button.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'hover:bg-white/20');
-                const originalClasses = STYLE_MAP[style].split(' ');
-                originalClasses.forEach(c => {
-                    if (c.startsWith('text-') || c.startsWith('focus:ring-')) {
-                        button.classList.add(c);
-                    }
-                });
-            } else {
-                STYLE_MAP[style].split(' ').forEach(c => button.classList.add(c));
-            }
-        }) : null;
-
         if (this.click$) {
             button.onclick = () => {
                 this.click$?.next(undefined);
@@ -144,11 +107,9 @@ export class ButtonBuilder implements ComponentBuilder {
             captionSub?.unsubscribe();
             enabledSub?.unsubscribe();
             styleSub?.unsubscribe();
-            classSub?.unsubscribe();
             this.click$?.complete();
         });
 
         return button;
     }
 }
-

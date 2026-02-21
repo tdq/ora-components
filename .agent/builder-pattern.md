@@ -8,6 +8,7 @@ export interface ComponentBuilder {
 ```
 
 The main feature of builders is that methods can be called in any order. and only in "build" method HTMLElement is created.
+"build" method should be called as last method for constructing component. All "with", "add", "as" methods are setting properties and parameters according to which component will be constructed in "build" method.
 
 ## Example of component builder:
 

@@ -1,15 +1,9 @@
-import { Observable } from 'rxjs';
 import { TextFieldBuilder } from '../text-field/text-field';
 import { NumberFieldBuilder } from '../number-field/number-field';
 import { ComboBoxBuilder } from '../combobox';
 import { DatePickerBuilder } from '../date-picker';
 import { CheckboxBuilder } from '../checkbox';
 import { ButtonBuilder } from '../button/button';
-
-export enum FormStyle {
-    DEFAULT = 'default',
-    COMPACT = 'compact'
-}
 
 export interface IFieldsBuilder {
     addTextField(column?: number, colspan?: number): TextFieldBuilder;

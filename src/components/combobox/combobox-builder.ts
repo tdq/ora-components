@@ -1,4 +1,4 @@
-import { Observable, Subject, BehaviorSubject, combineLatest, map, distinctUntilChanged } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, combineLatest, map, distinctUntilChanged, of, Subscription } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '@/core/destroyable-element';
 import { ComboBoxStyle } from './types';
@@ -21,7 +21,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
     private style$?: Observable<ComboBoxStyle>;
     private className$?: Observable<string>;
     private visible$?: Observable<boolean>;
-    private isGlass$ = new BehaviorSubject<boolean>(false);
+    private isGlass: boolean = false;
 
     withItems(items: Observable<ITEM[]>): ComboBoxBuilder<ITEM> {
         this.items$ = items;
@@ -53,8 +53,8 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         return this;
     }
 
-    asGlass(): ComboBoxBuilder<ITEM> {
-        this.isGlass$.next(true);
+    asGlass(isGlass: boolean = true): ComboBoxBuilder<ITEM> {
+        this.isGlass = isGlass;
         return this;
     }
 
@@ -131,22 +131,28 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         );
 
         // Subscriptions
-        const subs: any[] = [];
+        const subs = new Subscription();
 
-        subs.push(this.caption$?.subscribe(text => {
-            captionElement.textContent = text;
-            captionElement.classList.toggle('hidden', !text);
-        }));
+        if (this.caption$) {
+            subs.add(this.caption$.subscribe(text => {
+                captionElement.textContent = text;
+                captionElement.classList.toggle('hidden', !text);
+            }));
+        }
 
         const style$ = this.style$ || new BehaviorSubject<ComboBoxStyle>(ComboBoxStyle.TONAL);
-        subs.push(combineLatest([this.isGlass$, style$, isExpanded$]).subscribe(([isGlass, style, expanded]) => {
+        const isGlass = this.isGlass;
+
+        subs.add(combineLatest({
+            style: style$,
+            expanded: isExpanded$
+        }).subscribe(({ style, expanded }) => {
             // Update input container base style
             Object.values(STYLE_MAP).forEach(cls => {
                 cls.split(' ').forEach(c => inputContainer.classList.remove(c));
             });
             STYLE_MAP[style].split(' ').forEach(c => inputContainer.classList.add(c));
 
-            // Update input container glass effect
             if (isGlass) {
                 inputContainer.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20');
                 inputContainer.classList.remove('bg-secondary-container');
@@ -154,10 +160,8 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
                 inputContainer.classList.remove('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20');
             }
 
-            // Update listbox visibility
             listbox.classList.toggle('hidden', !expanded);
 
-            // Use a clean slate for listbox classes that change based on style/glass mode
             const dynamicClasses = [
                 'bg-white/10', 'bg-white/20', 'backdrop-blur-xl', 'border-white/20', 'border-white/30',
                 'bg-secondary-container', 'bg-surface', 'border-outline', 'border', 'border-transparent'
@@ -165,47 +169,57 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             listbox.classList.remove(...dynamicClasses);
 
             if (isGlass) {
-                // Glass effect: higher contrast for the popup background and border
                 listbox.classList.add('bg-white/20', 'backdrop-blur-xl', 'border', 'border-white/30');
             } else if (style === ComboBoxStyle.TONAL) {
-                // Tonal style: popup background matches input container, border is transparent to maintain layout
                 listbox.classList.add('bg-secondary-container', 'border', 'border-transparent');
             } else {
-                // Outlined style: popup needs a solid surface background for readability and an outline color border
                 listbox.classList.add('bg-surface', 'border', 'border-outline');
             }
         }));
 
-        subs.push(this.error$?.subscribe(text => {
-            error.textContent = text;
-            error.classList.toggle('hidden', !text);
-            const hasError = !!text;
-            inputContainer.classList.toggle('ring-error', hasError);
-            inputContainer.classList.toggle('focus-within:ring-error', hasError);
-            inputContainer.classList.toggle('shadow-[inset_0_-1px_0_0_var(--md-sys-color-error)]', hasError);
-            inputContainer.classList.toggle('focus-within:shadow-[inset_0_-2px_0_0_var(--md-sys-color-error)]', hasError);
-        }));
+        if (this.error$) {
+            subs.add(this.error$.subscribe(text => {
+                error.textContent = text;
+                error.classList.toggle('hidden', !text);
+                const hasError = !!text;
+                inputContainer.classList.toggle('ring-error', hasError);
+                inputContainer.classList.toggle('focus-within:ring-error', hasError);
+                inputContainer.classList.toggle('shadow-[inset_0_-1px_0_0_var(--md-sys-color-error)]', hasError);
+                inputContainer.classList.toggle('focus-within:shadow-[inset_0_-2px_0_0_var(--md-sys-color-error)]', hasError);
+            }));
+        }
 
-        subs.push(this.enabled$?.subscribe(enabled => {
-            input.disabled = !enabled;
-            inputContainer.classList.toggle('opacity-38', !enabled);
-            inputContainer.classList.toggle('cursor-not-allowed', !enabled);
-        }));
+        if (this.enabled$) {
+            subs.add(this.enabled$.subscribe(enabled => {
+                input.disabled = !enabled;
+                inputContainer.classList.toggle('opacity-38', !enabled);
+                inputContainer.classList.toggle('cursor-not-allowed', !enabled);
+            }));
+        }
 
-        subs.push(this.className$?.subscribe(cls => {
-            // We apply extra classes to the container
-            container.className = cn('flex flex-col gap-px-4 w-full relative', cls);
-        }));
+        if (this.className$) {
+            subs.add(this.className$.subscribe(cls => {
+                container.className = cn('flex flex-col gap-px-4 w-full relative', cls);
+            }));
+        }
 
-        subs.push(this.visible$?.subscribe(visible => {
-            container.classList.toggle('hidden', !visible);
-        }));
+        if (this.visible$) {
+            subs.add(this.visible$.subscribe(visible => {
+                container.classList.toggle('hidden', !visible);
+            }));
+        }
 
         let currentItems: ITEM[] = [];
-        subs.push(combineLatest([filteredItems$, style$, this.isGlass$, currentValue$, focusedIndex$, isExpanded$]).subscribe(([items, style, isGlass, selectedValue, focusedIndex, expanded]) => {
+
+        subs.add(combineLatest({
+            items: filteredItems$,
+            style: style$,
+            selectedValue: currentValue$,
+            focusedIndex: focusedIndex$,
+            expanded: isExpanded$
+        }).subscribe(({ items, style, selectedValue, focusedIndex, expanded }) => {
             currentItems = items;
-            
-            // Validate focusedIndex
+
             let effectiveFocus = focusedIndex;
             if (expanded && items.length > 0) {
                 if (effectiveFocus === -1) {
@@ -252,7 +266,9 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
                     if (isFocused) {
                         input.setAttribute('aria-activedescendant', option.id);
-                        option.scrollIntoView({ block: 'nearest' });
+                        if (option.scrollIntoView) {
+                            option.scrollIntoView({ block: 'nearest' });
+                        }
                     }
                 });
             }
@@ -262,8 +278,8 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
                 input.removeAttribute('aria-activedescendant');
             }
 
-            // Sync focusedIndex$ if it changed effectively
             if (effectiveFocus !== focusedIndex) {
+                // Update focusedIndex$ to keep it in sync, but do it asynchronously to avoid circular emission
                 Promise.resolve().then(() => {
                     if (focusedIndex$.value === focusedIndex) {
                         focusedIndex$.next(effectiveFocus);
@@ -272,19 +288,16 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             }
         }));
 
-        subs.push(isExpanded$.subscribe(expanded => {
+        subs.add(isExpanded$.subscribe(expanded => {
             input.setAttribute('aria-expanded', expanded.toString());
             if (expanded) {
                 input.focus();
-
-                // When opening, highlight the currently selected item or the first item
                 const currentVal = currentValue$.value;
-                const items = currentItems;
                 if (currentVal !== null) {
-                    const index = items.findIndex(it =>
+                    const index = currentItems.findIndex(it =>
                         this.itemIdProvider(it) === this.itemIdProvider(currentVal));
-                    focusedIndex$.next(index !== -1 ? index : (items.length > 0 ? 0 : -1));
-                } else if (items.length > 0) {
+                    focusedIndex$.next(index !== -1 ? index : (currentItems.length > 0 ? 0 : -1));
+                } else if (currentItems.length > 0) {
                     focusedIndex$.next(0);
                 }
             } else {
@@ -293,21 +306,22 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             }
         }));
 
-        subs.push(this.value$?.pipe(distinctUntilChanged()).subscribe(val => {
-            currentValue$.next(val || null);
-            if (val !== null && val !== undefined) {
-                const caption = this.itemCaptionProvider(val);
-                if (input.value !== caption) {
-                    input.value = caption;
-                    searchTerm$.next(caption);
+        if (this.value$) {
+            subs.add(this.value$.pipe(distinctUntilChanged()).subscribe(val => {
+                currentValue$.next(val || null);
+                if (val !== null && val !== undefined) {
+                    const caption = this.itemCaptionProvider(val);
+                    if (input.value !== caption) {
+                        input.value = caption;
+                        searchTerm$.next(caption);
+                    }
+                } else {
+                    input.value = '';
+                    searchTerm$.next('');
                 }
-            } else {
-                input.value = '';
-                searchTerm$.next('');
-            }
-        }));
+            }));
+        }
 
-        // Event Handlers
         input.oninput = (e) => {
             const val = (e.target as HTMLInputElement).value;
             searchTerm$.next(val);
@@ -315,11 +329,6 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             if (!isExpanded$.value) {
                 isExpanded$.next(true);
             }
-        };
-
-        input.onfocus = () => {
-            // Optional: open on focus? MD3 usually opens on focus or click
-            // isExpanded$.next(true);
         };
 
         input.onclick = () => {
@@ -373,7 +382,6 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             }
         };
 
-        // Click outside
         const clickOutsideHandler = (e: MouseEvent) => {
             if (!container.contains(e.target as Node)) {
                 isExpanded$.next(false);
@@ -382,7 +390,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         document.addEventListener('click', clickOutsideHandler);
 
         registerDestroy(container, () => {
-            subs.forEach(s => s?.unsubscribe());
+            subs.unsubscribe();
             if (typeof document !== 'undefined') {
                 document.removeEventListener('click', clickOutsideHandler);
             }

@@ -7,4 +7,5 @@ It has the following methods:
 - asGlass(): this - sets special styling option for checkbox and its popup with items as transparent with blur background (glass effect). 
 
 ## Style
-Style according to Material Design 3 
+Style according to Material Design 3
+Glass effect applied only for checkbox clickable part which contains check mark.
