@@ -1,5 +1,5 @@
 Layout component is a component which is used for layout of the page. It has the following methods:
-- addSlot(): SlotBuilder - adds new slot to the layout. IT can have one child component.
+- addSlot(): SlotBuilder - adds new slot to the layout. It can have one child component.
 - asVertical(): this - sets layout to vertical.
 - asHorizontal(): this - sets layout to horizontal.
 - withGap(gap: LayoutGap): this - sets gap between slots.

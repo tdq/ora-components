@@ -10,3 +10,4 @@ export * from './components/number-field';
 export * from './components/form';
 export * from './components/toolbar';
 export * from './components/dialog';
+export * from './components/tabs';

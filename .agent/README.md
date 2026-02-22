@@ -10,6 +10,7 @@ Logic and state are managed by RxJS.
 - [Component Guide](component.md)
 - [Theme](theme.md)
 - [Reactive](reactive.md)
+- [Rules](rules.md) - Follow this rules on creating components
 
 ## Components
 
