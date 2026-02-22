@@ -1,6 +1,8 @@
 import { DialogBuilder, DialogSize } from '../components/dialog';
 import { of, Subject } from 'rxjs';
 import { ButtonBuilder } from '../components/button';
+import { TabsBuilder } from '../components/tabs';
+import { FormBuilder } from '../components/form';
 
 export default {
     title: 'Components/Dialog',
@@ -101,6 +103,138 @@ export const Scrollable = () => {
         .build();
     
     container.appendChild(btn);
+    return container;
+};
+
+export const DialogWithTabs = () => {
+    const container = document.createElement('div');
+    container.className = 'p-10 min-h-[600px] w-full relative overflow-hidden flex items-center justify-center rounded-xl';
+    
+    // Add a colorful background to showcase the glass effect
+    const bg = document.createElement('div');
+    bg.className = 'absolute inset-0 -z-10 bg-gradient-to-br from-blue-600 via-teal-500 to-emerald-500 opacity-60';
+    container.appendChild(bg);
+
+    // Add some decorative elements
+    for (let i = 0; i < 5; i++) {
+        const circle = document.createElement('div');
+        const size = Math.random() * 200 + 100;
+        circle.className = 'absolute rounded-full opacity-30 blur-3xl animate-pulse';
+        circle.style.width = `${size}px`;
+        circle.style.height = `${size}px`;
+        circle.style.left = `${Math.random() * 80 + 10}%`;
+        circle.style.top = `${Math.random() * 80 + 10}%`;
+        circle.style.backgroundColor = ['#FFFFFF', '#A7F3D0', '#BAE6FD'][i % 3];
+        circle.style.animationDuration = `${Math.random() * 5 + 5}s`;
+        container.appendChild(circle);
+    }
+
+    const showDialog = () => {
+        // 1. Create Tabs
+        const tabs = new TabsBuilder()
+            .asGlass()
+            .withCaption(of('Account Settings'))
+            .withDescription(of('Manage your profile and preferences'));
+
+        // Tab 1: Profile Form
+        const profileForm = new FormBuilder()
+            .asGlass()
+            .withCaption(of('Personal Information'))
+            .withDescription(of('Update your personal details'));
+        
+        const profileFields = profileForm.withFields(2);
+        profileFields.addTextField()
+            .withLabel(of('First Name'))
+            .withPlaceholder(of('Enter first name'));
+        profileFields.addTextField()
+            .withLabel(of('Last Name'))
+            .withPlaceholder(of('Enter last name'));
+        profileFields.addTextField()
+            .withLabel(of('Email'))
+            .withPlaceholder(of('Enter email address'));
+        profileFields.addTextField()
+            .withLabel(of('Phone'))
+            .withPlaceholder(of('Enter phone number'));
+
+        tabs.addTab()
+            .withCaption(of('Profile'))
+            .withContent(profileForm);
+
+        // Tab 2: Security Form
+        const securityForm = new FormBuilder()
+            .asGlass()
+            .withCaption(of('Security Settings'))
+            .withDescription(of('Manage your password and security questions'));
+        
+        const securityFields = securityForm.withFields(1);
+        securityFields.addPasswordField()
+            .withLabel(of('Current Password'))
+            .withPlaceholder(of('Enter current password'));
+        securityFields.addPasswordField()
+            .withLabel(of('New Password'))
+            .withPlaceholder(of('Enter new password'));
+        securityFields.addPasswordField()
+            .withLabel(of('Confirm Password'))
+            .withPlaceholder(of('Confirm new password'));
+
+        tabs.addTab()
+            .withCaption(of('Security'))
+            .withContent(securityForm);
+
+        // Tab 3: Notifications
+        const notifForm = new FormBuilder()
+            .asGlass()
+            .withCaption(of('Notification Preferences'));
+            
+        const notifFields = notifForm.withFields(1);
+        notifFields.addCheckBox()
+            .withCaption(of('Email Notifications'));
+        notifFields.addCheckBox()
+            .withCaption(of('Push Notifications'));
+        notifFields.addCheckBox()
+            .withCaption(of('SMS Notifications'));
+
+        tabs.addTab()
+            .withCaption(of('Notifications'))
+            .withContent(notifForm);
+
+
+        // 2. Create Dialog containing Tabs
+        const dialog = new DialogBuilder()
+            .asGlass()
+            .withSize(DialogSize.LARGE)
+            .withContent(tabs);
+
+        const close$ = new Subject<void>();
+        close$.subscribe(() => dialog.close());
+
+        const toolbar = dialog.withToolbar();
+        
+        toolbar.addSecondaryButton()
+            .withCaption(of('Cancel'))
+            .withClick(close$);
+
+        toolbar.withPrimaryButton()
+            .withCaption(of('Save Changes'))
+            .withClick(close$);
+
+        dialog.show();
+    };
+
+    const btnClick$ = new Subject<void>();
+    btnClick$.subscribe(showDialog);
+
+    const btn = new ButtonBuilder()
+        .withCaption(of('Open Settings Dialog'))
+        .withClick(btnClick$)
+        .build();
+    
+    // Center button in container
+    const btnWrapper = document.createElement('div');
+    btnWrapper.className = 'z-10';
+    btnWrapper.appendChild(btn);
+    container.appendChild(btnWrapper);
+
     return container;
 };
 
