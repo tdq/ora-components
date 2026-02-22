@@ -114,7 +114,7 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
         
         const getBaseClasses = () => cn(
             this.isGlass
-                ? 'bg-white/10 backdrop-blur-md border border-white/20'
+                ? 'glass-effect'
                 : 'bg-surface border-none',
             'text-on-surface rounded-large elevation-5 flex flex-col overflow-hidden p-0 backdrop:bg-white/50',
             DIALOG_SIZE_MAP[this.size]

@@ -131,3 +131,19 @@ Buttons:
 Minimum contrast: WCAG AA (Target AAA for financial data)
 Touch target ≥ 44px
 No color-only meaning (use icons for status)
+
+## 9. Glass Effect
+
+Used for overlays and elevated components on top of content.
+
+### Light Theme Glass
+- **Background**: white/40 (rgba(255, 255, 255, 0.4))
+- **Backdrop Blur**: 12px
+- **Border**: sapphire-blue/20
+- **Label Color**: #001B3D (Dark Blue)
+
+### Dark Theme Glass
+- **Background**: white/10 (rgba(255, 255, 255, 0.1))
+- **Backdrop Blur**: 12px
+- **Border**: white/20
+- **Label Color**: #FFFFFF (White)

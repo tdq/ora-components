@@ -60,7 +60,7 @@ export class CheckboxBuilder implements ComponentBuilder {
                 'peer-checked:bg-primary peer-checked:border-primary',
                 'peer-disabled:opacity-38 peer-disabled:cursor-not-allowed',
                 isGlass
-                    ? 'bg-white/10 backdrop-blur-md border border-white/20'
+                    ? 'glass-effect'
                     : 'border-2 border-outline'
             );
         };

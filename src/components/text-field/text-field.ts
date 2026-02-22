@@ -386,16 +386,51 @@ export class TextFieldBuilder implements ComponentBuilder {
             );
 
             if (this.isGlass) {
-                inputWrapper.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus-within:bg-white/20');
+                inputWrapper.classList.add('glass-effect', 'focus-within:bg-white/20');
                 if (state.style === TextFieldStyle.OUTLINED) {
                     inputWrapper.classList.add('rounded-small');
                 } else {
                     inputWrapper.classList.add('rounded-t-small');
                 }
                 activeIndicator.classList.add('hidden');
+
+                // Apply glass text colors
+                const glassTextClasses = ['text-on-primary-container', 'dark:text-white'];
+                const standardTextClasses = ['text-on-surface', 'text-on-surface-variant'];
+
+                [label, input, prefix, suffix, leadingIconContainer, trailingIconContainer, supportText, charCounter].forEach(el => {
+                    el.classList.remove(...standardTextClasses);
+                    el.classList.add(...glassTextClasses);
+                });
+
+                // Ensure label uses glass color even when focused/error unless specifically needed otherwise
+                if (!state.errorText) {
+                    label.classList.remove('text-primary'); // Remove focus color
+                }
+
             } else {
                 STYLE_MAP[state.style].split(' ').forEach(c => inputWrapper.classList.add(c));
                 
+                // Revert text colors
+                const glassTextClasses = ['text-on-primary-container', 'dark:text-white'];
+                
+                // Reset specific elements to their defaults
+                label.classList.remove(...glassTextClasses);
+                label.classList.add('text-on-surface-variant');
+
+                input.classList.remove(...glassTextClasses);
+                input.classList.add('text-on-surface');
+
+                [prefix, suffix, leadingIconContainer, trailingIconContainer, charCounter].forEach(el => {
+                    el.classList.remove(...glassTextClasses);
+                    el.classList.add('text-on-surface-variant');
+                });
+
+                supportText.classList.remove(...glassTextClasses);
+                if (!state.errorText) {
+                    supportText.classList.add('text-on-surface-variant');
+                }
+
                 if (state.style === TextFieldStyle.TONAL) {
                     activeIndicator.classList.remove('hidden');
                     activeIndicator.classList.toggle('bg-error', !!state.errorText);

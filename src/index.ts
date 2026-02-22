@@ -11,3 +11,4 @@ export * from './components/form';
 export * from './components/toolbar';
 export * from './components/dialog';
 export * from './components/tabs';
+export * from './theme';

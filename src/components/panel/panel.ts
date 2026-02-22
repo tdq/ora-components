@@ -56,7 +56,7 @@ export class PanelBuilder implements ComponentBuilder {
             panel.className = cn(
                 'rounded-large border overflow-hidden transition-all',
                 !this.isGlass && 'bg-surface border-outline text-on-surface',
-                this.isGlass && 'bg-white/10 backdrop-blur-md border-white/20 text-on-surface',
+                this.isGlass && 'glass-effect text-on-surface',
                 GAP_MAP[this.gap],
                 extraClass
             );

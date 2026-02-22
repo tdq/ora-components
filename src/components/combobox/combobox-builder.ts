@@ -154,10 +154,37 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             STYLE_MAP[style].split(' ').forEach(c => inputContainer.classList.add(c));
 
             if (isGlass) {
-                inputContainer.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20');
+                inputContainer.classList.add('glass-effect');
                 inputContainer.classList.remove('bg-secondary-container');
+
+                // Adjust text colors for glass mode
+                const glassTextClasses = ['text-on-primary-container', 'dark:text-white'];
+                const standardCaptionClasses = ['text-on-surface-variant'];
+                const standardInputClasses = ['text-on-surface'];
+                const standardIconClasses = ['text-on-surface-variant'];
+
+                captionElement.classList.remove(...standardCaptionClasses);
+                captionElement.classList.add(...glassTextClasses);
+                
+                input.classList.remove(...standardInputClasses);
+                input.classList.add(...glassTextClasses);
+                
+                iconContainer.classList.remove(...standardIconClasses);
+                iconContainer.classList.add(...glassTextClasses);
             } else {
-                inputContainer.classList.remove('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20');
+                inputContainer.classList.remove('glass-effect');
+
+                // Revert text colors
+                const glassTextClasses = ['text-on-primary-container', 'dark:text-white'];
+                
+                captionElement.classList.add('text-on-surface-variant');
+                captionElement.classList.remove(...glassTextClasses);
+
+                input.classList.add('text-on-surface');
+                input.classList.remove(...glassTextClasses);
+
+                iconContainer.classList.add('text-on-surface-variant');
+                iconContainer.classList.remove(...glassTextClasses);
             }
 
             listbox.classList.toggle('hidden', !expanded);
@@ -169,7 +196,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             listbox.classList.remove(...dynamicClasses);
 
             if (isGlass) {
-                listbox.classList.add('bg-white/20', 'backdrop-blur-xl', 'border', 'border-white/30');
+                listbox.classList.add('glass-effect', 'bg-white/20', 'backdrop-blur-xl');
             } else if (style === ComboBoxStyle.TONAL) {
                 listbox.classList.add('bg-secondary-container', 'border', 'border-transparent');
             } else {

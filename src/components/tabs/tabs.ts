@@ -160,7 +160,7 @@ export class TabsBuilder implements ComponentBuilder {
         const contentArea = document.createElement('div');
         contentArea.className = cn(
             'flex-1 p-4',
-            this.isGlass && 'bg-white/5 backdrop-blur-md rounded-b-lg text-white' // Glass content background
+            this.isGlass && 'glass-effect rounded-b-lg text-white' // Glass content background
         );
 
         // Render content for active tab

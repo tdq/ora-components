@@ -237,21 +237,63 @@ export class NumberFieldBuilder implements ComponentBuilder {
                 input.setAttribute('aria-valuestep', step.toString());
 
                 // Reset styles
-                inputWrapper.classList.remove('bg-surface-variant', 'bg-transparent', 'rounded-small', 'rounded-t-small', 'shadow-[inset_0_-1px_0_0_var(--md-sys-color-outline-variant)]', 'focus-within:shadow-[inset_0_-2px_0_0_var(--md-sys-color-primary)]', 'ring-1', 'ring-inset', 'ring-outline', 'focus-within:ring-2', 'focus-within:ring-primary', 'bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus-within:bg-white/20');
+                inputWrapper.classList.remove('bg-surface-variant', 'bg-transparent', 'rounded-small', 'rounded-t-small', 'shadow-[inset_0_-1px_0_0_var(--md-sys-color-outline-variant)]', 'focus-within:shadow-[inset_0_-2px_0_0_var(--md-sys-color-primary)]', 'ring-1', 'ring-inset', 'ring-outline', 'focus-within:ring-2', 'focus-within:ring-primary', 'glass-effect', 'focus-within:bg-white/20');
+
+                // Define text color classes
+                const glassTextClasses = ['text-on-primary-container', 'dark:text-white'];
+                const standardLabelClasses = ['text-on-surface-variant'];
+                const standardInputClasses = ['text-on-surface'];
+                const standardAffixClasses = ['text-on-surface-variant'];
 
                 if (this.isGlass) {
-                    inputWrapper.classList.add('bg-white/10', 'backdrop-blur-md', 'border', 'border-white/20', 'focus-within:bg-white/20');
+                    inputWrapper.classList.add('glass-effect', 'focus-within:bg-white/20');
                     if (style === NumberFieldStyle.OUTLINED) {
                         inputWrapper.classList.add('rounded-small');
                     } else {
                         inputWrapper.classList.add('rounded-t-small');
                     }
+
+                    // Apply glass text colors
+                    label.classList.remove(...standardLabelClasses);
+                    label.classList.add(...glassTextClasses);
+
+                    input.classList.remove(...standardInputClasses);
+                    input.classList.add(...glassTextClasses);
+
+                    [prefix, suffix].forEach(el => {
+                        el.classList.remove(...standardAffixClasses);
+                        el.classList.add(...glassTextClasses);
+                    });
+
+                    // For error/description, if we want it same as label color in glass mode
+                    // Note: Usually error is red, but requirement says "description color same as label color"
+                    // If error is considered "description", we might override it here.
+                    // However, let's keep error red for now unless it's explicitly helper text.
+                    // But wait, the prompt says "Set description color same as label color".
+                    // NumberField only has 'error' slot, no separate helper text slot visible in code (unlike TextField).
+                    // If the user considers error as description, we should change it.
+                    // But error is usually critical. Let's assume description refers to helper text which NumberField lacks,
+                    // OR it refers to the label itself (caption).
+                    // Let's stick to label/input/affixes for now as they are the main "text" elements.
+                    
                 } else {
                     const styles = STYLE_MAP[style].split(' ');
                     // Replace focus: with focus-within:
                     styles.forEach(c => {
                         const adaptedClass = c.replace('focus:', 'focus-within:');
                         inputWrapper.classList.add(adaptedClass);
+                    });
+
+                    // Revert text colors
+                    label.classList.remove(...glassTextClasses);
+                    label.classList.add(...standardLabelClasses);
+
+                    input.classList.remove(...glassTextClasses);
+                    input.classList.add(...standardInputClasses);
+
+                    [prefix, suffix].forEach(el => {
+                        el.classList.remove(...glassTextClasses);
+                        el.classList.add(...standardAffixClasses);
                     });
                 }
 

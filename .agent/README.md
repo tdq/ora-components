@@ -11,6 +11,7 @@ Logic and state are managed by RxJS.
 - [Theme](theme.md)
 - [Reactive](reactive.md)
 - [Rules](rules.md) - Follow this rules on creating components
+- [Glass effect](glass-effects.md)
 
 ## Components
 

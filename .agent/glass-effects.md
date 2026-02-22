@@ -7,10 +7,22 @@ This specification outlines the implementation of the `asGlass()` modifier for `
 The "glass effect" is characterized by a semi-transparent background with a backdrop blur and a subtle border to ensure visibility against various backgrounds.
 
 ### Glass Effect Classes
-- **Background**: `bg-white/10` (Light/Dark mode compatible when used on colored backgrounds)
+
+#### Light Theme
+- **Background**: `bg-white/40`
 - **Blur**: `backdrop-blur-md`
-- **Border**: `border border-white/20`
-- **Text/Icon Color**: Inherited from the component's base style (e.g., `text-primary` or `text-on-surface`).
+- **Border**: `border-primary/20`
+- **Label Color**: `text-on-primary-container` (Dark Blue)
+- **Caption Color**: `text-on-primary-container` (Dark Blue)
+- **Description Color**: `text-on-primary-container` (Dark Blue)
+
+#### Dark Theme
+- **Background**: `bg-white/10`
+- **Blur**: `backdrop-blur-md`
+- **Border**: `border-white/20`
+- **Label Color**: `text-white` (White)
+- **Caption Color**: `text-white` (White)
+- **Description Color**: `text-white` (White)
 
 ## 2. Component Changes
 

@@ -219,10 +219,22 @@ export class DatePickerBuilder implements ComponentBuilder {
 
         if (this.isGlass) {
             inputWrapper.classList.remove('bg-surface-variant', 'border-b', 'border-outline-variant', 'rounded-t-small');
-            inputWrapper.classList.add('backdrop-blur-md', 'bg-white/10', 'border', 'border-white/20', 'rounded-small');
+            inputWrapper.classList.add('glass-effect', 'rounded-small');
             
             popup.classList.remove('bg-surface', 'border-outline');
-            popup.classList.add('backdrop-blur-md', 'bg-white/10', 'border-white/20');
+            popup.classList.add('glass-effect');
+
+            // Apply glass text colors
+            const glassTextClasses = ['text-on-primary-container', 'dark:text-white'];
+            
+            captionElement.classList.remove('text-on-surface-variant');
+            captionElement.classList.add(...glassTextClasses);
+
+            input.classList.remove('text-on-surface');
+            input.classList.add(...glassTextClasses);
+
+            iconButton.classList.remove('text-on-surface-variant');
+            iconButton.classList.add(...glassTextClasses);
         }
 
         subs.push(isExpanded$.subscribe(expanded => {
