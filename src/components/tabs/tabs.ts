@@ -1,5 +1,5 @@
-import { Observable, BehaviorSubject, of, combineLatest, Subscription } from 'rxjs';
-import { map, switchMap, distinctUntilChanged } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ComponentBuilder } from '../../core/component-builder';
 import { TabBuilder } from './tab-builder';
 import { clsx, type ClassValue } from 'clsx';
@@ -63,7 +63,8 @@ export class TabsBuilder implements ComponentBuilder {
         const headerSection = document.createElement('div');
         headerSection.className = cn(
             'flex flex-col md:flex-row md:items-end gap-4 border-b pb-0',
-             this.isGlass ? 'border-white/20' : 'border-outline-variant'
+            !this.isGlass && 'border-outline-variant',
+            this.isGlass && 'border-transparent'
         );
         
         // Caption & Description Container
@@ -77,7 +78,7 @@ export class TabsBuilder implements ComponentBuilder {
                     .withSize(LabelSize.LARGE)
                     .withClass(of(cn(
                         'font-bold text-headline-small',
-                        this.isGlass ? 'text-white' : 'text-on-surface'
+                        this.isGlass ? 'text-gray-700 dark:text-white/80' : 'text-on-surface'
                     )));
                 
                 textContainer.appendChild(labelBuilder.build());
@@ -89,7 +90,7 @@ export class TabsBuilder implements ComponentBuilder {
                     .withSize(LabelSize.SMALL)
                     .withClass(of(cn(
                         'text-body-medium mt-1',
-                        this.isGlass ? 'text-white/70' : 'text-on-surface-variant'
+                        this.isGlass ? 'text-gray-600 dark:text-white/60' : 'text-on-surface-variant'
                     )));
                 
                 textContainer.appendChild(descBuilder.build());
@@ -135,8 +136,8 @@ export class TabsBuilder implements ComponentBuilder {
                     !this.isGlass && !active && 'border-transparent text-on-surface-variant hover:bg-surface-variant/10 hover:text-on-surface',
                     
                     // Glass Theme
-                    this.isGlass && active && 'border-gray-900 text-gray-900 dark:border-white dark:text-white',
-                    this.isGlass && !active && 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-black/5 dark:text-white/70 dark:hover:text-white dark:hover:bg-white/10'
+                    this.isGlass && active && 'border-gray-900 text-gray-900 dark:border-white/80 dark:text-white/80',
+                    this.isGlass && !active && 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-black/5 dark:text-white/60 dark:hover:text-white/80 dark:hover:bg-white/10'
                 );
             });
             registerDestroy(container, () => styleSub.unsubscribe());

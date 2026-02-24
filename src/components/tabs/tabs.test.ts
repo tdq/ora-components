@@ -55,8 +55,17 @@ describe('Tabs Component', () => {
         const element = tabs.build();
         
         // Check for specific glass classes or structure
-        // Implementation details: header section gets border-white/20
-        const header = element.querySelector('.border-white\\/20');
+        // Implementation details: header section gets glass classes
+        // The header section is the first child
+        const header = element.children[0] as HTMLElement;
         expect(header).not.toBeNull();
+        
+        // Should have transparent border in glass mode
+        expect(header.className).toContain('border-transparent');
+        
+        // Should NOT have background or blur
+        expect(header.className).not.toContain('bg-white/60');
+        expect(header.className).not.toContain('backdrop-blur-xl');
+        expect(header.className).not.toContain('ring-1');
     });
 });

@@ -30,5 +30,15 @@ Toolbar should be on the bottom of the dialog.
 Only content is scrollable.
 Dialog drops large shadow.
 Dialog border radius is rounded-large.
+
+### Glass effect
 Glass effect applied also for toolbar.
 Backdrop is totaly transparent.
+
+Light theme:
+1. Caption color is `text-gray-700`
+2. Description color is `text-gray-600`
+
+Dark theme:
+1. Caption color is `text-white/80`
+2. Description color is `text-white/60`

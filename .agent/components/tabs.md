@@ -18,4 +18,14 @@ Caption is a big text.
 Panel with tabs buttons are scrollable horizontaly in case if there is not enough space for tabs.
 Tabs has minimum width to fits their caption.
 Captin and description are displayed on the left from tabs if any of them is defined.
-Styling of caption and description is same as in dialog. **Tabs content is not affected by glass effect**.
+
+### Glass effect
+**Tabs content and panel with tabs have no background**.
+
+Light theme:
+1. Caption color is `text-gray-700`
+2. Description color is `text-gray-600`
+
+Dark theme:
+1. Caption color is `text-white/80`
+2. Description color is `text-white/60`
