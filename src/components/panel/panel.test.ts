@@ -48,9 +48,7 @@ describe('PanelBuilder', () => {
             .asGlass()
             .build();
         
-        expect(element.classList.contains('bg-white/10')).toBe(true);
-        expect(element.classList.contains('backdrop-blur-md')).toBe(true);
-        expect(element.classList.contains('border-white/20')).toBe(true);
+        expect(element.classList.contains('glass-effect')).toBe(true);
         expect(element.classList.contains('bg-surface')).toBe(false);
     });
 

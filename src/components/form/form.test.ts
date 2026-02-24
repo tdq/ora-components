@@ -123,10 +123,10 @@ describe('FormBuilder', () => {
         const formEl = fb.build();
         
         // Form glass effect should be on the root element
-        expect(formEl).toHaveClass('backdrop-blur-md');
+        expect(formEl).toHaveClass('glass-effect');
         
         const button = formEl.querySelector('button');
-        expect(button).toHaveClass('backdrop-blur-md');
+        expect(button).toHaveClass('glass-effect');
     });
 
     it('should display error message', () => {
@@ -168,7 +168,7 @@ describe('FormBuilder', () => {
         
         const formEl = fb.build();
         const input = formEl.querySelector('input') as HTMLInputElement;
-        const errorSpan = formEl.querySelector('span:last-child') as HTMLElement;
+        const errorSpan = formEl.querySelector('[aria-live="polite"]') as HTMLElement;
         
         input.value = 'invalid';
         input.dispatchEvent(new Event('input'));

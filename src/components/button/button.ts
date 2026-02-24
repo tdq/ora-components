@@ -82,13 +82,20 @@ export class ButtonBuilder implements ComponentBuilder {
         const styleSub = combineLatest([style$, className$]).subscribe(([style, extraClass]) => {
             button.className = cn(BASE_CLASSES, extraClass);
 
-            if (this.isGlass && style !== ButtonStyle.TEXT) {
+            if (this.isGlass) {
                 // Apply glass effect
                 button.classList.add('glass-effect', 'hover:bg-white/20', 'dark:hover:bg-white/20');
 
-                // Text color
-                button.classList.remove('text-on-primary', 'text-primary', 'text-on-secondary-container');
-                button.classList.add('text-gray-900', 'dark:text-white');
+                // Specific overrides based on button style
+                if (style === ButtonStyle.TEXT) {
+                    button.classList.add('bg-transparent', 'ring-0');
+                } else if (style === ButtonStyle.OUTLINED) {
+                    button.classList.add('bg-transparent');
+                } else if (style === ButtonStyle.TONAL) {
+                    button.classList.add('ring-0');
+                } else if (style === ButtonStyle.ELEVATED) {
+                    button.classList.add('elevation-1', 'hover:elevation-2');
+                }
 
                 // Keep focus ring from the original style if possible
                 const originalClasses = STYLE_MAP[style].split(' ');

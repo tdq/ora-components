@@ -18,4 +18,4 @@ Caption is a big text.
 Panel with tabs buttons are scrollable horizontaly in case if there is not enough space for tabs.
 Tabs has minimum width to fits their caption.
 Captin and description are displayed on the left from tabs if any of them is defined.
-Styling of caption and description is same as in dialog.
+Styling of caption and description is same as in dialog. **Tabs content is not affected by glass effect**.

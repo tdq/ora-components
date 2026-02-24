@@ -16,4 +16,11 @@ Button style is an enum with the following values:
 
 ## Style
 Style according to Material Design 3
-Glass effect is not applied for text button background because it should not have any background.
+
+### Glass effect
+Button styles:
+1. Filled button has glass background, border and caption color according to generic glass effect instructions and color theme.
+2. Elevated button has glass background, shadow and caption color according to generic glass effect instructions and color theme.
+3. Tonal button has glass background and caption color according to generic glass effect instructions and color theme.
+4. Outlined button has transparent background, border and caption color according to generic glass effect instructions and color theme.
+5. Text button has transparent background and caption color according to generic glass effect instructions and color theme.

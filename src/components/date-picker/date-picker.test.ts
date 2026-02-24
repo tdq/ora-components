@@ -107,9 +107,8 @@ describe('DatePickerBuilder', () => {
             .build();
         document.body.appendChild(container);
 
-        const wrapper = container.querySelector('.bg-white\\/10');
+        const wrapper = container.querySelector('.glass-effect');
         expect(wrapper).toBeTruthy();
-        expect(wrapper).toHaveClass('backdrop-blur-md');
     });
 
     test('should display error message', () => {

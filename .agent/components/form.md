@@ -30,4 +30,6 @@ FormBuilder should use LayoutBuilder as a basis.
 LayoutBuilder should have large gap.
 Form error message should be displayed above toolbar.
 Toolbar should be on the bottom of the form.
+
+### Glass effect
 Glass effect applied only for fields and toolbar. **Form itself is not affected by glass effect**.

@@ -154,8 +154,7 @@ describe('TextFieldBuilder', () => {
         const container = builder.asGlass().build();
         const inputWrapper = container.querySelector('div.relative') as HTMLElement;
 
-        expect(inputWrapper.classList.contains('bg-white/10')).toBe(true);
-        expect(inputWrapper.classList.contains('backdrop-blur-md')).toBe(true);
+        expect(inputWrapper.classList.contains('glass-effect')).toBe(true);
     });
 
     test('should validate value and display error', () => {

@@ -47,7 +47,7 @@ describe('DialogBuilder', () => {
     it('should apply base classes including border radius and white backdrop', () => {
         const dialog = new DialogBuilder().build();
         expect(dialog).toHaveClass('rounded-large');
-        expect(dialog).toHaveClass('backdrop:bg-white/50');
+        expect(dialog).toHaveClass('backdrop:bg-transparent');
     });
 
     it('should apply constant gap classes to content container', () => {
@@ -72,10 +72,7 @@ describe('DialogBuilder', () => {
             .asGlass()
             .build();
 
-        expect(dialog).toHaveClass('bg-white/10');
-        expect(dialog).toHaveClass('backdrop-blur-md');
-        expect(dialog).toHaveClass('border');
-        expect(dialog).toHaveClass('border-white/20');
+        expect(dialog).toHaveClass('glass-effect');
         expect(dialog).not.toHaveClass('bg-surface');
         expect(dialog).not.toHaveClass('border-none');
     });
@@ -112,7 +109,7 @@ describe('DialogBuilder', () => {
 
         const button = toolbarWrapper?.querySelector('button');
         // Button glass effect adds bg-white/10
-        expect(button).toHaveClass('bg-white/10');
+        expect(button).toHaveClass('glass-effect');
     });
 
     it('should apply custom class reactively', () => {

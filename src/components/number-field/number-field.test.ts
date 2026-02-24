@@ -289,7 +289,7 @@ describe('NumberFieldBuilder', () => {
             // Styles are now applied to the wrapper div (parent of input)
             const wrapper = container.querySelector('input')?.parentElement as HTMLElement;
 
-            expect(wrapper.classList.contains('backdrop-blur-md')).toBe(true);
+            expect(wrapper.classList.contains('glass-effect')).toBe(true);
             expect(wrapper.classList.contains('rounded-small')).toBe(true);
         });
     });

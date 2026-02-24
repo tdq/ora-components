@@ -80,18 +80,16 @@ describe('ButtonBuilder', () => {
         expect(button.classList.contains('another-class')).toBe(true);
     });
 
-    it('should apply glass style to PRIMARY button', () => {
+    it('should apply glass style to PRIMARY (FILLED) button', () => {
         const button = new ButtonBuilder()
             .withCaption(new BehaviorSubject('Glass'))
             .asGlass()
             .build();
 
-        expect(button).toHaveClass('bg-white/10');
-        expect(button).toHaveClass('backdrop-blur-md');
-        expect(button).toHaveClass('text-on-primary'); // Kept from primary style
+        expect(button).toHaveClass('glass-effect');
     });
 
-    it('should NOT apply glass style to TEXT button', () => {
+    it('should apply glass style to TEXT button', () => {
         const style$ = new BehaviorSubject(ButtonStyle.TEXT);
         const button = new ButtonBuilder()
             .withCaption(new BehaviorSubject('Text Glass'))
@@ -99,12 +97,47 @@ describe('ButtonBuilder', () => {
             .asGlass()
             .build();
 
-        // Should NOT have glass classes
-        expect(button).not.toHaveClass('bg-white/10');
-        expect(button).not.toHaveClass('backdrop-blur-md');
+        expect(button).toHaveClass('glass-effect');
         
-        // Should have text style classes
+        // Should have specific text glass overrides
         expect(button).toHaveClass('bg-transparent');
-        expect(button).toHaveClass('text-primary');
+        expect(button).toHaveClass('ring-0');
+    });
+
+    it('should apply glass style to OUTLINED button', () => {
+        const style$ = new BehaviorSubject(ButtonStyle.OUTLINED);
+        const button = new ButtonBuilder()
+            .withCaption(new BehaviorSubject('Outlined Glass'))
+            .withStyle(style$)
+            .asGlass()
+            .build();
+
+        expect(button).toHaveClass('glass-effect');
+        expect(button).toHaveClass('bg-transparent');
+        expect(button).not.toHaveClass('ring-0');
+    });
+
+    it('should apply glass style to TONAL button', () => {
+        const style$ = new BehaviorSubject(ButtonStyle.TONAL);
+        const button = new ButtonBuilder()
+            .withCaption(new BehaviorSubject('Tonal Glass'))
+            .withStyle(style$)
+            .asGlass()
+            .build();
+
+        expect(button).toHaveClass('glass-effect');
+        expect(button).toHaveClass('ring-0');
+    });
+
+    it('should apply glass style to ELEVATED button', () => {
+        const style$ = new BehaviorSubject(ButtonStyle.ELEVATED);
+        const button = new ButtonBuilder()
+            .withCaption(new BehaviorSubject('Elevated Glass'))
+            .withStyle(style$)
+            .asGlass()
+            .build();
+
+        expect(button).toHaveClass('glass-effect');
+        expect(button).toHaveClass('elevation-1');
     });
 });

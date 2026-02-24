@@ -11,4 +11,4 @@ Place text buttons in leftLayout and primary, secondary buttons in rightLayout.
 Style according to Material Design 3 
 ToolbarBuilder should use LayoutBuilder as a basis.
 Primary ans secondary buttons should be right aligned in toolbar and text button should be left aligned.
-Glass effect applied only for toolbar buttons. Toolbar itself is not affected by glass effect.
+Glass effect applied only for toolbar buttons. **Toolbar itself is not affected by glass effect**.

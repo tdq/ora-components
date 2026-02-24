@@ -193,9 +193,8 @@ describe('ComboBoxBuilder', () => {
             .build();
         document.body.appendChild(container);
 
-        const inputContainer = container.querySelector('.bg-white\\/10');
+        const inputContainer = container.querySelector('.glass-effect');
         expect(inputContainer).toBeTruthy();
-        expect(inputContainer).toHaveClass('backdrop-blur-md');
     });
 
     test('should highlight selected item when dropdown opens', async () => {
