@@ -1,3 +1,6 @@
+# Component
+
+## Description
 Each component is a custom element based on native JavaScript and HTML (no shadow dom, only light dom is used).
 It has the following structure:
 - index.ts - component entry point
@@ -20,7 +23,6 @@ Each component should be defined in its own file.
 Try to reuse existing components for building more complex components.
 
 ## Types of components
-
 1. Components which provides value. This components has method "withValue(value: Subject<T>)". It also should have method "withError(error: Observable<string>)".
 2. Components which is used for layout. This components has method "withContent(content: ComponentBuilder)", or "addSlot(): SlotBuilder".
 
@@ -36,7 +38,6 @@ interface SlotBuilder {
 4. Components which are displaying data as table or as chart. These components has method "withData(data: Observable<T[]>)". It also should have method "withError(error: Observable<string>)". And also these components can have method "withColumns(columns: ColumnBuilder[])" for tables or withCharts(charts: ChartBuilder[]) for charts.
 
 ## Theme
-
 Components are styled by using Tailwind CSS. The theme is Material Design 3.
 Theme has color schemes:
 - light
@@ -44,13 +45,11 @@ Theme has color schemes:
 - pink
 
 ## Common methods
-
 - withCaption(caption: Observable<string>): this - sets the caption of the component
 - withContent(content: Observable<ComponentBuilder>): this - sets the content of the component
 - withVisible(visible: Observable<boolean>): this - sets the visibility of the component
 
 ## Example
-
 ```typescript
 class ExampleBuilder implements ComponentBuilder {
     build(): HTMLElement {

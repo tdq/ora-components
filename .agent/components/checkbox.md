@@ -1,3 +1,6 @@
+# Checkbox
+
+## Description
 Checkbox component is a custom element that is used to display a checkbox.
 It has the following methods:
 - withCaption(caption: Observable<string>): this - sets caption of the checkbox.
@@ -6,6 +9,6 @@ It has the following methods:
 - withValue(value: Subject<boolean>): this - sets value for checkbox.
 - asGlass(): this - sets special styling option for checkbox and its popup with items as transparent with blur background (glass effect). 
 
-## Style
+## Styling
 Style according to Material Design 3
 Glass effect applied only for checkbox clickable part which contains check mark.

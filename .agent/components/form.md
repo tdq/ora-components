@@ -1,3 +1,6 @@
+# Form
+
+## Description
 Form is a custom component which allows to build forms by combining different fields.
 It has the folowing methods:
 - withEnabled(enabled: Observable<boolean>): this - sets enabled state of the whole form.
@@ -22,7 +25,7 @@ It has the folowing methods:
 "column" - defines number of column in which this component should be displayed.
 "colspan" - defines amount of columns this component takes (width in columns amount).
 
-## Style
+## Styling
 Style according to Material Design 3 
 Error and description are small text.
 Caption is a big text.

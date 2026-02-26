@@ -1,3 +1,6 @@
+# Builder pattern
+
+## Description
 Builder pattern is used to create components.
 Components implemented by using builders pattern are classes, which implements interface "ComponentBuilder".
 

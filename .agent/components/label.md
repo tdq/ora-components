@@ -1,3 +1,6 @@
+# Label
+
+## Description
 Label component is a component which is used to display a label.
 It has the following methods:
 - withCaption(caption: Observable<string>): this - sets caption of the label.

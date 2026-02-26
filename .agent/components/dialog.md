@@ -1,4 +1,7 @@
-Button component is a custom popup that is used to display dialog.
+# Dialog
+
+## Description
+Dialog component is a custom popup that is used to display dialog.
 It has the following methods:
 - withCaption(caption: Observable<string>): this - sets caption of the dialog.
 - withDescription(description: Observable<string>): this - sets description of the dialog.
@@ -22,7 +25,7 @@ It uses existing components: layout, label
 Use HTML <dialog> tag for implementation.
 Always display dialog as modal.
 
-## Style
+## Styling
 Style according to Material Design 3 
 Description are small text.
 Caption is a big text.

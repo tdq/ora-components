@@ -1,3 +1,6 @@
+# Tabs
+
+## Description
 Tabs component is a custom element that is used to display a button.
 It has the following methods:
 - withCaption(caption: Observable<string>): this - sets label of the tabs.
@@ -11,7 +14,7 @@ TabBuilder has the following methods:
 - withContent(content: ComponentBuilder): this - sets content of the tab.
 - withVisible(visible: Observable<boolean>): this - sets visibility of the tab.
 
-## Style
+## Styling
 Style according to Material Design 3 
 Description are small text.
 Caption is a big text.

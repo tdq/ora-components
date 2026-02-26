@@ -1,3 +1,6 @@
+# ComboBox
+
+## Description
 ComboBox component is a custom element that is used to display a dropdown.
 It has the following methods:
 - withCaption(caption: Observable<string>): this - sets caption of the dropdown.
@@ -36,7 +39,7 @@ ComboBox implements ARIA patterns for combobox:
 - `aria-activedescendant` on the input points to the ID of the currently focused item in the listbox.
 - Listbox items have `role="option"` and `aria-selected`.
 
-## Style
+## Styling
 Style according to Material Design 3 
 Popup with items should have background according to combobox style (tonal or outline).
 Popup with items should have limited height.

@@ -1,3 +1,6 @@
+# DatePicker
+
+## Description
 DatePicker component is a custom component that is used to display a date selector.
 It has the following methods:
 - withCaption(caption: Observable<string>): this - sets caption of the datepicker.
@@ -11,18 +14,18 @@ It has the following methods:
 - withMaxDate(max: Observable<Date>): this - Sets maximum selectable date.
 - withFormat(format: string): this - sets date format (default: 'DD-MM-YYYY')
 
-## 2. Requirements
+## Requirements
 - DatePicker should not allow to type not in defined format. For example, if format is DD/MM/YYYY it should not allow to set anything like "asbasbds".
 - On opening calendar it should display currently selected date in the calendar.
 
-## 3. State Management
+## State Management
 
 - **Selected Date**: Managed via `withValue(Subject<Date | null>)`. Updates on valid manual input or grid cell selection.
 - **Popup Visibility**: Toggled by the calendar icon and closed on selection or outside click.
 - **Constraints**: `minDate` and `maxDate` disable selection of dates outside the range.
 - **Validation**: Manual input is validated against the specified format; invalid entries trigger error state.
 
-## 4. Styling Requirements
+## Styling
 
 - **Theme**: Use Material Design 3 tokens (`bg-surface-variant`, `text-on-surface`, `primary`).
 - **States**: Hover/focus effects for input and day cells (`hover:bg-primary-container`).
@@ -30,8 +33,7 @@ It has the following methods:
 - **Transitions**: Smooth transitions (150-200ms) for popup entry and day selection.
 Height is 48px
 
-## 5. Accessibility Requirements
-
+## Accessibility Requirements
 - **Keyboard**: 
   - `Alt + ArrowDown` to open popup.
   - Arrow keys to navigate calendar grid.

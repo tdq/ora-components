@@ -27,3 +27,4 @@ Logic and state are managed by RxJS.
 - [Panel](components/panel.md)
 - [Dialog](components/dialog.md)
 - [Toolbar](components/toolbar.md)
+- [Grid](components/grid/grid.md)

@@ -1,3 +1,6 @@
+# ListBox
+
+## Description
 ListBox component is a custom element that is used to display a scrollable list of items.
 It has the following methods:
 - withCaption(caption: Observable<string>): this - sets caption of the ListBox.
@@ -24,7 +27,7 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
 }
 ```
 
-## Style
+## Styling
 Style according to Material Design 3
 ListBox border and border-radius has same style as Panel but with 0 padding.
 ListBox items list has same styling as ComboBox dropdown items.

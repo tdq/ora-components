@@ -1,3 +1,6 @@
+# NumberField
+
+## Description
 NumberField component is a component that allows the user to enter and edit numbers.
 It has the folowing methods:
 - withValue(value: Subject<number>): this - sets value of the number field.
@@ -20,7 +23,7 @@ NumberField style is an enum with the following values:
 It should not allow to type anything except what format defines.
 Numbers are right aligned but placeholder is on the left.
 
-## Style
+## Styling
 Style according to Material Design 3 
 Error and label are small text.
 Border should be defined as outline so changing its size is not affecting size of the input.

@@ -1,3 +1,6 @@
+# Panel
+
+## Description
 Panel is a custom component that is used to display a panel (card).
 It has the following methods:
 - withGap(gap: PanelGap): this - sets gap between panel border and content (padding).
@@ -11,6 +14,6 @@ PanelGap is an enum with values:
 - LARGE. 16px gap
 - EXTRA_LARGE. 32px gap
 
-## Style
+## Styling
 Style according to Material Design 3
 No shadow.

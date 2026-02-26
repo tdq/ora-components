@@ -1,3 +1,6 @@
+# TextField
+
+## Description
 TextField component is a component that allows the user to enter and edit text.
 It has the folowing methods:
 - withValue(value: Subject<string>): this - sets value of the text field.
@@ -18,7 +21,7 @@ TextField style is an enum with the following values:
 ## Requirements
 At password mode it should display "*" symbols instead of actual text.
 
-## Style
+## Styling
 Style according to Material Design 3 
 Error and label are small text.
 Border should be defined as outline so changing its size is not affecting size of the input.

@@ -1,3 +1,6 @@
+# Button
+
+## Description
 Button component is a custom element that is used to display a button.
 It has the following methods:
 - withCaption(caption: Observable<string>): this - sets caption of the button.
@@ -14,7 +17,7 @@ Button style is an enum with the following values:
 - outlined
 - text
 
-## Style
+## Styling
 Style according to Material Design 3
 
 ### Glass effect
