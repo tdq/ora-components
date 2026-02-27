@@ -31,6 +31,10 @@ ComboBox should filter items only on typing also it should open dropdown in this
 When dropdown opens initially it is showing all items, and only when user started to change text value it is filtering items.
 When dropdown opens it highlights selected item (scrolls into it if it is not visible).
 
+### Dropdown
+It should open by calling `showPopover()` method.
+It should close on any event outside of the dropdown.
+
 ## Accessibility
 ComboBox implements ARIA patterns for combobox:
 - `role="combobox"` on the input element.

@@ -193,8 +193,6 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
                 iconContainer.classList.remove(...glassDescClasses);
             }
 
-            listbox.classList.toggle('hidden', !expanded);
-
             const dynamicClasses = [
                 'bg-white/10', 'bg-white/20', 'backdrop-blur-xl', 'border-white/20', 'border-white/30',
                 'bg-secondary-container', 'bg-surface', 'border-outline', 'border', 'border-transparent'
@@ -207,6 +205,16 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
                 listbox.classList.add('bg-secondary-container', 'border', 'border-transparent');
             } else {
                 listbox.classList.add('bg-surface', 'border', 'border-outline');
+            }
+
+            if (expanded) {
+                const rect = inputContainer.getBoundingClientRect();
+                listbox.style.top = `${rect.bottom + 4}px`;
+                listbox.style.left = `${rect.left}px`;
+                listbox.style.width = `${rect.width}px`;
+                (listbox as any).showPopover();
+            } else {
+                (listbox as any).hidePopover();
             }
         }));
 
@@ -422,10 +430,18 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         };
         document.addEventListener('click', clickOutsideHandler);
 
+        const scrollHandler = (e: Event) => {
+            if (isExpanded$.value && !listbox.contains(e.target as Node)) {
+                 isExpanded$.next(false);
+            }
+        };
+        document.addEventListener('scroll', scrollHandler, true);
+
         registerDestroy(container, () => {
             subs.unsubscribe();
             if (typeof document !== 'undefined') {
                 document.removeEventListener('click', clickOutsideHandler);
+                document.removeEventListener('scroll', scrollHandler, true);
             }
         });
 

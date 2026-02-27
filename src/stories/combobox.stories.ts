@@ -121,6 +121,51 @@ export const States = () => {
     return container;
 };
 
+export const ProgrammaticControl = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    const combobox = new ComboBoxBuilder<string>()
+        .withItems(of(FRUITS))
+        .withCaption(of('Controlled ComboBox'))
+        .build();
+
+    layout.addSlot().withContent({
+        build: () => combobox
+    });
+
+    const buttonsLayout = new LayoutBuilder()
+        .asHorizontal()
+        .withGap(LayoutGap.MEDIUM);
+
+    const showButton = document.createElement('button');
+    showButton.textContent = 'Show';
+    showButton.className = 'px-4 py-2 bg-primary text-on-primary rounded-full hover:shadow-lg transition-shadow';
+    showButton.onclick = () => combobox.show();
+
+    const hideButton = document.createElement('button');
+    hideButton.textContent = 'Hide';
+    hideButton.className = 'px-4 py-2 bg-secondary text-on-secondary rounded-full hover:shadow-lg transition-shadow';
+    hideButton.onclick = () => combobox.hide();
+
+    const toggleButton = document.createElement('button');
+    toggleButton.textContent = 'Toggle';
+    toggleButton.className = 'px-4 py-2 bg-tertiary text-on-tertiary rounded-full hover:shadow-lg transition-shadow';
+    toggleButton.onclick = () => combobox.toggle();
+
+    buttonsLayout.addSlot().withContent({ build: () => showButton });
+    buttonsLayout.addSlot().withContent({ build: () => hideButton });
+    buttonsLayout.addSlot().withContent({ build: () => toggleButton });
+
+    layout.addSlot().withContent(buttonsLayout);
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
 interface User {
     id: number;
     name: string;

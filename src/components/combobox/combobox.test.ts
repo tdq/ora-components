@@ -25,7 +25,7 @@ describe('ComboBoxBuilder', () => {
         expect(input.value).toBe('Banana');
 
         const listbox = screen.getByRole('listbox', { hidden: true });
-        expect(listbox).toHaveClass('hidden');
+        expect(listbox).not.toBeVisible();
     });
 
     test('should verify filtering: typing in the input should update the list of displayed options', async () => {
@@ -40,7 +40,7 @@ describe('ComboBoxBuilder', () => {
 
         // Listbox should be visible
         const listbox = screen.getByRole('listbox');
-        expect(listbox).not.toHaveClass('hidden');
+        expect(listbox).toBeVisible();
 
         await waitFor(() => {
             const options = screen.getAllByRole('option');
@@ -66,7 +66,7 @@ describe('ComboBoxBuilder', () => {
 
         expect(value$.getValue()).toBe('Apple');
         expect(input).toHaveValue('Apple');
-        expect(screen.getByRole('listbox', { hidden: true })).toHaveClass('hidden');
+        expect(screen.getByRole('listbox', { hidden: true })).not.toBeVisible();
     });
 
     test('should verify keyboard navigation: ArrowUp/Down should highlight items, Enter should select', async () => {
@@ -83,7 +83,7 @@ describe('ComboBoxBuilder', () => {
         
         // ArrowDown once to open
         fireEvent.keyDown(input, { key: 'ArrowDown' });
-        expect(screen.getByRole('listbox')).not.toHaveClass('hidden');
+        expect(screen.getByRole('listbox')).toBeVisible();
         
         // After first ArrowDown, it opens and already highlights the first item
         await waitFor(() => {
@@ -103,7 +103,7 @@ describe('ComboBoxBuilder', () => {
         fireEvent.keyDown(input, { key: 'Enter' });
         expect(value$.getValue()).toBe('Banana');
         expect(input).toHaveValue('Banana');
-        expect(screen.getByRole('listbox', { hidden: true })).toHaveClass('hidden');
+        expect(screen.getByRole('listbox', { hidden: true })).not.toBeVisible();
     });
 
     test('should verify dropdown behavior: should open on focus/input, close on Escape or click outside', () => {
@@ -118,19 +118,19 @@ describe('ComboBoxBuilder', () => {
 
         // Click to open
         fireEvent.click(input);
-        expect(listbox).not.toHaveClass('hidden');
+        expect(listbox).toBeVisible();
 
         // Escape to close
         fireEvent.keyDown(input, { key: 'Escape' });
-        expect(listbox).toHaveClass('hidden');
+        expect(listbox).not.toBeVisible();
 
         // Input to open
         fireEvent.input(input, { target: { value: 'a' } });
-        expect(listbox).not.toHaveClass('hidden');
+        expect(listbox).toBeVisible();
 
         // Click outside to close
         fireEvent.click(document.body);
-        expect(listbox).toHaveClass('hidden');
+        expect(listbox).not.toBeVisible();
     });
 
     test('should verify reactive updates: changing the items$ or value$ Subjects from outside should update the UI', async () => {
