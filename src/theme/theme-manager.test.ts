@@ -64,7 +64,7 @@ describe('ThemeManager', () => {
     }));
     window.matchMedia = matchMediaMock;
 
-    const manager = ThemeManager.getInstance();
+    ThemeManager.getInstance();
     
     // In init(), applyTheme() is called.
     // It checks currentTheme ('system') and mediaQuery.matches (true).
@@ -85,7 +85,7 @@ describe('ThemeManager', () => {
       }));
       window.matchMedia = matchMediaMock;
 
-    const manager = ThemeManager.getInstance();
+    ThemeManager.getInstance();
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     expect(document.documentElement.classList.contains('dark')).toBe(false);
   });

@@ -4,7 +4,6 @@ import { map } from 'rxjs/operators';
 import { LayoutBuilder, LayoutGap } from '../components/layout';
 import { LabelBuilder, LabelSize } from '../components/label';
 import { ButtonBuilder, ButtonStyle } from '../components/button';
-import { Validators } from '../utils/validators';
 
 export default {
     title: 'Components/TextField',
@@ -23,8 +22,8 @@ export const Styles = () => {
 
     layout.addSlot().withContent(
         new TextFieldBuilder()
-            .withPlaceholder(new BehaviorSubject('Type something...'))
-            .withStyle(new BehaviorSubject(TextFieldStyle.TONAL))
+            .withPlaceholder(of('Type something...'))
+            .withStyle(of(TextFieldStyle.TONAL))
     );
 
     layout.addSlot().withContent(
@@ -35,8 +34,8 @@ export const Styles = () => {
 
     layout.addSlot().withContent(
         new TextFieldBuilder()
-            .withPlaceholder(new BehaviorSubject('Type something...'))
-            .withStyle(new BehaviorSubject(TextFieldStyle.OUTLINED))
+            .withPlaceholder(of('Type something...'))
+            .withStyle(of(TextFieldStyle.OUTLINED))
     );
 
     const container = layout.build();
@@ -57,7 +56,7 @@ export const Interactive = () => {
 
     layout.addSlot().withContent(
         new TextFieldBuilder()
-            .withPlaceholder(new BehaviorSubject('Placeholder...'))
+            .withPlaceholder(of('Placeholder...'))
             .withValue(value$)
     );
 
@@ -89,11 +88,10 @@ export const States = () => {
 
     layout.addSlot().withContent(
         new TextFieldBuilder()
-            .withPlaceholder(new BehaviorSubject('Disabled when unchecked...'))
+            .withPlaceholder(of('Disabled when unchecked...'))
             .withEnabled(enabled$)
     );
 
-    // Exception for checkbox as per request
     const controls = document.createElement('label');
     controls.className = 'flex items-center gap-2 cursor-pointer';
 
@@ -159,6 +157,47 @@ export const LabelsAndErrors = () => {
     return container;
 };
 
+export const InlineValidation = () => {
+    const value1$ = new BehaviorSubject('');
+    const error1$ = value1$.pipe(
+        map(val => val.length > 0 && val.length < 3 ? 'Too short' : '')
+    );
+
+    const value2$ = new BehaviorSubject('');
+    const error2$ = value2$.pipe(
+        map(val => val.length > 0 && val.length < 3 ? 'Too short' : '')
+    );
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.EXTRA_LARGE);
+
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Username (TONAL)'))
+            .withPlaceholder(of('Type at least 3 characters...'))
+            .withValue(value1$)
+            .withError(error1$)
+            .asInlineError()
+            .withStyle(of(TextFieldStyle.TONAL))
+    );
+
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Username (OUTLINED)'))
+            .withPlaceholder(of('Type at least 3 characters...'))
+            .withValue(value2$)
+            .withError(error2$)
+            .asInlineError()
+            .withStyle(of(TextFieldStyle.OUTLINED))
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
 export const Glass = () => {
     const layout = new LayoutBuilder()
         .asVertical()
@@ -186,36 +225,25 @@ export const Glass = () => {
     return container;
 };
 
-export const EnhancedFeatures = () => {
+export const DocumentedFeatures = () => {
     const layout = new LayoutBuilder()
         .asVertical()
         .withGap(LayoutGap.EXTRA_LARGE);
 
-    // Helper Text & Character Counter
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Character Counter'))
-            .withPlaceholder(of('Type to see counter...'))
-            .withHelperText(of('This field has a limit'))
-            .withMaxLength(20)
-            .withCharacterCounter()
-    );
-
     // Password Toggle
     layout.addSlot().withContent(
         new TextFieldBuilder()
-            .withLabel(of('Password with Toggle'))
+            .withLabel(of('Password Field'))
             .withPlaceholder(of('Enter password'))
-            .withPasswordToggle()
+            .asPassword()
     );
 
-    // Leading/Trailing Icons
+    // Email Field
     layout.addSlot().withContent(
         new TextFieldBuilder()
-            .withLabel(of('Icons Support'))
-            .withPlaceholder(of('Search...'))
-            .withLeadingIcon(of('<svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>'))
-            .withTrailingIcon(of('<svg viewBox="0 0 24 24" class="w-5 h-5 fill-current text-primary"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>'))
+            .withLabel(of('Email Field'))
+            .withPlaceholder(of('Enter email'))
+            .asEmail()
     );
 
     // Prefix/Suffix
@@ -233,31 +261,4 @@ export const EnhancedFeatures = () => {
     return container;
 };
 
-export const Validation = () => {
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.EXTRA_LARGE);
-
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Email Validation'))
-            .withPlaceholder(of('Enter email...'))
-            .withEmailValidation()
-            .withValue(new BehaviorSubject(''))
-    );
-
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Required and Min Length'))
-            .withPlaceholder(of('Type at least 3 chars...'))
-            .withValidator(Validators.required('Field is mandatory'))
-            .withValidator(Validators.minLength(3, 'Too short!'))
-            .withValue(new BehaviorSubject(''))
-    );
-
-    const container = layout.build();
-    container.classList.add('p-4', 'max-w-md');
-
-    return container;
-};
 

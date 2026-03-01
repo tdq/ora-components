@@ -142,17 +142,17 @@ export const ProgrammaticControl = () => {
     const showButton = document.createElement('button');
     showButton.textContent = 'Show';
     showButton.className = 'px-4 py-2 bg-primary text-on-primary rounded-full hover:shadow-lg transition-shadow';
-    showButton.onclick = () => combobox.show();
+    showButton.onclick = () => (combobox as any).show();
 
     const hideButton = document.createElement('button');
     hideButton.textContent = 'Hide';
     hideButton.className = 'px-4 py-2 bg-secondary text-on-secondary rounded-full hover:shadow-lg transition-shadow';
-    hideButton.onclick = () => combobox.hide();
+    hideButton.onclick = () => (combobox as any).hide();
 
     const toggleButton = document.createElement('button');
     toggleButton.textContent = 'Toggle';
     toggleButton.className = 'px-4 py-2 bg-tertiary text-on-tertiary rounded-full hover:shadow-lg transition-shadow';
-    toggleButton.onclick = () => combobox.toggle();
+    toggleButton.onclick = () => (combobox as any).toggle();
 
     buttonsLayout.addSlot().withContent({ build: () => showButton });
     buttonsLayout.addSlot().withContent({ build: () => hideButton });

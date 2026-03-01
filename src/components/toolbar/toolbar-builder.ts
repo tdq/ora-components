@@ -3,12 +3,7 @@ import { ButtonBuilder, ButtonStyle } from '../button/button';
 import { LayoutBuilder, LayoutGap, SlotSize, Alignment } from '../layout/layout';
 import { TOOLBAR_STYLES } from './styles';
 import { ComponentBuilder } from '@/core/component-builder';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
 
 export class ToolbarBuilder implements ComponentBuilder {
     private primaryButton?: ButtonBuilder;

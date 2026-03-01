@@ -119,7 +119,7 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         const listStyleSub = combineLatest([
             this.style$, 
             this.error$ ? this.error$.pipe(startWith(null)) : of(null)
-        ]).subscribe(([style, error]) => {
+        ]).subscribe(([_style, error]) => {
              listContainer.className = cn(
                 'rounded-large border overflow-hidden transition-all flex-1 relative flex flex-col',
                 !this.isGlass && 'bg-surface text-on-surface',

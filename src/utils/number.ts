@@ -9,7 +9,6 @@ export function roundToStep(value: number, step: number): number {
     if (!step || step <= 0) return value;
     
     const precision = getPrecision(step);
-    const factor = Math.pow(10, precision);
     
     const stepped = Math.round(value / step) * step;
     // Fix floating point errors by rounding to the step's precision

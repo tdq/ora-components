@@ -1,4 +1,4 @@
-import { Observable, combineLatest, BehaviorSubject, fromEvent, of } from 'rxjs';
+import { Observable, combineLatest, BehaviorSubject, of } from 'rxjs';
 import { ComponentBuilder } from '@/core/component-builder';
 import { ColumnsBuilder } from './columns/columns-builder';
 import { ToolbarBuilder } from '../toolbar/toolbar-builder';
@@ -18,7 +18,6 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     private toolbarBuilder?: ToolbarBuilder;
     private actionsBuilder?: ActionsBuilder<ITEM>;
     private items$: Observable<ITEM[]> = of([]);
-    private enabled$: Observable<boolean> = of(true);
     private isGlass: boolean = false;
     private isEditable: boolean = false;
     private isMultiSelect: boolean = false;
@@ -51,10 +50,6 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         return this;
     }
 
-    withEnabled(enabled: Observable<boolean>): this {
-        this.enabled$ = enabled;
-        return this;
-    }
 
     withActions(): ActionsBuilder<ITEM> {
         this.actionsBuilder = new ActionsBuilder<ITEM>();

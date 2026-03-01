@@ -1,6 +1,3 @@
-import { Observable } from 'rxjs';
-import { ComponentBuilder } from '@/core/component-builder';
-
 export enum ColumnType {
     TEXT = 'TEXT',
     NUMBER = 'NUMBER',

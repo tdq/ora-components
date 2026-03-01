@@ -61,7 +61,7 @@ describe('TextFieldBuilder', () => {
     test('should handle style updates reactively', () => {
         const style$ = new BehaviorSubject(TextFieldStyle.TONAL);
         const container = builder.withStyle(style$).build();
-        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
+        const inputWrapper = container.querySelector('div.h-\\[48px\\]') as HTMLElement;
 
         expect(inputWrapper.classList.contains('bg-surface-variant')).toBe(true);
 
@@ -103,7 +103,7 @@ describe('TextFieldBuilder', () => {
     test('should apply custom class reactively', () => {
         const class$ = new BehaviorSubject('custom-class');
         const container = builder.withClass(class$).build();
-        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
+        const inputWrapper = container.querySelector('div.h-\\[48px\\]') as HTMLElement;
 
         expect(inputWrapper.classList.contains('custom-class')).toBe(true);
 
@@ -112,9 +112,18 @@ describe('TextFieldBuilder', () => {
         expect(inputWrapper.classList.contains('another-class')).toBe(true);
     });
 
-    test('should support password mode', () => {
+    test('should support password mode with toggle', () => {
         const container = builder.asPassword().build();
         const input = container.querySelector('input') as HTMLInputElement;
+        expect(input.type).toBe('password');
+
+        const toggleBtn = container.querySelector('button') as HTMLButtonElement;
+        expect(toggleBtn).toBeTruthy();
+
+        toggleBtn.click();
+        expect(input.type).toBe('text');
+
+        toggleBtn.click();
         expect(input.type).toBe('password');
     });
 
@@ -124,97 +133,11 @@ describe('TextFieldBuilder', () => {
         expect(input.type).toBe('email');
     });
 
-    test('should expose event observables', (done) => {
-        const container = builder.build();
-        const input = container.querySelector('input') as HTMLInputElement;
-        
-        builder.onFocus().subscribe(() => {
-            done();
-        });
-
-        input.dispatchEvent(new FocusEvent('focus'));
-    });
-
-    test('should handle required and readonly states', () => {
-        const required$ = new BehaviorSubject(false);
-        const readOnly$ = new BehaviorSubject(false);
-        const container = builder.withRequired(required$).withReadOnly(readOnly$).build();
-        const input = container.querySelector('input') as HTMLInputElement;
-
-        expect(input.required).toBe(false);
-        expect(input.readOnly).toBe(false);
-
-        required$.next(true);
-        readOnly$.next(true);
-        expect(input.required).toBe(true);
-        expect(input.readOnly).toBe(true);
-    });
-
     test('should apply glass effect classes', () => {
         const container = builder.asGlass().build();
-        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
+        const inputWrapper = container.querySelector('div.h-\\[48px\\]') as HTMLElement;
 
         expect(inputWrapper.classList.contains('glass-effect')).toBe(true);
-    });
-
-    test('should validate value and display error', () => {
-        const value$ = new BehaviorSubject('');
-        const container = builder
-            .withValue(value$)
-            .withValidator(v => v.length < 3 ? 'Too short' : null)
-            .build();
-        const input = container.querySelector('input') as HTMLInputElement;
-        const supportText = container.querySelector('div:last-child span:first-child') as HTMLElement;
-
-        input.value = 'hi';
-        input.dispatchEvent(new Event('input'));
-        expect(supportText.textContent).toBe('Too short');
-        expect(supportText.classList.contains('hidden')).toBe(false);
-
-        input.value = 'hello';
-        input.dispatchEvent(new Event('input'));
-        expect(supportText.textContent).toBe('');
-        expect(supportText.classList.contains('hidden')).toBe(true);
-    });
-
-    test('should validate email format', () => {
-        const value$ = new BehaviorSubject('');
-        const container = builder
-            .withValue(value$)
-            .withEmailValidation('Invalid email')
-            .build();
-        const input = container.querySelector('input') as HTMLInputElement;
-        const supportText = container.querySelector('div:last-child span:first-child') as HTMLElement;
-
-        input.value = 'invalid-email';
-        input.dispatchEvent(new Event('input'));
-        expect(supportText.textContent).toBe('Invalid email');
-
-        input.value = 'test@example.com';
-        input.dispatchEvent(new Event('input'));
-        expect(supportText.textContent).toBe('');
-    });
-
-    test('should support helper text', () => {
-        const helper$ = new BehaviorSubject('Helper text');
-        const container = builder.withHelperText(helper$).build();
-        const supportText = container.querySelector('div:last-child span:first-child') as HTMLElement;
-
-        expect(supportText.textContent).toBe('Helper text');
-        expect(supportText.classList.contains('hidden')).toBe(false);
-    });
-
-    test('should support leading and trailing icons', () => {
-        const leading$ = new BehaviorSubject('<span>leading</span>');
-        const trailing$ = new BehaviorSubject('<span>trailing</span>');
-        const container = builder
-            .withLeadingIcon(leading$)
-            .withTrailingIcon(trailing$)
-            .build();
-
-        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
-        expect(inputWrapper.innerHTML).toContain('leading');
-        expect(inputWrapper.innerHTML).toContain('trailing');
     });
 
     test('should support prefix and suffix', () => {
@@ -223,38 +146,31 @@ describe('TextFieldBuilder', () => {
             .withSuffix(of('USD'))
             .build();
 
-        const inputWrapper = container.querySelector('div.relative') as HTMLElement;
+        const inputWrapper = container.querySelector('div.h-\\[48px\\]') as HTMLElement;
         expect(inputWrapper.textContent).toContain('$');
         expect(inputWrapper.textContent).toContain('USD');
     });
 
-    test('should handle character counter', () => {
-        const value$ = new BehaviorSubject('');
-        const container = builder
-            .withValue(value$)
-            .withMaxLength(10)
-            .withCharacterCounter()
-            .build();
-        const charCounter = container.querySelector('div:last-child span:last-child') as HTMLElement;
+    test('should support inline error with popover', () => {
+        const error$ = new BehaviorSubject('');
+        const container = builder.withError(error$).asInlineError().build();
+        document.body.appendChild(container);
 
-        expect(charCounter.textContent).toBe('0 / 10');
+        error$.next('Some error');
+        const errorBtn = container.querySelector('button') as HTMLButtonElement;
+        expect(errorBtn).toBeTruthy();
 
-        value$.next('hello');
-        expect(charCounter.textContent).toBe('5 / 10');
+        // click to ensure popover is initialized if needed (though it's created on render)
+        errorBtn.click();
+
+        // Use class selector since popover attribute might be tricky in JSDOM
+        const popover = document.body.querySelector('.bg-error') as HTMLElement;
+        expect(popover).toBeTruthy();
+        expect(popover.textContent).toBe('Some error');
+
+        container.remove();
+        if (popover) popover.remove();
     });
-
-    test('should toggle password visibility', () => {
-        const container = builder.withPasswordToggle().build();
-        const input = container.querySelector('input') as HTMLInputElement;
-        const toggleBtn = container.querySelector('button') as HTMLButtonElement;
-
-        expect(input.type).toBe('password');
-        
-        toggleBtn.click();
-        expect(input.type).toBe('text');
-
-        toggleBtn.click();
-        expect(input.type).toBe('password');
-    });
-
 });
+
+

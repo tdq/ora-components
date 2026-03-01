@@ -1,5 +1,3 @@
-import { ComponentBuilder } from '@/core/component-builder';
-
 export interface GridAction<ITEM> {
     label: string;
     icon?: string;

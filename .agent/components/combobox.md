@@ -13,7 +13,8 @@ It has the following methods:
 - withValue(value: Subject<ITEM | null>): this - sets value for dropdown (which item is selected). It is also updated by dropdown itself on item selecting.
 - withError(error: Observable<string>): this - sets error of the dropdown.
 - withStyle(style: Observable<ComboBoxStyle>): this - sets style of the dropdown.
-- asGlass(): this - sets special styling option for combobox and its popup with items as transparent with blur background (glass effect). 
+- asGlass(): this - sets special styling option for combobox and its popup with items as transparent with blur background (glass effect).
+- asInlineError(): this - sets error state displaying as field style change.
 
 ComboBox style is an enum with the following values:
 - tonal
@@ -50,4 +51,10 @@ Popup with items should have limited height.
 Hovered item in popup should be highlighted with darker background.
 Currently selected item also should be highlighted in popup by using bold text style.
 Clicking the dropdown icon should focus the input.
-Height is 48px
+Height is 48px.
+Reserve space for error text only if it is not "as inline error".
+
+### Inline error state
+On error set red outline for text field. 
+Add error icon on the right inside of text field. 
+Clicking this icon shows tooltip with error text.

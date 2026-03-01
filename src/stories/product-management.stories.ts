@@ -5,8 +5,10 @@ import { FormBuilder } from '../components/form/form-builder';
 import { PanelBuilder, PanelGap } from '../components/panel/panel';
 import { LayoutBuilder, LayoutGap, Alignment } from '../components/layout/layout';
 import { DialogBuilder, DialogSize } from '../components/dialog/dialog';
-import { TextFieldStyle } from '../components/text-field/text-field';
+import { TextFieldBuilder, TextFieldStyle } from '../components/text-field/text-field';
 import { NumberFieldStyle } from '../components/number-field/number-field';
+import { ComboBoxBuilder, ComboBoxStyle } from '../components/combobox/combobox-builder';
+import { ButtonBuilder, ButtonStyle } from '../components/button/button';
 
 export default {
     title: 'Examples/Product Management',
@@ -38,7 +40,7 @@ export const ProductManagement = () => {
     // State
     const products$ = new BehaviorSubject<Product[]>(generateProducts(20));
     const filterName$ = new BehaviorSubject<string>('');
-    const filterCategory$ = new BehaviorSubject<string>('');
+    const filterCategory$ = new BehaviorSubject<string | null>('');
 
     // Derived State
     const filteredProducts$ = combineLatest([products$, filterName$, filterCategory$]).pipe(
@@ -118,13 +120,15 @@ export const ProductManagement = () => {
             .withLabel(of('Price'))
             .withValue(price$)
             .withError(priceError$)
-            .withStyle(of(NumberFieldStyle.OUTLINED));
+            .withStyle(of(NumberFieldStyle.OUTLINED))
+            .withSuffix(of('$'));
 
         fields.addNumberField(2, 1)
             .withLabel(of('Stock'))
             .withValue(stock$)
             .withError(stockError$)
-            .withStyle(of(NumberFieldStyle.OUTLINED));
+            .withStyle(of(NumberFieldStyle.OUTLINED))
+            .withSuffix(of('qty'));
 
         const dialog = new DialogBuilder()
             .withCaption(of(isEdit ? `Edit ${product?.name}` : 'New Product'))
@@ -176,52 +180,32 @@ export const ProductManagement = () => {
         .withGap(LayoutGap.LARGE)
         .withAlignment(of(Alignment.CENTER));
 
-    const nameFilterInput = document.createElement('input');
-    nameFilterInput.placeholder = 'Filter by name...';
-    nameFilterInput.className = 'px-3 py-2 border rounded border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500';
-    nameFilterInput.oninput = (e) => filterName$.next((e.target as HTMLInputElement).value);
+    // Name Filter
+    const nameFilter = new TextFieldBuilder()
+        .withPlaceholder(of('Filter by name...'))
+        .withValue(filterName$)
+        .withStyle(of(TextFieldStyle.OUTLINED));
 
-    const categoryFilterSelect = document.createElement('select');
-    categoryFilterSelect.className = 'px-3 py-2 border rounded border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500';
-    const allOption = document.createElement('option');
-    allOption.value = '';
-    allOption.text = 'All Categories';
-    categoryFilterSelect.appendChild(allOption);
-    CATEGORIES.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.text = c;
-        categoryFilterSelect.appendChild(opt);
-    });
-    categoryFilterSelect.onchange = (e) => filterCategory$.next((e.target as HTMLSelectElement).value);
+    // Category Filter
+    const categoryFilter = new ComboBoxBuilder<string>()
+        .withItems(of(['', ...CATEGORIES]))
+        .withItemCaptionProvider(item => item === '' ? 'All Categories' : item)
+        .withValue(filterCategory$)
+        .withStyle(of(ComboBoxStyle.OUTLINED));
 
     // Add Button
     const addBtnClick$ = new Subject<void>();
     addBtnClick$.subscribe(() => openProductDialog());
 
-    // We can't easily add raw elements to LayoutBuilder, need to wrap them or use existing components.
-    // Let's use FormBuilder for filters? Or just simple HTML structure inside Panel.
-    // PanelBuilder takes ComponentBuilder.
-    // Let's use a custom ComponentBuilder for raw elements if needed, or better, use TextFieldBuilder/ComboBoxBuilder standalone.
-    
-    // Actually LayoutBuilder slots take ComponentBuilder. I can wrap raw elements in a simple builder.
-    const rawElementBuilder = (el: HTMLElement) => ({ build: () => el });
+    const addButton = new ButtonBuilder()
+        .withCaption(of('Add Product'))
+        .withClick(addBtnClick$)
+        .withStyle(of(ButtonStyle.FILLED))
+        .withClass(of('ml-auto'));
 
-    filterLayout.addSlot().withContent(rawElementBuilder(nameFilterInput));
-    filterLayout.addSlot().withContent(rawElementBuilder(categoryFilterSelect));
-    
-    // Add Button (using ButtonBuilder)
-    // We need to create the button builder instance
-    const addButtonBuilder = {
-        build: () => {
-            const btn = document.createElement('button');
-            btn.textContent = 'Add Product';
-            btn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors ml-auto';
-            btn.onclick = () => addBtnClick$.next();
-            return btn;
-        }
-    };
-    filterLayout.addSlot().withContent(addButtonBuilder).withAlignment(of(Alignment.RIGHT));
+    filterLayout.addSlot().withContent(nameFilter);
+    filterLayout.addSlot().withContent(categoryFilter);
+    filterLayout.addSlot().withContent(addButton).withAlignment(of(Alignment.RIGHT));
 
     filterPanel.withContent(filterLayout);
 

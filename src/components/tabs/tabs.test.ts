@@ -8,8 +8,8 @@ describe('Tabs Component', () => {
             .withCaption(of('Main Title'))
             .withDescription(of('Main Description'));
 
-        const tab1 = tabs.addTab().withCaption(of('Tab 1')).withContent(new LabelBuilder().withCaption(of('Content 1')));
-        const tab2 = tabs.addTab().withCaption(of('Tab 2')).withContent(new LabelBuilder().withCaption(of('Content 2')));
+        tabs.addTab().withCaption(of('Tab 1')).withContent(new LabelBuilder().withCaption(of('Content 1')));
+        tabs.addTab().withCaption(of('Tab 2')).withContent(new LabelBuilder().withCaption(of('Content 2')));
 
         const element = tabs.build();
         document.body.appendChild(element);

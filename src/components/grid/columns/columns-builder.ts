@@ -1,4 +1,3 @@
-import { ComponentBuilder } from '@/core/component-builder';
 import { ColumnBuilder, GridColumn } from '../types';
 import { TextColumnBuilder } from './text-column';
 import { NumberColumnBuilder } from './number-column';

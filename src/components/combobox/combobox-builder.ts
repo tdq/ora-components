@@ -445,6 +445,11 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             }
         });
 
+        const element = container as any;
+        element.show = () => isExpanded$.next(true);
+        element.hide = () => isExpanded$.next(false);
+        element.toggle = () => isExpanded$.next(!isExpanded$.value);
+
         return container;
     }
 }

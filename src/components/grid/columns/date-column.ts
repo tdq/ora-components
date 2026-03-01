@@ -2,10 +2,7 @@ import { BaseColumnBuilder } from './base-column-builder';
 import { ColumnType, GridColumn } from '../types';
 
 export class DateColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
-    private _format: string = 'YYYY-MM-DD';
-
-    withFormat(format: string): this {
-        this._format = format;
+    withFormat(_format: string): this {
         return this;
     }
 
