@@ -6,6 +6,7 @@ describe('TextFieldBuilder', () => {
 
     beforeEach(() => {
         builder = new TextFieldBuilder();
+        document.body.innerHTML = '';
     });
 
     test('should render a container with an input element', () => {
@@ -151,20 +152,24 @@ describe('TextFieldBuilder', () => {
         expect(inputWrapper.textContent).toContain('USD');
     });
 
-    test('should support inline error with popover', () => {
+    test('should support inline error with popover', async () => {
         const error$ = new BehaviorSubject('');
         const container = builder.withError(error$).asInlineError().build();
         document.body.appendChild(container);
 
         error$.next('Some error');
+
+        // Wait for reactive updates
+        await new Promise(r => setTimeout(r, 0));
+
         const errorBtn = container.querySelector('button') as HTMLButtonElement;
         expect(errorBtn).toBeTruthy();
 
         // click to ensure popover is initialized if needed (though it's created on render)
         errorBtn.click();
 
-        // Use class selector since popover attribute might be tricky in JSDOM
-        const popover = document.body.querySelector('.bg-error') as HTMLElement;
+        // Use more specific class to avoid matching activeIndicator
+        const popover = document.body.querySelector('.error-popover') as HTMLElement;
         expect(popover).toBeTruthy();
         expect(popover.textContent).toBe('Some error');
 

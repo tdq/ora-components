@@ -1,8 +1,14 @@
 import { Observable, Subject, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { buildTextField, TextFieldStyle } from './text-field-logic';
+import { createTextFieldLabel } from './text-field-label';
+import { createTextFieldIconContainer } from './text-field-icon';
+import { createTextFieldSupportText } from './text-field-error';
 
 export { TextFieldStyle };
+
+let nextId = 0;
+const generateId = () => `text-field-${nextId++}`;
 
 export class TextFieldBuilder implements ComponentBuilder {
     private value$?: Subject<string>;
@@ -91,6 +97,48 @@ export class TextFieldBuilder implements ComponentBuilder {
     }
 
     build(): HTMLElement {
+        const id = generateId();
+        const errorId = `${id}-error`;
+
+        const container = document.createElement('div');
+        container.className = 'flex flex-col w-full group';
+
+        const label = createTextFieldLabel(id);
+        container.appendChild(label);
+
+        const inputWrapper = document.createElement('div');
+        inputWrapper.className = 'relative flex items-center gap-2 px-4 transition-all duration-200 h-[48px]';
+        container.appendChild(inputWrapper);
+
+        const leadingIconContainer = createTextFieldIconContainer('hidden');
+        inputWrapper.appendChild(leadingIconContainer);
+
+        const prefix = document.createElement('span');
+        prefix.className = 'body-large text-on-surface-variant select-none';
+        inputWrapper.appendChild(prefix);
+
+        const input = document.createElement('input');
+        input.id = id;
+        inputWrapper.appendChild(input);
+
+        const suffix = document.createElement('span');
+        suffix.className = 'body-large text-on-surface-variant select-none';
+        inputWrapper.appendChild(suffix);
+
+        const trailingIconContainer = createTextFieldIconContainer();
+        inputWrapper.appendChild(trailingIconContainer);
+
+        const activeIndicator = document.createElement('div');
+        activeIndicator.className = 'absolute bottom-0 left-0 right-0 h-[1px] bg-outline-variant transition-all duration-200 origin-center scale-x-100 group-focus-within:h-[2px] group-focus-within:bg-primary';
+        inputWrapper.appendChild(activeIndicator);
+
+        const footer = document.createElement('div');
+        footer.className = 'flex justify-between px-4 min-h-[20px] mt-1';
+        container.appendChild(footer);
+
+        const supportText = createTextFieldSupportText(errorId);
+        footer.appendChild(supportText);
+
         return buildTextField({
             value$: this.value$,
             placeholder$: this.placeholder$,
@@ -108,6 +156,18 @@ export class TextFieldBuilder implements ComponentBuilder {
             focusSubject: this.focusSubject,
             blurSubject: this.blurSubject,
             changeSubject: this.changeSubject
+        }, {
+            container,
+            label,
+            input,
+            inputWrapper,
+            prefix,
+            suffix,
+            leadingIconContainer,
+            trailingIconContainer,
+            activeIndicator,
+            footer,
+            supportText
         });
     }
 }
