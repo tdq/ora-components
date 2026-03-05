@@ -21,7 +21,7 @@ export function createTextFieldError(errorText: string): HTMLElement {
 
     const popover = document.createElement('div');
     popover.setAttribute('popover', 'auto');
-    popover.className = 'error-popover bg-error text-on-error md-label-small px-3 py-2 rounded-small shadow-elevation-2 max-w-xs';
+    popover.className = 'error-popover bg-error text-on-error md-label-small px-3 py-2 rounded-small elevation-2 max-w-xs transition-opacity duration-200';
     popover.textContent = errorText;
     document.body.appendChild(popover);
 
@@ -45,8 +45,13 @@ export function createTextFieldError(errorText: string): HTMLElement {
         const rect = button.getBoundingClientRect();
         popover.style.position = 'absolute';
         popover.style.margin = '0';
-        popover.style.left = `${rect.left + rect.width / 2}px`;
-        popover.style.top = `${rect.top - 8}px`;
+
+        // Initial horizontal center relative to button
+        const leftBase = rect.left + rect.width / 2;
+        const topBase = rect.top - 8;
+
+        popover.style.left = `${leftBase + window.scrollX}px`;
+        popover.style.top = `${topBase + window.scrollY}px`;
         popover.style.transform = 'translate(-50%, -100%)';
 
         if ((popover as any).showPopover) {
@@ -54,6 +59,19 @@ export function createTextFieldError(errorText: string): HTMLElement {
         } else {
             popover.style.display = 'block';
         }
+
+        // Viewport boundary check
+        const popoverRect = popover.getBoundingClientRect();
+        const padding = 8;
+        let finalLeft = leftBase + window.scrollX;
+
+        if (popoverRect.left < padding) {
+            finalLeft += (padding - popoverRect.left);
+        } else if (popoverRect.right > window.innerWidth - padding) {
+            finalLeft -= (popoverRect.right - (window.innerWidth - padding));
+        }
+
+        popover.style.left = `${finalLeft}px`;
         isVisible = true;
 
         // Auto-close after 5 seconds

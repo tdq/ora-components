@@ -24,7 +24,7 @@ const BASE_INPUT_CLASSES = 'flex-1 min-w-0 bg-transparent outline-none transitio
 
 function getValidationClasses(error: string): string {
     if (!error) return '';
-    return 'outline-error focus-within:outline-error text-error';
+    return 'outline outline-2 -outline-offset-2 outline-error focus-within:outline-error text-error';
 }
 
 export interface TextFieldConfig {

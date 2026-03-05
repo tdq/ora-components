@@ -42,7 +42,9 @@ Height is 48px.
 Reserve space for error text only if it is not "as inline error".
 
 ### Inline error state
-On error set red outline for text field. 
-Add error icon on the right inside of text field. 
-Clicking this icon shows tooltip with error text close to this icon. Use "showPopover()" method for showing tooltip.
-Tooltip should close after 5 seconds or on clicking outside of the tooltip or on clicking the error icon again.
+- On error set red outline for text field. 
+- Add error icon on the right inside of text field. 
+- Clicking this icon shows tooltip with error text close to this icon. Use "showPopover()" method for showing tooltip.
+- Tooltip should close after 5 seconds or on clicking outside of the tooltip or on clicking the error icon again.
+- Tooltip should have popover shadow.
+- Tooltip should be positioned in the way it is always visible for user.

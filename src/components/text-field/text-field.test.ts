@@ -152,7 +152,7 @@ describe('TextFieldBuilder', () => {
         expect(inputWrapper.textContent).toContain('USD');
     });
 
-    test('should support inline error with popover', async () => {
+    test('should support inline error with popover and red outline', async () => {
         const error$ = new BehaviorSubject('');
         const container = builder.withError(error$).asInlineError().build();
         document.body.appendChild(container);
@@ -165,14 +165,40 @@ describe('TextFieldBuilder', () => {
         const errorBtn = container.querySelector('button') as HTMLButtonElement;
         expect(errorBtn).toBeTruthy();
 
-        // click to ensure popover is initialized if needed (though it's created on render)
+        // Check red outline on input wrapper
+        const inputWrapper = container.querySelector('div.relative.flex.items-center.h-\\[48px\\]') as HTMLElement;
+        expect(inputWrapper.classList.contains('outline-error')).toBe(true);
+        expect(inputWrapper.classList.contains('outline-2')).toBe(true);
+
+        // Click to toggle popover
         errorBtn.click();
 
-        // Use more specific class to avoid matching activeIndicator
         const popover = document.body.querySelector('.error-popover') as HTMLElement;
         expect(popover).toBeTruthy();
         expect(popover.textContent).toBe('Some error');
+        expect(popover.classList.contains('elevation-2')).toBe(true);
 
+        container.remove();
+        if (popover) popover.remove();
+    });
+
+    test('should handle popover auto-close after timeout', () => {
+        jest.useFakeTimers();
+        const error$ = new BehaviorSubject('Error');
+        const container = builder.withError(error$).asInlineError().build();
+        document.body.appendChild(container);
+
+        const errorBtn = container.querySelector('button') as HTMLButtonElement;
+        expect(errorBtn).toBeTruthy();
+        errorBtn.click();
+
+        const popover = document.body.querySelector('.error-popover') as HTMLElement;
+        expect(popover).toBeTruthy();
+
+        // Advance timers by 5s
+        jest.advanceTimersByTime(5000);
+
+        jest.useRealTimers();
         container.remove();
         if (popover) popover.remove();
     });
