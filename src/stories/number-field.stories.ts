@@ -262,3 +262,33 @@ export const LabelAndPlaceholder = () => {
     container.classList.add('p-4', 'max-w-md');
     return container;
 };
+
+export const InlineErrors = () => {
+    const value$ = new BehaviorSubject<number | null>(0);
+    const error$ = value$.pipe(
+        map(val => (val !== null && val < 0) ? 'Negative numbers are not allowed' : ((val !== null && val > 1000) ? 'Value too large' : ''))
+    );
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new NumberFieldBuilder()
+            .withLabel(of('Inline Error Example'))
+            .asInlineError()
+            .withValue(value$)
+            .withError(error$)
+            .withPlaceholder(of('Click the icon on error'))
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Try entering a negative number to see the error icon. Click it to show a tooltip.'))
+            .withSize(LabelSize.SMALL)
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+    return container;
+};

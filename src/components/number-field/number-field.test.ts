@@ -80,7 +80,7 @@ describe('NumberFieldBuilder', () => {
             expect(errorEl.textContent).toBe('Value too high');
             expect(errorEl.classList.contains('hidden')).toBe(false);
             expect(input.getAttribute('aria-invalid')).toBe('true');
-            
+
             // Error styles are on the wrapper
             const wrapper = input.parentElement as HTMLElement;
             expect(wrapper.classList.contains('ring-error')).toBe(true);
@@ -193,7 +193,7 @@ describe('NumberFieldBuilder', () => {
 
             input.value = '0.2';
             input.dispatchEvent(new Event('input'));
-            
+
             // Simulate ArrowUp (0.2 + 0.1)
             input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
             expect(value$.value).toBe(0.3);
@@ -319,7 +319,7 @@ describe('NumberFieldBuilder', () => {
             // Update observables
             prefix$.next('');
             expect(prefixEl.classList.contains('hidden')).toBe(true);
-            
+
             suffix$.next('New Suffix');
             expect(suffixEl.textContent).toBe('New Suffix');
         });
@@ -338,5 +338,41 @@ describe('NumberFieldBuilder', () => {
 
         value$.next(20);
         expect(input.value).toBe('10'); // Should not have updated
+    });
+
+    describe('8. Inline Error State', () => {
+        test('should render error icon and show popover on click', async () => {
+            const error$ = new BehaviorSubject('');
+            const container = builder.asInlineError().withError(error$).build();
+            document.body.appendChild(container);
+
+            const inputWrapper = container.querySelector('input')?.parentElement as HTMLElement;
+            const suffixContainer = inputWrapper.lastElementChild as HTMLElement;
+
+            expect(suffixContainer.querySelector('button')).toBeNull();
+
+            error$.next('Invalid number');
+            const errorButton = suffixContainer.querySelector('button') as HTMLButtonElement;
+            expect(errorButton).toBeTruthy();
+            expect(errorButton.getAttribute('aria-label')).toContain('Invalid number');
+
+            // Find the popover
+            const popover = document.body.querySelector('.error-popover') as HTMLElement;
+            expect(popover).toBeTruthy();
+            expect(popover.textContent).toBe('Invalid number');
+
+            // Click icon to show popover
+            errorButton.click();
+
+            // In JSDOM, showPopover might not be implemented, so we check if display changes or just assume call happened
+            // The component handles fallback to style.display = 'block'
+            expect(popover.style.display).not.toBe('none');
+
+            error$.next('');
+            expect(suffixContainer.querySelector('button')).toBeNull();
+
+            document.body.removeChild(container);
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
     });
 });
