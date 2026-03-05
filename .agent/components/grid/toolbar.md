@@ -1,15 +1,22 @@
 # Grid Toolbar
 
 ## Description
-Defines grid specific toolbar.
-it has the following methods:
-- addButton(): ButtonBuilder - adds secondary type button into the toolbar
+The Grid component supports an optional header toolbar for global actions. It uses the standard `ToolbarBuilder` to define and render buttons.
+
+## Builder Methods
+When calling `withToolbar()` on the `GridBuilder`, it returns a `ToolbarBuilder` instance. 
+
+Key methods of `ToolbarBuilder`:
+- `withPrimaryButton(): ButtonBuilder`: Adds a primary action button (filled style) to the right side of the toolbar.
+- `addSecondaryButton(): ButtonBuilder`: Adds a secondary action button (outlined style) to the right side.
+- `addTextButton(): ButtonBuilder`: Adds a text-style button to the left side of the toolbar.
+
+See the full [Toolbar Documentation](../toolbar.md) for more details.
+
+## Implementation Details
+- **Rendering**: The toolbar is rendered at the top of the grid container, above the column headers.
+- **Glass Effect**: If `asGlass()` is called on the `GridBuilder`, the glass effect is automatically propagated to the toolbar buttons.
 
 ## Styling
-1. Buttons are stick together (there is no gap between them). 
-2. Only first and last buttons has rounded corners.
-3. First button has rounded corners on the left only.
-4. Last button has rounded corners on the right only.
-
-### Glass effect
-Only buttons has glass effect.
+- **Alignment**: Primary and secondary buttons are right-aligned, while text buttons are left-aligned.
+- **Material Design 3**: Follows MD3 button styles and state layers.

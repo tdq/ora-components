@@ -20,6 +20,7 @@ export interface GridColumn<ITEM> {
     width?: string;
     sortable?: boolean;
     filterable?: boolean;
+    cellClass?: string;
     render: (item: ITEM) => HTMLElement | string;
 }
 

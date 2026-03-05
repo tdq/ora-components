@@ -184,3 +184,20 @@ export const CustomRendering = () => {
     
     return grid.build();
 };
+
+export const HighVolume = () => {
+    const manyUsers = generateUsers(1000);
+    const grid = new GridBuilder<User>()
+        .withItems(of(manyUsers))
+        .withHeight(of(600))
+        .asMultiSelect();
+
+    const columns = grid.withColumns();
+    columns.addNumberColumn('id').withHeader('ID').withWidth('60px');
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addTextColumn('email').withHeader('Email');
+    columns.addEnumColumn('role').withHeader('Role');
+    columns.addMoneyColumn('balance').withHeader('Balance');
+
+    return grid.build();
+};

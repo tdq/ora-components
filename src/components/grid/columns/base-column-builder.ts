@@ -5,6 +5,7 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
     protected _width: string = '1fr';
     protected _sortable: boolean = false;
     protected _field: string;
+    protected _cellClass: string = '';
 
     constructor(field: string) {
         this._field = field;
@@ -26,6 +27,11 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
         return this;
     }
 
+    withClass(className: string): this {
+        this._cellClass = className;
+        return this;
+    }
+
     abstract build(): GridColumn<ITEM>;
 
     protected createBaseColumn(type: ColumnType): GridColumn<ITEM> {
@@ -36,6 +42,7 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
             header: this._header,
             width: this._width,
             sortable: this._sortable,
+            cellClass: this._cellClass,
             render: (item: ITEM) => this.render(item)
         };
     }
