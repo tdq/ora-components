@@ -8,9 +8,11 @@ The `ActionsBuilder` is used to define a set of contextual actions that appear f
 - `addIconAction(icon: string, onClick: (item: ITEM) => void): this`: Adds an icon-based action button (e.g., using FontAwesome or Material Icon classes).
 
 ## Implementation Details
-- **Rendering**: Row actions are rendered as small buttons within an `actionCell`.
+- **Rendering**: Row actions are rendered as small buttons within an `actionCell`. This cell is part of a `sticky right-0` panel that remains visible during horizontal scrolling.
 - **Event Handling**: Clicks on row actions are isolated to prevent triggering row selection or other row-level events.
+- **Sticky Behavior**: The actions column is pinned to the right. It includes a left border (`border-l border-border`) and an opaque background (`bg-background`) to ensure it remains legible when overlapping other column content.
 
 ## Styling
 - **Default Appearance**: Rendered as flat buttons that gain a background on hover (`hover:bg-muted`).
 - **Icon Actions**: Use a class-based icon system (e.g., `<i class="fa fa-edit"></i>`).
+- **Container**: The action cell uses `flex-none` with a fixed width (default `w-20`).

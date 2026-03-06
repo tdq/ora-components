@@ -12,6 +12,17 @@ export enum ColumnType {
     MONEY = 'MONEY'
 }
 
+export enum SortDirection {
+    NONE = 'NONE',
+    ASC = 'ASC',
+    DESC = 'DESC'
+}
+
+export interface SortConfig {
+    field: string;
+    direction: SortDirection;
+}
+
 export interface GridColumn<ITEM> {
     id: string;
     field: keyof ITEM | string;
@@ -20,6 +31,7 @@ export interface GridColumn<ITEM> {
     width?: string;
     sortable?: boolean;
     filterable?: boolean;
+    resizable?: boolean;
     cellClass?: string;
     render: (item: ITEM) => HTMLElement | string;
 }
@@ -28,5 +40,7 @@ export interface ColumnBuilder<ITEM> {
     withHeader(header: string): this;
     withWidth(width: string): this;
     sortable(sortable: boolean): this;
+    resizable(resizable: boolean): this;
+    withClass(className: string): this;
     build(): GridColumn<ITEM>;
 }

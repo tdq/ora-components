@@ -6,14 +6,15 @@ The `BooleanColumnBuilder` is used to display boolean values in a grid cell. By 
 ## Builder Methods
 In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) methods:
 
-- `withTrueText(text: string): this`: Sets the display text for `true` values.
-- `withFalseText(text: string): this`: Sets the display text for `false` values.
+- `withItemCaptionProvider(provider: (value: boolean) => string): this`: Maps `true`/`false` values to custom display labels.
 - `asCheckbox(): this`: Renders the boolean value as a readonly checkbox.
 
 ## Implementation Details
 - **Field**: Expects a boolean value from the data item.
-- **Rendering**: Returns a string based on the value and configured labels.
+- **Rendering**: Uses the provided provider or a `CheckboxBuilder` when `asCheckbox()` is enabled.
+- **Internal Component**: When rendering a checkbox, it utilizes the project's standard `CheckboxBuilder` to ensure consistent Material Design 3 styling and interactive feedback.
 
 ## Styling
-- **Alignment**: Typically centered or left-aligned.
-- **Color**: Inherits from row styling.
+- **Alignment**: Center-aligned.
+- **Checkbox**: Uses the styles defined in `CheckboxBuilder`, including MD3 state layers and color tokens.
+- **Borders**: Inherits cell borders (`border-r border-border/50`).

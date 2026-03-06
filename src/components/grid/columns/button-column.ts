@@ -1,11 +1,12 @@
 import { BaseColumnBuilder } from './base-column-builder';
 import { ColumnType, GridColumn } from '../types';
-import { ButtonStyle } from '../../button/button';
-import { clsx } from 'clsx';
+import { ButtonStyle, ButtonBuilder } from '../../button/button';
+import { Subject, of } from 'rxjs';
+import { registerDestroy } from '@/core/destroyable-element';
 
 export class ButtonColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
     private _label: string = 'Action';
-    private _onClick: (item: ITEM) => void = () => {};
+    private _click?: Subject<ITEM>;
     private _style: ButtonStyle = ButtonStyle.FILLED;
 
     withLabel(label: string): this {
@@ -13,8 +14,8 @@ export class ButtonColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return this;
     }
 
-    withOnClick(onClick: (item: ITEM) => void): this {
-        this._onClick = onClick;
+    withClick(click: Subject<ITEM>): this {
+        this._click = click;
         return this;
     }
 
@@ -24,23 +25,22 @@ export class ButtonColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
     }
 
     render(item: ITEM): HTMLElement {
-        const button = document.createElement('button');
-        button.textContent = this._label;
-        
-        let styleClass = 'bg-primary text-white hover:bg-primary/90';
-        if (this._style === ButtonStyle.OUTLINED) {
-            styleClass = 'border border-primary text-primary hover:bg-primary/5';
-        } else if (this._style === ButtonStyle.TEXT) {
-            styleClass = 'text-primary hover:bg-primary/5';
-        } else if (this._style === ButtonStyle.TONAL) {
-            styleClass = 'bg-secondary-container text-on-secondary-container hover:bg-secondary-container/90';
-        }
+        const click$ = new Subject<void>();
+        const sub = click$.subscribe(() => {
+            if (this._click) {
+                this._click.next(item);
+            }
+        });
 
-        button.className = clsx('px-2 py-1 rounded text-sm transition-colors', styleClass);
-        button.onclick = (e) => {
-            e.stopPropagation();
-            this._onClick(item);
-        };
+        const button = new ButtonBuilder()
+            .withCaption(of(this._label))
+            .withStyle(of(this._style))
+            .withClick(click$)
+            .withClass(of('px-2 py-1 h-8 text-xs')) // Compact size for grid
+            .build();
+        
+        registerDestroy(button, () => sub.unsubscribe());
+
         return button;
     }
 

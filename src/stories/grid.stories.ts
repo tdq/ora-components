@@ -1,4 +1,5 @@
 import { GridBuilder } from '../components/grid/grid-builder';
+import { SortDirection } from '../components/grid/types';
 import { of, Subject } from 'rxjs';
 
 export default {
@@ -198,6 +199,36 @@ export const HighVolume = () => {
     columns.addTextColumn('email').withHeader('Email');
     columns.addEnumColumn('role').withHeader('Role');
     columns.addMoneyColumn('balance').withHeader('Balance');
+
+    return grid.build();
+};
+
+export const Sorting = () => {
+    const grid = new GridBuilder<User>()
+        .withItems(of(users))
+        .withHeight(of(500))
+        .withSort('name', SortDirection.ASC);
+
+    const columns = grid.withColumns();
+    columns.addNumberColumn('id').withHeader('ID').withWidth('60px').sortable(true);
+    columns.addTextColumn('name').withHeader('Name').withWidth('150px').sortable(true);
+    columns.addEnumColumn('role').withHeader('Role').withWidth('100px').sortable(true);
+    columns.addMoneyColumn('balance').withHeader('Balance').withWidth('100px').sortable(true);
+    columns.addDateColumn('lastLogin').withHeader('Last Login').withWidth('150px').sortable(true);
+
+    return grid.build();
+};
+
+export const ResizableColumns = () => {
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 15)))
+        .withHeight(of(400));
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name (Resizable)').withWidth('200px').resizable(true);
+    columns.addTextColumn('email').withHeader('Email (Resizable)').withWidth('250px').resizable(true);
+    columns.addEnumColumn('role').withHeader('Role').withWidth('100px');
+    columns.addMoneyColumn('balance').withHeader('Balance').withWidth('100px');
 
     return grid.build();
 };

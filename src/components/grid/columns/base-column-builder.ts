@@ -4,6 +4,7 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
     protected _header: string = '';
     protected _width: string = '1fr';
     protected _sortable: boolean = false;
+    protected _resizable: boolean = false;
     protected _field: string;
     protected _cellClass: string = '';
 
@@ -27,6 +28,11 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
         return this;
     }
 
+    resizable(resizable: boolean): this {
+        this._resizable = resizable;
+        return this;
+    }
+
     withClass(className: string): this {
         this._cellClass = className;
         return this;
@@ -42,6 +48,7 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
             header: this._header,
             width: this._width,
             sortable: this._sortable,
+            resizable: this._resizable,
             cellClass: this._cellClass,
             render: (item: ITEM) => this.render(item)
         };

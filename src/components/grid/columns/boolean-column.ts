@@ -1,18 +1,14 @@
 import { BaseColumnBuilder } from './base-column-builder';
 import { ColumnType, GridColumn } from '../types';
+import { CheckboxBuilder } from '../../checkbox/checkbox';
+import { of, BehaviorSubject } from 'rxjs';
 
 export class BooleanColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
-    private _trueText: string = 'Yes';
-    private _falseText: string = 'No';
+    private _captionProvider: (value: boolean) => string = (v) => v ? 'Yes' : 'No';
     private _isCheckbox: boolean = false;
 
-    withTrueText(text: string): this {
-        this._trueText = text;
-        return this;
-    }
-
-    withFalseText(text: string): this {
-        this._falseText = text;
+    withItemCaptionProvider(provider: (value: boolean) => string): this {
+        this._captionProvider = provider;
         return this;
     }
 
@@ -22,16 +18,14 @@ export class BooleanColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
     }
 
     render(item: ITEM): HTMLElement | string {
-        const value = (item as any)[this._field];
+        const value = !!(item as any)[this._field];
         if (this._isCheckbox) {
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = !!value;
-            checkbox.disabled = true; // Default to readonly in grid unless specified otherwise
-            checkbox.className = 'w-4 h-4 rounded border-outline accent-primary cursor-default';
-            return checkbox;
+            return new CheckboxBuilder()
+                .withValue(new BehaviorSubject(value))
+                .withEnabled(of(false))
+                .build();
         }
-        return value ? this._trueText : this._falseText;
+        return this._captionProvider(value);
     }
 
     build(): GridColumn<ITEM> {
