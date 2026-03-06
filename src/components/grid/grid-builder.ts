@@ -78,7 +78,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     build(): HTMLElement {
         const container = document.createElement('div');
         container.className = cn(
-            'flex flex-col w-full text-sm text-foreground bg-background rounded-lg border border-border overflow-hidden',
+            'flex flex-col w-full text-sm text-foreground bg-background rounded-lg border border-outline/30 dark:border-stone-50/20 overflow-hidden',
             this.isGlass && 'glass-effect bg-opacity-50 backdrop-blur-md'
         );
 
@@ -89,7 +89,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
         const header = document.createElement('div');
         header.className = cn(
-            'flex flex-row items-stretch border-b border-border bg-surface-container-low font-medium h-[52px] sticky top-0 z-20',
+            'flex flex-row items-stretch bg-surface-container-low/80 backdrop-blur font-semibold h-[52px] sticky top-0 z-20 text-on-surface-variant text-[11px] uppercase tracking-wider border-b border-outline/20 dark:border-stone-50/20',
             this.isGlass && 'bg-white/20 backdrop-blur-md'
         );
 
@@ -156,7 +156,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
         if (this.isMultiSelect) {
             const checkCell = document.createElement('div');
-            checkCell.className = 'w-12 flex-none flex items-center justify-center border-r border-border/50';
+            checkCell.className = 'w-12 flex-none flex items-center justify-center';
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -186,9 +186,8 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             this.applyColumnWidth(cell, col);
 
             cell.className = cn(
-                'px-4 h-full flex items-center text-left truncate font-medium text-on-surface-variant group relative border-r border-border/50',
-                col.sortable && 'cursor-pointer hover:text-primary transition-colors',
-                index === columns.length - 1 && 'border-r-0'
+                'px-4 h-full flex items-center text-left truncate font-semibold text-on-surface-variant group relative',
+                col.sortable && 'cursor-pointer hover:text-primary transition-colors'
             );
 
             const span = document.createElement('span');
@@ -255,7 +254,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         if (this.actionsBuilder) {
             const actionCell = document.createElement('div');
             actionCell.className = cn(
-                'w-20 flex-none sticky right-0 bg-surface-container-low border-l border-border z-20',
+                'w-20 flex-none sticky right-0 bg-surface-container-low/80 backdrop-blur-sm border-l border-outline/10 dark:border-stone-50/10 z-20',
                 this.isGlass && 'bg-white/20 backdrop-blur-md'
             );
             header.appendChild(actionCell);
@@ -312,10 +311,10 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
                 content.appendChild(element);
                 this.renderedRows.set(i, { element, item });
             } else if (existing.item !== item) {
-                this.updateRowContent(existing.element, item, columns, actions, isSelected);
+                this.updateRowContent(existing.element, item, i, columns, actions, isSelected);
                 existing.item = item;
             } else {
-                this.updateRowSelection(existing.element, isSelected);
+                this.updateRowSelection(existing.element, i, isSelected);
             }
         }
     }
@@ -329,14 +328,15 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     ): HTMLElement {
         const row = document.createElement('div');
         row.className = cn(
-            'absolute w-full flex items-stretch border-b border-border/50 hover:bg-muted/30 transition-colors group',
+            'absolute w-full flex items-stretch border-b border-outline/10 dark:border-stone-50/10 transition-all duration-200 group border-l-2 border-l-transparent hover:bg-surface-variant/20 hover:border-l-primary dark:hover:bg-slate-800/60',
+            index % 2 === 1 && 'bg-surface-container-low/20',
             this.isEditable && 'cursor-text',
-            isSelected && 'bg-primary/5'
+            isSelected && 'bg-primary/10 border-l-primary'
         );
         row.style.top = `${index * this.rowHeight}px`;
         row.style.height = `${this.rowHeight}px`;
 
-        this.populateRow(row, item, columns, actions, isSelected);
+        this.populateRow(row, item, index, columns, actions, isSelected);
 
         return row;
     }
@@ -344,28 +344,32 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     private updateRowContent(
         row: HTMLElement,
         item: ITEM,
+        index: number,
         columns: GridColumn<ITEM>[],
         actions: GridAction<ITEM>[],
         isSelected: boolean
     ) {
         row.innerHTML = '';
-        this.populateRow(row, item, columns, actions, isSelected);
+        this.populateRow(row, item, index, columns, actions, isSelected);
         row.className = cn(
-            row.className.split(' ').filter(c => !c.startsWith('bg-primary/')).join(' '),
-            isSelected && 'bg-primary/5'
+            'absolute w-full flex items-stretch border-b border-outline/10 dark:border-stone-50/10 transition-all duration-200 group border-l-2 border-l-transparent hover:bg-surface-variant/20 hover:border-l-primary dark:hover:bg-slate-800/60',
+            index % 2 === 1 && 'bg-surface-container-low/20',
+            this.isEditable && 'cursor-text',
+            isSelected && 'bg-primary/10 border-l-primary'
         );
     }
 
     private populateRow(
         row: HTMLElement,
         item: ITEM,
+        index: number,
         columns: GridColumn<ITEM>[],
         actions: GridAction<ITEM>[],
         isSelected: boolean
     ) {
         if (this.isMultiSelect) {
             const checkCell = document.createElement('div');
-            checkCell.className = 'w-12 flex-none flex items-center justify-center border-r border-border/50';
+            checkCell.className = 'w-12 flex-none flex items-center justify-center';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.className = 'rounded border-outline w-4 h-4 cursor-pointer accent-primary';
@@ -386,13 +390,12 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             row.appendChild(checkCell);
         }
 
-        columns.forEach((col, index) => {
+        columns.forEach((col) => {
             const cell = document.createElement('div');
             this.applyColumnWidth(cell, col);
             cell.className = cn(
-                'px-4 flex items-center truncate border-r border-border/50 h-full',
-                col.cellClass,
-                index === columns.length - 1 && 'border-r-0'
+                'px-4 flex items-center truncate h-full',
+                col.cellClass
             );
 
             const content = col.render(item);
@@ -407,9 +410,9 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         if (actions.length > 0) {
             const actionCell = document.createElement('div');
             actionCell.className = cn(
-                'w-20 flex-none flex items-center justify-center gap-1 sticky right-0 z-10 border-l border-border transition-colors',
-                isSelected ? 'bg-primary/5' : 'bg-background',
-                'group-hover:bg-muted/30'
+                'w-20 flex-none flex items-center justify-center gap-1 sticky right-0 z-10 border-l border-outline/10 dark:border-stone-50/10 transition-all duration-200 bg-surface-container-low/80 backdrop-blur-sm',
+                isSelected ? 'bg-primary/10' : (index % 2 === 1 ? 'bg-surface-container-low/20' : 'bg-background'),
+                'group-hover:bg-surface-variant/20 dark:group-hover:bg-slate-800/60'
             );
 
             actions.forEach(action => {
@@ -436,7 +439,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         }
     }
 
-    private updateRowSelection(row: HTMLElement, isSelected: boolean) {
+    private updateRowSelection(row: HTMLElement, index: number, isSelected: boolean) {
         if (this.isMultiSelect) {
             const checkbox = row.querySelector('input[type="checkbox"]') as HTMLInputElement;
             if (checkbox) checkbox.checked = isSelected;
@@ -445,20 +448,26 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         const actionCell = Array.from(row.children).find(c => (c as HTMLElement).classList.contains('sticky')) as HTMLElement;
         if (actionCell) {
             if (isSelected) {
-                actionCell.classList.add('bg-primary/5');
-                actionCell.classList.remove('bg-background');
+                actionCell.classList.add('bg-primary/10');
+                actionCell.classList.remove('bg-background', 'bg-surface-container-low/20');
             } else {
-                actionCell.classList.remove('bg-primary/5');
-                actionCell.classList.add('bg-background');
+                actionCell.classList.remove('bg-primary/10');
+                if (index % 2 === 1) {
+                    actionCell.classList.add('bg-surface-container-low/20');
+                    actionCell.classList.remove('bg-background');
+                } else {
+                    actionCell.classList.add('bg-background');
+                    actionCell.classList.remove('bg-surface-container-low/20');
+                }
             }
         }
 
         if (isSelected) {
-            row.classList.add('bg-primary/5');
-            row.classList.remove('bg-background');
+            row.classList.add('bg-primary/10', 'border-l-primary');
+            row.classList.remove('border-l-transparent');
         } else {
-            row.classList.remove('bg-primary/5');
-            row.classList.add('bg-background');
+            row.classList.remove('bg-primary/10', 'border-l-primary');
+            row.classList.add('border-l-transparent');
         }
     }
 

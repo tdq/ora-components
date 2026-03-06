@@ -119,25 +119,24 @@ When `asMultiSelect()` is enabled:
 Styling uses Tailwind CSS utilities following MD3 specifications.
 
 ### Components
-- **Container**: `bg-background`, `border-border`, `rounded-lg` (8px).
+- **Container**: `bg-background`, `border-outline/30`, `dark:border-stone-50/20`, `rounded-lg` (8px).
 - **Header**:
     - **Height**: 52px (`h-[52px]`).
-    - **Background**: `bg-muted/50` (Tonal variant) or `bg-surface-container-low`.
-    - **Typography**: `font-medium`, `text-sm`, `text-on-surface-variant` (rendered via `LabelBuilder`).
-    - **Borders**: Vertical borders (`border-r border-border/50`) between columns.
+    - **Background**: `bg-surface-container-low/80 backdrop-blur`.
+    - **Typography**: `font-semibold`, `text-[11px]`, `text-on-surface-variant`, `uppercase`, `tracking-wider`.
+    - **Borders**: Bottom border `border-b border-outline/20 dark:border-stone-50/20`. No vertical borders between columns for a modern look.
 - **Rows**:
     - **Height**: 52px (`h-[52px]`).
-    - **Background**: `bg-surface` or `bg-background`.
-    - **Interaction**: `hover:bg-muted/30` (State layer).
-    - **Border**: `border-b border-border/50`.
+    - **Background**: `bg-surface` or `bg-background` with zebra striping (`bg-surface-container-low/20` for odd rows).
+    - **Interaction**: `hover:bg-surface-variant/20 dark:hover:bg-slate-800/60 transition-all duration-200`. Includes a left accent `hover:border-l-primary`.
+    - **Border**: Bottom border `border-b border-outline/10 dark:border-stone-50/10`.
 - **Cells**:
     - **Padding**: `px-4`.
     - **Alignment**: `flex items-center`.
-    - **Borders**: Vertical borders (`border-r border-border/50`) align with header borders.
     - **Content**: `truncate` for text.
 - **Sticky Actions Column**:
     - **Position**: `sticky right-0 z-10`.
-    - **Styling**: `border-l border-border bg-background`.
+    - **Styling**: `border-l border-outline/10 dark:border-stone-50/10 bg-surface-container-low/80 backdrop-blur-sm`.
 
 ## Comparison with Standalone Components
 Grid columns are designed to provide a consistent experience with standalone components while optimized for row-based rendering:

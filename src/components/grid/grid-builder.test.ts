@@ -89,7 +89,7 @@ describe('GridBuilder', () => {
 
         // Check if row has selection background
         const firstRow = container.querySelector('.absolute') as HTMLElement;
-        expect(firstRow.classList.contains('bg-primary/5')).toBe(true);
+        expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
 
         document.body.removeChild(container);
     });
@@ -113,7 +113,7 @@ describe('GridBuilder', () => {
 
         const rows = container.querySelectorAll('.absolute');
         rows.forEach(row => {
-            expect(row.classList.contains('bg-primary/5')).toBe(true);
+            expect(row.classList.contains('bg-primary/10')).toBe(true);
         });
 
         document.body.removeChild(container);
