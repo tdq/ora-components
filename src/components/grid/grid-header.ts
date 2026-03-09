@@ -1,0 +1,166 @@
+import { GridColumn, SortConfig, SortDirection } from './types';
+import { GridStyles } from './grid-styles';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
+
+export class GridHeader<ITEM> {
+    private element: HTMLElement;
+
+    constructor(
+        private columns: GridColumn<ITEM>[],
+        private isGlass: boolean,
+        private isMultiSelect: boolean,
+        private hasActions: boolean,
+        private onSort: (field: string, direction: SortDirection) => void,
+        private onSelectAll: (checked: boolean) => void,
+        private onColumnsResized: (columns: GridColumn<ITEM>[]) => void
+    ) {
+        this.element = this.createHeader();
+    }
+
+    private createHeader(): HTMLElement {
+        const header = document.createElement('div');
+        header.className = cn(
+            GridStyles.header,
+            this.isGlass && GridStyles.headerGlass
+        );
+        return header;
+    }
+
+    render(items: ITEM[], selected: Set<ITEM>, sort: SortConfig) {
+        this.element.innerHTML = '';
+
+        if (this.isMultiSelect) {
+            const checkCell = document.createElement('div');
+            checkCell.className = GridStyles.checkboxCell;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = GridStyles.checkboxInput;
+
+            const allSelected = items.length > 0 && items.every(item => selected.has(item));
+            const noneSelected = selected.size === 0;
+            const isIndeterminate = !allSelected && !noneSelected && items.some(item => selected.has(item));
+
+            checkbox.checked = allSelected;
+            checkbox.indeterminate = isIndeterminate;
+
+            checkbox.addEventListener('change', () => {
+                this.onSelectAll(checkbox.checked);
+            });
+
+            checkCell.appendChild(checkbox);
+            this.element.appendChild(checkCell);
+        }
+
+        this.columns.forEach((col) => {
+            const cell = document.createElement('div');
+            this.applyColumnWidth(cell, col);
+
+            cell.className = cn(
+                GridStyles.headerCell,
+                col.sortable && GridStyles.headerCellSortable
+            );
+
+            const span = document.createElement('span');
+            span.textContent = col.header;
+            span.className = 'truncate';
+            cell.appendChild(span);
+
+            if (col.sortable) {
+                const icon = document.createElement('i');
+                const isCurrent = sort.field === col.field;
+                const iconClass = isCurrent && sort.direction === SortDirection.ASC ? 'fa-sort-up' :
+                    isCurrent && sort.direction === SortDirection.DESC ? 'fa-sort-down' : 'fa-sort';
+
+                icon.className = cn(
+                    GridStyles.sortIcon,
+                    iconClass,
+                    isCurrent ? GridStyles.sortIconActive : GridStyles.sortIconInactive
+                );
+                cell.appendChild(icon);
+
+                cell.addEventListener('click', (e) => {
+                    if ((e.target as HTMLElement).classList.contains('resize-handle')) return;
+
+                    let nextDirection = SortDirection.ASC;
+                    if (isCurrent) {
+                        if (sort.direction === SortDirection.ASC) nextDirection = SortDirection.DESC;
+                        else if (sort.direction === SortDirection.DESC) nextDirection = SortDirection.NONE;
+                    }
+                    this.onSort(col.field as string, nextDirection);
+                });
+            }
+
+            if (col.resizable) {
+                const handle = document.createElement('div');
+                handle.className = GridStyles.resizeHandle;
+                cell.appendChild(handle);
+
+                handle.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const startX = e.pageX;
+                    const startWidth = cell.offsetWidth;
+
+                    const onMouseMove = (moveEvent: MouseEvent) => {
+                        const newWidth = Math.max(50, startWidth + (moveEvent.pageX - startX));
+                        col.width = `${newWidth}px`;
+                        this.applyColumnWidth(cell, col);
+                        this.onColumnsResized(this.columns);
+                    };
+
+                    const onMouseUp = () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                    };
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+            }
+
+            this.element.appendChild(cell);
+        });
+
+        if (this.hasActions) {
+            const actionCell = document.createElement('div');
+            actionCell.className = GridStyles.actionHeaderCell;
+            this.element.appendChild(actionCell);
+        }
+    }
+
+    private applyColumnWidth(element: HTMLElement, col: GridColumn<ITEM>) {
+        if (col.width) {
+            if (col.width.includes('px') || col.width.includes('rem')) {
+                element.style.width = col.width;
+                element.style.flex = 'none';
+                element.classList.add('flex-none');
+                element.classList.remove('flex-1');
+            } else if (col.width.includes('fr')) {
+                element.style.flex = col.width.replace('fr', '');
+                element.style.width = '';
+                element.classList.remove('flex-none');
+                element.classList.remove('flex-1');
+            } else {
+                element.style.width = col.width;
+                element.style.flex = 'none';
+                element.classList.add('flex-none');
+                element.classList.remove('flex-1');
+            }
+        } else {
+            element.style.width = '';
+            element.style.flex = '1';
+            element.classList.add('flex-1');
+            element.classList.remove('flex-none');
+        }
+    }
+
+    getElement(): HTMLElement {
+        return this.element;
+    }
+}

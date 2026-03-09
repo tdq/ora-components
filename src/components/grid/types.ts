@@ -36,6 +36,18 @@ export interface GridColumn<ITEM> {
     render: (item: ITEM) => HTMLElement | string;
 }
 
+export interface GridAction<ITEM> {
+    label: string;
+    icon?: string;
+    onClick: (item: ITEM) => void;
+}
+
+export interface GridState<ITEM> {
+    items: ITEM[];
+    selectedItems: Set<ITEM>;
+    sortConfig: SortConfig;
+}
+
 export interface ColumnBuilder<ITEM> {
     withHeader(header: string): this;
     withWidth(width: string): this;

@@ -5,6 +5,15 @@ The Grid component is a high-performance tabular data display component designed
 
 The component is highly reactive, utilizing **RxJS** to handle data updates, selection states, and layout changes without full DOM re-renders.
 
+## Architecture
+The grid is refactored into modular components to separate concerns and improve maintainability:
+- **`GridBuilder`**: Public API and orchestrator.
+- **`GridLogic`**: Reactive state management (sorting, selection, data processing).
+- **`GridViewport`**: Virtualization engine and scroll management.
+- **`GridHeader`**: Header rendering and interaction logic.
+- **`GridRow`**: Row and cell rendering implementation.
+- **`GridStyles`**: Centralized Tailwind CSS class constants.
+
 ## GridBuilder Methods
 The `GridBuilder<ITEM>` class uses a generic type `ITEM` to ensure type safety across columns, actions, and selection state.
 
@@ -45,64 +54,39 @@ All column builders inherit these common methods:
 - `resizable(resizable: boolean)`: Enables column resizing via a handle in the header.
 - `withClass(className: string)`: Adds custom CSS classes to all cells in this column.
 
-## Detailed Column Builder Methods
-
-### TextColumnBuilder
-- `withPlaceholder(text: string)`: Shows a placeholder string if the cell value is empty or null.
-
-### NumberColumnBuilder
-- `withDecimals(decimals: number)`: Sets the number of fixed decimal places (default: 2).
-
-### DateColumnBuilder
-- `withFormat(format: string)`: Sets the date display format (currently defaults to `toLocaleDateString()`).
-
-### BooleanColumnBuilder
-- `withItemCaptionProvider(provider: (value: boolean) => string)`: Maps `true`/`false` to custom display labels.
-- `asCheckbox()`: Renders the boolean value as a readonly checkbox.
-
-### ButtonColumnBuilder
-- `withLabel(label: string)`: Sets the text content of the cell button.
-- `withClick(click: Subject<ITEM>)`: Subject triggered on button click with the row's item.
-- `withStyle(style: ButtonStyle)`: Sets the button style (FILLED, OUTLINED, TONAL, TEXT) matching standalone buttons.
-
-### EnumColumnBuilder
-- `withItemCaptionProvider(provider: (item: ITEM) => string)`: Maps raw values to display labels.
-
-### IconColumnBuilder
-- `withIconProvider(provider: (item: ITEM) => string)`: Returns icon class string based on the item state.
-- `withTooltipProvider(provider: (item: ITEM) => string)`: Adds a native tooltip to the icon.
-
-### MoneyColumnBuilder
-- `withCurrency(currency: string)`: Sets the ISO currency code (default: 'USD').
-
 ## Implementation Requirements
 
 ### Virtual Scrolling & Horizontal Sync
 The grid implements a custom virtualization engine to maintain 60fps even with thousands of rows:
-- **Viewport**: The main scrollable container with `overflow-auto`.
+- **Viewport**: The main scrollable container with `overflow-auto`. Managed by `GridViewport`.
 - **Content**: A relative-positioned container with its total height calculated as `itemCount * rowHeight`.
 - **Header Sync**: The header is placed inside the scrollable viewport to ensure horizontal alignment with rows while remaining `sticky top-0` vertically.
-- **Row Positioning**: Visible rows are absolutely positioned within the content container based on their index.
+- **Row Positioning**: Visible rows are managed as `GridRow` instances and absolutely positioned within the content container based on their index.
 - **Buffering**: Extra rows (default: 5) are rendered above and below the visible viewport to prevent flickering during fast scrolls.
 
 ### Selection
 When `asMultiSelect()` is enabled:
-- **State**: Tracked via `selectedItems` (a `BehaviorSubject<Set<ITEM>>`).
-- **Header**: Includes a `CheckboxBuilder` for "Select All" / "Deselect All" logic, supporting the indeterminate state when only some items are selected.
-- **Rows**: Selection triggers a background highlight (`bg-primary/5`) and uses the `CheckboxBuilder` for row-level selection.
+- **State**: Tracked via `GridLogic` using `selectedItems` (a `BehaviorSubject<Set<ITEM>>`).
+- **Header**: `GridHeader` renders a checkbox for "Select All" / "Deselect All" logic.
+- **Rows**: `GridRow` renders a checkbox and handles selection toggling. Selection triggers a background highlight (`bg-primary/10`) and an accent border.
 
 ### Sticky Panels
-- **Sticky Header**: The header remains fixed at the top (`sticky top-0`) during vertical scrolling and has a higher z-index (`z-20`).
-- **Sticky Actions**: When actions are defined, they are rendered in a dedicated column that is `sticky right-0`. This panel has a left border (`border-l`) and an opaque background (`bg-background`) to remain visible and legible over scrolled column content.
+- **Sticky Header**: Managed by `GridHeader`, remains fixed at the top (`sticky top-0`) with a higher z-index (`z-20`).
+- **Sticky Actions**: Rendered in a dedicated column that is `sticky right-0`. This panel uses `backdrop-blur-sm` and an opaque background to remain visible over scrolled content.
 
 ### Column Sorting
-- **State**: The `GridBuilder` maintains a sort configuration (field and direction).
-- **Interaction**: Clicking a sortable header toggles the state: `NONE` → `ASC` → `DESC`.
-- **Visuals**: Displays sort icons (e.g., `fa-sort-up`/`down`) which are visible on hover or when active.
+- **State**: Managed in `GridLogic` (field and direction).
+- **Interaction**: `GridHeader` captures clicks and updates `GridLogic`.
+- **Visuals**: `GridHeader` displays sort icons based on the current `SortConfig`.
 
 ## File Structure
-- `grid-builder.ts`: Main entry point containing `GridBuilder` and virtualization logic.
-- `types.ts`: Shared interfaces, enums (`ColumnType`), and type definitions.
+- `grid-builder.ts`: Orchestrator that assembles the grid using specialized modules.
+- `grid-logic.ts`: Reactive state and data processing logic.
+- `grid-viewport.ts`: Virtualization and scrolling implementation.
+- `grid-header.ts`: Header rendering and interaction logic.
+- `grid-row.ts`: Row and cell rendering implementation.
+- `grid-styles.ts`: Centralized Tailwind CSS classes.
+- `types.ts`: Shared interfaces, enums (`ColumnType`), and state definitions.
 - `columns/`: Specialized column builders.
 - `columns/base-column-builder.ts`: Abstract base class for all columns.
 - `columns/columns-builder.ts`: Orchestrator for defining the grid's column set.
@@ -116,29 +100,21 @@ When `asMultiSelect()` is enabled:
 - `LabelBuilder` (`src/components/label/`): Used for consistent header and cell typography.
 
 ## Styling (Material Design 3)
-Styling uses Tailwind CSS utilities following MD3 specifications.
+Styling is centralized in `grid-styles.ts` and uses Tailwind CSS utilities following MD3 specifications.
 
 ### Components
-- **Container**: `bg-background`, `border-outline/30`, `dark:border-stone-50/20`, `rounded-lg` (8px).
+- **Container**: `bg-background`, `border-outline/30`, `dark:border-stone-50/20`, `rounded-lg`.
 - **Header**:
-    - **Height**: 52px (`h-[52px]`).
+    - **Height**: 52px.
     - **Background**: `bg-surface-container-low/80 backdrop-blur`.
     - **Typography**: `font-semibold`, `text-[11px]`, `text-on-surface-variant`, `uppercase`, `tracking-wider`.
-    - **Borders**: Bottom border `border-b border-outline/20 dark:border-stone-50/20`. No vertical borders between columns for a modern look.
 - **Rows**:
-    - **Height**: 52px (`h-[52px]`).
-    - **Background**: `bg-surface` or `bg-background` with zebra striping (`bg-surface-container-low/20` for odd rows).
-    - **Interaction**: `hover:bg-surface-variant/20 dark:hover:bg-slate-800/60 transition-all duration-200`. Includes a left accent `hover:border-l-primary`.
-    - **Border**: Bottom border `border-b border-outline/10 dark:border-stone-50/10`.
+    - **Height**: 52px.
+    - **Background**: Zebra striping (`bg-surface-container-low/20` for odd rows).
+    - **Interaction**: `hover:bg-surface-variant/20 transition-all duration-200`. Includes a left accent `hover:border-l-primary`.
 - **Cells**:
     - **Padding**: `px-4`.
     - **Alignment**: `flex items-center`.
-    - **Content**: `truncate` for text.
 - **Sticky Actions Column**:
     - **Position**: `sticky right-0 z-10`.
-    - **Styling**: `border-l border-outline/10 dark:border-stone-50/10 bg-surface-container-low/80 backdrop-blur-sm`.
-
-## Comparison with Standalone Components
-Grid columns are designed to provide a consistent experience with standalone components while optimized for row-based rendering:
-- **Reactive State**: While standalone components use `Observable<T>`, grid columns often use providers like `(item: ITEM) => T` to handle row-specific logic within the virtualization loop.
-- **Consistency**: Stylistic variants like `asGlass()` or `ButtonStyle` are shared between standalone components and their grid counterparts.
+    - **Styling**: `border-l border-outline/10 bg-surface-container-low/80 backdrop-blur-sm`.

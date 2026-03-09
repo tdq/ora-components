@@ -1,12 +1,16 @@
-import { Observable, combineLatest, BehaviorSubject, of, map } from 'rxjs';
+import { Observable, combineLatest, of } from 'rxjs';
 import { ComponentBuilder } from '@/core/component-builder';
 import { ColumnsBuilder } from './columns/columns-builder';
 import { ToolbarBuilder } from '../toolbar/toolbar-builder';
-import { ActionsBuilder, GridAction } from './actions-builder';
-import { GridColumn, SortConfig, SortDirection } from './types';
+import { ActionsBuilder } from './actions-builder';
+import { SortDirection } from './types';
 import { registerDestroy } from '@/core/destroyable-element';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { GridStyles } from './grid-styles';
+import { GridLogic } from './grid-logic';
+import { GridViewport } from './grid-viewport';
+import { GridHeader } from './grid-header';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -22,13 +26,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     private isEditable: boolean = false;
     private isMultiSelect: boolean = false;
 
-    private selectedItems$ = new BehaviorSubject<Set<ITEM>>(new Set());
-    private sortConfig$ = new BehaviorSubject<SortConfig>({ field: '', direction: SortDirection.NONE });
-    private readonly rowHeight = 52;
-    private readonly buffer = 5;
-
-    // Internal state for virtualization
-    private renderedRows = new Map<number, { element: HTMLElement; item: ITEM }>();
+    private logic = new GridLogic<ITEM>();
 
     withHeight(height: Observable<number>): this {
         this.height$ = height;
@@ -67,19 +65,20 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
     withItems(items: Observable<ITEM[]>): this {
         this.items$ = items;
+        this.logic.setItems(items);
         return this;
     }
 
     withSort(field: keyof ITEM | string, direction: SortDirection = SortDirection.ASC): this {
-        this.sortConfig$.next({ field: field as string, direction });
+        this.logic.setSort(field as string, direction);
         return this;
     }
 
     build(): HTMLElement {
         const container = document.createElement('div');
         container.className = cn(
-            'flex flex-col w-full text-sm text-foreground bg-background rounded-lg border border-outline/30 dark:border-stone-50/20 overflow-hidden',
-            this.isGlass && 'glass-effect bg-opacity-50 backdrop-blur-md'
+            GridStyles.container,
+            this.isGlass && GridStyles.glass
         );
 
         if (this.toolbarBuilder) {
@@ -87,418 +86,51 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             container.appendChild(this.toolbarBuilder.build());
         }
 
-        const header = document.createElement('div');
-        header.className = cn(
-            'flex flex-row items-stretch bg-surface-container-low/80 backdrop-blur font-semibold h-[52px] sticky top-0 z-20 text-on-surface-variant text-[11px] uppercase tracking-wider border-b border-outline/20 dark:border-stone-50/20',
-            this.isGlass && 'bg-white/20 backdrop-blur-md'
-        );
-
-        const viewport = document.createElement('div');
-        viewport.className = 'flex-1 overflow-auto relative outline-none';
-        viewport.tabIndex = -1;
-        container.appendChild(viewport);
-
-        // Move header inside viewport for horizontal sync
-        viewport.appendChild(header);
-
-        const content = document.createElement('div');
-        content.className = 'relative w-full';
-        viewport.appendChild(content);
-
         const columns = this.columnsBuilder ? this.columnsBuilder.build() : [];
         const actions = this.actionsBuilder ? this.actionsBuilder.build() : [];
 
-        const sortedItems$ = combineLatest([this.items$, this.sortConfig$]).pipe(
-            map(([items, sort]) => {
-                if (!sort.field || sort.direction === SortDirection.NONE) {
-                    return items;
-                }
-                return [...items].sort((a, b) => {
-                    const valA = (a as any)[sort.field];
-                    const valB = (b as any)[sort.field];
-                    if (valA === valB) return 0;
-                    const modifier = sort.direction === SortDirection.ASC ? 1 : -1;
-                    return valA > valB ? modifier : -modifier;
-                });
-            })
+        const viewport = new GridViewport(
+            columns,
+            actions,
+            this.isMultiSelect,
+            this.isEditable,
+            (item) => this.logic.toggleSelection(item)
         );
 
-        let lastItems: ITEM[] = [];
+        let currentItems: ITEM[] = [];
 
-        const updateVirtualization = (items: ITEM[]) => {
-            this.renderVisibleRows(viewport, content, items, columns, actions, this.selectedItems$.value);
-        };
+        const header = new GridHeader(
+            columns,
+            this.isGlass,
+            this.isMultiSelect,
+            actions.length > 0,
+            (field, direction) => this.logic.setSort(field, direction),
+            (checked) => {
+                if (checked) {
+                    const set = new Set(currentItems);
+                    this.logic.setSelectedItems(set);
+                } else {
+                    this.logic.setSelectedItems(new Set());
+                }
+            },
+            (resizedColumns) => viewport.updateColumns(resizedColumns)
+        );
 
-        const sub = combineLatest([sortedItems$, this.height$, this.selectedItems$, this.sortConfig$]).subscribe(([items, height, selected, sort]) => {
-            lastItems = items;
+        viewport.addHeader(header.getElement());
+        container.appendChild(viewport.getElement());
+
+        const sub = combineLatest([this.logic.state$, this.height$]).subscribe(([state, height]) => {
+            currentItems = state.items;
             container.style.height = `${height}px`;
-            const totalHeight = items.length * this.rowHeight;
-            content.style.height = `${totalHeight}px`;
-
-            this.renderHeader(header, columns, items, selected, sort);
-            updateVirtualization(items);
+            header.render(state.items, state.selectedItems, state.sortConfig);
+            viewport.update(state.items, state.selectedItems);
         });
 
-        registerDestroy(container, () => sub.unsubscribe());
-
-        const onScroll = () => {
-            updateVirtualization(lastItems);
-        };
-
-        viewport.addEventListener('scroll', onScroll);
-        registerDestroy(container, () => viewport.removeEventListener('scroll', onScroll));
+        registerDestroy(container, () => {
+            sub.unsubscribe();
+            this.logic.destroy();
+        });
 
         return container;
-    }
-
-    private renderHeader(header: HTMLElement, columns: GridColumn<ITEM>[], items: ITEM[], selected: Set<ITEM>, sort: SortConfig) {
-        header.innerHTML = '';
-
-        if (this.isMultiSelect) {
-            const checkCell = document.createElement('div');
-            checkCell.className = 'w-12 flex-none flex items-center justify-center';
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'rounded border-outline w-4 h-4 cursor-pointer accent-primary';
-
-            const allSelected = items.length > 0 && items.every(item => selected.has(item));
-            const noneSelected = selected.size === 0;
-            const isIndeterminate = !allSelected && !noneSelected && items.some(item => selected.has(item));
-
-            checkbox.checked = allSelected;
-            checkbox.indeterminate = isIndeterminate;
-
-            checkbox.addEventListener('change', () => {
-                if (checkbox.checked) {
-                    this.selectedItems$.next(new Set(items));
-                } else {
-                    this.selectedItems$.next(new Set());
-                }
-            });
-
-            checkCell.appendChild(checkbox);
-            header.appendChild(checkCell);
-        }
-
-        columns.forEach((col, index) => {
-            const cell = document.createElement('div');
-            this.applyColumnWidth(cell, col);
-
-            cell.className = cn(
-                'px-4 h-full flex items-center text-left truncate font-semibold text-on-surface-variant group relative',
-                col.sortable && 'cursor-pointer hover:text-primary transition-colors'
-            );
-
-            const span = document.createElement('span');
-            span.textContent = col.header;
-            span.className = 'truncate';
-            cell.appendChild(span);
-
-            if (col.sortable) {
-                const icon = document.createElement('i');
-                const isCurrent = sort.field === col.field;
-                const iconClass = isCurrent && sort.direction === SortDirection.ASC ? 'fa-sort-up' :
-                    isCurrent && sort.direction === SortDirection.DESC ? 'fa-sort-down' : 'fa-sort';
-
-                icon.className = cn(
-                    'fas ml-2 transition-opacity',
-                    iconClass,
-                    isCurrent ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50'
-                );
-                cell.appendChild(icon);
-
-                cell.addEventListener('click', (e) => {
-                    if ((e.target as HTMLElement).classList.contains('resize-handle')) return;
-
-                    let nextDirection = SortDirection.ASC;
-                    if (isCurrent) {
-                        if (sort.direction === SortDirection.ASC) nextDirection = SortDirection.DESC;
-                        else if (sort.direction === SortDirection.DESC) nextDirection = SortDirection.NONE;
-                    }
-                    this.sortConfig$.next({ field: col.field as string, direction: nextDirection });
-                });
-            }
-
-            if (col.resizable) {
-                const handle = document.createElement('div');
-                handle.className = 'resize-handle absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-primary/30 transition-colors z-30';
-                cell.appendChild(handle);
-
-                handle.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const startX = e.pageX;
-                    const startWidth = cell.offsetWidth;
-
-                    const onMouseMove = (moveEvent: MouseEvent) => {
-                        const newWidth = Math.max(50, startWidth + (moveEvent.pageX - startX));
-                        col.width = `${newWidth}px`;
-                        this.applyColumnWidth(cell, col);
-                        this.updateVisibleRowsWidth(columns);
-                    };
-
-                    const onMouseUp = () => {
-                        document.removeEventListener('mousemove', onMouseMove);
-                        document.removeEventListener('mouseup', onMouseUp);
-                    };
-
-                    document.addEventListener('mousemove', onMouseMove);
-                    document.addEventListener('mouseup', onMouseUp);
-                });
-            }
-
-            header.appendChild(cell);
-        });
-
-        if (this.actionsBuilder) {
-            const actionCell = document.createElement('div');
-            actionCell.className = cn(
-                'w-20 flex-none sticky right-0 bg-surface-container-low/80 backdrop-blur-sm border-l border-outline/10 dark:border-stone-50/10 z-20',
-                this.isGlass && 'bg-white/20 backdrop-blur-md'
-            );
-            header.appendChild(actionCell);
-        }
-    }
-
-    private updateVisibleRowsWidth(columns: GridColumn<ITEM>[]) {
-        this.renderedRows.forEach(({ element }) => {
-            let cellIndex = this.isMultiSelect ? 1 : 0;
-            columns.forEach(col => {
-                const cell = element.children[cellIndex] as HTMLElement;
-                if (cell) {
-                    this.applyColumnWidth(cell, col);
-                }
-                cellIndex++;
-            });
-        });
-    }
-
-    private renderVisibleRows(
-        viewport: HTMLElement,
-        content: HTMLElement,
-        items: ITEM[],
-        columns: GridColumn<ITEM>[],
-        actions: GridAction<ITEM>[],
-        selected: Set<ITEM>
-    ) {
-        const scrollTop = viewport.scrollTop;
-        const viewportHeight = viewport.clientHeight;
-        const count = items.length;
-
-        if (count === 0) {
-            this.clearRenderedRows();
-            return;
-        }
-
-        const startIndex = Math.max(0, Math.floor(scrollTop / this.rowHeight) - this.buffer);
-        const endIndex = Math.min(count - 1, Math.floor((scrollTop + viewportHeight) / this.rowHeight) + this.buffer);
-
-        for (const [index, row] of this.renderedRows.entries()) {
-            if (index < startIndex || index > endIndex) {
-                row.element.remove();
-                this.renderedRows.delete(index);
-            }
-        }
-
-        for (let i = startIndex; i <= endIndex; i++) {
-            const item = items[i];
-            const isSelected = selected.has(item);
-            const existing = this.renderedRows.get(i);
-
-            if (!existing) {
-                const element = this.createRow(item, i, columns, actions, isSelected);
-                content.appendChild(element);
-                this.renderedRows.set(i, { element, item });
-            } else if (existing.item !== item) {
-                this.updateRowContent(existing.element, item, i, columns, actions, isSelected);
-                existing.item = item;
-            } else {
-                this.updateRowSelection(existing.element, i, isSelected);
-            }
-        }
-    }
-
-    private createRow(
-        item: ITEM,
-        index: number,
-        columns: GridColumn<ITEM>[],
-        actions: GridAction<ITEM>[],
-        isSelected: boolean
-    ): HTMLElement {
-        const row = document.createElement('div');
-        row.className = cn(
-            'absolute w-full flex items-stretch border-b border-outline/10 dark:border-stone-50/10 transition-all duration-200 group border-l-2 border-l-transparent hover:bg-surface-variant/20 hover:border-l-primary dark:hover:bg-slate-800/60',
-            index % 2 === 1 && 'bg-surface-container-low/20',
-            this.isEditable && 'cursor-text',
-            isSelected && 'bg-primary/10 border-l-primary'
-        );
-        row.style.top = `${index * this.rowHeight}px`;
-        row.style.height = `${this.rowHeight}px`;
-
-        this.populateRow(row, item, index, columns, actions, isSelected);
-
-        return row;
-    }
-
-    private updateRowContent(
-        row: HTMLElement,
-        item: ITEM,
-        index: number,
-        columns: GridColumn<ITEM>[],
-        actions: GridAction<ITEM>[],
-        isSelected: boolean
-    ) {
-        row.innerHTML = '';
-        this.populateRow(row, item, index, columns, actions, isSelected);
-        row.className = cn(
-            'absolute w-full flex items-stretch border-b border-outline/10 dark:border-stone-50/10 transition-all duration-200 group border-l-2 border-l-transparent hover:bg-surface-variant/20 hover:border-l-primary dark:hover:bg-slate-800/60',
-            index % 2 === 1 && 'bg-surface-container-low/20',
-            this.isEditable && 'cursor-text',
-            isSelected && 'bg-primary/10 border-l-primary'
-        );
-    }
-
-    private populateRow(
-        row: HTMLElement,
-        item: ITEM,
-        index: number,
-        columns: GridColumn<ITEM>[],
-        actions: GridAction<ITEM>[],
-        isSelected: boolean
-    ) {
-        if (this.isMultiSelect) {
-            const checkCell = document.createElement('div');
-            checkCell.className = 'w-12 flex-none flex items-center justify-center';
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'rounded border-outline w-4 h-4 cursor-pointer accent-primary';
-            checkbox.checked = isSelected;
-
-            checkbox.addEventListener('change', (e) => {
-                const checked = (e.target as HTMLInputElement).checked;
-                const current = new Set(this.selectedItems$.value);
-                if (checked) {
-                    current.add(item);
-                } else {
-                    current.delete(item);
-                }
-                this.selectedItems$.next(current);
-            });
-
-            checkCell.appendChild(checkbox);
-            row.appendChild(checkCell);
-        }
-
-        columns.forEach((col) => {
-            const cell = document.createElement('div');
-            this.applyColumnWidth(cell, col);
-            cell.className = cn(
-                'px-4 flex items-center truncate h-full',
-                col.cellClass
-            );
-
-            const content = col.render(item);
-            if (content instanceof HTMLElement) {
-                cell.appendChild(content);
-            } else {
-                cell.textContent = String(content);
-            }
-            row.appendChild(cell);
-        });
-
-        if (actions.length > 0) {
-            const actionCell = document.createElement('div');
-            actionCell.className = cn(
-                'w-20 flex-none flex items-center justify-center gap-1 sticky right-0 z-10 border-l border-outline/10 dark:border-stone-50/10 transition-all duration-200 bg-surface-container-low/80 backdrop-blur-sm',
-                isSelected ? 'bg-primary/10' : (index % 2 === 1 ? 'bg-surface-container-low/20' : 'bg-background'),
-                'group-hover:bg-surface-variant/20 dark:group-hover:bg-slate-800/60'
-            );
-
-            actions.forEach(action => {
-                const btn = document.createElement('button');
-                btn.className = 'p-2 hover:bg-muted rounded-full text-on-surface-variant hover:text-primary transition-colors';
-                btn.title = action.label;
-
-                if (action.icon) {
-                    const icon = document.createElement('i');
-                    icon.className = action.icon;
-                    btn.appendChild(icon);
-                } else {
-                    btn.textContent = action.label;
-                    btn.className = cn(btn.className, 'text-xs px-2 rounded-md');
-                }
-
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    action.onClick(item);
-                };
-                actionCell.appendChild(btn);
-            });
-            row.appendChild(actionCell);
-        }
-    }
-
-    private updateRowSelection(row: HTMLElement, index: number, isSelected: boolean) {
-        if (this.isMultiSelect) {
-            const checkbox = row.querySelector('input[type="checkbox"]') as HTMLInputElement;
-            if (checkbox) checkbox.checked = isSelected;
-        }
-
-        const actionCell = Array.from(row.children).find(c => (c as HTMLElement).classList.contains('sticky')) as HTMLElement;
-        if (actionCell) {
-            if (isSelected) {
-                actionCell.classList.add('bg-primary/10');
-                actionCell.classList.remove('bg-background', 'bg-surface-container-low/20');
-            } else {
-                actionCell.classList.remove('bg-primary/10');
-                if (index % 2 === 1) {
-                    actionCell.classList.add('bg-surface-container-low/20');
-                    actionCell.classList.remove('bg-background');
-                } else {
-                    actionCell.classList.add('bg-background');
-                    actionCell.classList.remove('bg-surface-container-low/20');
-                }
-            }
-        }
-
-        if (isSelected) {
-            row.classList.add('bg-primary/10', 'border-l-primary');
-            row.classList.remove('border-l-transparent');
-        } else {
-            row.classList.remove('bg-primary/10', 'border-l-primary');
-            row.classList.add('border-l-transparent');
-        }
-    }
-
-    private applyColumnWidth(element: HTMLElement, col: GridColumn<ITEM>) {
-        if (col.width) {
-            if (col.width.includes('px') || col.width.includes('rem')) {
-                element.style.width = col.width;
-                element.style.flex = 'none';
-                element.classList.add('flex-none');
-                element.classList.remove('flex-1');
-            } else if (col.width.includes('fr')) {
-                element.style.flex = col.width.replace('fr', '');
-                element.style.width = '';
-                element.classList.remove('flex-none');
-                element.classList.remove('flex-1');
-            } else {
-                element.style.width = col.width;
-                element.style.flex = 'none';
-                element.classList.add('flex-none');
-                element.classList.remove('flex-1');
-            }
-        } else {
-            element.style.width = '';
-            element.style.flex = '1';
-            element.classList.add('flex-1');
-            element.classList.remove('flex-none');
-        }
-    }
-
-    private clearRenderedRows() {
-        this.renderedRows.forEach(row => row.element.remove());
-        this.renderedRows.clear();
     }
 }

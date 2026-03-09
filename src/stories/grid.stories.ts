@@ -86,9 +86,12 @@ export const WithActions = () => {
     columns.addTextColumn('name').withHeader('Name');
     columns.addTextColumn('email').withHeader('Email');
 
+    const editClick = (user: User) => alert(`Editing ${user.name}`);
+    const deleteClick = (user: User) => alert(`Deleting ${user.name}`);
+
     const actions = grid.withActions();
-    actions.addAction('Edit', (user) => alert(`Editing ${user.name}`));
-    actions.addAction('Delete', (user) => alert(`Deleting ${user.name}`));
+    actions.addAction('Edit', editClick);
+    actions.addAction('Delete', deleteClick);
 
     return grid.build();
 };
@@ -101,7 +104,7 @@ export const WithToolbar = () => {
     const toolbar = grid.withToolbar();
     const addClick = new Subject<void>();
     addClick.subscribe(() => alert('Add User Clicked'));
-    
+
     toolbar.withPrimaryButton().withCaption(of('Add User')).withClick(addClick);
     toolbar.addSecondaryButton().withCaption(of('Export'));
 
@@ -139,7 +142,7 @@ export const GlassEffect = () => {
 
     const container = document.createElement('div');
     container.className = 'p-8 bg-gradient-to-br from-blue-500 to-purple-600 h-[500px] flex items-center justify-center';
-    
+
     const gridElement = grid.build();
     gridElement.style.width = '100%';
     container.appendChild(gridElement);
@@ -166,7 +169,7 @@ export const CustomRendering = () => {
 
     const columns = grid.withColumns();
     columns.addTextColumn('name').withHeader('Name');
-    
+
     columns.addCustomColumn()
         .withHeader('Status Badge')
         .withWidth('150px')
@@ -182,7 +185,7 @@ export const CustomRendering = () => {
             }
             return badge;
         });
-    
+
     return grid.build();
 };
 

@@ -1,8 +1,4 @@
-export interface GridAction<ITEM> {
-    label: string;
-    icon?: string;
-    onClick: (item: ITEM) => void;
-}
+import { GridAction } from './types';
 
 export class ActionsBuilder<ITEM> {
     private actions: GridAction<ITEM>[] = [];
