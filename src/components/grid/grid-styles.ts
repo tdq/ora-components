@@ -11,14 +11,14 @@ export const GridStyles = {
     checkboxCell: 'w-12 flex-none flex items-center justify-center',
     checkboxInput: 'rounded border-outline w-4 h-4 cursor-pointer accent-primary',
     
-    headerCell: 'px-4 h-full flex items-center text-left truncate font-semibold text-on-surface-variant group relative',
-    headerCellSortable: 'cursor-pointer hover:text-primary transition-colors',
+    headerCell: 'px-4 h-full flex items-center text-left truncate font-semibold text-on-surface-variant group relative transition-colors hover:bg-surface-variant/30 after:absolute after:right-0 after:top-[10%] after:h-[80%] after:w-0.5 after:bg-outline/20 after:opacity-0 [&.resizable-column]:hover:after:opacity-100 before:absolute before:left-0 before:top-[10%] before:h-[80%] before:w-0.5 before:bg-outline/20 before:opacity-0 [&.prev-resizable]:hover:before:opacity-100',
+    headerCellSortable: 'cursor-pointer hover:text-primary',
     
-    sortIcon: 'fas ml-2 transition-opacity',
-    sortIconActive: 'opacity-100 text-primary',
-    sortIconInactive: 'opacity-0 group-hover:opacity-50',
+    sortIcon: 'fas ml-2 transition-all transform',
+    sortIconActive: 'opacity-100 text-primary scale-110',
+    sortIconInactive: 'opacity-0 group-hover:opacity-40 -translate-y-1 group-hover:translate-y-0',
     
-    resizeHandle: 'resize-handle absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-primary/30 transition-colors z-30',
+    resizeHandle: 'resize-handle absolute right-0 top-[10%] w-1.5 h-[80%] cursor-col-resize z-40 transition-all after:absolute after:right-0 after:top-0 after:h-full after:w-0.5 after:bg-primary after:opacity-0 hover:after:opacity-100 [&.active]:after:opacity-100',
     
     actionHeaderCell: 'w-20 flex-none sticky right-0 bg-surface-container-low/80 border-l border-outline/10 dark:border-stone-50/10 z-20',
     

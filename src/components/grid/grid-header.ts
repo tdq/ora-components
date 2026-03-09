@@ -57,13 +57,15 @@ export class GridHeader<ITEM> {
             this.element.appendChild(checkCell);
         }
 
-        this.columns.forEach((col) => {
+        this.columns.forEach((col, index) => {
             const cell = document.createElement('div');
             this.applyColumnWidth(cell, col);
 
             cell.className = cn(
                 GridStyles.headerCell,
-                col.sortable && GridStyles.headerCellSortable
+                col.sortable && GridStyles.headerCellSortable,
+                col.resizable && 'resizable-column',
+                (index > 0 && this.columns[index - 1].resizable) && 'prev-resizable'
             );
 
             const span = document.createElement('span');
@@ -106,6 +108,10 @@ export class GridHeader<ITEM> {
                     e.stopPropagation();
                     const startX = e.pageX;
                     const startWidth = cell.offsetWidth;
+                    
+                    document.body.style.cursor = 'col-resize';
+                    handle.classList.add('active');
+                    cell.classList.add('bg-surface-variant/30');
 
                     const onMouseMove = (moveEvent: MouseEvent) => {
                         const newWidth = Math.max(50, startWidth + (moveEvent.pageX - startX));
@@ -115,6 +121,9 @@ export class GridHeader<ITEM> {
                     };
 
                     const onMouseUp = () => {
+                        document.body.style.cursor = '';
+                        handle.classList.remove('active');
+                        cell.classList.remove('bg-surface-variant/30');
                         document.removeEventListener('mousemove', onMouseMove);
                         document.removeEventListener('mouseup', onMouseUp);
                     };

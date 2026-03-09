@@ -114,6 +114,7 @@ Styling is centralized in `grid-styles.ts` and uses Tailwind CSS utilities follo
 - **Header**:
     - **Height**: 52px.
     - **Background**: `bg-surface-container-low/80 backdrop-blur`.
+    - **Borders**: Interactive resizable borders (grey on hover, primary blue on active/handle hover). Borders are 2px wide and 80% of header height.
     - **Typography**: `font-semibold`, `text-[11px]`, `text-on-surface-variant`, `uppercase`, `tracking-wider`.
 - **Rows**:
     - **Height**: 52px.
