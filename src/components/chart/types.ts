@@ -1,6 +1,3 @@
-import { Observable } from 'rxjs';
-import { ComponentBuilder } from '../../core/component-builder';
-
 export type ChartType = 'line' | 'bar' | 'area';
 export type CurveType = 'smooth' | 'step' | 'linear';
 export type ScaleType = 'linear' | 'log' | 'time' | 'category';

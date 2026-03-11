@@ -10,6 +10,7 @@ By default, the chart is transparent and occupies 100% of the available width an
 ## Architecture
 The chart is modularized into several builders and logic classes:
 - **`ChartBuilder<ITEM>`**: The main orchestrator and public API.
+- **`LabelBuilder`**: Used for all text elements outside the SVG (Title, Legend, Tooltip).
 - **`LineChartBuilder<ITEM>`**: Handles configuration of line-based data series.
 - **`BarChartBuilder<ITEM>`**: Handles configuration of bar-based data series.
 - **`AreaChartBuilder<ITEM>`**: Handles configuration of area-based data series.
@@ -43,6 +44,7 @@ Each method returns a specialized builder for that series.
 - `asGlass(): this`: Enables translucent glass styling with backdrop blur and adds panel-like container styling (padding, borders, rounded corners).
 
 ## Implementation Requirements
+- **Text Components**: All text elements outside of the SVG (Title, Legend labels, Tooltip content) MUST be created using `LabelBuilder` to ensure consistent typography and reactivity.
 - **SVG Namespace**: All SVG elements MUST be created using `document.createElementNS('http://www.w3.org/2000/svg', ...)`.
 - **Responsive ViewBox**: The SVG `viewBox` MUST be defined using the dimensions of the parent `chartArea` div via `getBoundingClientRect()`. 
 - **Resize Handling**: A `ResizeObserver` MUST be attached to the `chartArea` element to trigger a re-render and update the `viewBox` whenever the available space changes.
@@ -56,3 +58,4 @@ Each method returns a specialized builder for that series.
 - **Clearing Logic**: When re-rendering, use `while(element.firstChild) element.removeChild(element.firstChild)` to clear content robustly.
 - **Reactivity**: Use RxJS `BehaviorSubject` for all configuration properties. Ensure previous subscriptions (e.g., for `data$` or `title$`) are unsubscribed before creating new ones or on destroy.
 - **State Reset**: Call `logic.resetCharts()` at the beginning of the `build()` method to ensure a clean state if `build()` is called multiple times on the same builder instance.
+- **Reactive Visibility**: Use `classList.toggle('hidden', !condition)` within the state subscription for elements like the title that may be conditionally visible.

@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of, map } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '../../core/destroyable-element';
 import { 
@@ -18,6 +18,7 @@ import { ChartLogic } from './chart-logic';
 import { ChartStyles } from './styles';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { LabelBuilder, LabelSize } from '../label';
 
 function cn(...inputs: any[]) {
     return twMerge(clsx(inputs));
@@ -125,8 +126,11 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
         const container = document.createElement('div');
         container.className = ChartStyles.container;
 
-        const titleEl = document.createElement('div');
-        titleEl.className = ChartStyles.title;
+        const titleEl = new LabelBuilder()
+            .withSize(LabelSize.LARGE)
+            .withCaption(this.logic.state$.pipe(map(s => s.title || '')))
+            .build();
+        titleEl.setAttribute('class', ChartStyles.title);
         container.appendChild(titleEl);
 
         const chartArea = document.createElement('div');
@@ -175,7 +179,8 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
 
         const sub = this.logic.state$.subscribe(state => {
             lastState = state;
-            this.render(state, container, titleEl, chartArea, svg, mainG, defs, legendEl, tooltipEl);
+            titleEl.classList.toggle('hidden', !state.title);
+            this.render(state, container, chartArea, svg, mainG, defs, legendEl);
         });
 
         const handleMouseMove = (e: MouseEvent) => {
@@ -195,7 +200,7 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
             
             const rect = chartArea.getBoundingClientRect();
             if (rect.width > 0 && rect.height > 0) {
-                this.render(lastState, container, titleEl, chartArea, svg, mainG, defs, legendEl, tooltipEl);
+                this.render(lastState, container, chartArea, svg, mainG, defs, legendEl);
             }
         });
         resizeObserver.observe(chartArea);
@@ -222,13 +227,11 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
     private render(
         state: ChartState<ITEM>, 
         container: HTMLElement, 
-        titleEl: HTMLElement, 
         chartArea: HTMLElement,
         svg: SVGSVGElement, 
         mainG: SVGGElement,
         defs: SVGDefsElement,
-        legendEl: HTMLElement,
-        tooltipEl: HTMLElement
+        legendEl: HTMLElement
     ) {
         container.className = cn(ChartStyles.container, state.isGlass && ChartStyles.glass);
         if (state.height > 0) {
@@ -237,8 +240,6 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
             container.style.height = '100%';
         }
         container.style.width = state.width;
-        titleEl.textContent = state.title || '';
-        titleEl.style.display = state.title ? 'block' : 'none';
 
         // Clear content
         while (mainG.firstChild) mainG.removeChild(mainG.firstChild);
@@ -267,7 +268,7 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
         mainG.appendChild(g);
 
         this.renderAxes(g, state, xScale, yScale, secondaryYScale, viewWidth, viewHeight, categories, yDomain, secondaryYDomain);
-        this.renderSeries(g, state, xScale, yScale, secondaryYScale, viewHeight);
+        this.renderSeries(g, state, xScale, yScale, secondaryYScale);
         this.renderLegend(legendEl, state);
     }
 
@@ -300,8 +301,7 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
         state: ChartState<ITEM>, 
         xScale: any, 
         yScale: any, 
-        secondaryYScale: any, 
-        viewHeight: number
+        secondaryYScale: any
     ) {
         state.charts.forEach((chart, i) => {
             const scale = chart.useSecondaryAxis && secondaryYScale ? secondaryYScale : yScale;
@@ -312,10 +312,10 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
                     this.renderLine(g, state, chart, xScale, scale, filterId);
                     break;
                 case 'bar':
-                    this.renderBars(g, state, chart, xScale, scale, viewHeight, filterId);
+                    this.renderBars(g, state, chart, xScale, scale, filterId);
                     break;
                 case 'area':
-                    this.renderArea(g, state, chart, xScale, scale, viewHeight, filterId);
+                    this.renderArea(g, state, chart, xScale, scale, filterId);
                     break;
             }
         });
@@ -329,7 +329,7 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
             return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
         }).join(' ');
 
-        const zeroPoints = state.data.map((d, i) => {
+        const zeroPoints = state.data.map((_, i) => {
             const x = xScale(i);
             return `${i === 0 ? 'M' : 'L'} ${x},${baselineY}`;
         }).join(' ');
@@ -387,7 +387,7 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
         }
     }
 
-    private renderBars(g: SVGGElement, state: ChartState<ITEM>, config: BarChartConfig<ITEM>, xScale: any, yScale: any, viewHeight: number, filterId: string) {
+    private renderBars(g: SVGGElement, state: ChartState<ITEM>, config: BarChartConfig<ITEM>, xScale: any, yScale: any, filterId: string) {
         const barWidth = 20; 
         const baselineY = yScale(0);
 
@@ -434,7 +434,7 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
         });
     }
 
-    private renderArea(g: SVGGElement, state: ChartState<ITEM>, config: AreaChartConfig<ITEM>, xScale: any, yScale: any, viewHeight: number, filterId: string) {
+    private renderArea(g: SVGGElement, state: ChartState<ITEM>, config: AreaChartConfig<ITEM>, xScale: any, yScale: any, filterId: string) {
         if (state.data.length === 0) return;
 
         const baselineY = yScale(0);
@@ -444,7 +444,7 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
             return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
         }).join(' ');
 
-        const zeroLinePoints = state.data.map((d, i) => {
+        const zeroLinePoints = state.data.map((_, i) => {
             const x = xScale(i);
             return `${i === 0 ? 'M' : 'L'} ${x},${baselineY}`;
         }).join(' ');
@@ -539,11 +539,11 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
         }
 
         if (state.yAxis.visible) {
-            this.renderYAxis(g, state.yAxis, yScale, yDomain, viewWidth, viewHeight, false);
+            this.renderYAxis(g, state.yAxis, yScale, yDomain, viewWidth, false);
         }
 
         if (state.secondaryYAxis && secondaryYScale && secondaryYDomain) {
-            this.renderYAxis(g, state.secondaryYAxis, secondaryYScale, secondaryYDomain, viewWidth, viewHeight, true);
+            this.renderYAxis(g, state.secondaryYAxis, secondaryYScale, secondaryYDomain, viewWidth, true);
         }
     }
 
@@ -553,7 +553,6 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
         scale: (v: number) => number, 
         domain: number[], 
         viewWidth: number, 
-        viewHeight: number,
         isSecondary: boolean
     ) {
         const attrs: Record<string, string> = {};
@@ -607,8 +606,10 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
             color.className = ChartStyles.legendColor;
             color.style.backgroundColor = chart.color || 'currentColor';
             
-            const label = document.createElement('span');
-            label.textContent = chart.label;
+            const label = new LabelBuilder()
+                .withSize(LabelSize.MEDIUM)
+                .withCaption(of(chart.label))
+                .build();
             
             item.appendChild(color);
             item.appendChild(label);
@@ -633,17 +634,36 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
 
         const categories = state.data.map(d => String(d[state.categoryField as keyof ITEM]));
         
-        let html = `<div class="font-semibold mb-1">${categories[index]}</div>`;
+        while (tooltipEl.firstChild) tooltipEl.removeChild(tooltipEl.firstChild);
+
+        const header = new LabelBuilder()
+            .withSize(LabelSize.MEDIUM)
+            .withCaption(of(categories[index]))
+            .withClass(of('font-semibold mb-1 block'))
+            .build();
+        tooltipEl.appendChild(header);
+
         state.charts.forEach(chart => {
             const val = item[chart.field as keyof ITEM];
             const displayVal = chart.tooltipRenderer ? chart.tooltipRenderer(item) : val;
-            html += `<div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full" style="background-color: ${chart.color}"></div>
-                <span>${chart.label}: ${displayVal}</span>
-            </div>`;
+            
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2';
+            
+            const color = document.createElement('div');
+            color.className = 'w-2 h-2 rounded-full';
+            color.style.backgroundColor = chart.color || 'currentColor';
+            
+            const label = new LabelBuilder()
+                .withSize(LabelSize.SMALL)
+                .withCaption(of(`${chart.label}: ${displayVal}`))
+                .build();
+            
+            row.appendChild(color);
+            row.appendChild(label);
+            tooltipEl.appendChild(row);
         });
 
-        tooltipEl.innerHTML = html;
         tooltipEl.classList.remove('opacity-0');
         
         const tooltipRect = tooltipEl.getBoundingClientRect();

@@ -34,5 +34,6 @@ Used to configure area-based series (line with filled area below).
 - **Animation Paths**: For path-based animations (`LineChart`, `AreaChart`), create a `zeroLinePoints` string representing all data points shifted to `yScale(0)`. Transition the `d` attribute from `zeroLinePoints` to actual `points`.
 - **Bar Animation**: Bars MUST transition both `y` and `height` properties from the `baselineY` to their final calculated values.
 - **Shadow Application**: Each series MUST apply its corresponding filter using `setAttribute('filter', 'url(#shadow-i)')`.
+- **Tooltip Content**: Tooltip content MUST be constructed using `LabelBuilder` (e.g., `LabelSize.MEDIUM` for headers and `LabelSize.SMALL` for data rows) instead of raw `innerHTML` strings.
 - **Composition**: Series are rendered in the order they were added. Area charts should typically be added first to ensure they don't overlap line markers.
 - **Markers**: Markers for line series should also receive the shadow filter for consistent visual depth. Markers should also be animated from `baselineY` to their target position.

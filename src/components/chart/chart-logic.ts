@@ -191,11 +191,11 @@ export class ChartLogic<ITEM> {
         };
 
         let secondaryYScale = undefined;
-        let secondaryYDomain = undefined;
+        let secondaryYDomain: number[] | undefined = undefined;
         if (state.secondaryYAxis) {
             secondaryYDomain = getYDomain(true);
             secondaryYScale = (val: number) => {
-                const [min, max] = secondaryYDomain;
+                const [min, max] = secondaryYDomain!;
                 return viewHeight - ((val - min) / (max - min)) * viewHeight;
             };
         }
