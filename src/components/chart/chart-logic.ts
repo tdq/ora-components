@@ -1,0 +1,215 @@
+import { BehaviorSubject, Observable, Subscription, combineLatest, map } from 'rxjs';
+import { ChartState, IndividualChartConfig, AxisConfig } from './types';
+
+export class ChartLogic<ITEM> {
+    private _data$ = new BehaviorSubject<ITEM[]>([]);
+    private _categoryField$ = new BehaviorSubject<keyof ITEM | string>('');
+    private _charts$ = new BehaviorSubject<IndividualChartConfig<ITEM>[]>([]);
+    private _xAxis$ = new BehaviorSubject<AxisConfig>({
+        visible: true,
+        showGridLines: true,
+        showMinorGridLines: false,
+        position: 'bottom',
+        scaleType: 'category'
+    });
+    private _yAxis$ = new BehaviorSubject<AxisConfig>({
+        visible: true,
+        showGridLines: true,
+        showMinorGridLines: false,
+        position: 'left',
+        scaleType: 'linear',
+        ticks: 5
+    });
+    private _secondaryYAxis$ = new BehaviorSubject<AxisConfig | undefined>(undefined);
+    private _title$ = new BehaviorSubject<string | undefined>(undefined);
+    private _showLegend$ = new BehaviorSubject<boolean>(true);
+    private _showTooltip$ = new BehaviorSubject<boolean>(true);
+    private _isGlass$ = new BehaviorSubject<boolean>(false);
+    private _height$ = new BehaviorSubject<number>(0);
+    private _width$ = new BehaviorSubject<string>('100%');
+
+    private _dataSubscription?: Subscription;
+    private _titleSubscription?: Subscription;
+
+    public readonly state$: Observable<ChartState<ITEM>> = combineLatest([
+        this._data$,
+        this._categoryField$,
+        this._charts$,
+        this._xAxis$,
+        this._yAxis$,
+        this._secondaryYAxis$,
+        this._title$,
+        this._showLegend$,
+        this._showTooltip$,
+        this._isGlass$,
+        this._height$,
+        this._width$
+    ]).pipe(
+        map(([data, categoryField, charts, xAxis, yAxis, secondaryYAxis, title, showLegend, showTooltip, isGlass, height, width]) => ({
+            data,
+            categoryField,
+            charts,
+            xAxis,
+            yAxis,
+            secondaryYAxis,
+            title,
+            showLegend,
+            showTooltip,
+            isGlass,
+            height,
+            width
+        }))
+    );
+
+    setData(data$: Observable<ITEM[]>): void {
+        this._dataSubscription?.unsubscribe();
+        this._dataSubscription = data$.subscribe(data => this._data$.next(data));
+    }
+
+    setCategoryField(field: keyof ITEM | string): void {
+        this._categoryField$.next(field);
+    }
+
+    addChart(config: IndividualChartConfig<ITEM>): void {
+        const current = this._charts$.value;
+        this._charts$.next([...current, config]);
+    }
+
+    resetCharts(): void {
+        this._charts$.next([]);
+    }
+
+    setXAxis(config: AxisConfig): void {
+        this._xAxis$.next(config);
+    }
+
+    setYAxis(config: AxisConfig): void {
+        this._yAxis$.next(config);
+    }
+
+    setSecondaryYAxis(config: AxisConfig): void {
+        this._secondaryYAxis$.next(config);
+    }
+
+    setTitle(title$: Observable<string>): void {
+        this._titleSubscription?.unsubscribe();
+        this._titleSubscription = title$.subscribe(title => this._title$.next(title));
+    }
+
+    setShowLegend(visible: boolean): void {
+        this._showLegend$.next(visible);
+    }
+
+    setShowTooltip(enabled: boolean): void {
+        this._showTooltip$.next(enabled);
+    }
+
+    setIsGlass(isGlass: boolean): void {
+        this._isGlass$.next(isGlass);
+    }
+
+    setHeight(height: number): void {
+        this._height$.next(height);
+    }
+
+    setWidth(width: string): void {
+        this._width$.next(width);
+    }
+
+    public calculateScales(state: ChartState<ITEM>, viewWidth: number, viewHeight: number) {
+        const categories = state.data.map(d => String(d[state.categoryField as keyof ITEM]));
+        
+        // X Scale (Category)
+        const xScale = (index: number) => {
+            if (categories.length <= 1) return viewWidth / 2;
+            return (index / (categories.length - 1)) * viewWidth;
+        };
+
+        // Y Scale (Linear)
+        const getYDomain = (useSecondary: boolean) => {
+            const relevantCharts = state.charts.filter(c => !!c.useSecondaryAxis === useSecondary);
+            if (relevantCharts.length === 0) return [0, 100];
+
+            let min = Infinity;
+            let max = -Infinity;
+
+            // Handle stacking for bar/area
+            const stackedCharts = relevantCharts.filter(c => (c.type === 'bar' || c.type === 'area') && c.isStacked);
+            const nonStackedCharts = relevantCharts.filter(c => !((c.type === 'bar' || c.type === 'area') && c.isStacked));
+
+            state.data.forEach(item => {
+                let stackPos = 0;
+                let stackNeg = 0;
+
+                stackedCharts.forEach(c => {
+                    const val = Number(item[c.field as keyof ITEM]) || 0;
+                    if (val >= 0) stackPos += val;
+                    else stackNeg += val;
+                });
+
+                if (stackedCharts.length > 0) {
+                    min = Math.min(min, stackNeg);
+                    max = Math.max(max, stackPos);
+                }
+
+                nonStackedCharts.forEach(c => {
+                    const val = Number(item[c.field as keyof ITEM]) || 0;
+                    min = Math.min(min, val);
+                    max = Math.max(max, val);
+                });
+            });
+
+            const axis = useSecondary ? state.secondaryYAxis : state.yAxis;
+            if (axis?.min !== undefined && axis.min !== 'auto') min = axis.min;
+            if (axis?.max !== undefined && axis.max !== 'auto') max = axis.max;
+
+            // Padding
+            if (min === max) {
+                min -= 10;
+                max += 10;
+            } else {
+                const range = max - min;
+                max += range * 0.1;
+                if (min > 0) min = 0; // Usually start at 0 for charts unless negative values exist
+                else min -= range * 0.1;
+            }
+
+            return [min, max];
+        };
+
+        const yDomain = getYDomain(false);
+        const yScale = (val: number) => {
+            const [min, max] = yDomain;
+            return viewHeight - ((val - min) / (max - min)) * viewHeight;
+        };
+
+        let secondaryYScale = undefined;
+        let secondaryYDomain = undefined;
+        if (state.secondaryYAxis) {
+            secondaryYDomain = getYDomain(true);
+            secondaryYScale = (val: number) => {
+                const [min, max] = secondaryYDomain;
+                return viewHeight - ((val - min) / (max - min)) * viewHeight;
+            };
+        }
+
+        return { xScale, yScale, yDomain, secondaryYScale, secondaryYDomain, categories };
+    }
+
+    destroy(): void {
+        this._dataSubscription?.unsubscribe();
+        this._titleSubscription?.unsubscribe();
+        this._data$.complete();
+        this._categoryField$.complete();
+        this._charts$.complete();
+        this._xAxis$.complete();
+        this._yAxis$.complete();
+        this._secondaryYAxis$.complete();
+        this._title$.complete();
+        this._showLegend$.complete();
+        this._showTooltip$.complete();
+        this._isGlass$.complete();
+        this._height$.complete();
+        this._width$.complete();
+    }
+}

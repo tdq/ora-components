@@ -36,3 +36,11 @@ if (typeof HTMLElement !== 'undefined' && !HTMLElement.prototype.showPopover) {
     this.style.display = 'none';
   };
 }
+
+class ResizeObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+}
+
+window.ResizeObserver = window.ResizeObserver || ResizeObserverMock;
