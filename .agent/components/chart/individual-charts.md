@@ -21,6 +21,7 @@ Used to configure line-based series.
 Used to configure bar-based series.
 - `asStacked(): this`: Sets the series to be stacked with other bar or area series.
 - `withBarWidth(width: number): this`: Sets the relative width of the bars (0-1).
+- **Max Width**: The absolute width of a bar MUST NOT exceed **32px**.
 
 ## AreaChartBuilder
 Used to configure area-based series (line with filled area below).
@@ -30,6 +31,7 @@ Used to configure area-based series (line with filled area below).
 
 ## Implementation Details
 - **Rendering**: The `SeriesRenderer` handles the drawing of all series types.
+- **X-Scale Padding**: There MUST be exactly **8px padding** between the Y-axis and the first series element (e.g., the first bar's left edge).
 - **Zero Baseline**: All value-based renderings (lines, bars, areas) MUST use `yScale(0)` as the baseline. 
 - **Path Rendering**: Lines and area boundaries MUST use `<path>` elements with standard `M` (move to) and `L` (line to) commands. 
 - **Animation Paths**: For path-based animations (`LineChart`, `AreaChart`), create a `zeroLinePoints` string representing all data points shifted to `yScale(0)`. Transition the `d` attribute from `zeroLinePoints` to actual `points`.

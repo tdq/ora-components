@@ -126,11 +126,18 @@ export class ChartLogic<ITEM> {
     public calculateScales(state: ChartState<ITEM>, viewWidth: number, viewHeight: number): ChartScales {
         const categories = state.data.map(d => String(d[state.categoryField as keyof ITEM]));
         
-        // X Scale (Category)
-        const xScale = (index: number) => {
-            if (categories.length <= 1) return viewWidth / 2;
-            return (index / (categories.length - 1)) * viewWidth;
-        };
+        // X Scale (Category) with 8px padding on each side for bars
+        const N = categories.length;
+        const barWidth = Math.min(((viewWidth - 16) / (N || 1)) * 0.8, 32);
+        
+        let xScale;
+        let xStep = 0;
+        if (N > 1) {
+            xStep = (viewWidth - 16 - barWidth) / (N - 1);
+            xScale = (index: number) => 8 + barWidth / 2 + index * xStep;
+        } else {
+            xScale = (index: number) => viewWidth / 2;
+        }
 
         // Y Scale (Linear)
         const getYDomain = (useSecondary: boolean) => {
@@ -200,7 +207,7 @@ export class ChartLogic<ITEM> {
             };
         }
 
-        return { xScale, yScale, yDomain, secondaryYScale, secondaryYDomain, categories };
+        return { xScale, yScale, yDomain, secondaryYScale, secondaryYDomain, categories, xStep, barWidth };
     }
 
     destroy(): void {

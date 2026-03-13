@@ -73,6 +73,8 @@ export interface ChartScales {
     secondaryYScale?: (val: number) => number;
     secondaryYDomain?: number[];
     categories: string[];
+    xStep?: number;
+    barWidth?: number;
 }
 
 export interface AxisBuilder {

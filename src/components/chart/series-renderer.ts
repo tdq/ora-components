@@ -19,7 +19,7 @@ export class SeriesRenderer {
                     this.renderLine(g, state, chart as LineChartConfig<any>, xScale, scale, filterId);
                     break;
                 case 'bar':
-                    this.renderBars(g, state, chart as BarChartConfig<any>, xScale, scale, filterId);
+                    this.renderBars(g, state, chart as BarChartConfig<any>, xScale, scale, filterId, scales);
                     break;
                 case 'area':
                     this.renderArea(g, state, chart as AreaChartConfig<any>, xScale, scale, filterId);
@@ -118,8 +118,8 @@ export class SeriesRenderer {
         }
     }
 
-    private renderBars(g: SVGGElement, state: ChartState<any>, config: BarChartConfig<any>, xScale: any, yScale: any, filterId: string) {
-        const barWidth = 20; 
+    private renderBars(g: SVGGElement, state: ChartState<any>, config: BarChartConfig<any>, xScale: any, yScale: any, filterId: string, scales: ChartScales) {
+        const barWidth = scales.barWidth || 32; 
         const baselineY = yScale(0);
 
         state.data.forEach((d, i) => {

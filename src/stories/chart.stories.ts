@@ -148,7 +148,7 @@ export const GlassEffect = () => {
 
     const container = document.createElement('div');
     container.className = 'p-12 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 min-h-[600px] flex items-center justify-center';
-    
+
     const chart = builder.build();
     chart.style.width = '100%';
     chart.style.maxWidth = '800px';

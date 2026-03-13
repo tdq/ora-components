@@ -27,7 +27,7 @@ The `AxisBuilder` is used to configure the appearance and behavior of X and Y ax
 - **Dynamic Scaling**: The axis scale is automatically recalculated by `ChartLogic` when data or bounds change.
 - **Tick Generation**: Ticks are generated using smart algorithms to ensure readable intervals.
 - **Responsive Layout**: `ChartSvgArea` provides the `viewWidth` and `viewHeight` to the renderer to ensure proper alignment.
-- **Type Safety**: `AxisRenderer.render` receives a `ChartScales` object containing `xScale`, `yScale`, `yDomain`, and optionally secondary axis information.
+- **Type Safety**: `AxisRenderer.render` receives a `ChartScales` object containing `xScale`, `yScale`, `yDomain`, `xStep`, `barWidth`, and optionally secondary axis information.
 
 ## Styling
 - **Axis Line**: Uses standard MD3 `outline` color tokens.

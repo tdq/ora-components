@@ -131,4 +131,21 @@ describe('ChartBuilder', () => {
         // At least 2 for each bar (y and height) + 1 for line (d)
         expect(animateElements.length).toBe(testData.length * 2 + 1);
     });
+
+    it('should render bars with exactly 8px padding from the Y axis', () => {
+        const chartBuilder = new ChartBuilder<any>()
+            .withData(of(testData))
+            .withCategoryField('category');
+        
+        chartBuilder.addBarChart('value1');
+        
+        const chart = chartBuilder.build();
+
+        const rects = chart.querySelectorAll('rect');
+        const firstRectX = parseFloat(rects[0].getAttribute('x') || '0');
+        
+        // Padding should be exactly 8px
+        // firstRectX = xScale(0) - barWidth / 2 = (8 + barWidth/2) - barWidth/2 = 8
+        expect(firstRectX).toBeCloseTo(8, 1);
+    });
 });

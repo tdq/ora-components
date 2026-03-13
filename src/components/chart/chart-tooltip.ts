@@ -32,7 +32,19 @@ export class ChartTooltip<ITEM> {
             return;
         }
 
-        const index = Math.max(0, Math.min(state.data.length - 1, Math.round((x / viewWidth) * (state.data.length - 1))));
+        const N = state.data.length;
+        const barWidth = Math.min(((viewWidth - 16) / (N || 1)) * 0.8, 32);
+        
+        let index = 0;
+        let xPos = viewWidth / 2;
+        let xStep = 0;
+        
+        if (N > 1) {
+            xStep = (viewWidth - 16 - barWidth) / (N - 1);
+            index = Math.max(0, Math.min(N - 1, Math.round((x - 8 - barWidth / 2) / xStep)));
+            xPos = 8 + barWidth / 2 + index * xStep;
+        }
+
         const item = state.data[index];
         if (!item) return;
 
@@ -71,11 +83,11 @@ export class ChartTooltip<ITEM> {
         this.element.classList.remove('opacity-0');
         
         const tooltipRect = this.element.getBoundingClientRect();
-        const xPos = (index / (state.data.length - 1)) * viewWidth + padding.left;
+        const finalXPos = xPos + padding.left;
         
-        let left = xPos + 10;
+        let left = finalXPos + 10;
         if (left + tooltipRect.width > rect.width) {
-            left = xPos - tooltipRect.width - 10;
+            left = finalXPos - tooltipRect.width - 10;
         }
         this.element.style.left = `${left}px`;
         this.element.style.top = `20px`;

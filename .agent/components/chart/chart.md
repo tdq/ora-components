@@ -52,5 +52,6 @@ Each method returns a specialized builder for that series.
 - **SVG Namespace**: All SVG elements MUST be created using `document.createElementNS('http://www.w3.org/2000/svg', ...)`.
 - **Animation Paths**: When `animate` is true, use `<animate>` elements inside SVG paths/rects/circles.
 - **Rendering Loop**: Use `logic.state$` subscription to trigger re-renders. `ChartViewport` is responsible for clearing the SVG (via `ChartSvgArea.clear()`) and updating filters before renderers are called.
+- **X-Axis Scaling**: Category scales MUST be point-centered with exactly **8px padding** from the Y-axis to the first chart element (e.g., the left edge of the first bar). This is achieved using the formula `xScale(i) = 8 + barWidth / 2 + i * xStep`.
 - **Individual Shadows**: `SeriesRenderer` MUST handle the creation of filters in `<defs>` with ID `shadow-${index}`.
 - **Cleanup**: `ChartViewport` MUST use `registerDestroy` to unsubscribe from RxJS and disconnect observers.
