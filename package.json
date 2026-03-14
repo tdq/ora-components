@@ -17,67 +17,67 @@
     },
     "./button": {
       "import": "./dist/button/index.js",
-      "types": "./dist/components/button/index.d.ts"
+      "types": "./dist/button/index.d.ts"
     },
     "./chart": {
       "import": "./dist/chart/index.js",
-      "types": "./dist/components/chart/index.d.ts"
+      "types": "./dist/chart/index.d.ts"
     },
     "./checkbox": {
       "import": "./dist/checkbox/index.js",
-      "types": "./dist/components/checkbox/index.d.ts"
+      "types": "./dist/checkbox/index.d.ts"
     },
     "./combobox": {
       "import": "./dist/combobox/index.js",
-      "types": "./dist/components/combobox/index.d.ts"
+      "types": "./dist/combobox/index.d.ts"
     },
     "./datepicker": {
       "import": "./dist/datepicker/index.js",
-      "types": "./dist/components/date-picker/index.d.ts"
+      "types": "./dist/datepicker/index.d.ts"
     },
     "./dialog": {
       "import": "./dist/dialog/index.js",
-      "types": "./dist/components/dialog/index.d.ts"
+      "types": "./dist/dialog/index.d.ts"
     },
     "./form": {
       "import": "./dist/form/index.js",
-      "types": "./dist/components/form/index.d.ts"
+      "types": "./dist/form/index.d.ts"
     },
     "./grid": {
       "import": "./dist/grid/index.js",
-      "types": "./dist/components/grid/index.d.ts"
+      "types": "./dist/grid/index.d.ts"
     },
     "./label": {
       "import": "./dist/label/index.js",
-      "types": "./dist/components/label/index.d.ts"
+      "types": "./dist/label/index.d.ts"
     },
     "./layout": {
       "import": "./dist/layout/index.js",
-      "types": "./dist/components/layout/index.d.ts"
+      "types": "./dist/layout/index.d.ts"
     },
     "./listbox": {
       "import": "./dist/listbox/index.js",
-      "types": "./dist/components/listbox/index.d.ts"
+      "types": "./dist/listbox/index.d.ts"
     },
     "./numberfield": {
       "import": "./dist/numberfield/index.js",
-      "types": "./dist/components/number-field/index.d.ts"
+      "types": "./dist/numberfield/index.d.ts"
     },
     "./panel": {
       "import": "./dist/panel/index.js",
-      "types": "./dist/components/panel/index.d.ts"
+      "types": "./dist/panel/index.d.ts"
     },
     "./tabs": {
       "import": "./dist/tabs/index.js",
-      "types": "./dist/components/tabs/index.d.ts"
+      "types": "./dist/tabs/index.d.ts"
     },
     "./textfield": {
       "import": "./dist/textfield/index.js",
-      "types": "./dist/components/text-field/index.d.ts"
+      "types": "./dist/textfield/index.d.ts"
     },
     "./toolbar": {
       "import": "./dist/toolbar/index.js",
-      "types": "./dist/components/toolbar/index.d.ts"
+      "types": "./dist/toolbar/index.d.ts"
     }
   },
 
@@ -89,7 +89,7 @@
 
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run build:css && npm run build:types",
+    "build": "vite build && npm run build:css && npm run build:types && node scripts/reorganize-types.mjs",
     "build:css": "tailwindcss -i ./src/index.css -o ./dist/a1-components.css --minify",
     "build:types": "tsc -p tsconfig.build.json",
     "test": "jest",
