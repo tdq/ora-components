@@ -1,5 +1,5 @@
 import { Observable, Subject, Subscription, combineLatest } from 'rxjs';
-import { FieldStyle } from '@/theme';
+import { FieldStyle } from '../../theme';
 import { clamp, roundToStep, formatNumber } from '@/utils/number';
 import { createNumberFieldErrorIcon } from './number-field-error';
 

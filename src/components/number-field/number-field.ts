@@ -1,6 +1,6 @@
 import { Observable, Subject, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
-import { FieldStyle } from '@/theme';
+import { FieldStyle } from '../../theme';
 import { generateFieldId } from '../component-parts';
 import { registerDestroy } from '@/core/destroyable-element';
 import { NumberFieldLogic, NumberFieldState } from './number-field-logic';

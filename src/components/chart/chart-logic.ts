@@ -136,7 +136,7 @@ export class ChartLogic<ITEM> {
             xStep = (viewWidth - 16 - barWidth) / (N - 1);
             xScale = (index: number) => 8 + barWidth / 2 + index * xStep;
         } else {
-            xScale = (index: number) => viewWidth / 2;
+            xScale = (_: number) => viewWidth / 2;
         }
 
         // Y Scale (Linear)

@@ -2,7 +2,7 @@ import { Observable, of } from 'rxjs';
 import { ButtonBuilder, ButtonStyle } from '../button/button';
 import { LayoutBuilder, LayoutGap, SlotSize, Alignment } from '../layout/layout';
 import { TOOLBAR_STYLES } from './styles';
-import { ComponentBuilder } from '@/core/component-builder';
+import { ComponentBuilder } from '../../core/component-builder';
 
 
 export class ToolbarBuilder implements ComponentBuilder {

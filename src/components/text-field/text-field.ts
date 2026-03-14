@@ -1,6 +1,6 @@
 import { Observable, Subject, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
-import { FieldStyle } from '@/theme';
+import { FieldStyle } from '../../theme';
 import { generateFieldId } from '../component-parts';
 import { buildTextField } from './text-field-logic';
 import { createTextFieldLabel } from './text-field-label';

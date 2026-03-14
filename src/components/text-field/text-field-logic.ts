@@ -2,7 +2,7 @@ import { Observable, Subject, BehaviorSubject, combineLatest, of, fromEvent, Sub
 import { map, distinctUntilChanged, startWith } from 'rxjs/operators';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { FieldStyle } from '@/theme';
+import { FieldStyle } from '../../theme';
 import { registerDestroy } from '@/core/destroyable-element';
 import { updateAffixContent } from '../component-parts';
 import { createPasswordToggle } from './text-field-icon';

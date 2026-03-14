@@ -1,5 +1,5 @@
 import { Observable, combineLatest, of } from 'rxjs';
-import { ComponentBuilder } from '@/core/component-builder';
+import { ComponentBuilder } from '../../core/component-builder';
 import { ColumnsBuilder } from './columns/columns-builder';
 import { ToolbarBuilder } from '../toolbar/toolbar-builder';
 import { ActionsBuilder } from './actions-builder';
