@@ -1,0 +1,21 @@
+{
+  "name": "aura-stories",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "aura-components": "*"
+  },
+  "devDependencies": {
+    "@storybook/html-vite": "^7.6.21",
+    "@storybook/addon-links": "^7.6.21",
+    "@storybook/addon-essentials": "^7.6.21",
+    "storybook": "^7.6.21",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21"
+  }
+}

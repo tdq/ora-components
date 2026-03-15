@@ -1,0 +1,13 @@
+
+
+> aura-examples@0.1.0 build
+> vite build
+
+[1G[0K[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+
+node_modules/aura-components/dist/a1-components.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
+[2K[1Gtransforming (1) [2mindex.html[22m[2K[1Gtransforming (19) [2m../aura-components/src/components/grid/index.ts[22m[2K[1Gtransforming (195) [2m../aura-components/src/theme/types.ts[22m[2K[1Gtransforming (264) [2m../../node_modules/rxjs/dist/esm5/operators/index.js[22m[2K[1Gtransforming (304) [2m../aura-components/src/components/grid/columns/columns-builder.ts[22m[2K[1G[32m✓[39m 338 modules transformed.
+[2K[1Grendering chunks (1)...[2K[1G[2K[1Gcomputing gzip size (0)...[2K[1Gcomputing gzip size (1)...[2K[1Gcomputing gzip size (2)...[2K[1G[2mdist/[22m[32mindex.html                [39m[1m[2m 0.40 kB[22m[1m[22m[2m │ gzip:  0.29 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-BiSnaIFx.js  [39m[1m[2m61.11 kB[22m[1m[22m[2m │ gzip: 19.45 kB[22m
+[32m✓ built in 968ms[39m
+[1G[0K\[1G[0K

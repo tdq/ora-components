@@ -18,6 +18,10 @@ It has the following methods:
 - DatePicker should not allow to type not in defined format. For example, if format is DD/MM/YYYY it should not allow to set anything like "asbasbds".
 - On opening calendar it should display currently selected date in the calendar.
 
+### Calendar
+It should open by calling `showPopover()` method.
+It should close on any event outside of the calendar.
+
 ## State Management
 
 - **Selected Date**: Managed via `withValue(Subject<Date | null>)`. Updates on valid manual input or grid cell selection.

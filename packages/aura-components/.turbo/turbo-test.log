@@ -1,0 +1,1171 @@
+
+
+> aura-components@0.1.1 test
+> jest
+
+[1G[0K[1m[2mDetermining test suites to run...[22m[22m[999D[K
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        0 s[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        0 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        1 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        2 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        3 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1Ats-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1Ats-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1Ats-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1Ats-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1Ats-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1Ats-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1Ats-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        5 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        6 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mTest suite failed to run
+
+    Cannot find module '@testing-library/dom' from 'src/components/combobox/combobox.test.ts'
+
+    [0m [90m 1 |[39m [36mimport[39m { [33mBehaviorSubject[39m } [36mfrom[39m [32m'rxjs'[39m[33m;[39m
+     [90m 2 |[39m [36mimport[39m { [33mComboBoxBuilder[39m[33m,[39m [33mComboBoxStyle[39m } [36mfrom[39m [32m'./combobox-builder'[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { fireEvent[33m,[39m screen[33m,[39m waitFor } [36mfrom[39m [32m'@testing-library/dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 4 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m 5 |[39m
+     [90m 6 |[39m describe([32m'ComboBoxBuilder'[39m[33m,[39m () [33m=>[39m {[0m
+
+      [2mat Resolver._throwModNotFoundError ([22m../../node_modules/jest-resolve/build/resolver.js[2m:427:11)[22m
+      [2mat Object.<anonymous> ([22m[0m[36msrc/components/combobox/combobox.test.ts[39m[0m[2m:3:1)[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/combobox/[22m[1mcombobox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m0 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-logic.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, 1 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-logic.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, 1 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mTest suite failed to run
+
+    Cannot find module '@testing-library/dom' from 'src/components/date-picker/date-picker.test.ts'
+
+    [0m [90m 1 |[39m [36mimport[39m { [33mBehaviorSubject[39m } [36mfrom[39m [32m'rxjs'[39m[33m;[39m
+     [90m 2 |[39m [36mimport[39m { [33mDatePickerBuilder[39m } [36mfrom[39m [32m'./datepicker-builder'[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { fireEvent[33m,[39m screen } [36mfrom[39m [32m'@testing-library/dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 4 |[39m [36mimport[39m { formatDate[33m,[39m parseDate[33m,[39m isValidDate } [36mfrom[39m [32m'./date-utils'[39m[33m;[39m
+     [90m 5 |[39m
+     [90m 6 |[39m describe([32m'DatePicker Utilities'[39m[33m,[39m () [33m=>[39m {[0m
+
+      [2mat Resolver._throwModNotFoundError ([22m../../node_modules/jest-resolve/build/resolver.js[2m:427:11)[22m
+      [2mat Object.<anonymous> ([22m[0m[36msrc/components/date-picker/date-picker.test.ts[39m[0m[2m:3:1)[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/date-picker/[22m[1mdate-picker.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-logic.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, 1 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-logic.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, 2 of 19 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-logic.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, 2 of 19 total
+[1mTests:       [22m[1m[32m3 passed[39m[22m, 3 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-logic.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, 2 of 19 total
+[1mTests:       [22m[1m[32m9 passed[39m[22m, 9 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-logic.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, 2 of 19 total
+[1mTests:       [22m[1m[32m23 passed[39m[22m, 23 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/grid/[22m[1mgrid-logic.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-logic.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, 2 of 19 total
+[1mTests:       [22m[1m[32m23 passed[39m[22m, 23 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m1 passed[39m[22m, 3 of 19 total
+[1mTests:       [22m[1m[32m36 passed[39m[22m, 36 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m ([0m[1m[41m5.149 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m1 passed[39m[22m, 3 of 19 total
+[1mTests:       [22m[1m[32m36 passed[39m[22m, 36 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/component-parts/error-popover.ts[2m:2:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/component-parts/index.ts[2m:1:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/text-field/text-field.ts[2m:4:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/text-field/text-field.test.ts[39m[0m[2m:2:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/text-field/[22m[1mtext-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m1 passed[39m[22m, 3 of 19 total
+[1mTests:       [22m[1m[32m36 passed[39m[22m, 36 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m2 passed[39m[22m, 4 of 19 total
+[1mTests:       [22m[1m[31m2 failed[39m[22m, [1m[32m50 passed[39m[22m, 52 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m2 passed[39m[22m, 4 of 19 total
+[1mTests:       [22m[1m[31m2 failed[39m[22m, [1m[32m57 passed[39m[22m, 59 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m2 passed[39m[22m, 4 of 19 total
+[1mTests:       [22m[1m[31m3 failed[39m[22m, [1m[32m71 passed[39m[22m, 74 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m ([0m[1m[41m5.167 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m2 passed[39m[22m, 4 of 19 total
+[1mTests:       [22m[1m[31m3 failed[39m[22m, [1m[32m71 passed[39m[22m, 74 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/label/label.ts[2m:5:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/label/index.ts[2m:1:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/chart/chart-legend.ts[2m:3:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/chart/chart-viewport.ts[2m:7:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/chart/chart-builder.ts[2m:13:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/chart/chart.test.ts[39m[0m[2m:1:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m2 passed[39m[22m, 4 of 19 total
+[1mTests:       [22m[1m[31m3 failed[39m[22m, [1m[32m71 passed[39m[22m, 74 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m ([0m[1m[41m5.234 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m2 passed[39m[22m, 4 of 19 total
+[1mTests:       [22m[1m[31m3 failed[39m[22m, [1m[32m71 passed[39m[22m, 74 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/component-parts/error-popover.ts[2m:2:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/component-parts/index.ts[2m:1:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/number-field/number-field.ts[2m:4:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/number-field/number-field.test.ts[39m[0m[2m:2:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m2 passed[39m[22m, 4 of 19 total
+[1mTests:       [22m[1m[31m3 failed[39m[22m, [1m[32m71 passed[39m[22m, 74 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[1m[31m  [1m● [22m[1mNumberFieldBuilder › 5. Accessibility › should have correct ARIA attributes and linkages[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"number-field-11-error"[39m
+    Received: [31mnull[39m
+[2m[22m
+[2m    [0m [90m 230 |[39m             expect(input[33m.[39mid)[33m.[39mtoBeTruthy()[33m;[39m[22m
+[2m     [90m 231 |[39m             expect(label[33m.[39mgetAttribute([32m'for'[39m))[33m.[39mtoBe(input[33m.[39mid)[33m;[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 232 |[39m             expect(input[33m.[39mgetAttribute([32m'aria-describedby'[39m))[33m.[39mtoBe(error[33m.[39mid)[33m;[39m[22m
+[2m     [90m     |[39m                                                            [31m[1m^[22m[2m[39m[22m
+[2m     [90m 233 |[39m[22m
+[2m     [90m 234 |[39m             min$[33m.[39mnext([33m-[39m[35m10[39m)[33m;[39m[22m
+[2m     [90m 235 |[39m             expect(input[33m.[39mgetAttribute([32m'aria-valuemin'[39m))[33m.[39mtoBe([32m'-10'[39m)[33m;[39m[0m[22m
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/number-field/number-field.test.ts[39m[0m[2m:232:60)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mNumberFieldBuilder › 7. Prefix and Suffix › should render prefix and suffix when provided[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"SPAN"[39m
+    Received: [31m"DIV"[39m
+[2m[22m
+[2m    [0m [90m 315 |[39m             expect(prefixEl[33m.[39mclassList[33m.[39mcontains([32m'hidden'[39m))[33m.[39mtoBe([36mfalse[39m)[33m;[39m[22m
+[2m     [90m 316 |[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 317 |[39m             expect(suffixEl[33m.[39mtagName)[33m.[39mtoBe([32m'SPAN'[39m)[33m;[39m[22m
+[2m     [90m     |[39m                                      [31m[1m^[22m[2m[39m[22m
+[2m     [90m 318 |[39m             expect(suffixEl[33m.[39mtextContent)[33m.[39mtoBe([32m'Suf'[39m)[33m;[39m[22m
+[2m     [90m 319 |[39m             expect(suffixEl[33m.[39mclassList[33m.[39mcontains([32m'hidden'[39m))[33m.[39mtoBe([36mfalse[39m)[33m;[39m[22m
+[2m     [90m 320 |[39m[0m[22m
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/number-field/number-field.test.ts[39m[0m[2m:317:38)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/number-field/[22m[1mnumber-field.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/chart/[22m[1mchart.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m2 passed[39m[22m, 4 of 19 total
+[1mTests:       [22m[1m[31m3 failed[39m[22m, [1m[32m71 passed[39m[22m, 74 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m3 failed[39m[22m, [1m[32m3 passed[39m[22m, 6 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m74 passed[39m[22m, 78 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m3 failed[39m[22m, [1m[32m3 passed[39m[22m, 6 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m74 passed[39m[22m, 78 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/label/label.ts[2m:5:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/dialog/dialog.ts[2m:3:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/dialog/dialog.test.ts[39m[0m[2m:1:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/dialog/[22m[1mdialog.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m3 failed[39m[22m, [1m[32m3 passed[39m[22m, 6 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m74 passed[39m[22m, 78 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m3 failed[39m[22m, [1m[32m4 passed[39m[22m, 7 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m77 passed[39m[22m, 81 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m ([0m[1m[41m5.444 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m3 failed[39m[22m, [1m[32m4 passed[39m[22m, 7 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m77 passed[39m[22m, 81 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/layout/layout.ts[2m:4:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/form/form-builder.ts[2m:3:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/form/form.test.ts[39m[0m[2m:1:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m3 failed[39m[22m, [1m[32m4 passed[39m[22m, 7 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m77 passed[39m[22m, 81 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[1m[31m  [1m● [22m[1mFormBuilder › should propagate asGlass state to form, fields and buttons[39m[22m
+
+    [2mexpect([22m[31melement[39m[2m).toHaveClass([22m[32m[32m"glass-effect"[39m[32m[39m[2m)[22m
+
+    Expected the element to have class:
+    [32m  glass-effect[39m
+    Received:
+    [31m  flex w-full flex-col gap-8[39m
+[2m[22m
+[2m    [0m [90m 124 |[39m         [22m
+[2m     [90m 125 |[39m         [90m// Form glass effect should be on the root element[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 126 |[39m         expect(formEl)[33m.[39mtoHaveClass([32m'glass-effect'[39m)[33m;[39m[22m
+[2m     [90m     |[39m                        [31m[1m^[22m[2m[39m[22m
+[2m     [90m 127 |[39m         [22m
+[2m     [90m 128 |[39m         [36mconst[39m button [33m=[39m formEl[33m.[39mquerySelector([32m'button'[39m)[33m;[39m[22m
+[2m     [90m 129 |[39m         expect(button)[33m.[39mtoHaveClass([32m'glass-effect'[39m)[33m;[39m[0m[22m
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/form/form.test.ts[39m[0m[2m:126:24)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mFormBuilder › should support email validation in form field[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"Invalid email address"[39m
+    Received: [31m""[39m
+[2m[22m
+[2m    [0m [90m 173 |[39m         input[33m.[39mvalue [33m=[39m [32m'invalid'[39m[33m;[39m[22m
+[2m     [90m 174 |[39m         input[33m.[39mdispatchEvent([36mnew[39m [33mEvent[39m([32m'input'[39m))[33m;[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 175 |[39m         expect(errorSpan[33m.[39mtextContent)[33m.[39mtoBe([32m'Invalid email address'[39m)[33m;[39m[22m
+[2m     [90m     |[39m                                       [31m[1m^[22m[2m[39m[22m
+[2m     [90m 176 |[39m         [22m
+[2m     [90m 177 |[39m         input[33m.[39mvalue [33m=[39m [32m'valid@example.com'[39m[33m;[39m[22m
+[2m     [90m 178 |[39m         input[33m.[39mdispatchEvent([36mnew[39m [33mEvent[39m([32m'input'[39m))[33m;[39m[0m[22m
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/form/form.test.ts[39m[0m[2m:175:39)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/form/[22m[1mform.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m3 failed[39m[22m, [1m[32m4 passed[39m[22m, 7 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m77 passed[39m[22m, 81 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m4 passed[39m[22m, 8 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m77 passed[39m[22m, 81 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m ([0m[1m[41m5.604 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m4 passed[39m[22m, 8 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m77 passed[39m[22m, 81 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/checkbox/checkbox.ts[2m:5:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/grid/columns/boolean-column.ts[2m:3:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/grid/columns/columns-builder.ts[2m:7:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/grid/grid-builder.ts[2m:3:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/grid/grid-builder.test.ts[39m[0m[2m:2:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m4 passed[39m[22m, 8 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m77 passed[39m[22m, 81 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m4 passed[39m[22m, 8 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m77 passed[39m[22m, 81 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mpivot-logic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-builder.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-viewport.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m4 passed[39m[22m, 8 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m77 passed[39m[22m, 81 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m7 passed[39m[22m, 11 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m114 passed[39m[22m, 118 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m7 passed[39m[22m, 11 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m114 passed[39m[22m, 118 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/layout/layout.ts[2m:4:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/layout/layout.test.ts[39m[0m[2m:1:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m7 passed[39m[22m, 11 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m114 passed[39m[22m, 118 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m7 passed[39m[22m, 11 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m114 passed[39m[22m, 118 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/button/button.ts[2m:5:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/button/button.test.ts[39m[0m[2m:1:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m7 passed[39m[22m, 11 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m114 passed[39m[22m, 118 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/layout/[22m[1mlayout.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/theme/[22m[1mtheme-manager.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/button/[22m[1mbutton.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m7 passed[39m[22m, 11 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m114 passed[39m[22m, 118 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/checkbox/checkbox.ts[2m:5:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/grid/columns/boolean-column.ts[2m:3:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/grid/columns/columns-builder.ts[2m:7:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/grid/grid-header.test.ts[39m[0m[2m:4:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/tabs/tabs.ts[2m:7:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/tabs/tabs.test.ts[39m[0m[2m:1:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/label/label.ts[2m:5:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/label/label.test.ts[39m[0m[2m:2:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/panel/panel.ts[2m:5:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/panel/panel.test.ts[39m[0m[2m:2:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A  [1m● [22mConsole
+
+    [2m[33mconsole.warn[39m[22m
+[33m      destroyable element observer started[39m
+[2m[22m
+[2m    [0m [90m 2 |[39m[22m
+[2m     [90m 3 |[39m ([36mfunction[39m () {[22m
+[2m    [31m[1m>[22m[2m[39m[90m 4 |[39m     console[33m.[39mwarn([32m'destroyable element observer started'[39m)[33m;[39m[22m
+[2m     [90m   |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 5 |[39m[22m
+[2m     [90m 6 |[39m     [90m/**[39m[22m
+[2m     [90m 7 |[39m [90m     * Internal storage of destroy callbacks.[39m[0m[22m
+[2m[22m
+[2m      [2mat [22m[2msrc/core/destroyable-element.ts[2m:4:13[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/core/destroyable-element.ts[2m:82:3)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/components/checkbox/checkbox.ts[2m:5:1)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/checkbox/checkbox.test.ts[39m[0m[2m:1:1)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/label/[22m[1mlabel.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/grid/[22m[1mgrid-header.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/tabs/[22m[1mtabs.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/checkbox/[22m[1mcheckbox.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/panel/[22m[1mpanel.test.ts[22m
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m10 passed[39m[22m, 14 of 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m121 passed[39m[22m, 125 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m15 passed[39m[22m, 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m142 passed[39m[22m, 146 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s[K[1A[K[1A[K[1A[K[1A[K[1A[999D[K
+[1mTest Suites: [22m[1m[31m4 failed[39m[22m, [1m[32m15 passed[39m[22m, 19 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[32m142 passed[39m[22m, 146 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10.355 s
+[2mRan all test suites[22m[2m.[22m
+[1G[0K\[1G[0K[1mnpm[22m [31merror[39m [94mLifecycle script `test` failed with error:[39m
+[1G[0K\[1G[0K[1mnpm[22m [31merror[39m [94mError: command failed[39m
+[1G[0K\[1G[0K[1mnpm[22m [31merror[39m [94m  in workspace: aura-components@0.1.1[39m
+[1G[0K\[1G[0K[1mnpm[22m [31merror[39m [94m  at location: /Users/nikolaigorokhov/Projects/1A/a1-components/packages/aura-components[39m
+[1G[0K\[1G[0K

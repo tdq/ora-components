@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "aura-components": ["../aura-components/src/index.ts"],
+      "aura-components/*": ["../aura-components/src/*"]
+    }
+  },
+  "include": ["src/**/*", ".storybook/**/*"]
+}
