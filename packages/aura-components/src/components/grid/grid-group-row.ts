@@ -15,14 +15,18 @@ export class GridGroupRow {
     constructor(
         private header: GridGroupHeader,
         private index: number,
-        private onToggle: (groupKey: string) => void
+        private onToggle: (groupKey: string) => void,
+        private isGlass: boolean = false
     ) {
         this.element = this.createGroupRow();
     }
 
     private createGroupRow(): HTMLElement {
         const row = document.createElement('div');
-        row.className = GridStyles.groupRow;
+        row.className = cn(
+            GridStyles.groupRow,
+            this.isGlass && GridStyles.groupRowGlass
+        );
         row.style.transform = `translateY(${this.index * this.rowHeight}px)`;
         row.style.height = `${this.rowHeight}px`;
         row.style.paddingLeft = `${this.header.level * 24}px`;

@@ -139,7 +139,10 @@ export class GridHeader<ITEM> {
 
         if (this.actionCount > 0) {
             const actionCell = document.createElement('div');
-            actionCell.className = GridStyles.actionHeaderCell;
+            actionCell.className = cn(
+                GridStyles.actionHeaderCell,
+                this.isGlass && GridStyles.actionHeaderCellGlass
+            );
             const actionWidth = this.actionCount * 36 + 8;
             actionCell.style.width = `${actionWidth}px`;
             this.element.appendChild(actionCell);

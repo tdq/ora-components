@@ -9,7 +9,7 @@ ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues re
 ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
 ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
 ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
-FAIL src/components/dialog/dialog.test.ts
+FAIL src/components/dialog/dialog.test.ts (9.056 s)
   ● Console
 
     console.warn
@@ -46,7 +46,7 @@ FAIL src/components/dialog/dialog.test.ts
 
       at Object.<anonymous> (src/components/dialog/dialog.test.ts:160:41)
 
-PASS src/components/grid/grid-header.test.ts
+PASS src/components/grid/grid-header.test.ts (9.503 s)
   ● Console
 
     console.warn
@@ -67,7 +67,7 @@ PASS src/components/grid/grid-header.test.ts
       at Object.<anonymous> (src/components/grid/columns/columns-builder.ts:7:1)
       at Object.<anonymous> (src/components/grid/grid-header.test.ts:4:1)
 
-FAIL src/components/chart/chart.test.ts
+FAIL src/components/chart/chart.test.ts (10.109 s)
   ● Console
 
     console.warn
@@ -109,7 +109,7 @@ FAIL src/components/chart/chart.test.ts
 
       at Object.<anonymous> (src/components/chart/chart.test.ts:113:23)
 
-FAIL src/components/number-field/number-field.test.ts
+FAIL src/components/number-field/number-field.test.ts (10.842 s)
   ● Console
 
     console.warn
@@ -164,90 +164,7 @@ FAIL src/components/number-field/number-field.test.ts
 
       at Object.<anonymous> (src/components/number-field/number-field.test.ts:317:38)
 
-PASS src/router/router-builder.test.ts
-PASS src/components/grid/grid-builder.test.ts
-  ● Console
-
-    console.warn
-      destroyable element observer started
-
-      2 |
-      3 | (function () {
-    > 4 |     console.warn('destroyable element observer started');
-        |             ^
-      5 |
-      6 |     /**
-      7 |      * Internal storage of destroy callbacks.
-
-      at src/core/destroyable-element.ts:4:13
-      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/checkbox/checkbox.ts:5:1)
-      at Object.<anonymous> (src/components/grid/columns/boolean-column.ts:3:1)
-      at Object.<anonymous> (src/components/grid/columns/columns-builder.ts:7:1)
-      at Object.<anonymous> (src/components/grid/grid-builder.ts:3:1)
-      at Object.<anonymous> (src/components/grid/grid-builder.test.ts:2:1)
-
-PASS src/router/link.test.ts
-PASS src/components/text-field/text-field.test.ts
-  ● Console
-
-    console.warn
-      destroyable element observer started
-
-      2 |
-      3 | (function () {
-    > 4 |     console.warn('destroyable element observer started');
-        |             ^
-      5 |
-      6 |     /**
-      7 |      * Internal storage of destroy callbacks.
-
-      at src/core/destroyable-element.ts:4:13
-      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/component-parts/error-popover.ts:2:1)
-      at Object.<anonymous> (src/components/component-parts/index.ts:1:1)
-      at Object.<anonymous> (src/components/text-field/text-field.ts:4:1)
-      at Object.<anonymous> (src/components/text-field/text-field.test.ts:2:1)
-
-PASS src/components/combobox/combobox.test.ts
-  ● Console
-
-    console.warn
-      destroyable element observer started
-
-      2 |
-      3 | (function () {
-    > 4 |     console.warn('destroyable element observer started');
-        |             ^
-      5 |
-      6 |     /**
-      7 |      * Internal storage of destroy callbacks.
-
-      at src/core/destroyable-element.ts:4:13
-      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/combobox/combobox-builder.ts:3:1)
-      at Object.<anonymous> (src/components/combobox/combobox.test.ts:2:1)
-
-PASS src/components/layout/layout.test.ts
-  ● Console
-
-    console.warn
-      destroyable element observer started
-
-      2 |
-      3 | (function () {
-    > 4 |     console.warn('destroyable element observer started');
-        |             ^
-      5 |
-      6 |     /**
-      7 |      * Internal storage of destroy callbacks.
-
-      at src/core/destroyable-element.ts:4:13
-      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/layout/layout.ts:4:1)
-      at Object.<anonymous> (src/components/layout/layout.test.ts:1:1)
-
-FAIL src/components/form/form.test.ts (5.105 s)
+FAIL src/components/form/form.test.ts (11.31 s)
   ● Console
 
     console.warn
@@ -303,7 +220,9 @@ FAIL src/components/form/form.test.ts (5.105 s)
 
       at Object.<anonymous> (src/components/form/form.test.ts:175:39)
 
-PASS src/components/checkbox/checkbox.test.ts
+PASS src/components/grid/grid-logic.test.ts
+PASS src/router/router-builder.test.ts
+PASS src/components/grid/grid-builder.test.ts
   ● Console
 
     console.warn
@@ -320,7 +239,70 @@ PASS src/components/checkbox/checkbox.test.ts
       at src/core/destroyable-element.ts:4:13
       at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
       at Object.<anonymous> (src/components/checkbox/checkbox.ts:5:1)
-      at Object.<anonymous> (src/components/checkbox/checkbox.test.ts:1:1)
+      at Object.<anonymous> (src/components/grid/columns/boolean-column.ts:3:1)
+      at Object.<anonymous> (src/components/grid/columns/columns-builder.ts:7:1)
+      at Object.<anonymous> (src/components/grid/grid-builder.ts:3:1)
+      at Object.<anonymous> (src/components/grid/grid-builder.test.ts:2:1)
+
+PASS src/components/text-field/text-field.test.ts
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/component-parts/error-popover.ts:2:1)
+      at Object.<anonymous> (src/components/component-parts/index.ts:1:1)
+      at Object.<anonymous> (src/components/text-field/text-field.ts:4:1)
+      at Object.<anonymous> (src/components/text-field/text-field.test.ts:2:1)
+
+PASS src/router/link.test.ts
+PASS src/components/date-picker/date-picker.test.ts (13.653 s)
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/date-picker/datepicker-builder.ts:3:1)
+      at Object.<anonymous> (src/components/date-picker/date-picker.test.ts:2:1)
+
+PASS src/components/combobox/combobox.test.ts (14.044 s)
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/combobox/combobox-builder.ts:3:1)
+      at Object.<anonymous> (src/components/combobox/combobox.test.ts:2:1)
 
 PASS src/components/tabs/tabs.test.ts
   ● Console
@@ -341,9 +323,45 @@ PASS src/components/tabs/tabs.test.ts
       at Object.<anonymous> (src/components/tabs/tabs.ts:7:1)
       at Object.<anonymous> (src/components/tabs/tabs.test.ts:1:1)
 
-PASS src/components/grid/grid-viewport.test.ts
-PASS src/components/grid/actions-builder.test.ts
-PASS src/components/grid/grid-logic.test.ts
+PASS src/components/layout/layout.test.ts
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/layout/layout.ts:4:1)
+      at Object.<anonymous> (src/components/layout/layout.test.ts:1:1)
+
+PASS src/theme/theme-manager.test.ts
+PASS src/components/checkbox/checkbox.test.ts
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/checkbox/checkbox.ts:5:1)
+      at Object.<anonymous> (src/components/checkbox/checkbox.test.ts:1:1)
+
 PASS src/components/panel/panel.test.ts
   ● Console
 
@@ -364,6 +382,7 @@ PASS src/components/panel/panel.test.ts
       at Object.<anonymous> (src/components/panel/panel.test.ts:2:1)
 
 PASS src/router/route-matcher.test.ts
+PASS src/components/grid/actions-builder.test.ts
 PASS src/components/label/label.test.ts
   ● Console
 
@@ -383,26 +402,7 @@ PASS src/components/label/label.test.ts
       at Object.<anonymous> (src/components/label/label.ts:5:1)
       at Object.<anonymous> (src/components/label/label.test.ts:2:1)
 
-PASS src/theme/theme-manager.test.ts
-PASS src/components/date-picker/date-picker.test.ts (5.687 s)
-  ● Console
-
-    console.warn
-      destroyable element observer started
-
-      2 |
-      3 | (function () {
-    > 4 |     console.warn('destroyable element observer started');
-        |             ^
-      5 |
-      6 |     /**
-      7 |      * Internal storage of destroy callbacks.
-
-      at src/core/destroyable-element.ts:4:13
-      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/date-picker/datepicker-builder.ts:3:1)
-      at Object.<anonymous> (src/components/date-picker/date-picker.test.ts:2:1)
-
+PASS src/components/grid/grid-viewport.test.ts
 PASS src/components/grid/pivot-logic.test.ts
 PASS src/components/button/button.test.ts
   ● Console
@@ -425,7 +425,7 @@ PASS src/components/button/button.test.ts
 
 
 Summary of all failing tests
-FAIL src/components/dialog/dialog.test.ts
+FAIL src/components/dialog/dialog.test.ts (9.056 s)
   ● DialogBuilder › should be centered (no inline positioning styles) on reopen after drag
 
     expect(received).toBe(expected) // Object.is equality
@@ -443,7 +443,7 @@ FAIL src/components/dialog/dialog.test.ts
 
       at Object.<anonymous> (src/components/dialog/dialog.test.ts:160:41)
 
-FAIL src/components/chart/chart.test.ts
+FAIL src/components/chart/chart.test.ts (10.109 s)
   ● ChartBuilder › should apply glass style
 
     expect(element).toHaveClass("backdrop-blur-md")
@@ -463,7 +463,7 @@ FAIL src/components/chart/chart.test.ts
 
       at Object.<anonymous> (src/components/chart/chart.test.ts:113:23)
 
-FAIL src/components/number-field/number-field.test.ts
+FAIL src/components/number-field/number-field.test.ts (10.842 s)
   ● NumberFieldBuilder › 5. Accessibility › should have correct ARIA attributes and linkages
 
     expect(received).toBe(expected) // Object.is equality
@@ -498,7 +498,7 @@ FAIL src/components/number-field/number-field.test.ts
 
       at Object.<anonymous> (src/components/number-field/number-field.test.ts:317:38)
 
-FAIL src/components/form/form.test.ts (5.105 s)
+FAIL src/components/form/form.test.ts (11.31 s)
   ● FormBuilder › should propagate asGlass state to form, fields and buttons
 
     expect(element).toHaveClass("glass-effect")
@@ -539,7 +539,7 @@ FAIL src/components/form/form.test.ts (5.105 s)
 Test Suites: 4 failed, 19 passed, 23 total
 Tests:       6 failed, 218 passed, 224 total
 Snapshots:   0 total
-Time:        9.656 s, estimated 15 s
+Time:        27.738 s
 Ran all test suites.
 npm error Lifecycle script `test` failed with error:
 npm error Error: command failed

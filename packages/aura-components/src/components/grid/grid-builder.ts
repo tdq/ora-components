@@ -125,7 +125,8 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             this.isMultiSelect,
             this.isEditable,
             (item) => this.logic.toggleSelection(item),
-            (groupKey) => this.logic.toggleGroup(groupKey)
+            (groupKey) => this.logic.toggleGroup(groupKey),
+            this.isGlass
         );
 
         let currentItems: ITEM[] = [];

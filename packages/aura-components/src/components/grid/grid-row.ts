@@ -23,7 +23,8 @@ export class GridRow<ITEM> {
         private isMultiSelect: boolean,
         private isEditable: boolean,
         private onToggleSelection: (item: ITEM) => void,
-        private level: number = 0
+        private level: number = 0,
+        private isGlass: boolean = false
     ) {
         this.element = this.createRow();
     }
@@ -32,7 +33,8 @@ export class GridRow<ITEM> {
         const row = document.createElement('div');
         row.className = cn(
             GridStyles.row,
-            this.index % 2 === 1 && GridStyles.rowOdd,
+            !this.isGlass && this.index % 2 === 1 && GridStyles.rowOdd,
+            this.isGlass && GridStyles.rowGlass,
             this.isEditable && GridStyles.rowEditable,
             this.isSelected && GridStyles.rowSelected
         );
@@ -93,8 +95,8 @@ export class GridRow<ITEM> {
             const actionCell = document.createElement('div');
             actionCell.className = cn(
                 GridStyles.actionCell,
-                this.isSelected ? GridStyles.actionCellSelected : (this.index % 2 === 1 ? GridStyles.actionCellOdd : GridStyles.actionCellEven),
-                'group-hover:bg-surface-variant/20 dark:group-hover:bg-slate-800/60'
+                this.isSelected ? GridStyles.actionCellSelected : (this.isGlass ? GridStyles.actionCellGlass : (this.index % 2 === 1 ? GridStyles.actionCellOdd : GridStyles.actionCellEven)),
+                !this.isGlass && 'group-hover:bg-surface-variant/20 dark:group-hover:bg-slate-800/60'
             );
             const actionWidth = this.actions.length * 36 + 8;
             actionCell.style.width = `${actionWidth}px`;
@@ -195,7 +197,8 @@ export class GridRow<ITEM> {
         this.element.innerHTML = '';
         this.element.className = cn(
             GridStyles.row,
-            this.index % 2 === 1 && GridStyles.rowOdd,
+            !this.isGlass && this.index % 2 === 1 && GridStyles.rowOdd,
+            this.isGlass && GridStyles.rowGlass,
             this.isEditable && GridStyles.rowEditable,
             this.isSelected && GridStyles.rowSelected
         );
@@ -212,28 +215,20 @@ export class GridRow<ITEM> {
         }
 
         if (this.actionCell) {
-            if (isSelected) {
-                this.actionCell.classList.add(GridStyles.actionCellSelected);
-                this.actionCell.classList.remove(GridStyles.actionCellEven, GridStyles.actionCellOdd);
-            } else {
-                this.actionCell.classList.remove(GridStyles.actionCellSelected);
-                if (this.index % 2 === 1) {
-                    this.actionCell.classList.add(GridStyles.actionCellOdd);
-                    this.actionCell.classList.remove(GridStyles.actionCellEven);
-                } else {
-                    this.actionCell.classList.add(GridStyles.actionCellEven);
-                    this.actionCell.classList.remove(GridStyles.actionCellOdd);
-                }
-            }
+            this.actionCell.className = cn(
+                GridStyles.actionCell,
+                this.isSelected ? GridStyles.actionCellSelected : (this.isGlass ? GridStyles.actionCellGlass : (this.index % 2 === 1 ? GridStyles.actionCellOdd : GridStyles.actionCellEven)),
+                !this.isGlass && 'group-hover:bg-surface-variant/20 dark:group-hover:bg-slate-800/60'
+            );
         }
 
-        if (isSelected) {
-            this.element.classList.add('bg-primary/10', 'border-l-primary');
-            this.element.classList.remove('border-l-transparent');
-        } else {
-            this.element.classList.remove('bg-primary/10', 'border-l-primary');
-            this.element.classList.add('border-l-transparent');
-        }
+        this.element.className = cn(
+            GridStyles.row,
+            !this.isGlass && this.index % 2 === 1 && GridStyles.rowOdd,
+            this.isGlass && GridStyles.rowGlass,
+            this.isEditable && GridStyles.rowEditable,
+            this.isSelected && GridStyles.rowSelected
+        );
     }
 
     updateColumns(columns: GridColumn<ITEM>[]) {

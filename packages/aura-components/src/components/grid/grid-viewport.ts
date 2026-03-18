@@ -22,7 +22,8 @@ export class GridViewport<ITEM> {
         private isMultiSelect: boolean,
         private isEditable: boolean,
         private onToggleSelection: (item: ITEM) => void,
-        private onToggleGroup: (groupKey: string) => void
+        private onToggleGroup: (groupKey: string) => void,
+        private isGlass: boolean = false
     ) {
         this.element = document.createElement('div');
         this.element.className = GridStyles.viewport;
@@ -109,7 +110,7 @@ export class GridViewport<ITEM> {
             if (existing) {
                 existing.getElement().remove();
             }
-            const groupRow = new GridGroupRow(header, index, (key) => this.onToggleGroup(key));
+            const groupRow = new GridGroupRow(header, index, (key) => this.onToggleGroup(key), this.isGlass);
             this.contentElement.appendChild(groupRow.getElement());
             this.renderedRows.set(index, groupRow);
         }
@@ -136,7 +137,8 @@ export class GridViewport<ITEM> {
                 this.isMultiSelect,
                 this.isEditable,
                 this.onToggleSelection,
-                level
+                level,
+                this.isGlass
             );
             this.contentElement.appendChild(row.getElement());
             this.renderedRows.set(index, row);

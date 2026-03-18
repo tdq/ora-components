@@ -1,6 +1,6 @@
 export const GridStyles = {
     container: 'flex flex-col w-full text-sm text-foreground bg-background rounded-lg border border-outline/30 dark:border-stone-50/20 overflow-hidden',
-    glass: 'glass-effect bg-opacity-50 backdrop-blur-md',
+    glass: 'glass-effect bg-surface-container-low/50 backdrop-blur-md',
     
     header: 'flex flex-row items-stretch bg-surface-container-low/80 backdrop-blur font-semibold h-[52px] sticky top-0 z-20 text-on-surface-variant text-[11px] uppercase tracking-wider border-b border-outline/20 dark:border-stone-50/20',
     headerGlass: 'bg-white/20 backdrop-blur-md',
@@ -21,17 +21,21 @@ export const GridStyles = {
     
     resizeHandle: 'resize-handle absolute right-0 top-[10%] w-1.5 h-[80%] cursor-col-resize z-40 transition-all after:absolute after:right-0 after:top-0 after:h-full after:w-0.5 after:bg-primary after:opacity-0 hover:after:opacity-100 [&.active]:after:opacity-100',
     
-    actionHeaderCell: 'flex-none sticky right-0 bg-surface-container-low/80 border-l border-outline/10 dark:border-stone-50/10 z-20',
+    actionHeaderCell: 'flex-none sticky right-0 bg-surface-container-low/80 backdrop-blur-sm border-l border-outline/10 dark:border-stone-50/10 z-20',
+    actionHeaderCellGlass: 'bg-white/20 backdrop-blur-md',
     
     row: 'absolute w-full flex items-stretch border-b border-outline/10 dark:border-stone-50/10 transition-colors duration-200 group border-l-2 border-l-transparent hover:bg-surface-variant/20 hover:border-l-primary dark:hover:bg-slate-800/60 [will-change:transform]',
     rowOdd: 'bg-surface-container-low/20',
     rowSelected: 'bg-primary/10 border-l-primary',
     rowEditable: 'cursor-text',
+    rowGlass: 'hover:bg-white/10 dark:hover:bg-white/5',
+    actionCellGlass: 'bg-white/10 backdrop-blur-md',
     
     cell: 'px-4 flex items-center truncate h-full',
     totalCell: 'font-bold bg-surface-container-highest/30',
     
     groupRow: 'absolute w-full flex items-center bg-surface-container-high border-b border-outline/10 cursor-pointer hover:bg-surface-container-highest transition-colors z-10 [will-change:transform]',
+    groupRowGlass: 'bg-white/10 backdrop-blur-md hover:bg-white/20',
     groupToggle: 'w-10 h-10 flex items-center justify-center text-on-surface-variant transition-transform duration-200',
     groupToggleExpanded: 'rotate-90',
     groupIcon: 'w-5 h-5 flex items-center justify-center',
@@ -39,7 +43,7 @@ export const GridStyles = {
     groupValue: 'text-primary',
     groupCount: 'text-xs text-on-surface-variant/60 font-normal',
     
-    actionCell: 'flex-none flex items-center justify-center gap-1 sticky right-0 z-10 border-l border-outline/10 dark:border-stone-50/10 transition-colors duration-200 bg-surface-container-low/80',
+    actionCell: 'flex-none flex items-center justify-center gap-1 sticky right-0 z-10 border-l border-outline/10 dark:border-stone-50/10 transition-colors duration-200 bg-surface-container-low/80 backdrop-blur-sm',
     actionCellSelected: 'bg-primary/10',
     actionCellOdd: 'bg-surface-container-low/20',
     actionCellEven: 'bg-background',
