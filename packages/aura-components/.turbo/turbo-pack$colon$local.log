@@ -8,7 +8,7 @@
 > vite build && npm run build:css && npm run build:types && node scripts/reorganize-types.mjs && node scripts/generate-manifest.mjs
 
 [1G[0K[36mvite v5.4.21 [32mbuilding for production...[36m[39m
-[2K[1Gtransforming (1) [2msrc/components/number-field/index.ts[22m[2K[1Gtransforming (31) [2msrc/components/combobox/combobox-builder.ts[22m[2K[1Gtransforming (53) [2msrc/components/listbox/listbox.ts[22m[2K[1Gtransforming (173) [2msrc/components/chart/chart-logic.ts[22m[2K[1Gtransforming (249) [2msrc/components/grid/grid-styles.ts[22m[2K[1G[32m✓[39m 300 modules transformed.
+[2K[1Gtransforming (1) [2msrc/components/date-picker/index.ts[22m[2K[1Gtransforming (29) [2msrc/components/chart/chart-svg-area.ts[22m[2K[1Gtransforming (48) [2msrc/components/layout/layout.ts[22m[2K[1Gtransforming (167) [2msrc/components/grid/grid-builder.ts[22m[2K[1Gtransforming (221) [2msrc/core/destroyable-element.ts[22m[2K[1Gtransforming (290) [2msrc/components/grid/columns/enum-column.ts[22m[2K[1G[32m✓[39m 300 modules transformed.
 [2K[1Grendering chunks (1)...[2K[1Grendering chunks (2)...[2K[1Grendering chunks (3)...[2K[1Grendering chunks (4)...[2K[1Grendering chunks (5)...[2K[1Grendering chunks (6)...[2K[1Grendering chunks (7)...[2K[1Grendering chunks (8)...[2K[1Grendering chunks (9)...[2K[1Grendering chunks (10)...[2K[1Grendering chunks (11)...[2K[1Grendering chunks (12)...[2K[1Grendering chunks (13)...[2K[1Grendering chunks (14)...[2K[1Grendering chunks (15)...[2K[1Grendering chunks (16)...[2K[1Grendering chunks (17)...[2K[1Grendering chunks (18)...[2K[1Grendering chunks (19)...[2K[1Grendering chunks (20)...[2K[1Grendering chunks (21)...[2K[1Grendering chunks (22)...[2K[1Grendering chunks (23)...[2K[1Grendering chunks (24)...[2K[1Grendering chunks (25)...[2K[1Grendering chunks (26)...[2K[1Grendering chunks (27)...[2K[1Grendering chunks (28)...[2K[1Grendering chunks (29)...[2K[1Grendering chunks (30)...[2K[1Grendering chunks (31)...[2K[1Grendering chunks (32)...[2K[1Grendering chunks (33)...[2K[1Grendering chunks (34)...[2K[1Grendering chunks (35)...[2K[1Grendering chunks (36)...[2K[1Grendering chunks (37)...[2K[1Grendering chunks (38)...[2K[1G[2K[1Gcomputing gzip size (0)...[2K[1Gcomputing gzip size (1)...[2K[1Gcomputing gzip size (2)...[2K[1Gcomputing gzip size (3)...[2K[1Gcomputing gzip size (4)...[2K[1Gcomputing gzip size (5)...[2K[1Gcomputing gzip size (6)...[2K[1Gcomputing gzip size (7)...[2K[1Gcomputing gzip size (8)...[2K[1Gcomputing gzip size (9)...[2K[1Gcomputing gzip size (10)...[2K[1Gcomputing gzip size (11)...[2K[1Gcomputing gzip size (12)...[2K[1Gcomputing gzip size (13)...[2K[1Gcomputing gzip size (14)...[2K[1Gcomputing gzip size (15)...[2K[1Gcomputing gzip size (16)...[2K[1Gcomputing gzip size (17)...[2K[1Gcomputing gzip size (18)...[2K[1Gcomputing gzip size (19)...[2K[1Gcomputing gzip size (20)...[2K[1Gcomputing gzip size (21)...[2K[1Gcomputing gzip size (22)...[2K[1Gcomputing gzip size (23)...[2K[1Gcomputing gzip size (24)...[2K[1Gcomputing gzip size (25)...[2K[1Gcomputing gzip size (26)...[2K[1Gcomputing gzip size (27)...[2K[1Gcomputing gzip size (28)...[2K[1Gcomputing gzip size (29)...[2K[1Gcomputing gzip size (30)...[2K[1Gcomputing gzip size (31)...[2K[1Gcomputing gzip size (32)...[2K[1Gcomputing gzip size (33)...[2K[1Gcomputing gzip size (34)...[2K[1Gcomputing gzip size (35)...[2K[1Gcomputing gzip size (36)...[2K[1Gcomputing gzip size (37)...[2K[1Gcomputing gzip size (38)...[2K[1G[2mdist/[22m[36mcheckbox/index.js                [39m[1m[2m 0.09 kB[22m[1m[22m[2m │ gzip:  0.09 kB[22m
 [2mdist/[22m[36mbutton/index.js                  [39m[1m[2m 0.10 kB[22m[1m[22m[2m │ gzip:  0.10 kB[22m
 [2mdist/[22m[36mpanel/index.js                   [39m[1m[2m 0.10 kB[22m[1m[22m[2m │ gzip:  0.11 kB[22m
@@ -39,15 +39,15 @@
 [2mdist/[22m[36mlistbox-AgQCL32E.js              [39m[1m[2m 5.01 kB[22m[1m[22m[2m │ gzip:  1.73 kB[22m
 [2mdist/[22m[36mtext-field-BB16H2Et.js           [39m[1m[2m 9.07 kB[22m[1m[22m[2m │ gzip:  2.98 kB[22m
 [2mdist/[22m[36mstartWith-D7k5baRl.js            [39m[1m[2m10.09 kB[22m[1m[22m[2m │ gzip:  2.75 kB[22m
-[2mdist/[22m[36mindex.js                         [39m[1m[2m10.48 kB[22m[1m[22m[2m │ gzip:  3.50 kB[22m
+[2mdist/[22m[36mindex.js                         [39m[1m[2m10.48 kB[22m[1m[22m[2m │ gzip:  3.49 kB[22m
 [2mdist/[22m[36mnumber-field-CFwde23x.js         [39m[1m[2m12.38 kB[22m[1m[22m[2m │ gzip:  3.65 kB[22m
 [2mdist/[22m[36mcombobox-builder-UIIWv5cs.js     [39m[1m[2m12.67 kB[22m[1m[22m[2m │ gzip:  3.89 kB[22m
 [2mdist/[22m[36mmap-DqDc5iNP.js                  [39m[1m[2m13.06 kB[22m[1m[22m[2m │ gzip:  3.73 kB[22m
 [2mdist/[22m[36mdatepicker-builder-C9B01mnZ.js   [39m[1m[2m14.81 kB[22m[1m[22m[2m │ gzip:  4.46 kB[22m
 [2mdist/[22m[36mchart-builder-B7zAMyVo.js        [39m[1m[2m24.82 kB[22m[1m[22m[2m │ gzip:  6.28 kB[22m
-[2mdist/[22m[36mgrid-builder-Bv0J6RRp.js         [39m[1m[2m36.64 kB[22m[1m[22m[2m │ gzip:  8.99 kB[22m
+[2mdist/[22m[36mgrid-builder-BkhcbmlG.js         [39m[1m[2m36.56 kB[22m[1m[22m[2m │ gzip:  8.93 kB[22m
 [2mdist/[22m[36mbundle-mjs-C-fAsw3z.js           [39m[1m[2m59.63 kB[22m[1m[22m[2m │ gzip: 10.67 kB[22m
-[32m✓ built in 1.70s[39m
+[32m✓ built in 1.83s[39m
 
 > aura-components@0.1.1 build:css
 > tailwindcss -i ./src/index.css -o ./dist/a1-components.css --minify
@@ -58,7 +58,7 @@
 
 Rebuilding...
 
-Done in 833ms.
+Done in 1307ms.
 [1G[0K\[1G[0K
 > aura-components@0.1.1 build:types
 > tsc -p tsconfig.build.json
@@ -161,10 +161,10 @@ Done in 833ms.
   removed dist/components/
   rewrote imports in index.d.ts
 Generated manifest with 26 components
-[1G[0K\[1G[0K[1G[0K\[1G[0K|[1G[0K[1mnpm[22m [96mnotice[39m
+[1G[0K\[1G[0K[1G[0K\[1G[0K|[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m
 [1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m package: aura-components@0.1.1
 [1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m [94mTarball Contents[39m
-[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m 33.0kB dist/a1-components.css
+[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m 33.1kB dist/a1-components.css
 [1mnpm[22m [96mnotice[39m 59.6kB dist/bundle-mjs-C-fAsw3z.js
 [1mnpm[22m [96mnotice[39m 3.9kB dist/button-BK6qIwy3.js
 [1mnpm[22m [96mnotice[39m 981B dist/button/button.d.ts
@@ -228,7 +228,7 @@ Generated manifest with 26 components
 [1mnpm[22m [96mnotice[39m 115B dist/form/index.js
 [1mnpm[22m [96mnotice[39m 186B dist/form/styles.d.ts
 [1mnpm[22m [96mnotice[39m 932B dist/form/types.d.ts
-[1mnpm[22m [96mnotice[39m 36.6kB dist/grid-builder-Bv0J6RRp.js
+[1mnpm[22m [96mnotice[39m 36.6kB dist/grid-builder-BkhcbmlG.js
 [1mnpm[22m [96mnotice[39m 219B dist/grid/actions-builder.d.ts
 [1mnpm[22m [96mnotice[39m 754B dist/grid/columns/base-column-builder.d.ts
 [1mnpm[22m [96mnotice[39m 411B dist/grid/columns/boolean-column.d.ts
@@ -245,11 +245,11 @@ Generated manifest with 26 components
 [1mnpm[22m [96mnotice[39m 248B dist/grid/columns/percentage-column.d.ts
 [1mnpm[22m [96mnotice[39m 316B dist/grid/columns/text-column.d.ts
 [1mnpm[22m [96mnotice[39m 1.1kB dist/grid/grid-builder.d.ts
-[1mnpm[22m [96mnotice[39m 441B dist/grid/grid-group-row.d.ts
+[1mnpm[22m [96mnotice[39m 481B dist/grid/grid-group-row.d.ts
 [1mnpm[22m [96mnotice[39m 776B dist/grid/grid-header.d.ts
 [1mnpm[22m [96mnotice[39m 1.1kB dist/grid/grid-logic.d.ts
 [1mnpm[22m [96mnotice[39m 1.0kB dist/grid/grid-row.d.ts
-[1mnpm[22m [96mnotice[39m 985B dist/grid/grid-styles.d.ts
+[1mnpm[22m [96mnotice[39m 1.0kB dist/grid/grid-styles.d.ts
 [1mnpm[22m [96mnotice[39m 1.1kB dist/grid/grid-viewport.d.ts
 [1mnpm[22m [96mnotice[39m 119B dist/grid/index.d.ts
 [1mnpm[22m [96mnotice[39m 664B dist/grid/index.js
@@ -319,10 +319,10 @@ Generated manifest with 26 components
 [1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m name: aura-components
 [1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m version: 0.1.1
 [1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m filename: aura-components-0.1.1.tgz
-[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m package size: 86.2 kB
-[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m unpacked size: 415.3 kB
-[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m shasum: 48d75013df972f544c4bc784ce4a768451bcf4d8
-[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m integrity: sha512-ts2EhK6zpY5Kd[...]58GEkyCq/uJfw==
+[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m package size: 86.1 kB
+[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m unpacked size: 415.4 kB
+[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m shasum: 708080f5763e7fe591cdf6649ced281c5d90d6f5
+[1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m integrity: sha512-vz8e5f1YNe219[...]aZKinDaFsoH0Q==
 [1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m total files: 151
 [1G[0K/[1G[0K[1mnpm[22m [96mnotice[39m
 [1G[0K/[1G[0Kaura-components-0.1.1.tgz

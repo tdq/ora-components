@@ -123,6 +123,7 @@ Styling is centralized in `grid-styles.ts` and uses Tailwind CSS utilities follo
 
 ### Glass effect
 Grid rows do not have background in case of glass effect. Grid header has background with blur.
+**Grid itself is not affected by glass effect**.
 
 ### Components
 - **Container**: `bg-background`, `border-outline/30`, `dark:border-stone-50/20`, `rounded-lg`.

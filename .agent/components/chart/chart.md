@@ -55,3 +55,8 @@ Each method returns a specialized builder for that series.
 - **X-Axis Scaling**: Category scales MUST be point-centered with exactly **8px padding** from the Y-axis to the first chart element (e.g., the left edge of the first bar). This is achieved using the formula `xScale(i) = 8 + barWidth / 2 + i * xStep`.
 - **Individual Shadows**: `SeriesRenderer` MUST handle the creation of filters in `<defs>` with ID `shadow-${index}`.
 - **Cleanup**: `ChartViewport` MUST use `registerDestroy` to unsubscribe from RxJS and disconnect observers.
+
+## Styling
+
+### Glass effect
+**Chart itself is not affected by glass effect**.
