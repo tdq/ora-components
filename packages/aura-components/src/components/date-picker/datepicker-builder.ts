@@ -164,7 +164,10 @@ export class DatePickerBuilder implements ComponentBuilder {
         const iconButton = document.createElement('button');
         iconButton.type = 'button';
         iconButton.className = 'p-px-12 text-on-surface-variant hover:text-primary transition-colors focus:outline-none';
-        iconButton.innerHTML = Icons.CALENDAR.replace('<svg', '<svg class="w-px-24 h-px-24"');
+        const calendarIconWrapper = document.createElement('span');
+        calendarIconWrapper.className = 'w-6 h-6 inline-flex items-center justify-center [&_svg]:w-full [&_svg]:h-full [&_svg]:block';
+        calendarIconWrapper.innerHTML = Icons.CALENDAR;
+        iconButton.appendChild(calendarIconWrapper);
         inputWrapper.appendChild(iconButton);
 
         // Error message

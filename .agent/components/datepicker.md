@@ -38,6 +38,33 @@ It should close on any event outside of the calendar.
 - **Transitions**: Smooth transitions (150-200ms) for popup entry and day selection.
 Height is 48px
 
+## Icon Rendering
+
+All icons are rendered as inline SVG strings sourced from the `Icons` class — no FontAwesome or external icon dependencies.
+
+**Calendar icon button** (toggles the popup):
+```html
+<button ...>
+  <span class="w-6 h-6 inline-flex items-center justify-center [&_svg]:w-full [&_svg]:h-full [&_svg]:block">
+    <!-- innerHTML = Icons.CALENDAR -->
+  </span>
+</button>
+```
+
+**Month navigation buttons** (previous / next month):
+```html
+<button ...>
+  <span class="w-5 h-5 inline-flex items-center justify-center [&_svg]:w-full [&_svg]:h-full [&_svg]:block">
+    <!-- innerHTML = Icons.CHEVRON_LEFT or Icons.CHEVRON_RIGHT -->
+  </span>
+</button>
+```
+
+Key rules:
+- The wrapper `<span>` uses standard Tailwind size classes (`w-5`, `w-6`, etc.). Do **not** use custom `w-px-N` tokens — they do not constrain SVG dimensions.
+- The `[&_svg]:w-full [&_svg]:h-full [&_svg]:block` modifiers ensure the injected SVG fills the wrapper exactly.
+- Calendar icon uses `w-6 h-6`; nav chevrons use `w-5 h-5`.
+
 ## Accessibility Requirements
 - **Keyboard**: 
   - `Alt + ArrowDown` to open popup.
