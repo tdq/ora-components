@@ -4,20 +4,41 @@ import { ChartStyles } from './styles';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export class AxisRenderer {
+    /**
+     * Determines whether X-axis labels need rotation and at what angle,
+     * based on estimated label width vs available space per category.
+     * Returns 0 (no rotation), -45, or -90.
+     */
+    static getLabelRotation(categories: string[], xStep: number): 0 | -45 | -90 {
+        if (categories.length === 0 || xStep <= 0) return 0;
+        const CHAR_WIDTH_PX = 7;
+        const maxLen = categories.reduce((max, c) => Math.max(max, c.length), 0);
+        const estimatedWidth = maxLen * CHAR_WIDTH_PX;
+
+        if (estimatedWidth <= xStep * 0.8) return 0;
+        // At 45°, the horizontal footprint of a label shrinks to width * cos(45°) ≈ 0.707.
+        // Apply the same 0.8 margin as the horizontal check for consistency.
+        if (estimatedWidth * 0.707 <= xStep * 0.8) return -45;
+        return -90;
+    }
+
     render(
-        g: SVGGElement, 
-        state: ChartState<any>, 
+        g: SVGGElement,
+        state: ChartState<any>,
         scales: ChartScales,
-        viewWidth: number, 
+        viewWidth: number,
         viewHeight: number
     ) {
-        const { xScale, yScale, secondaryYScale, categories, yDomain, secondaryYDomain } = scales;
+        const { xScale, yScale, secondaryYScale, categories, yDomain, secondaryYDomain, xStep } = scales;
 
         if (state.xAxis.visible) {
             const xAxisG = this.createSvgElement('g', {
                 transform: `translate(0, ${viewHeight})`
             });
             g.appendChild(xAxisG);
+
+            const effectiveXStep = (xStep && xStep > 0) ? xStep : (viewWidth / Math.max(categories.length - 1, 1));
+            const rotation = AxisRenderer.getLabelRotation(categories, effectiveXStep);
 
             categories.forEach((cat: string, i: number) => {
                 const x = xScale(i);
@@ -32,12 +53,33 @@ export class AxisRenderer {
                     xAxisG.appendChild(line);
                 }
 
-                const text = this.createSvgElement('text', {
-                    x: String(x),
-                    y: '20',
-                    'text-anchor': 'middle',
-                    class: ChartStyles.axis
-                });
+                let textAttrs: Record<string, string>;
+                if (rotation === -45) {
+                    textAttrs = {
+                        x: String(x),
+                        y: '20',
+                        'text-anchor': 'end',
+                        transform: `rotate(-45, ${x}, 20)`,
+                        class: ChartStyles.axis
+                    };
+                } else if (rotation === -90) {
+                    textAttrs = {
+                        x: String(x),
+                        y: '8',
+                        'text-anchor': 'end',
+                        transform: `rotate(-90, ${x}, 8)`,
+                        class: ChartStyles.axis
+                    };
+                } else {
+                    textAttrs = {
+                        x: String(x),
+                        y: '20',
+                        'text-anchor': 'middle',
+                        class: ChartStyles.axis
+                    };
+                }
+
+                const text = this.createSvgElement('text', textAttrs);
                 text.textContent = cat;
                 xAxisG.appendChild(text);
             });

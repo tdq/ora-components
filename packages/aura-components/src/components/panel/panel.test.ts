@@ -71,4 +71,17 @@ describe('PanelBuilder', () => {
         expect(element.classList.contains('border')).toBe(true);
         expect(element.classList.contains('shadow-level-1')).toBe(false);
     });
+
+    it('ST-4: should use [overflow:clip] instead of overflow-hidden so backdrop-filter children are not clipped', () => {
+        const element = new PanelBuilder().build();
+        // Tailwind classes are not processed in JSDOM; test className string directly
+        expect(element.className).toContain('[overflow:clip]');
+        expect(element.className).not.toContain('overflow-hidden');
+    });
+
+    it('ST-4: glass panel should use [overflow:clip] instead of overflow-hidden', () => {
+        const element = new PanelBuilder().asGlass().build();
+        expect(element.className).toContain('[overflow:clip]');
+        expect(element.className).not.toContain('overflow-hidden');
+    });
 });

@@ -54,7 +54,7 @@ export class PanelBuilder implements ComponentBuilder {
         
         const sub = className$.subscribe((extraClass) => {
             panel.className = cn(
-                'w-full rounded-large overflow-hidden transition-all',
+                'w-full rounded-large [overflow:clip] transition-all',
                 !this.isGlass && 'border bg-surface border-outline text-on-surface',
                 this.isGlass && 'glass-effect',
                 GAP_MAP[this.gap],

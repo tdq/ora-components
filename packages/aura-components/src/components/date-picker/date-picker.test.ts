@@ -2,6 +2,8 @@ import { BehaviorSubject } from 'rxjs';
 import { DatePickerBuilder } from './datepicker-builder';
 import { fireEvent, screen } from '@testing-library/dom';
 import { formatDate, parseDate, isValidDate } from './date-utils';
+import { DayOfWeek } from './types';
+import { renderCalendar } from './calendar';
 
 describe('DatePicker Utilities', () => {
     test('isValidDate should validate dates correctly', () => {
@@ -237,6 +239,19 @@ describe('DatePickerBuilder', () => {
         expect(input.value).toBe('12-3');
     });
 
+    test('ST-6: inputWrapper should have h-[48px] and input should have h-full', () => {
+        const container = builder.build();
+        document.body.appendChild(container);
+
+        const inputWrapper = container.querySelector('div.flex.items-center') as HTMLElement;
+        expect(inputWrapper).not.toBeNull();
+        expect(inputWrapper.classList.contains('h-[48px]')).toBe(true);
+
+        const input = container.querySelector('input') as HTMLInputElement;
+        expect(input).not.toBeNull();
+        expect(input.classList.contains('h-full')).toBe(true);
+    });
+
     test('should block invalid characters', () => {
         const container = builder.build();
         document.body.appendChild(container);
@@ -244,7 +259,7 @@ describe('DatePickerBuilder', () => {
 
         input.value = '';
         input.setSelectionRange(0, 0);
-        
+
         // 'a' is not allowed where 'D' is expected
         const event = new KeyboardEvent('keypress', { key: 'a', cancelable: true });
         const prevented = !input.dispatchEvent(event);
@@ -254,5 +269,173 @@ describe('DatePickerBuilder', () => {
         const event2 = new KeyboardEvent('keypress', { key: '1', cancelable: true });
         const prevented2 = !input.dispatchEvent(event2);
         expect(prevented2).toBe(false);
+    });
+
+    // ST-7: withFirstDayOfTheWeek builder method
+    test('ST-7: withFirstDayOfTheWeek returns the builder for chaining', () => {
+        const result = builder.withFirstDayOfTheWeek(DayOfWeek.SUNDAY);
+        expect(result).toBe(builder);
+    });
+
+    test('ST-7: withFirstDayOfTheWeek(MONDAY) sets firstDayOfWeek to MONDAY and builds without error', () => {
+        expect(() => {
+            builder.withFirstDayOfTheWeek(DayOfWeek.MONDAY).build();
+        }).not.toThrow();
+    });
+
+    test('ST-7: withFirstDayOfTheWeek(SUNDAY) sets firstDayOfWeek to SUNDAY and builds without error', () => {
+        expect(() => {
+            builder.withFirstDayOfTheWeek(DayOfWeek.SUNDAY).build();
+        }).not.toThrow();
+    });
+
+    test('ST-7: default builder (no withFirstDayOfTheWeek call) uses MONDAY as first day', () => {
+        // January 2023 starts on Sunday (getDay() = 0).
+        // With MONDAY as first day: offset = (0 - 1 + 7) % 7 = 6
+        // So the first 6 grid cells in daysContainer are empty, and day "1" is the 7th cell.
+        const value$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 1));
+        const container = builder.withValue(value$).build();
+        document.body.appendChild(container);
+
+        const iconButton = container.querySelector('button');
+        fireEvent.click(iconButton!);
+
+        const grid = container.querySelector('[role="grid"]') as HTMLElement;
+        // The 7 header cells (Mo Tu We Th Fr Sa Su) are first children of grid.
+        const headerCells = Array.from(grid.children).slice(0, 7).map(el => el.textContent);
+        // With MONDAY default, first header must be 'Mo'
+        expect(headerCells[0]).toBe('Mo');
+        // Last header must be 'Su'
+        expect(headerCells[6]).toBe('Su');
+    });
+});
+
+describe('ST-7: DayOfWeek enum', () => {
+    test('DayOfWeek enum has correct numeric values', () => {
+        expect(DayOfWeek.SUNDAY).toBe(0);
+        expect(DayOfWeek.MONDAY).toBe(1);
+        expect(DayOfWeek.TUESDAY).toBe(2);
+        expect(DayOfWeek.WEDNESDAY).toBe(3);
+        expect(DayOfWeek.THURSDAY).toBe(4);
+        expect(DayOfWeek.FRIDAY).toBe(5);
+        expect(DayOfWeek.SATURDAY).toBe(6);
+    });
+});
+
+describe('ST-7: Calendar weekday headers and day offset', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    function getWeekdayHeaders(calendarEl: HTMLElement): string[] {
+        const grid = calendarEl.querySelector('[role="grid"]') as HTMLElement;
+        // First 7 children of the grid are the weekday header divs
+        return Array.from(grid.children).slice(0, 7).map(el => el.textContent ?? '');
+    }
+
+    function getDaysContainerChildren(calendarEl: HTMLElement): HTMLElement[] {
+        const grid = calendarEl.querySelector('[role="grid"]') as HTMLElement;
+        // The 8th child of grid is the daysContainer div with class 'contents'
+        const daysContainer = grid.querySelector('.contents') as HTMLElement;
+        return Array.from(daysContainer.children) as HTMLElement[];
+    }
+
+    test('ST-7: MONDAY default renders Mo as first and Su as last weekday header', () => {
+        const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 1));
+        const cal = renderCalendar({
+            selectedDate$,
+            onSelect: () => {},
+            firstDayOfWeek: DayOfWeek.MONDAY,
+        });
+        document.body.appendChild(cal);
+
+        const headers = getWeekdayHeaders(cal);
+        expect(headers[0]).toBe('Mo');
+        expect(headers[6]).toBe('Su');
+    });
+
+    test('ST-7: SUNDAY renders Su as first and Sa as last weekday header', () => {
+        const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 1));
+        const cal = renderCalendar({
+            selectedDate$,
+            onSelect: () => {},
+            firstDayOfWeek: DayOfWeek.SUNDAY,
+        });
+        document.body.appendChild(cal);
+
+        const headers = getWeekdayHeaders(cal);
+        expect(headers[0]).toBe('Su');
+        expect(headers[6]).toBe('Sa');
+    });
+
+    test('ST-7: WEDNESDAY renders We as first weekday header', () => {
+        const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 1));
+        const cal = renderCalendar({
+            selectedDate$,
+            onSelect: () => {},
+            firstDayOfWeek: DayOfWeek.WEDNESDAY,
+        });
+        document.body.appendChild(cal);
+
+        const headers = getWeekdayHeaders(cal);
+        expect(headers[0]).toBe('We');
+        // Full rotation: We Th Fr Sa Su Mo Tu
+        expect(headers).toEqual(['We', 'Th', 'Fr', 'Sa', 'Su', 'Mo', 'Tu']);
+    });
+
+    test('ST-7: MONDAY — January 2023 offset is 6 empty cells before day 1', () => {
+        // Jan 2023 starts on Sunday (getDay()=0). firstDayOfWeek=MONDAY(1).
+        // offset = (0 - 1 + 7) % 7 = 6
+        const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 15));
+        const cal = renderCalendar({
+            selectedDate$,
+            onSelect: () => {},
+            firstDayOfWeek: DayOfWeek.MONDAY,
+        });
+        document.body.appendChild(cal);
+
+        const cells = getDaysContainerChildren(cal);
+        // First 6 children are empty placeholder divs (no textContent)
+        for (let i = 0; i < 6; i++) {
+            expect(cells[i].textContent).toBe('');
+        }
+        // 7th child (index 6) is the button for day 1
+        expect(cells[6].textContent).toBe('1');
+    });
+
+    test('ST-7: SUNDAY — January 2023 offset is 0, day 1 is the first cell', () => {
+        // Jan 2023 starts on Sunday (getDay()=0). firstDayOfWeek=SUNDAY(0).
+        // offset = (0 - 0 + 7) % 7 = 0 — no empty cells
+        const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 15));
+        const cal = renderCalendar({
+            selectedDate$,
+            onSelect: () => {},
+            firstDayOfWeek: DayOfWeek.SUNDAY,
+        });
+        document.body.appendChild(cal);
+
+        const cells = getDaysContainerChildren(cal);
+        // No offset: first cell is day 1
+        expect(cells[0].textContent).toBe('1');
+    });
+
+    test('ST-7: omitting firstDayOfWeek defaults to MONDAY behaviour', () => {
+        // Same as the MONDAY test: offset=6 for Jan 2023
+        const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 15));
+        const cal = renderCalendar({
+            selectedDate$,
+            onSelect: () => {},
+            // firstDayOfWeek intentionally omitted
+        });
+        document.body.appendChild(cal);
+
+        const headers = getWeekdayHeaders(cal);
+        expect(headers[0]).toBe('Mo');
+
+        const cells = getDaysContainerChildren(cal);
+        for (let i = 0; i < 6; i++) {
+            expect(cells[i].textContent).toBe('');
+        }
+        expect(cells[6].textContent).toBe('1');
     });
 });

@@ -1,6 +1,6 @@
 import { BehaviorSubject, combineLatest, take } from 'rxjs';
 import { getDaysInMonth, getFirstDayOfMonth, isSameDay, isValidDate } from './date-utils';
-import { CalendarOptions } from './types';
+import { CalendarOptions, DayOfWeek } from './types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Icons } from '@/core/icons';
@@ -88,7 +88,9 @@ export function renderCalendar(options: CalendarOptions): HTMLElement {
     grid.className = 'grid grid-cols-7 gap-px-2 text-center outline-none';
     grid.tabIndex = 0;
     
-    const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    const firstDayOfWeek = options.firstDayOfWeek ?? DayOfWeek.MONDAY;
+    const allWeekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    const weekdays = [...allWeekdays.slice(firstDayOfWeek), ...allWeekdays.slice(0, firstDayOfWeek)];
     weekdays.forEach(day => {
         const d = document.createElement('div');
         d.className = cn(
@@ -159,11 +161,12 @@ export function renderCalendar(options: CalendarOptions): HTMLElement {
 
         const daysInMonth = getDaysInMonth(year, month);
         const firstDay = getFirstDayOfMonth(year, month);
-        
+        const offset = (firstDay - firstDayOfWeek + 7) % 7;
+
         const fragment = document.createDocumentFragment();
 
         // Empty cells for first week
-        for (let i = 0; i < firstDay; i++) {
+        for (let i = 0; i < offset; i++) {
             const empty = document.createElement('div');
             fragment.appendChild(empty);
         }

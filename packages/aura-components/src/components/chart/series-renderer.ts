@@ -20,13 +20,13 @@ export class SeriesRenderer {
                 
                 switch (chart.type) {
                     case 'line':
-                        this.renderLine(g, state, chart as LineChartConfig<any>, xScale, scale, filterId);
+                        this.renderLine(g, state, scales, chart as LineChartConfig<any>, xScale, scale, filterId);
                         break;
                     case 'bar':
-                        this.renderBars(g, state, chart as BarChartConfig<any>, xScale, scale, filterId, scales);
+                        this.renderBars(g, state, scales, chart as BarChartConfig<any>, xScale, scale, filterId);
                         break;
                     case 'area':
-                        this.renderArea(g, state, chart as AreaChartConfig<any>, xScale, scale, filterId);
+                        this.renderArea(g, state, scales, chart as AreaChartConfig<any>, xScale, scale, filterId);
                         break;
                 }
             });
@@ -57,15 +57,16 @@ export class SeriesRenderer {
         });
     }
 
-    private renderLine(g: SVGGElement, state: ChartState<any>, config: LineChartConfig<any>, xScale: any, yScale: any, filterId: string) {
+    private renderLine(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: LineChartConfig<any>, xScale: any, yScale: any, filterId: string) {
+        const data = scales.displayData;
         const baselineY = yScale(0);
-        const points = state.data.map((d, i) => {
+        const points = data.map((d, i) => {
             const x = xScale(i);
             const y = yScale(Number(d[config.field]) || 0);
             return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
         }).join(' ');
 
-        const zeroPoints = state.data.map((_, i) => {
+        const zeroPoints = data.map((_: any, i: number) => {
             const x = xScale(i);
             return `${i === 0 ? 'M' : 'L'} ${x},${baselineY}`;
         }).join(' ');
@@ -95,7 +96,7 @@ export class SeriesRenderer {
         g.appendChild(path);
 
         if (config.showMarkers) {
-            state.data.forEach((d, i) => {
+            data.forEach((d: any, i: number) => {
                 const x = xScale(i);
                 const y = yScale(Number(d[config.field]) || 0);
                 const circle = this.createSvgElement('circle', {
@@ -123,11 +124,12 @@ export class SeriesRenderer {
         }
     }
 
-    private renderBars(g: SVGGElement, state: ChartState<any>, config: BarChartConfig<any>, xScale: any, yScale: any, filterId: string, scales: ChartScales) {
-        const barWidth = scales.barWidth || 32; 
+    private renderBars(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: BarChartConfig<any>, xScale: any, yScale: any, filterId: string) {
+        const data = scales.displayData;
+        const barWidth = scales.barWidth || 32;
         const baselineY = yScale(0);
 
-        state.data.forEach((d, i) => {
+        data.forEach((d: any, i: number) => {
             const val = Number(d[config.field]) || 0;
             const valY = yScale(val);
             const y = Math.min(baselineY, valY);
@@ -170,23 +172,24 @@ export class SeriesRenderer {
         });
     }
 
-    private renderArea(g: SVGGElement, state: ChartState<any>, config: AreaChartConfig<any>, xScale: any, yScale: any, filterId: string) {
-        if (state.data.length === 0) return;
+    private renderArea(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: AreaChartConfig<any>, xScale: any, yScale: any, filterId: string) {
+        const data = scales.displayData;
+        if (data.length === 0) return;
 
         const baselineY = yScale(0);
-        const linePoints = state.data.map((d, i) => {
+        const linePoints = data.map((d: any, i: number) => {
             const x = xScale(i);
             const y = yScale(Number(d[config.field]) || 0);
             return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
         }).join(' ');
 
-        const zeroLinePoints = state.data.map((_, i) => {
+        const zeroLinePoints = data.map((_: any, i: number) => {
             const x = xScale(i);
             return `${i === 0 ? 'M' : 'L'} ${x},${baselineY}`;
         }).join(' ');
 
-        const areaPathData = `${linePoints} L ${xScale(state.data.length - 1)},${baselineY} L ${xScale(0)},${baselineY} Z`;
-        const zeroAreaPathData = `${zeroLinePoints} L ${xScale(state.data.length - 1)},${baselineY} L ${xScale(0)},${baselineY} Z`;
+        const areaPathData = `${linePoints} L ${xScale(data.length - 1)},${baselineY} L ${xScale(0)},${baselineY} Z`;
+        const zeroAreaPathData = `${zeroLinePoints} L ${xScale(data.length - 1)},${baselineY} L ${xScale(0)},${baselineY} Z`;
         
         const area = this.createSvgElement('path', {
             d: state.animate ? zeroAreaPathData : areaPathData,

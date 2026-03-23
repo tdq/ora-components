@@ -1,16 +1,24 @@
+import { Observable, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
+import { registerDestroy } from '../../core/destroyable-element';
 
 export class FieldAffixBuilder implements ComponentBuilder {
-    private className: string = '';
+    private className$: Observable<string> = of('');
 
-    withClass(className: string): this {
-        this.className = className;
+    withClass(className: Observable<string>): this {
+        this.className$ = className;
         return this;
     }
 
     build(): HTMLElement {
         const container = document.createElement('div');
-        container.className = `flex items-center justify-center text-on-surface-variant ${this.className}`;
+        container.className = `flex items-center justify-center text-on-surface-variant`;
+
+        const sub = this.className$.subscribe(cls => {
+            container.className = `flex items-center justify-center text-on-surface-variant${cls ? ' ' + cls : ''}`;
+        });
+
+        registerDestroy(container, () => sub.unsubscribe());
         return container;
     }
 }

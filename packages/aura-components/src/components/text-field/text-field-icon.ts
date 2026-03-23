@@ -1,9 +1,10 @@
+import { of } from 'rxjs';
 import { FieldAffixBuilder, updateAffixContent } from '../component-parts';
 import { Icons } from '@/core/icons';
 
 export function createTextFieldIconContainer(className: string = ''): HTMLElement {
     return new FieldAffixBuilder()
-        .withClass(className)
+        .withClass(of(className))
         .build();
 }
 

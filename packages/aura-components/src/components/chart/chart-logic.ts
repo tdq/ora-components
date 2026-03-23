@@ -123,13 +123,36 @@ export class ChartLogic<ITEM> {
         this._width$.next(width);
     }
 
+    private sampleIndices(total: number, maxPoints: number): number[] {
+        if (maxPoints <= 0) return [];
+        if (maxPoints === 1) return [0];
+        const indices: number[] = [];
+        const step = (total - 1) / (maxPoints - 1);
+        for (let i = 0; i < maxPoints - 1; i++) {
+            indices.push(Math.round(i * step));
+        }
+        indices.push(total - 1); // guarantee last point is always included
+        return indices;
+    }
+
     public calculateScales(state: ChartState<ITEM>, viewWidth: number, viewHeight: number): ChartScales {
         const categories = state.data.map(d => String(d[state.categoryField as keyof ITEM]));
-        
+
+        // Downsample: never render more points than there are pixels on the X axis
+        const MAX_POINTS = Math.max(2, Math.floor(viewWidth));
+        let displayData: ITEM[] = state.data;
+        let displayCategories = categories;
+
+        if (categories.length > MAX_POINTS && MAX_POINTS >= 2) {
+            const indices = this.sampleIndices(categories.length, MAX_POINTS);
+            displayData = indices.map(i => state.data[i]);
+            displayCategories = indices.map(i => categories[i]);
+        }
+
         // X Scale (Category) with 8px padding on each side for bars
-        const N = categories.length;
+        const N = displayCategories.length;
         const barWidth = Math.min(((viewWidth - 16) / (N || 1)) * 0.8, 32);
-        
+
         let xScale;
         let xStep = 0;
         if (N > 1) {
@@ -207,7 +230,7 @@ export class ChartLogic<ITEM> {
             };
         }
 
-        return { xScale, yScale, yDomain, secondaryYScale, secondaryYDomain, categories, xStep, barWidth };
+        return { xScale, yScale, yDomain, secondaryYScale, secondaryYDomain, categories: displayCategories, displayData, xStep, barWidth };
     }
 
     destroy(): void {

@@ -62,9 +62,9 @@ export class ChartSvgArea {
         while (this.mainG.firstChild) this.mainG.removeChild(this.mainG.firstChild);
     }
 
-    getViewBox(padding: { top: number, right: number, bottom: number, left: number }, chartArea: HTMLElement) {
+    getViewBox(padding: { top: number, right: number, bottom: number, left: number }, chartArea: HTMLElement, totalWidth?: number) {
         const rect = chartArea.getBoundingClientRect();
-        const width = rect.width || 600; 
+        const width = totalWidth || rect.width || 600;
         const height = rect.height || 400;
 
         this.svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
