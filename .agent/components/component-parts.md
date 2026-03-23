@@ -11,8 +11,8 @@ Component parts eliminate duplication between field components by centralizing c
 Builds an error icon button with a popover tooltip for inline error display.
 
 Methods:
-- withError(error: string): this - sets the error text to display.
-- build(): HTMLElement - returns a `<button>` with an error icon (uses `Icons.ERROR`). On click, toggles a popover tooltip showing the error text.
+- `withError(error: string): this` - sets the error text to display.
+- `build(): HTMLElement` - returns a `<button>` with an error icon (uses `Icons.ERROR`). On click, toggles a popover tooltip showing the error text.
 
 Popover behavior:
 - Positioned above the icon, centered horizontally.
@@ -26,22 +26,22 @@ Popover behavior:
 Builds a `<label>` element for a field.
 
 Methods:
-- withId(id: string): this - sets the `for` attribute to link to the input.
-- build(): HTMLLabelElement - returns a styled label with `md-label-small` typography.
+- `withId(id: string): this` - sets the `for` attribute to link to the input.
+- `build(): HTMLLabelElement` - returns a styled label with `md-label-small` typography.
 
 ### FieldSupportTextBuilder
 Builds an error/support text `<span>` element.
 
 Methods:
-- withId(id: string): this - sets the element `id` for ARIA `describedby` linkage.
-- build(): HTMLElement - returns a span with `aria-live="polite"` and error text styling.
+- `withId(id: string): this` - sets the element `id` for ARIA `describedby` linkage.
+- `build(): HTMLElement` - returns a span with `aria-live="polite"` and error text styling.
 
 ### FieldAffixBuilder
 Builds a container `<div>` for prefix/suffix/icon content.
 
 Methods:
-- withClass(className: string): this - sets additional CSS class.
-- build(): HTMLElement - returns a flex container for icons/text.
+- `withClass(className: Observable<string>): this` - sets additional CSS class.
+- `build(): HTMLElement` - returns a flex container for icons/text.
 
 ### updateAffixContent(container, content)
 Utility function to update the content of an affix container reactively.

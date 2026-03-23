@@ -5,23 +5,23 @@ TextField component allows the user to enter and edit text.
 It uses the builder pattern (implements ComponentBuilder) and follows Material Design 3 styling.
 
 ### Builder methods
-- withValue(value: Subject\<string\>): this - receives a Subject which is both observed and updated by the component. On input change, component calls value.next(newValue).
-- withPlaceholder(placeholder: Observable\<string\>): this - sets placeholder text.
-- withEnabled(enabled: Observable\<boolean\>): this - sets enabled/disabled state.
-- withStyle(style: Observable\<FieldStyle\>): this - sets visual style. FieldStyle is imported from `@/theme`.
-- withError(error: Observable\<string\>): this - sets error message. Empty string means no error.
-- withLabel(label: Observable\<string\>): this - sets the label above the field.
-- withClass(className: Observable\<string\>): this - sets additional CSS class on the input wrapper.
-- withPrefix(text: Observable\<HTMLElement | string\>): this - sets non-editable prefix (icon or text).
-- withSuffix(text: Observable\<HTMLElement | string\>): this - sets non-editable suffix (icon or text).
-- asGlass(): this - enables glass effect styling (transparent with blur background).
-- asPassword(): this - sets input type="password" with a visibility toggle icon.
-- asEmail(): this - sets input type="email" and enables native email validation.
-- asInlineError(): this - displays errors as field style change instead of support text below.
+- `withValue(value: Subject<string>): this` - receives a Subject which is both observed and updated by the component. On input change, component calls value.next(newValue).
+- `withPlaceholder(placeholder: Observable<string>): this` - sets placeholder text.
+- `withEnabled(enabled: Observable<boolean>): this` - sets enabled/disabled state.
+- `withStyle(style: Observable<FieldStyle>): this` - sets visual style. FieldStyle is imported from `@/theme`.
+- `withError(error: Observable<string>): this` - sets error message. Empty string means no error.
+- `withLabel(label: Observable<string>): this` - sets the label above the field.
+- `withClass(className: Observable<string>): this` - sets additional CSS class on the input wrapper.
+- `withPrefix(text: Observable<HTMLElement | string>): this` - sets non-editable prefix (icon or text).
+- `withSuffix(text: Observable<HTMLElement | string>): this` - sets non-editable suffix (icon or text).
+- `asGlass(): this` - enables glass effect styling (transparent with blur background).
+- `asPassword(): this` - sets input type="password" with a visibility toggle icon.
+- `asEmail(): this` - sets input type="email" and enables native email validation.
+- `asInlineError(): this` - displays errors as field style change instead of support text below.
 
 ### FieldStyle enum (from `@/theme`)
-- TONAL - filled background style with bottom active indicator
-- OUTLINED - transparent background with outline border
+- `TONAL` - filled background style with bottom active indicator
+- `OUTLINED` - transparent background with outline border
 
 ## Requirements
 - In password mode, display "*" symbols instead of actual text.

@@ -61,7 +61,7 @@ All column builders inherit these common methods:
 - `withWidth(width: string)`: Sets CSS width (e.g., `'100px'`, `'2fr'`, `'15%'`).
 - `asSortable()`: Enables the sorting UI for the column.
 - `asResizable()`: Enables column resizing via a handle in the header.
-- `withClass(className: string)`: Adds custom CSS classes to all cells in this column.
+- `withClass(className: Observable<string>)`: Adds custom CSS classes to all cells in this column.
 
 ## Implementation Requirements
 

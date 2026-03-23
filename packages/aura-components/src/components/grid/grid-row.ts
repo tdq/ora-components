@@ -1,3 +1,4 @@
+import { Subscription } from 'rxjs';
 import { GridColumn, GridAction } from './types';
 import { GridStyles } from './grid-styles';
 import { clsx, type ClassValue } from 'clsx';
@@ -12,6 +13,8 @@ export class GridRow<ITEM> {
     private actionCell?: HTMLElement;
     private checkbox?: HTMLInputElement;
     private listenerAbort?: AbortController;
+    private columnSubscriptions: Subscription[] = [];
+    private actionSubscriptions: Subscription[] = [];
     private readonly rowHeight = 52;
 
     constructor(
@@ -73,7 +76,13 @@ export class GridRow<ITEM> {
         this.columns.forEach((col, index) => {
             const cell = document.createElement('div');
             this.applyColumnWidth(cell, col);
-            cell.className = cn(GridStyles.cell, col.cellClass);
+            cell.className = cn(GridStyles.cell);
+            if (col.cellClass) {
+                const sub = col.cellClass.subscribe(cls => {
+                    cell.className = cn(GridStyles.cell, cls);
+                });
+                this.columnSubscriptions.push(sub);
+            }
 
             const content = col.render(this.item);
             if (content instanceof HTMLElement) {
@@ -139,6 +148,23 @@ export class GridRow<ITEM> {
                     action.onClick(this.item);
                 }, { signal });
 
+                if (action.enable) {
+                    const sub = action.enable.subscribe(enabled => {
+                        btn.disabled = !enabled;
+                    });
+                    this.actionSubscriptions.push(sub);
+                }
+                if (action.visible) {
+                    const sub = action.visible.subscribe(visible => {
+                        wrapper.style.display = visible ? '' : 'none';
+                        const visibleCount = Array.from(actionCell.children).filter(
+                            el => (el as HTMLElement).style.display !== 'none'
+                        ).length;
+                        actionCell.style.width = `${visibleCount * 36 + 8}px`;
+                    });
+                    this.actionSubscriptions.push(sub);
+                }
+
                 wrapper.appendChild(btn);
                 wrapper.appendChild(tooltip);
                 actionCell.appendChild(wrapper);
@@ -193,6 +219,10 @@ export class GridRow<ITEM> {
             const htmlEl = el as HTMLElement;
             if (htmlEl.matches(':popover-open')) htmlEl.hidePopover();
         });
+        this.columnSubscriptions.forEach(s => s.unsubscribe());
+        this.columnSubscriptions = [];
+        this.actionSubscriptions.forEach(s => s.unsubscribe());
+        this.actionSubscriptions = [];
         this.listenerAbort?.abort();
         this.element.innerHTML = '';
         this.element.className = cn(
@@ -231,13 +261,29 @@ export class GridRow<ITEM> {
         );
     }
 
+    destroy(): void {
+        this.columnSubscriptions.forEach(s => s.unsubscribe());
+        this.columnSubscriptions = [];
+        this.actionSubscriptions.forEach(s => s.unsubscribe());
+        this.actionSubscriptions = [];
+        this.listenerAbort?.abort();
+    }
+
     updateColumns(columns: GridColumn<ITEM>[]) {
+        this.columnSubscriptions.forEach(s => s.unsubscribe());
+        this.columnSubscriptions = [];
         this.columns = columns;
         let cellIndex = this.isMultiSelect ? 1 : 0;
         columns.forEach(col => {
             const cell = this.element.children[cellIndex] as HTMLElement;
             if (cell) {
                 this.applyColumnWidth(cell, col);
+                if (col.cellClass) {
+                    const sub = col.cellClass.subscribe(cls => {
+                        cell.className = cn(GridStyles.cell, cls);
+                    });
+                    this.columnSubscriptions.push(sub);
+                }
             }
             cellIndex++;
         });

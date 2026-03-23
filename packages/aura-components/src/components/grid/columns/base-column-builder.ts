@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { ColumnBuilder, GridColumn, ColumnType } from '../types';
 
 export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
@@ -6,7 +7,7 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
     protected _sortable: boolean = false;
     protected _resizable: boolean = false;
     protected _field: string;
-    protected _cellClass: string = '';
+    protected _cellClass?: Observable<string>;
 
     constructor(field: string) {
         this._field = field;
@@ -33,7 +34,7 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
         return this;
     }
 
-    withClass(className: string): this {
+    withClass(className: Observable<string>): this {
         this._cellClass = className;
         return this;
     }

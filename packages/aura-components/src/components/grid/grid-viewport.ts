@@ -52,6 +52,7 @@ export class GridViewport<ITEM> {
     }
 
     destroy() {
+        this.clearRenderedRows();
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
             this.resizeObserver = null;
@@ -86,6 +87,7 @@ export class GridViewport<ITEM> {
 
         for (const [index, row] of this.renderedRows.entries()) {
             if (index < startIndex || index > endIndex) {
+                if (row instanceof GridRow) row.destroy();
                 row.getElement().remove();
                 this.renderedRows.delete(index);
             }
@@ -108,6 +110,7 @@ export class GridViewport<ITEM> {
             existing.update(header, index);
         } else {
             if (existing) {
+                if (existing instanceof GridRow) existing.destroy();
                 existing.getElement().remove();
             }
             const groupRow = new GridGroupRow(header, index, (key) => this.onToggleGroup(key), this.isGlass);
@@ -163,7 +166,10 @@ export class GridViewport<ITEM> {
     }
 
     private clearRenderedRows() {
-        this.renderedRows.forEach(row => row.getElement().remove());
+        this.renderedRows.forEach(row => {
+            if (row instanceof GridRow) row.destroy();
+            row.getElement().remove();
+        });
         this.renderedRows.clear();
     }
 }

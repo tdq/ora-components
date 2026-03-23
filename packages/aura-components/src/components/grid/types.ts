@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 export enum ColumnType {
     TEXT = 'TEXT',
     NUMBER = 'NUMBER',
@@ -32,7 +34,7 @@ export interface GridColumn<ITEM> {
     sortable?: boolean;
     filterable?: boolean;
     resizable?: boolean;
-    cellClass?: string;
+    cellClass?: Observable<string>;
     render: (item: ITEM) => HTMLElement | string;
 }
 
@@ -40,6 +42,8 @@ export interface GridAction<ITEM> {
     label: string;
     icon: string;
     onClick: (item: ITEM) => void;
+    enable?: Observable<boolean>;
+    visible?: Observable<boolean>;
 }
 
 export interface GridGroupHeader {
@@ -72,7 +76,7 @@ export interface ColumnBuilder<ITEM> {
     withWidth(width: string): this;
     asSortable(sortable?: boolean): this;
     asResizable(resizable?: boolean): this;
-    withClass(className: string): this;
+    withClass(className: Observable<string>): this;
     build(): GridColumn<ITEM>;
 }
 

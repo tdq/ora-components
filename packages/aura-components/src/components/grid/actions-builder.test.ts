@@ -1,5 +1,6 @@
+import { BehaviorSubject } from 'rxjs';
 import { Icons } from '@/core/icons';
-import { ActionsBuilder } from './actions-builder';
+import { ActionsBuilder, ActionBuilder } from './actions-builder';
 
 describe('ActionsBuilder', () => {
     let onClick: jest.Mock;
@@ -62,14 +63,177 @@ describe('ActionsBuilder', () => {
         expect(() => builder.addAction(Icons.EDIT, '   ', onClick)).toThrow();
     });
 
-    it('should support fluent chaining — addAction returns this', () => {
-        const onClick2 = jest.fn();
+    it('addAction returns an ActionBuilder, not ActionsBuilder', () => {
         const builder = new ActionsBuilder<any>();
-        const result = builder
-            .addAction(Icons.EDIT, 'Edit', onClick)
-            .addAction(Icons.DELETE, 'Delete', onClick2);
+        const result = builder.addAction(Icons.EDIT, 'Edit', onClick);
 
-        expect(result).toBe(builder);
-        expect(builder.build().length).toBe(2);
+        expect(result).toBeInstanceOf(ActionBuilder);
+        expect(result).not.toBe(builder);
+    });
+
+    it('addAction does not support direct chaining back to ActionsBuilder', () => {
+        // Per spec: addAction returns ActionBuilder, so chaining .addAction on the
+        // result would call ActionBuilder#addAction which does not exist.
+        const builder = new ActionsBuilder<any>();
+        const actionBuilder = builder.addAction(Icons.EDIT, 'Edit', onClick);
+
+        expect((actionBuilder as any).addAction).toBeUndefined();
+    });
+});
+
+describe('ActionBuilder', () => {
+    let onClick: jest.Mock;
+
+    beforeEach(() => {
+        onClick = jest.fn();
+    });
+
+    describe('withEnable', () => {
+        it('should set enable observable on the underlying action', () => {
+            const enable$ = new BehaviorSubject(true);
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withEnable(enable$);
+
+            const actions = actionsBuilder.build();
+            expect(actions[0].enable).toBe(enable$);
+        });
+
+        it('should return the same ActionBuilder instance for chaining', () => {
+            const enable$ = new BehaviorSubject(true);
+            const actionsBuilder = new ActionsBuilder<any>();
+            const actionBuilder = actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick);
+            const returned = actionBuilder.withEnable(enable$);
+
+            expect(returned).toBe(actionBuilder);
+        });
+
+        it('action.enable observable emits the current value', () => {
+            const enable$ = new BehaviorSubject(false);
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withEnable(enable$);
+
+            const actions = actionsBuilder.build();
+            let emitted: boolean | undefined;
+            actions[0].enable!.subscribe(v => { emitted = v; });
+            expect(emitted).toBe(false);
+
+            enable$.next(true);
+            expect(emitted).toBe(true);
+        });
+
+        it('action.enable is undefined when withEnable is not called', () => {
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick);
+
+            const actions = actionsBuilder.build();
+            expect(actions[0].enable).toBeUndefined();
+        });
+    });
+
+    describe('withVisible', () => {
+        it('should set visible observable on the underlying action', () => {
+            const visible$ = new BehaviorSubject(true);
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withVisible(visible$);
+
+            const actions = actionsBuilder.build();
+            expect(actions[0].visible).toBe(visible$);
+        });
+
+        it('should return the same ActionBuilder instance for chaining', () => {
+            const visible$ = new BehaviorSubject(true);
+            const actionsBuilder = new ActionsBuilder<any>();
+            const actionBuilder = actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick);
+            const returned = actionBuilder.withVisible(visible$);
+
+            expect(returned).toBe(actionBuilder);
+        });
+
+        it('action.visible observable emits the current value', () => {
+            const visible$ = new BehaviorSubject(true);
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withVisible(visible$);
+
+            const actions = actionsBuilder.build();
+            let emitted: boolean | undefined;
+            actions[0].visible!.subscribe(v => { emitted = v; });
+            expect(emitted).toBe(true);
+
+            visible$.next(false);
+            expect(emitted).toBe(false);
+        });
+
+        it('action.visible is undefined when withVisible is not called', () => {
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick);
+
+            const actions = actionsBuilder.build();
+            expect(actions[0].visible).toBeUndefined();
+        });
+    });
+
+    describe('chaining withEnable and withVisible', () => {
+        it('should allow chaining withEnable followed by withVisible', () => {
+            const enable$ = new BehaviorSubject(true);
+            const visible$ = new BehaviorSubject(true);
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder
+                .addAction(Icons.EDIT, 'Edit', onClick)
+                .withEnable(enable$)
+                .withVisible(visible$);
+
+            const actions = actionsBuilder.build();
+            expect(actions[0].enable).toBe(enable$);
+            expect(actions[0].visible).toBe(visible$);
+        });
+
+        it('should allow chaining withVisible followed by withEnable', () => {
+            const enable$ = new BehaviorSubject(false);
+            const visible$ = new BehaviorSubject(false);
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder
+                .addAction(Icons.DELETE, 'Delete', onClick)
+                .withVisible(visible$)
+                .withEnable(enable$);
+
+            const actions = actionsBuilder.build();
+            expect(actions[0].enable).toBe(enable$);
+            expect(actions[0].visible).toBe(visible$);
+        });
+
+        it('enable and visible observables on separate actions are independent', () => {
+            const enable$ = new BehaviorSubject(true);
+            const visible$ = new BehaviorSubject(false);
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withEnable(enable$);
+            actionsBuilder.addAction(Icons.DELETE, 'Delete', onClick).withVisible(visible$);
+
+            const actions = actionsBuilder.build();
+            expect(actions[0].enable).toBe(enable$);
+            expect(actions[0].visible).toBeUndefined();
+            expect(actions[1].enable).toBeUndefined();
+            expect(actions[1].visible).toBe(visible$);
+        });
+    });
+
+    describe('build() defensive copy preserves enable/visible', () => {
+        it('enable and visible observables survive the defensive copy', () => {
+            const enable$ = new BehaviorSubject(true);
+            const visible$ = new BehaviorSubject(true);
+            const actionsBuilder = new ActionsBuilder<any>();
+            actionsBuilder
+                .addAction(Icons.EDIT, 'Edit', onClick)
+                .withEnable(enable$)
+                .withVisible(visible$);
+
+            const copy1 = actionsBuilder.build();
+            const copy2 = actionsBuilder.build();
+
+            // Copies are distinct arrays
+            expect(copy1).not.toBe(copy2);
+            // But the action objects (and their observables) are the same references
+            expect(copy1[0].enable).toBe(enable$);
+            expect(copy2[0].visible).toBe(visible$);
+        });
     });
 });

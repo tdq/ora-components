@@ -1,14 +1,30 @@
+import { Observable } from 'rxjs';
 import { GridAction } from './types';
+
+export class ActionBuilder<ITEM> {
+    constructor(private action: GridAction<ITEM>) {}
+
+    withEnable(enable: Observable<boolean>): this {
+        this.action.enable = enable;
+        return this;
+    }
+
+    withVisible(visible: Observable<boolean>): this {
+        this.action.visible = visible;
+        return this;
+    }
+}
 
 export class ActionsBuilder<ITEM> {
     private actions: GridAction<ITEM>[] = [];
 
-    addAction(icon: string, label: string, onClick: (item: ITEM) => void): this {
+    addAction(icon: string, label: string, onClick: (item: ITEM) => void): ActionBuilder<ITEM> {
         if (typeof icon !== 'string' || !icon.trim()) throw new Error('ActionsBuilder.addAction: icon SVG is required');
         if (!icon.trim().startsWith('<svg')) throw new Error('ActionsBuilder.addAction: icon must be an SVG string');
         if (typeof label !== 'string' || !label.trim()) throw new Error('ActionsBuilder.addAction: label must be a non-empty string');
-        this.actions.push({ icon, label, onClick });
-        return this;
+        const action: GridAction<ITEM> = { icon, label, onClick };
+        this.actions.push(action);
+        return new ActionBuilder<ITEM>(action);
     }
 
     build(): GridAction<ITEM>[] {

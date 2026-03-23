@@ -3,16 +3,16 @@
 ## Description
 Tabs component is a custom element that is used to display a button.
 It has the following methods:
-- withCaption(caption: Observable<string>): this - sets label of the tabs.
-- withDescription(description: Observable<string>): this - sets description of the tabs.
-- asGlass(): this - sets special styling option for tabs and its contents as transparent with blur background (glass effect).
-- addTab(): TabBuilder - adds new tab to the tabs. It can have one child component.
-- withClass(className: Observable<string>): this - sets class css name of the tabs.
+- `withCaption(caption: Observable<string>): this` - sets label of the tabs.
+- `withDescription(description: Observable<string>): this` - sets description of the tabs.
+- `asGlass(): this` - sets special styling option for tabs and its contents as transparent with blur background (glass effect).
+- `addTab(): TabBuilder` - adds new tab to the tabs. It can have one child component.
+- `withClass(className: Observable<string>): this` - sets class css name of the tabs.
 
 TabBuilder has the following methods:
-- withCaption(caption: Observable<string>): this - sets label of the tab.
-- withContent(content: ComponentBuilder): this - sets content of the tab.
-- withVisible(visible: Observable<boolean>): this - sets visibility of the tab.
+- `withCaption(caption: Observable<string>): this` - sets label of the tab.
+- `withContent(content: ComponentBuilder): this` - sets content of the tab.
+- `withVisible(visible: Observable<boolean>): this` - sets visibility of the tab.
 
 ## Styling
 Style according to Material Design 3 

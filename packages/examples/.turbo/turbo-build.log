@@ -6,8 +6,8 @@
 [1G[0K[36mvite v5.4.21 [32mbuilding for production...[36m[39m
 
 node_modules/aura-components/dist/a1-components.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
-[2K[1Gtransforming (1) [2mindex.html[22m[2K[1Gtransforming (4) [2msrc/components/button.ts[22m[2K[1Gtransforming (10) [2m../../node_modules/rxjs/dist/esm5/internal/Observable.js[22m[2K[1Gtransforming (175) [2m../aura-components/src/core/component-builder.ts[22m[2K[1Gtransforming (248) [2m../aura-components/src/components/dialog/index.ts[22m[2K[1Gtransforming (256) [2m../aura-components/src/router/link.ts[22m[2K[1Gtransforming (262) [2m../aura-components/src/components/chart/chart-builder.ts[22m[2K[1Gtransforming (276) [2m../aura-components/src/components/form/form-builder.ts[22m[2K[1Gtransforming (293) [2m../aura-components/src/components/grid/grid-builder.ts[22m[2K[1Gtransforming (310) [2m../aura-components/src/components/combobox/combobox-item.ts[22m[2K[1Gtransforming (333) [2m../aura-components/src/components/grid/columns/base-column-builder.ts[22m[2K[1G[32m✓[39m 343 modules transformed.
+[2K[1Gtransforming (1) [2mindex.html[22m[2K[1Gtransforming (31) [2m../../node_modules/rxjs/dist/esm5/internal/symbol/observable.js[22m[2K[1Gtransforming (196) [2m../../node_modules/rxjs/dist/esm5/internal/util/errorContext.js[22m[2K[1Gtransforming (263) [2m../aura-components/src/components/combobox/combobox-builder.ts[22m[2K[1Gtransforming (289) [2m../aura-components/src/components/form/form-builder.ts[22m[2K[1Gtransforming (342) [2m../aura-components/src/components/grid/grid-group-row.ts[22m[2K[1G[32m✓[39m 343 modules transformed.
 [2K[1Grendering chunks (1)...[2K[1G[2K[1Gcomputing gzip size (0)...[2K[1Gcomputing gzip size (1)...[2K[1Gcomputing gzip size (2)...[2K[1G[2mdist/[22m[32mindex.html                [39m[1m[2m 0.40 kB[22m[1m[22m[2m │ gzip:  0.29 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-BNmvE32M.js  [39m[1m[2m61.79 kB[22m[1m[22m[2m │ gzip: 19.65 kB[22m
-[32m✓ built in 3.01s[39m
+[2mdist/[22m[2massets/[22m[36mindex-KBTB-BKs.js  [39m[1m[2m61.93 kB[22m[1m[22m[2m │ gzip: 19.66 kB[22m
+[32m✓ built in 996ms[39m
 [1G[0K\[1G[0K

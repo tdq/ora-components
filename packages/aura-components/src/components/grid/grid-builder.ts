@@ -93,7 +93,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             width: '150px',
             sortable: true,
             resizable: true,
-            cellClass: col.id.startsWith('total_') ? GridStyles.totalCell : undefined,
+            cellClass: col.id.startsWith('total_') ? of(GridStyles.totalCell) : undefined,
             render: (item: any) => {
                 const val = item[col.field];
                 return typeof val === 'number' ? val.toLocaleString() : (val ?? '');
