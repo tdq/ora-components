@@ -15,5 +15,9 @@ PanelGap is an enum with values:
 - EXTRA_LARGE. 32px gap
 
 ## Styling
-Style according to Material Design 3
+Style according to Material Design 3.
+No shadow.
+It should have full width
+
+### Glass styling
 No shadow.
