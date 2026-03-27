@@ -1,12 +1,11 @@
 import { BaseColumnBuilder } from './base-column-builder';
 import { ColumnType, GridColumn } from '../types';
-import { ButtonStyle, ButtonBuilder } from '../../button/button';
-import { Subject, of } from 'rxjs';
-import { registerDestroy } from '@/core/destroyable-element';
+import { ButtonStyle, ButtonBuilder, ClickListener } from '../../button/button';
+import { of } from 'rxjs';
 
 export class ButtonColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
     private _label: string = 'Action';
-    private _click?: Subject<ITEM>;
+    private _click?: ClickListener<ITEM>;
     private _style: ButtonStyle = ButtonStyle.FILLED;
 
     withLabel(label: string): this {
@@ -14,7 +13,7 @@ export class ButtonColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return this;
     }
 
-    withClick(click: Subject<ITEM>): this {
+    withClick(click: ClickListener<ITEM>): this {
         this._click = click;
         return this;
     }
@@ -25,23 +24,16 @@ export class ButtonColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
     }
 
     render(item: ITEM): HTMLElement {
-        const click$ = new Subject<void>();
-        const sub = click$.subscribe(() => {
-            if (this._click) {
-                this._click.next(item);
-            }
-        });
-
-        const button = new ButtonBuilder()
+        const builder = new ButtonBuilder()
             .withCaption(of(this._label))
             .withStyle(of(this._style))
-            .withClick(() => click$.next())
             .withClass(of('px-2 py-1 h-8 text-xs')) // Compact size for grid
-            .build();
-        
-        registerDestroy(button, () => sub.unsubscribe());
 
-        return button;
+        if(this._click) {
+            builder.withClick(() => this._click!(item))
+        }
+
+        return builder.build();
     }
 
     build(): GridColumn<ITEM> {

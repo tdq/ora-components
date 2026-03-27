@@ -1,15 +1,14 @@
-import { Observable } from 'rxjs';
 import { GridAction } from './types';
 
 export class ActionBuilder<ITEM> {
     constructor(private action: GridAction<ITEM>) {}
 
-    withEnable(enable: Observable<boolean>): this {
+    withEnable(enable: (item: ITEM) => boolean): this {
         this.action.enable = enable;
         return this;
     }
 
-    withVisible(visible: Observable<boolean>): this {
+    withVisible(visible: (item: ITEM) => boolean): this {
         this.action.visible = visible;
         return this;
     }

@@ -14,7 +14,6 @@ export class GridRow<ITEM> {
     private checkbox?: HTMLInputElement;
     private listenerAbort?: AbortController;
     private columnSubscriptions: Subscription[] = [];
-    private actionSubscriptions: Subscription[] = [];
     private readonly rowHeight = 52;
 
     constructor(
@@ -174,26 +173,18 @@ export class GridRow<ITEM> {
                 }, { signal });
 
                 if (action.enable) {
-                    const sub = action.enable.subscribe(enabled => {
-                        btn.disabled = !enabled;
-                    });
-                    this.actionSubscriptions.push(sub);
+                    btn.disabled = !action.enable(this.item);
                 }
                 if (action.visible) {
-                    const sub = action.visible.subscribe(visible => {
-                        wrapper.style.display = visible ? '' : 'none';
-                        const visibleCount = Array.from(actionCell.children).filter(
-                            el => (el as HTMLElement).style.display !== 'none'
-                        ).length;
-                        actionCell.style.width = `${visibleCount * 36 + 8}px`;
-                    });
-                    this.actionSubscriptions.push(sub);
+                    const visible = action.visible(this.item);
+                    wrapper.style.display = visible ? '' : 'none';
                 }
 
                 wrapper.appendChild(btn);
                 wrapper.appendChild(tooltip);
                 actionCell.appendChild(wrapper);
             });
+
             this.actionCell = actionCell;
             row.appendChild(actionCell);
         }
@@ -246,8 +237,6 @@ export class GridRow<ITEM> {
         });
         this.columnSubscriptions.forEach(s => s.unsubscribe());
         this.columnSubscriptions = [];
-        this.actionSubscriptions.forEach(s => s.unsubscribe());
-        this.actionSubscriptions = [];
         this.listenerAbort?.abort();
         this.element.innerHTML = '';
         this.element.className = cn(
@@ -289,8 +278,6 @@ export class GridRow<ITEM> {
     destroy(): void {
         this.columnSubscriptions.forEach(s => s.unsubscribe());
         this.columnSubscriptions = [];
-        this.actionSubscriptions.forEach(s => s.unsubscribe());
-        this.actionSubscriptions = [];
         this.listenerAbort?.abort();
     }
 

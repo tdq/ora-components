@@ -43,7 +43,7 @@ export const GridStyles = {
     groupValue: 'text-primary',
     groupCount: 'text-xs text-on-surface-variant/60 font-normal',
     
-    actionCell: 'flex-none flex items-center justify-center gap-1 sticky right-0 z-10 border-l border-outline/10 dark:border-stone-50/10 transition-colors duration-200 bg-surface-container-low/80',
+    actionCell: 'flex-none flex items-center justify-start px-1 gap-1 sticky right-0 z-10 border-l border-outline/10 dark:border-stone-50/10 transition-colors duration-200 bg-surface-container-low/80',
     actionCellSelected: 'bg-primary/10',
     actionCellOdd: 'bg-surface-container-low/20',
     actionCellEven: 'bg-background',

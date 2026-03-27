@@ -44,8 +44,8 @@ export interface GridAction<ITEM> {
     label: string;
     icon: string;
     onClick: (item: ITEM) => void;
-    enable?: Observable<boolean>;
-    visible?: Observable<boolean>;
+    enable?: (item: ITEM) => boolean;
+    visible?: (item: ITEM) => boolean;
 }
 
 export interface GridGroupHeader {

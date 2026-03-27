@@ -1,4 +1,3 @@
-import { BehaviorSubject } from 'rxjs';
 import { Icons } from '@/core/icons';
 import { ActionsBuilder, ActionBuilder } from './actions-builder';
 
@@ -89,84 +88,76 @@ describe('ActionBuilder', () => {
     });
 
     describe('withEnable', () => {
-        it('should set enable observable on the underlying action', () => {
-            const enable$ = new BehaviorSubject(true);
+        it('should set enable predicate on the underlying action', () => {
+            const enable = (item: any) => true;
             const actionsBuilder = new ActionsBuilder<any>();
-            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withEnable(enable$);
-
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withEnable(enable);
+    
             const actions = actionsBuilder.build();
-            expect(actions[0].enable).toBe(enable$);
+            expect(actions[0].enable).toBe(enable);
         });
-
+    
         it('should return the same ActionBuilder instance for chaining', () => {
-            const enable$ = new BehaviorSubject(true);
+            const enable = (item: any) => true;
             const actionsBuilder = new ActionsBuilder<any>();
             const actionBuilder = actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick);
-            const returned = actionBuilder.withEnable(enable$);
-
+            const returned = actionBuilder.withEnable(enable);
+    
             expect(returned).toBe(actionBuilder);
         });
-
-        it('action.enable observable emits the current value', () => {
-            const enable$ = new BehaviorSubject(false);
+    
+        it('action.enable predicate can be called', () => {
+            const enable = (item: { active: boolean }) => item.active;
             const actionsBuilder = new ActionsBuilder<any>();
-            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withEnable(enable$);
-
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withEnable(enable);
+    
             const actions = actionsBuilder.build();
-            let emitted: boolean | undefined;
-            actions[0].enable!.subscribe(v => { emitted = v; });
-            expect(emitted).toBe(false);
-
-            enable$.next(true);
-            expect(emitted).toBe(true);
+            expect(actions[0].enable!({ active: false })).toBe(false);
+            expect(actions[0].enable!({ active: true })).toBe(true);
         });
-
+    
         it('action.enable is undefined when withEnable is not called', () => {
             const actionsBuilder = new ActionsBuilder<any>();
             actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick);
-
+    
             const actions = actionsBuilder.build();
             expect(actions[0].enable).toBeUndefined();
         });
     });
 
     describe('withVisible', () => {
-        it('should set visible observable on the underlying action', () => {
-            const visible$ = new BehaviorSubject(true);
+        it('should set visible predicate on the underlying action', () => {
+            const visible = (item: any) => true;
             const actionsBuilder = new ActionsBuilder<any>();
-            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withVisible(visible$);
-
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withVisible(visible);
+    
             const actions = actionsBuilder.build();
-            expect(actions[0].visible).toBe(visible$);
+            expect(actions[0].visible).toBe(visible);
         });
-
+    
         it('should return the same ActionBuilder instance for chaining', () => {
-            const visible$ = new BehaviorSubject(true);
+            const visible = (item: any) => true;
             const actionsBuilder = new ActionsBuilder<any>();
             const actionBuilder = actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick);
-            const returned = actionBuilder.withVisible(visible$);
-
+            const returned = actionBuilder.withVisible(visible);
+    
             expect(returned).toBe(actionBuilder);
         });
-
-        it('action.visible observable emits the current value', () => {
-            const visible$ = new BehaviorSubject(true);
+    
+        it('action.visible predicate can be called', () => {
+            const visible = (item: { show: boolean }) => item.show;
             const actionsBuilder = new ActionsBuilder<any>();
-            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withVisible(visible$);
-
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withVisible(visible);
+    
             const actions = actionsBuilder.build();
-            let emitted: boolean | undefined;
-            actions[0].visible!.subscribe(v => { emitted = v; });
-            expect(emitted).toBe(true);
-
-            visible$.next(false);
-            expect(emitted).toBe(false);
+            expect(actions[0].visible!({ show: true })).toBe(true);
+            expect(actions[0].visible!({ show: false })).toBe(false);
         });
-
+    
         it('action.visible is undefined when withVisible is not called', () => {
             const actionsBuilder = new ActionsBuilder<any>();
             actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick);
-
+    
             const actions = actionsBuilder.build();
             expect(actions[0].visible).toBeUndefined();
         });
@@ -174,66 +165,66 @@ describe('ActionBuilder', () => {
 
     describe('chaining withEnable and withVisible', () => {
         it('should allow chaining withEnable followed by withVisible', () => {
-            const enable$ = new BehaviorSubject(true);
-            const visible$ = new BehaviorSubject(true);
+            const enable = (item: any) => true;
+            const visible = (item: any) => true;
             const actionsBuilder = new ActionsBuilder<any>();
             actionsBuilder
                 .addAction(Icons.EDIT, 'Edit', onClick)
-                .withEnable(enable$)
-                .withVisible(visible$);
-
+                .withEnable(enable)
+                .withVisible(visible);
+    
             const actions = actionsBuilder.build();
-            expect(actions[0].enable).toBe(enable$);
-            expect(actions[0].visible).toBe(visible$);
+            expect(actions[0].enable).toBe(enable);
+            expect(actions[0].visible).toBe(visible);
         });
-
+    
         it('should allow chaining withVisible followed by withEnable', () => {
-            const enable$ = new BehaviorSubject(false);
-            const visible$ = new BehaviorSubject(false);
+            const enable = (item: any) => false;
+            const visible = (item: any) => false;
             const actionsBuilder = new ActionsBuilder<any>();
             actionsBuilder
                 .addAction(Icons.DELETE, 'Delete', onClick)
-                .withVisible(visible$)
-                .withEnable(enable$);
-
+                .withVisible(visible)
+                .withEnable(enable);
+    
             const actions = actionsBuilder.build();
-            expect(actions[0].enable).toBe(enable$);
-            expect(actions[0].visible).toBe(visible$);
+            expect(actions[0].enable).toBe(enable);
+            expect(actions[0].visible).toBe(visible);
         });
-
-        it('enable and visible observables on separate actions are independent', () => {
-            const enable$ = new BehaviorSubject(true);
-            const visible$ = new BehaviorSubject(false);
+    
+        it('enable and visible predicates on separate actions are independent', () => {
+            const enable = (item: any) => true;
+            const visible = (item: any) => false;
             const actionsBuilder = new ActionsBuilder<any>();
-            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withEnable(enable$);
-            actionsBuilder.addAction(Icons.DELETE, 'Delete', onClick).withVisible(visible$);
-
+            actionsBuilder.addAction(Icons.EDIT, 'Edit', onClick).withEnable(enable);
+            actionsBuilder.addAction(Icons.DELETE, 'Delete', onClick).withVisible(visible);
+    
             const actions = actionsBuilder.build();
-            expect(actions[0].enable).toBe(enable$);
+            expect(actions[0].enable).toBe(enable);
             expect(actions[0].visible).toBeUndefined();
             expect(actions[1].enable).toBeUndefined();
-            expect(actions[1].visible).toBe(visible$);
+            expect(actions[1].visible).toBe(visible);
         });
     });
 
     describe('build() defensive copy preserves enable/visible', () => {
-        it('enable and visible observables survive the defensive copy', () => {
-            const enable$ = new BehaviorSubject(true);
-            const visible$ = new BehaviorSubject(true);
+        it('enable and visible predicates survive the defensive copy', () => {
+            const enable = (item: any) => true;
+            const visible = (item: any) => true;
             const actionsBuilder = new ActionsBuilder<any>();
             actionsBuilder
                 .addAction(Icons.EDIT, 'Edit', onClick)
-                .withEnable(enable$)
-                .withVisible(visible$);
-
+                .withEnable(enable)
+                .withVisible(visible);
+    
             const copy1 = actionsBuilder.build();
             const copy2 = actionsBuilder.build();
-
+    
             // Copies are distinct arrays
             expect(copy1).not.toBe(copy2);
-            // But the action objects (and their observables) are the same references
-            expect(copy1[0].enable).toBe(enable$);
-            expect(copy2[0].visible).toBe(visible$);
+            // But the action objects (and their predicates) are the same references
+            expect(copy1[0].enable).toBe(enable);
+            expect(copy2[0].visible).toBe(visible);
         });
     });
 });

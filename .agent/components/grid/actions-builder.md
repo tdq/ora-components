@@ -12,8 +12,8 @@ The `ActionsBuilder` is used to define a set of contextual actions that appear f
 
 ### ActionBuilder
 ActionsBuilder has next methods:
-- `withEnable(enable: Observable<boolean>): this` - sets actions button status to enabled or disabled
-- `withVisible(visible: Observable<boolean>): this` - displays or hides action button
+- `withEnable(enable: (item: ITEM) => boolean): this` - sets actions button status to enabled or disabled based on item
+- `withVisible(visible: (item: ITEM) => boolean): this` - displays or hides action button based on item
 
 ## Validation
 `addAction` throws an `Error` in the following cases:
@@ -40,7 +40,7 @@ actions.addAction(Icons.DELETE, 'Delete', (item) => remove(item));
 - **Accessibility**: Each button has `aria-label` set to the action `label`.
 
 ## Styling
-- **Default Appearance**: Defined by `GridStyles.actionButton`. Rendered as rounded-full buttons that gain a background on hover.
-- **Column Width**: Auto-scales based on the number of actions: `actions.length * 36 + 8` px, set as an inline style on the action cell.
+- **Default Appearance**: Defined by `GridStyles.actionButton`. Rendered as rounded-full buttons that gain a background on hover. Actions are **left-aligned** within the column.
+- **Column Width**: Auto-scales based on the **total number of defined actions**: `actions.length * 36 + 8` px, set as an inline style on the action cell. The width is **fixed** for all rows and the header to ensure perfect alignment, even if some actions are hidden for specific rows via `withVisible`.
 - **Tooltip**: Uses the browser **Popover API** (`popover="manual"`). On `mouseenter`, the tooltip is positioned using `getBoundingClientRect()` and shown via `tooltip.showPopover()` (guarded by a `:popover-open` check). On `mouseleave`, `tooltip.hidePopover()` is called (also guarded). Tooltips render in the browser top layer, escaping all overflow and z-index constraints.
 - **Performance**: Sticky cells use an opaque background (`bg-surface-container-low/80`) instead of backdrop blur to maintain high frame rates during scroll.
