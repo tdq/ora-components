@@ -22,7 +22,7 @@ export const GridStyles = {
     
     resizeHandle: 'resize-handle absolute right-0 top-[10%] w-1.5 h-[80%] cursor-col-resize z-40 transition-all after:absolute after:right-0 after:top-0 after:h-full after:w-0.5 after:bg-primary after:opacity-0 hover:after:opacity-100 [&.active]:after:opacity-100',
     
-    actionHeaderCell: 'flex-none sticky right-0 bg-surface-container-low/80 backdrop-blur border-l border-outline/10 dark:border-stone-50/10 z-20',
+    actionHeaderCell: 'flex-none sticky right-0 bg-surface-container-low/80 backdrop-blur border-l border-outline/10 dark:border-stone-50/10 z-20 ml-auto',
     actionHeaderCellGlass: 'glass-effect !bg-white/20',
     
     row: 'absolute w-full flex items-stretch border-b border-outline/10 dark:border-stone-50/10 transition-colors duration-200 group border-l-2 border-l-transparent hover:bg-surface-variant/20 hover:border-l-primary dark:hover:bg-slate-800/60 [will-change:transform] pointer-events-auto',
@@ -44,7 +44,7 @@ export const GridStyles = {
     groupValue: 'text-primary',
     groupCount: 'text-xs text-on-surface-variant/60 font-normal',
     
-    actionCell: 'flex-none flex items-center justify-start px-1 gap-1 sticky right-0 z-10 border-l border-outline/10 dark:border-stone-50/10 transition-colors duration-200 bg-surface-container-low/80',
+    actionCell: 'flex-none flex items-center justify-end px-2 gap-1 sticky right-0 z-10 border-l border-outline/10 dark:border-stone-50/10 transition-colors duration-200 bg-surface-container-low/80 ml-auto',
     actionCellSelected: 'bg-primary/10',
     actionCellOdd: 'bg-surface-container-low/20',
     actionCellEven: 'bg-background',

@@ -143,8 +143,6 @@ export class GridHeader<ITEM> {
                 GridStyles.actionHeaderCell,
                 this.isGlass && GridStyles.actionHeaderCellGlass
             );
-            const actionWidth = this.actionCount * 36 + 8;
-            actionCell.style.width = `${actionWidth}px`;
             this.element.appendChild(actionCell);
         }
     }
