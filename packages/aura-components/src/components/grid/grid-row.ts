@@ -1,5 +1,5 @@
 import { Subscription } from 'rxjs';
-import { GridColumn, GridAction, CellEditor, ColumnType } from './types';
+import { GridColumn, GridAction, ColumnType } from './types';
 import { GridStyles } from './grid-styles';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -27,10 +27,10 @@ export class GridRow<ITEM> {
         private onToggleSelection: (item: ITEM) => void,
         private level: number = 0,
         private isGlass: boolean = false,
-        private onCommit: (item: ITEM) => void = () => {},
-        private onRequestNextRow: (rowIndex: number) => void = () => {},
-        private onRequestPreviousRow: (rowIndex: number) => void = () => {},
-        private onActivateEditor: (row: GridRow<ITEM>, cell: HTMLElement) => void = () => {}
+        private onCommit: (item: ITEM) => void = () => { },
+        private onRequestNextRow: (rowIndex: number) => void = () => { },
+        private onRequestPreviousRow: (rowIndex: number) => void = () => { },
+        private onActivateEditor: (row: GridRow<ITEM>, cell: HTMLElement) => void = () => { }
     ) {
         this.element = this.createRow();
     }

@@ -57,14 +57,6 @@ export class ThemeManager {
     }
 
     document.documentElement.setAttribute('data-theme', themeToApply);
-
-    // Keep .dark class for backward compatibility if needed,
-    // although Tailwind is now configured to use data-theme="dark"
-    if (themeToApply === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
   }
 }
 
