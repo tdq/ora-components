@@ -9,7 +9,7 @@ ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues re
 ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
 ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
 ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
-FAIL src/components/dialog/dialog.test.ts (9.056 s)
+FAIL src/components/dialog/dialog.test.ts
   ● Console
 
     console.warn
@@ -46,28 +46,7 @@ FAIL src/components/dialog/dialog.test.ts (9.056 s)
 
       at Object.<anonymous> (src/components/dialog/dialog.test.ts:160:41)
 
-PASS src/components/grid/grid-header.test.ts (9.503 s)
-  ● Console
-
-    console.warn
-      destroyable element observer started
-
-      2 |
-      3 | (function () {
-    > 4 |     console.warn('destroyable element observer started');
-        |             ^
-      5 |
-      6 |     /**
-      7 |      * Internal storage of destroy callbacks.
-
-      at src/core/destroyable-element.ts:4:13
-      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/checkbox/checkbox.ts:5:1)
-      at Object.<anonymous> (src/components/grid/columns/boolean-column.ts:3:1)
-      at Object.<anonymous> (src/components/grid/columns/columns-builder.ts:7:1)
-      at Object.<anonymous> (src/components/grid/grid-header.test.ts:4:1)
-
-FAIL src/components/chart/chart.test.ts (10.109 s)
+FAIL src/components/chart/chart.test.ts
   ● Console
 
     console.warn
@@ -99,17 +78,17 @@ FAIL src/components/chart/chart.test.ts (10.109 s)
     Received:
       relative flex flex-col w-full h-full
 
-      111 |             .build();
-      112 |
-    > 113 |         expect(chart).toHaveClass('backdrop-blur-md');
+      222 |             .build();
+      223 |
+    > 224 |         expect(chart).toHaveClass('backdrop-blur-md');
           |                       ^
-      114 |     });
-      115 |
-      116 |     it('should include animation elements when enabled', () => {
+      225 |     });
+      226 |
+      227 |     it('should include animation elements when enabled', () => {
 
-      at Object.<anonymous> (src/components/chart/chart.test.ts:113:23)
+      at Object.<anonymous> (src/components/chart/chart.test.ts:224:23)
 
-FAIL src/components/number-field/number-field.test.ts (10.842 s)
+FAIL src/components/grid/grid-header.test.ts
   ● Console
 
     console.warn
@@ -127,44 +106,81 @@ FAIL src/components/number-field/number-field.test.ts (10.842 s)
       at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
       at Object.<anonymous> (src/components/component-parts/error-popover.ts:2:1)
       at Object.<anonymous> (src/components/component-parts/index.ts:1:1)
-      at Object.<anonymous> (src/components/number-field/number-field.ts:4:1)
-      at Object.<anonymous> (src/components/number-field/number-field.test.ts:2:1)
+      at Object.<anonymous> (src/components/text-field/text-field.ts:4:1)
+      at Object.<anonymous> (src/components/grid/columns/text-column.ts:4:1)
+      at Object.<anonymous> (src/components/grid/columns/columns-builder.ts:2:1)
+      at Object.<anonymous> (src/components/grid/grid-header.test.ts:4:1)
 
-  ● NumberFieldBuilder › 5. Accessibility › should have correct ARIA attributes and linkages
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: "number-field-11-error"
-    Received: null
-
-      230 |             expect(input.id).toBeTruthy();
-      231 |             expect(label.getAttribute('for')).toBe(input.id);
-    > 232 |             expect(input.getAttribute('aria-describedby')).toBe(error.id);
-          |                                                            ^
-      233 |
-      234 |             min$.next(-10);
-      235 |             expect(input.getAttribute('aria-valuemin')).toBe('-10');
-
-      at Object.<anonymous> (src/components/number-field/number-field.test.ts:232:60)
-
-  ● NumberFieldBuilder › 7. Prefix and Suffix › should render prefix and suffix when provided
+  ● GridHeader › should render action header cell with correct width when actionCount > 0
 
     expect(received).toBe(expected) // Object.is equality
 
-    Expected: "SPAN"
-    Received: "DIV"
+    Expected: "80px"
+    Received: ""
 
-      315 |             expect(prefixEl.classList.contains('hidden')).toBe(false);
-      316 |
-    > 317 |             expect(suffixEl.tagName).toBe('SPAN');
-          |                                      ^
-      318 |             expect(suffixEl.textContent).toBe('Suf');
-      319 |             expect(suffixEl.classList.contains('hidden')).toBe(false);
-      320 |
+      82 |         const actionCell = header.getElement().querySelector(`.${GridStyles.actionHeaderCell.split(' ')[0]}`) as HTMLElement;
+      83 |         expect(actionCell).not.toBeNull();
+    > 84 |         expect(actionCell.style.width).toBe('80px');
+         |                                        ^
+      85 |     });
+      86 |
+      87 |     it('should not render action header cell when actionCount is 0', () => {
 
-      at Object.<anonymous> (src/components/number-field/number-field.test.ts:317:38)
+      at Object.<anonymous> (src/components/grid/grid-header.test.ts:84:40)
 
-FAIL src/components/form/form.test.ts (11.31 s)
+FAIL src/components/grid/grid-viewport.test.ts
+  ● GridViewport › should render visible rows
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 9
+    Received: 10
+
+      67 |         // buffer is 5. So we expect startIndex = 0, endIndex = min(99, floor(200/52) + 5) = 3 + 5 = 8.
+      68 |         // 0 to 8 is 9 rows.
+    > 69 |         expect(rows.length).toBe(9);
+         |                             ^
+      70 |     });
+      71 |
+      72 |     it('should update rows when viewport size changes', () => {
+
+      at Object.<anonymous> (src/components/grid/grid-viewport.test.ts:69:29)
+
+  ● GridViewport › should update rows when viewport size changes
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 6
+    Received: 7
+
+      79 |
+      80 |         // floor(0/52) + 5 = 5. 0-5 is 6 rows.
+    > 81 |         expect(rows.length).toBe(6);
+         |                             ^
+      82 |
+      83 |         // Update clientHeight to 500
+      84 |         Object.defineProperty(viewport.getElement(), 'clientHeight', { value: 500, configurable: true, writable: true });
+
+      at Object.<anonymous> (src/components/grid/grid-viewport.test.ts:81:29)
+
+  ● GridViewport › should update rows on scroll
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 14
+    Received: 15
+
+      108 |     // endIndex = floor((1040 + 200) / 52) + 5 = floor(1240 / 52) + 5 = 23 + 5 = 28
+      109 |     // 15 to 28 is 14 rows.
+    > 110 |     expect(rows.length).toBe(14);
+          |                         ^
+      111 |
+      112 |     const firstRowTop = Math.min(...rows.map(r => {
+      113 |         const transform = r.style.transform;
+
+      at Object.<anonymous> (src/components/grid/grid-viewport.test.ts:110:25)
+
+FAIL src/components/form/form.test.ts
   ● Console
 
     console.warn
@@ -220,9 +236,7 @@ FAIL src/components/form/form.test.ts (11.31 s)
 
       at Object.<anonymous> (src/components/form/form.test.ts:175:39)
 
-PASS src/components/grid/grid-logic.test.ts
-PASS src/router/router-builder.test.ts
-PASS src/components/grid/grid-builder.test.ts
+FAIL src/components/number-field/number-field.test.ts
   ● Console
 
     console.warn
@@ -238,13 +252,46 @@ PASS src/components/grid/grid-builder.test.ts
 
       at src/core/destroyable-element.ts:4:13
       at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/checkbox/checkbox.ts:5:1)
-      at Object.<anonymous> (src/components/grid/columns/boolean-column.ts:3:1)
-      at Object.<anonymous> (src/components/grid/columns/columns-builder.ts:7:1)
-      at Object.<anonymous> (src/components/grid/grid-builder.ts:3:1)
-      at Object.<anonymous> (src/components/grid/grid-builder.test.ts:2:1)
+      at Object.<anonymous> (src/components/component-parts/error-popover.ts:2:1)
+      at Object.<anonymous> (src/components/component-parts/index.ts:1:1)
+      at Object.<anonymous> (src/components/number-field/number-field.ts:4:1)
+      at Object.<anonymous> (src/components/number-field/number-field.test.ts:2:1)
 
-PASS src/components/text-field/text-field.test.ts
+  ● NumberFieldBuilder › 5. Accessibility › should have correct ARIA attributes and linkages
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "number-field-11-error"
+    Received: null
+
+      230 |             expect(input.id).toBeTruthy();
+      231 |             expect(label.getAttribute('for')).toBe(input.id);
+    > 232 |             expect(input.getAttribute('aria-describedby')).toBe(error.id);
+          |                                                            ^
+      233 |
+      234 |             min$.next(-10);
+      235 |             expect(input.getAttribute('aria-valuemin')).toBe('-10');
+
+      at Object.<anonymous> (src/components/number-field/number-field.test.ts:232:60)
+
+  ● NumberFieldBuilder › 7. Prefix and Suffix › should render prefix and suffix when provided
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "SPAN"
+    Received: "DIV"
+
+      315 |             expect(prefixEl.classList.contains('hidden')).toBe(false);
+      316 |
+    > 317 |             expect(suffixEl.tagName).toBe('SPAN');
+          |                                      ^
+      318 |             expect(suffixEl.textContent).toBe('Suf');
+      319 |             expect(suffixEl.classList.contains('hidden')).toBe(false);
+      320 |
+
+      at Object.<anonymous> (src/components/number-field/number-field.test.ts:317:38)
+
+FAIL src/components/text-field/text-field.test.ts
   ● Console
 
     console.warn
@@ -265,44 +312,22 @@ PASS src/components/text-field/text-field.test.ts
       at Object.<anonymous> (src/components/text-field/text-field.ts:4:1)
       at Object.<anonymous> (src/components/text-field/text-field.test.ts:2:1)
 
-PASS src/router/link.test.ts
-PASS src/components/date-picker/date-picker.test.ts (13.653 s)
-  ● Console
+  ● TextFieldBuilder › should support inline error with popover and red outline
 
-    console.warn
-      destroyable element observer started
+    expect(received).toBe(expected) // Object.is equality
 
-      2 |
-      3 | (function () {
-    > 4 |     console.warn('destroyable element observer started');
-        |             ^
-      5 |
-      6 |     /**
-      7 |      * Internal storage of destroy callbacks.
+    Expected: true
+    Received: false
 
-      at src/core/destroyable-element.ts:4:13
-      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/date-picker/datepicker-builder.ts:3:1)
-      at Object.<anonymous> (src/components/date-picker/date-picker.test.ts:2:1)
+      169 |         const inputWrapper = container.querySelector('div.relative.flex.items-center.h-\\[48px\\]') as HTMLElement;
+      170 |         expect(inputWrapper.classList.contains('outline-error')).toBe(true);
+    > 171 |         expect(inputWrapper.classList.contains('outline-2')).toBe(true);
+          |                                                              ^
+      172 |
+      173 |         // Click to toggle popover
+      174 |         errorBtn.click();
 
-PASS src/components/combobox/combobox.test.ts (14.044 s)
-  ● Console
-
-    console.warn
-      destroyable element observer started
-
-      2 |
-      3 | (function () {
-    > 4 |     console.warn('destroyable element observer started');
-        |             ^
-      5 |
-      6 |     /**
-      7 |      * Internal storage of destroy callbacks.
-
-      at src/core/destroyable-element.ts:4:13
-      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/combobox/combobox-builder.ts:3:1)
-      at Object.<anonymous> (src/components/combobox/combobox.test.ts:2:1)
+      at Object.<anonymous> (src/components/text-field/text-field.test.ts:171:62)
 
 PASS src/components/tabs/tabs.test.ts
   ● Console
@@ -323,7 +348,8 @@ PASS src/components/tabs/tabs.test.ts
       at Object.<anonymous> (src/components/tabs/tabs.ts:7:1)
       at Object.<anonymous> (src/components/tabs/tabs.test.ts:1:1)
 
-PASS src/components/layout/layout.test.ts
+PASS src/router/router-builder.test.ts
+PASS src/components/grid/pivot-grouping.test.ts
   ● Console
 
     console.warn
@@ -339,10 +365,55 @@ PASS src/components/layout/layout.test.ts
 
       at src/core/destroyable-element.ts:4:13
       at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/layout/layout.ts:4:1)
-      at Object.<anonymous> (src/components/layout/layout.test.ts:1:1)
+      at Object.<anonymous> (src/components/component-parts/error-popover.ts:2:1)
+      at Object.<anonymous> (src/components/component-parts/index.ts:1:1)
+      at Object.<anonymous> (src/components/text-field/text-field.ts:4:1)
+      at Object.<anonymous> (src/components/grid/columns/text-column.ts:4:1)
+      at Object.<anonymous> (src/components/grid/columns/columns-builder.ts:2:1)
+      at Object.<anonymous> (src/components/grid/grid-builder.ts:3:1)
+      at Object.<anonymous> (src/components/grid/pivot-grouping.test.ts:2:1)
 
-PASS src/theme/theme-manager.test.ts
+PASS src/components/grid/grid-inline-editing.test.ts
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/component-parts/error-popover.ts:2:1)
+      at Object.<anonymous> (src/components/component-parts/index.ts:1:1)
+      at Object.<anonymous> (src/components/text-field/text-field.ts:4:1)
+      at Object.<anonymous> (src/components/grid/columns/text-column.ts:4:1)
+      at Object.<anonymous> (src/components/grid/grid-inline-editing.test.ts:18:1)
+
+PASS src/components/button/button.test.ts
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/button/button.ts:5:1)
+      at Object.<anonymous> (src/components/button/button.test.ts:1:1)
+
 PASS src/components/checkbox/checkbox.test.ts
   ● Console
 
@@ -381,8 +452,90 @@ PASS src/components/panel/panel.test.ts
       at Object.<anonymous> (src/components/panel/panel.ts:5:1)
       at Object.<anonymous> (src/components/panel/panel.test.ts:2:1)
 
-PASS src/router/route-matcher.test.ts
-PASS src/components/grid/actions-builder.test.ts
+PASS src/components/grid/grid-builder.test.ts
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/component-parts/error-popover.ts:2:1)
+      at Object.<anonymous> (src/components/component-parts/index.ts:1:1)
+      at Object.<anonymous> (src/components/text-field/text-field.ts:4:1)
+      at Object.<anonymous> (src/components/grid/columns/text-column.ts:4:1)
+      at Object.<anonymous> (src/components/grid/columns/columns-builder.ts:2:1)
+      at Object.<anonymous> (src/components/grid/grid-builder.ts:3:1)
+      at Object.<anonymous> (src/components/grid/grid-builder.test.ts:2:1)
+
+PASS src/components/grid/grid-logic.test.ts
+PASS src/router/link.test.ts
+PASS src/components/layout/layout.test.ts
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/layout/layout.ts:4:1)
+      at Object.<anonymous> (src/components/layout/layout.test.ts:1:1)
+
+PASS src/components/combobox/combobox.test.ts
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/combobox/combobox-builder.ts:3:1)
+      at Object.<anonymous> (src/components/combobox/combobox.test.ts:2:1)
+
+PASS src/components/date-picker/date-picker.test.ts
+  ● Console
+
+    console.warn
+      destroyable element observer started
+
+      2 |
+      3 | (function () {
+    > 4 |     console.warn('destroyable element observer started');
+        |             ^
+      5 |
+      6 |     /**
+      7 |      * Internal storage of destroy callbacks.
+
+      at src/core/destroyable-element.ts:4:13
+      at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
+      at Object.<anonymous> (src/components/date-picker/datepicker-builder.ts:3:1)
+      at Object.<anonymous> (src/components/date-picker/date-picker.test.ts:2:1)
+
+PASS src/theme/theme-manager.test.ts
 PASS src/components/label/label.test.ts
   ● Console
 
@@ -402,9 +555,7 @@ PASS src/components/label/label.test.ts
       at Object.<anonymous> (src/components/label/label.ts:5:1)
       at Object.<anonymous> (src/components/label/label.test.ts:2:1)
 
-PASS src/components/grid/grid-viewport.test.ts
-PASS src/components/grid/pivot-logic.test.ts
-PASS src/components/button/button.test.ts
+PASS src/components/grid/columns/money-column.test.ts
   ● Console
 
     console.warn
@@ -420,12 +571,20 @@ PASS src/components/button/button.test.ts
 
       at src/core/destroyable-element.ts:4:13
       at Object.<anonymous> (src/core/destroyable-element.ts:82:3)
-      at Object.<anonymous> (src/components/button/button.ts:5:1)
-      at Object.<anonymous> (src/components/button/button.test.ts:1:1)
+      at Object.<anonymous> (src/components/component-parts/error-popover.ts:2:1)
+      at Object.<anonymous> (src/components/component-parts/index.ts:1:1)
+      at Object.<anonymous> (src/components/number-field/number-field.ts:4:1)
+      at Object.<anonymous> (src/components/grid/columns/money-column.ts:5:1)
+      at Object.<anonymous> (src/components/grid/columns/money-column.test.ts:1:1)
 
+PASS src/components/grid/actions-builder.test.ts
+PASS src/components/grid/pivot-logic.test.ts
+PASS src/components/grid/cell-class.test.ts
+PASS src/utils/currency-registry.test.ts
+PASS src/router/route-matcher.test.ts
 
 Summary of all failing tests
-FAIL src/components/dialog/dialog.test.ts (9.056 s)
+FAIL src/components/dialog/dialog.test.ts
   ● DialogBuilder › should be centered (no inline positioning styles) on reopen after drag
 
     expect(received).toBe(expected) // Object.is equality
@@ -443,7 +602,7 @@ FAIL src/components/dialog/dialog.test.ts (9.056 s)
 
       at Object.<anonymous> (src/components/dialog/dialog.test.ts:160:41)
 
-FAIL src/components/chart/chart.test.ts (10.109 s)
+FAIL src/components/chart/chart.test.ts
   ● ChartBuilder › should apply glass style
 
     expect(element).toHaveClass("backdrop-blur-md")
@@ -453,52 +612,87 @@ FAIL src/components/chart/chart.test.ts (10.109 s)
     Received:
       relative flex flex-col w-full h-full
 
-      111 |             .build();
-      112 |
-    > 113 |         expect(chart).toHaveClass('backdrop-blur-md');
+      222 |             .build();
+      223 |
+    > 224 |         expect(chart).toHaveClass('backdrop-blur-md');
           |                       ^
-      114 |     });
-      115 |
-      116 |     it('should include animation elements when enabled', () => {
+      225 |     });
+      226 |
+      227 |     it('should include animation elements when enabled', () => {
 
-      at Object.<anonymous> (src/components/chart/chart.test.ts:113:23)
+      at Object.<anonymous> (src/components/chart/chart.test.ts:224:23)
 
-FAIL src/components/number-field/number-field.test.ts (10.842 s)
-  ● NumberFieldBuilder › 5. Accessibility › should have correct ARIA attributes and linkages
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: "number-field-11-error"
-    Received: null
-
-      230 |             expect(input.id).toBeTruthy();
-      231 |             expect(label.getAttribute('for')).toBe(input.id);
-    > 232 |             expect(input.getAttribute('aria-describedby')).toBe(error.id);
-          |                                                            ^
-      233 |
-      234 |             min$.next(-10);
-      235 |             expect(input.getAttribute('aria-valuemin')).toBe('-10');
-
-      at Object.<anonymous> (src/components/number-field/number-field.test.ts:232:60)
-
-  ● NumberFieldBuilder › 7. Prefix and Suffix › should render prefix and suffix when provided
+FAIL src/components/grid/grid-header.test.ts
+  ● GridHeader › should render action header cell with correct width when actionCount > 0
 
     expect(received).toBe(expected) // Object.is equality
 
-    Expected: "SPAN"
-    Received: "DIV"
+    Expected: "80px"
+    Received: ""
 
-      315 |             expect(prefixEl.classList.contains('hidden')).toBe(false);
-      316 |
-    > 317 |             expect(suffixEl.tagName).toBe('SPAN');
-          |                                      ^
-      318 |             expect(suffixEl.textContent).toBe('Suf');
-      319 |             expect(suffixEl.classList.contains('hidden')).toBe(false);
-      320 |
+      82 |         const actionCell = header.getElement().querySelector(`.${GridStyles.actionHeaderCell.split(' ')[0]}`) as HTMLElement;
+      83 |         expect(actionCell).not.toBeNull();
+    > 84 |         expect(actionCell.style.width).toBe('80px');
+         |                                        ^
+      85 |     });
+      86 |
+      87 |     it('should not render action header cell when actionCount is 0', () => {
 
-      at Object.<anonymous> (src/components/number-field/number-field.test.ts:317:38)
+      at Object.<anonymous> (src/components/grid/grid-header.test.ts:84:40)
 
-FAIL src/components/form/form.test.ts (11.31 s)
+FAIL src/components/grid/grid-viewport.test.ts
+  ● GridViewport › should render visible rows
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 9
+    Received: 10
+
+      67 |         // buffer is 5. So we expect startIndex = 0, endIndex = min(99, floor(200/52) + 5) = 3 + 5 = 8.
+      68 |         // 0 to 8 is 9 rows.
+    > 69 |         expect(rows.length).toBe(9);
+         |                             ^
+      70 |     });
+      71 |
+      72 |     it('should update rows when viewport size changes', () => {
+
+      at Object.<anonymous> (src/components/grid/grid-viewport.test.ts:69:29)
+
+  ● GridViewport › should update rows when viewport size changes
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 6
+    Received: 7
+
+      79 |
+      80 |         // floor(0/52) + 5 = 5. 0-5 is 6 rows.
+    > 81 |         expect(rows.length).toBe(6);
+         |                             ^
+      82 |
+      83 |         // Update clientHeight to 500
+      84 |         Object.defineProperty(viewport.getElement(), 'clientHeight', { value: 500, configurable: true, writable: true });
+
+      at Object.<anonymous> (src/components/grid/grid-viewport.test.ts:81:29)
+
+  ● GridViewport › should update rows on scroll
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 14
+    Received: 15
+
+      108 |     // endIndex = floor((1040 + 200) / 52) + 5 = floor(1240 / 52) + 5 = 23 + 5 = 28
+      109 |     // 15 to 28 is 14 rows.
+    > 110 |     expect(rows.length).toBe(14);
+          |                         ^
+      111 |
+      112 |     const firstRowTop = Math.min(...rows.map(r => {
+      113 |         const transform = r.style.transform;
+
+      at Object.<anonymous> (src/components/grid/grid-viewport.test.ts:110:25)
+
+FAIL src/components/form/form.test.ts
   ● FormBuilder › should propagate asGlass state to form, fields and buttons
 
     expect(element).toHaveClass("glass-effect")
@@ -535,11 +729,64 @@ FAIL src/components/form/form.test.ts (11.31 s)
 
       at Object.<anonymous> (src/components/form/form.test.ts:175:39)
 
+FAIL src/components/number-field/number-field.test.ts
+  ● NumberFieldBuilder › 5. Accessibility › should have correct ARIA attributes and linkages
 
-Test Suites: 4 failed, 19 passed, 23 total
-Tests:       6 failed, 218 passed, 224 total
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "number-field-11-error"
+    Received: null
+
+      230 |             expect(input.id).toBeTruthy();
+      231 |             expect(label.getAttribute('for')).toBe(input.id);
+    > 232 |             expect(input.getAttribute('aria-describedby')).toBe(error.id);
+          |                                                            ^
+      233 |
+      234 |             min$.next(-10);
+      235 |             expect(input.getAttribute('aria-valuemin')).toBe('-10');
+
+      at Object.<anonymous> (src/components/number-field/number-field.test.ts:232:60)
+
+  ● NumberFieldBuilder › 7. Prefix and Suffix › should render prefix and suffix when provided
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "SPAN"
+    Received: "DIV"
+
+      315 |             expect(prefixEl.classList.contains('hidden')).toBe(false);
+      316 |
+    > 317 |             expect(suffixEl.tagName).toBe('SPAN');
+          |                                      ^
+      318 |             expect(suffixEl.textContent).toBe('Suf');
+      319 |             expect(suffixEl.classList.contains('hidden')).toBe(false);
+      320 |
+
+      at Object.<anonymous> (src/components/number-field/number-field.test.ts:317:38)
+
+FAIL src/components/text-field/text-field.test.ts
+  ● TextFieldBuilder › should support inline error with popover and red outline
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      169 |         const inputWrapper = container.querySelector('div.relative.flex.items-center.h-\\[48px\\]') as HTMLElement;
+      170 |         expect(inputWrapper.classList.contains('outline-error')).toBe(true);
+    > 171 |         expect(inputWrapper.classList.contains('outline-2')).toBe(true);
+          |                                                              ^
+      172 |
+      173 |         // Click to toggle popover
+      174 |         errorBtn.click();
+
+      at Object.<anonymous> (src/components/text-field/text-field.test.ts:171:62)
+
+
+Test Suites: 7 failed, 21 passed, 28 total
+Tests:       11 failed, 327 passed, 338 total
 Snapshots:   0 total
-Time:        27.738 s
+Time:        7.442 s, estimated 19 s
 Ran all test suites.
 npm error Lifecycle script `test` failed with error:
 npm error Error: command failed

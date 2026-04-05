@@ -25,6 +25,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     private isGlass: boolean = false;
     private isEditable: boolean = false;
     private isMultiSelect: boolean = false;
+    private _onCommit: (item: ITEM) => void = () => {};
 
     private logic = new GridLogic<ITEM>();
 
@@ -48,8 +49,9 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         return this.toolbarBuilder;
     }
 
-    asEditable(): this {
+    asEditable(onCommit: (item: ITEM) => void): this {
         this.isEditable = true;
+        this._onCommit = onCommit;
         return this;
     }
 
@@ -126,7 +128,8 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             this.isEditable,
             (item) => this.logic.toggleSelection(item),
             (groupKey) => this.logic.toggleGroup(groupKey),
-            this.isGlass
+            this.isGlass,
+            this._onCommit
         );
 
         this.logic.setColumns(columns);

@@ -29,6 +29,12 @@ export interface SortConfig {
     direction: SortDirection;
 }
 
+export interface CellEditor {
+    element: HTMLElement;
+    getValue: () => any;
+    focus(): void;
+}
+
 export interface GridColumn<ITEM> {
     id: string;
     field: keyof ITEM | string;
@@ -41,7 +47,7 @@ export interface GridColumn<ITEM> {
     editable?: boolean;
     cellClass?: (item: ITEM) => string;
     render: (item: ITEM) => HTMLElement | string;
-    onEdit?: (item: ITEM, field: keyof ITEM | string, newValue: string) => void;
+    renderEditor?: (item: ITEM, isGlass: boolean) => CellEditor | null;
     sortValue?: (item: ITEM) => any;
 }
 
@@ -83,7 +89,7 @@ export interface ColumnBuilder<ITEM> {
     withWidth(width: string): this;
     asSortable(sortable?: boolean): this;
     asResizable(resizable?: boolean): this;
-    asEditable(onEdit: (item: ITEM, field: keyof ITEM | string, newValue: string) => void): this;
+    asEditable(): this;
     withClass(classProvider: (item: ITEM) => string): this;
     withSortValue(provider: (item: ITEM) => any): this;
     build(): GridColumn<ITEM>;

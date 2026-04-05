@@ -15,6 +15,9 @@ export class GridViewport<ITEM> {
     private lastSelected: Set<ITEM> = new Set();
     private ticking = false;
 
+    private activeEditorRow: GridRow<ITEM> | null = null;
+    private activeEditorCell: HTMLElement | null = null;
+
     private resizeObserver: ResizeObserver | null = null;
 
     constructor(
@@ -24,7 +27,8 @@ export class GridViewport<ITEM> {
         private isEditable: boolean,
         private onToggleSelection: (item: ITEM) => void,
         private onToggleGroup: (groupKey: string) => void,
-        private isGlass: boolean = false
+        private isGlass: boolean = false,
+        private onCommit: (item: ITEM) => void = () => {}
     ) {
         this.element = document.createElement('div');
         this.element.className = GridStyles.viewport;
@@ -92,7 +96,14 @@ export class GridViewport<ITEM> {
 
         for (const [index, row] of this.renderedRows.entries()) {
             if (index < startIndex || index > endIndex) {
-                if (row instanceof GridRow) row.destroy();
+                if (row instanceof GridRow) {
+                    // Commit any open editor before evicting
+                    if (this.activeEditorRow === row && this.activeEditorCell) {
+                        row.commitActiveEditor(this.activeEditorCell);
+                        this.clearActiveEditor();
+                    }
+                    row.destroy();
+                }
                 row.getElement().remove();
                 this.renderedRows.delete(index);
             }
@@ -124,6 +135,65 @@ export class GridViewport<ITEM> {
         }
     }
 
+    private handleTabToNextRow(rowIndex: number) {
+        for (let i = rowIndex + 1; i < this.lastRows.length; i++) {
+            const rowData = this.lastRows[i];
+            if (rowData.type === 'ITEM') {
+                const viewportHeight = this.element.clientHeight;
+                const targetScrollTop = i * this.rowHeight;
+                const currentScrollTop = this.element.scrollTop;
+                if (targetScrollTop < currentScrollTop || targetScrollTop + this.rowHeight > currentScrollTop + viewportHeight) {
+                    this.element.scrollTop = targetScrollTop - viewportHeight / 2;
+                    this.renderVisibleRows(); // force synchronous render so the row exists before rAF
+                }
+                requestAnimationFrame(() => {
+                    const row = this.renderedRows.get(i);
+                    if (row instanceof GridRow) {
+                        row.activateFirstEditableCell();
+                    }
+                });
+                return;
+            }
+        }
+    }
+
+    private handleTabToPreviousRow(rowIndex: number) {
+        for (let i = rowIndex - 1; i >= 0; i--) {
+            const rowData = this.lastRows[i];
+            if (rowData.type === 'ITEM') {
+                const viewportHeight = this.element.clientHeight;
+                const targetScrollTop = i * this.rowHeight;
+                const currentScrollTop = this.element.scrollTop;
+                if (targetScrollTop < currentScrollTop || targetScrollTop + this.rowHeight > currentScrollTop + viewportHeight) {
+                    this.element.scrollTop = targetScrollTop - viewportHeight / 2;
+                    this.renderVisibleRows(); // force synchronous render so the row exists before rAF
+                }
+                requestAnimationFrame(() => {
+                    const row = this.renderedRows.get(i);
+                    if (row instanceof GridRow) {
+                        row.activateLastEditableCell();
+                    }
+                });
+                return;
+            }
+        }
+    }
+
+    private handleEditorActivate(row: GridRow<ITEM>, cell: HTMLElement) {
+        if (this.activeEditorRow && this.activeEditorCell) {
+            if (this.activeEditorRow !== row || this.activeEditorCell !== cell) {
+                this.activeEditorRow.commitActiveEditor(this.activeEditorCell);
+            }
+        }
+        this.activeEditorRow = row;
+        this.activeEditorCell = cell;
+    }
+
+    clearActiveEditor() {
+        this.activeEditorRow = null;
+        this.activeEditorCell = null;
+    }
+
     private renderItemRow(item: ITEM, index: number, level: number, existing?: GridRow<ITEM> | GridGroupRow) {
         const isSelected = this.lastSelected.has(item);
         if (existing instanceof GridRow) {
@@ -146,7 +216,11 @@ export class GridViewport<ITEM> {
                 this.isEditable,
                 this.onToggleSelection,
                 level,
-                this.isGlass
+                this.isGlass,
+                this.onCommit,
+                (rowIndex) => this.handleTabToNextRow(rowIndex),
+                (rowIndex) => this.handleTabToPreviousRow(rowIndex),
+                (r, cell) => this.handleEditorActivate(r, cell)
             );
             this.rowsContainer.appendChild(row.getElement());
             this.renderedRows.set(index, row);
@@ -171,10 +245,17 @@ export class GridViewport<ITEM> {
     }
 
     private clearRenderedRows() {
+        if (this.activeEditorRow && this.activeEditorCell) {
+            this.activeEditorRow.commitActiveEditor(this.activeEditorCell);
+            this.clearActiveEditor();
+        }
         this.renderedRows.forEach(row => {
             if (row instanceof GridRow) row.destroy();
             row.getElement().remove();
         });
         this.renderedRows.clear();
+        // If activeEditorRow/Cell weren't cleared by the guard above, null them here
+        this.activeEditorRow = null;
+        this.activeEditorCell = null;
     }
 }

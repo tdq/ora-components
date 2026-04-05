@@ -13,3 +13,8 @@ In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) met
 
 ## Styling
 - **Alignment**: Right-aligned is recommended.
+
+## Editing
+Built-in editor is **NumberFieldBuilder** with `asInlineError()` modifier. It is not displaying any label.
+In case if grid has `asGlass()` modifier, the number field should be initialized with `asGlass()` modifier.
+It also should have `withSuffix(of(currencySign))` modifier (provide currency sign from CurrencyRegistry).

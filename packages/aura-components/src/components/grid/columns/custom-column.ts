@@ -13,11 +13,11 @@ export class CustomColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return this;
     }
 
-    render(item: ITEM): HTMLElement | string {
+    override render(item: ITEM): HTMLElement | string {
         return this._renderer(item);
     }
 
-    build(): GridColumn<ITEM> {
+    override build(): GridColumn<ITEM> {
         return this.createBaseColumn(ColumnType.CUSTOM);
     }
 }

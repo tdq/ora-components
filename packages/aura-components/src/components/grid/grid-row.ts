@@ -1,5 +1,5 @@
 import { Subscription } from 'rxjs';
-import { GridColumn, GridAction } from './types';
+import { GridColumn, GridAction, CellEditor, ColumnType } from './types';
 import { GridStyles } from './grid-styles';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -26,7 +26,11 @@ export class GridRow<ITEM> {
         private isEditable: boolean,
         private onToggleSelection: (item: ITEM) => void,
         private level: number = 0,
-        private isGlass: boolean = false
+        private isGlass: boolean = false,
+        private onCommit: (item: ITEM) => void = () => {},
+        private onRequestNextRow: (rowIndex: number) => void = () => {},
+        private onRequestPreviousRow: (rowIndex: number) => void = () => {},
+        private onActivateEditor: (row: GridRow<ITEM>, cell: HTMLElement) => void = () => {}
     ) {
         this.element = this.createRow();
     }
@@ -82,7 +86,7 @@ export class GridRow<ITEM> {
         });
 
         if (firstCell && this.level > 0) {
-            firstCell.style.paddingLeft = `${(this.level * 24) + 16}px`; // 16px is standard cell padding
+            firstCell.style.paddingLeft = `${(this.level * 24) + 16}px`;
         }
 
         if (this.actions.length > 0) {
@@ -175,10 +179,119 @@ export class GridRow<ITEM> {
         }
     }
 
+    private showCellDisplay(cell: HTMLElement, col: GridColumn<ITEM>) {
+        const abort: AbortController | undefined = (cell as any).__editorAbort;
+        if (abort) {
+            abort.abort();
+            delete (cell as any).__editorAbort;
+        }
+        delete (cell as any).__commitEdit;
+        delete cell.dataset.editing;
+        while (cell.firstChild) {
+            cell.removeChild(cell.firstChild);
+        }
+        const content = col.render(this.item);
+        if (content instanceof HTMLElement) {
+            cell.appendChild(content);
+        } else {
+            cell.textContent = content != null ? String(content) : '';
+        }
+    }
+
+    private enterEditMode(cell: HTMLElement, col: GridColumn<ITEM>, signal: AbortSignal) {
+        if (!col.renderEditor) return;
+        this.onActivateEditor(this, cell);
+        const editor = col.renderEditor(this.item, this.isGlass);
+        if (!editor) return;
+
+        cell.dataset.editing = '1';
+        while (cell.firstChild) {
+            cell.removeChild(cell.firstChild);
+        }
+        cell.appendChild(editor.element);
+
+        const originalValue = (this.item as any)[col.field as string];
+
+        const commitEdit = () => {
+            (this.item as any)[col.field as string] = editor.getValue();
+            this.onCommit(this.item);
+            this.showCellDisplay(cell, col);
+            cell.focus();
+        };
+        (cell as any).__commitEdit = commitEdit;
+
+        const revertEdit = () => {
+            (this.item as any)[col.field as string] = originalValue;
+            this.showCellDisplay(cell, col);
+            cell.focus();
+        };
+
+        const editorAbort = new AbortController();
+        (cell as any).__editorAbort = editorAbort;
+        // Tie editor listeners to the row signal too (handles row destroy while editor is open)
+        signal.addEventListener('abort', () => editorAbort.abort());
+
+        editor.element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                commitEdit();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                revertEdit();
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                e.stopPropagation();
+                (this.item as any)[col.field as string] = editor.getValue();
+                this.onCommit(this.item);
+                this.showCellDisplay(cell, col);
+
+                const editableCells = this.getEditableCells();
+                const currentIdx = editableCells.indexOf(cell);
+
+                if (e.shiftKey) {
+                    // Shift+Tab: move to previous editable cell
+                    if (currentIdx > 0) {
+                        editableCells[currentIdx - 1].click();
+                    } else {
+                        // First editable column — request previous row's last editable cell
+                        this.onRequestPreviousRow(this.index);
+                    }
+                } else {
+                    // Tab: move to next editable cell
+                    if (currentIdx >= 0 && currentIdx < editableCells.length - 1) {
+                        editableCells[currentIdx + 1].click();
+                    } else {
+                        this.onRequestNextRow(this.index);
+                    }
+                }
+            }
+        }, { signal: editorAbort.signal });
+
+        if (col.type === ColumnType.BOOLEAN) {
+            const input = editor.element.querySelector('input[type="checkbox"]');
+            if (input) {
+                input.addEventListener('change', () => {
+                    commitEdit();
+                }, { signal: editorAbort.signal });
+            }
+        }
+
+        requestAnimationFrame(() => editor.focus());
+    }
+
     private populateCell(cell: HTMLElement, col: GridColumn<ITEM>, signal: AbortSignal) {
-        cell.innerHTML = '';
+        const abort: AbortController | undefined = (cell as any).__editorAbort;
+        if (abort) {
+            abort.abort();
+            delete (cell as any).__editorAbort;
+        }
+        while (cell.firstChild) {
+            cell.removeChild(cell.firstChild);
+        }
         this.applyColumnWidth(cell, col);
-        
+
         if (col.cellClass) {
             const cls = col.cellClass(this.item);
             cell.className = cn(GridStyles.cell, cls);
@@ -186,37 +299,63 @@ export class GridRow<ITEM> {
             cell.className = cn(GridStyles.cell);
         }
 
-        const content = col.render(this.item);
-        if (this.isEditable && col.editable && col.onEdit) {
-            const onEdit = col.onEdit;
-            const rawContent = content instanceof HTMLElement ? content.textContent ?? '' : (content != null ? String(content) : '');
-            const span = document.createElement('span');
-            span.className = 'outline-none block w-full';
-            span.contentEditable = 'true';
-            span.textContent = rawContent;
-            let cancelled = false;
-            span.addEventListener('blur', () => {
-                if (!cancelled) {
-                    onEdit(this.item, col.field, span.textContent ?? '');
+        if (this.isEditable && col.editable && col.renderEditor) {
+            cell.style.cursor = 'text';
+            cell.tabIndex = 0;
+
+            this.showCellDisplay(cell, col);
+
+            cell.addEventListener('click', () => {
+                if (!cell.dataset.editing) {
+                    this.enterEditMode(cell, col, signal);
                 }
-                cancelled = false;
             }, { signal });
-            span.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
+
+            cell.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !cell.dataset.editing) {
                     e.preventDefault();
-                    span.blur();
-                } else if (e.key === 'Escape') {
-                    cancelled = true;
-                    span.textContent = String(col.render(this.item));
-                    span.blur();
+                    this.enterEditMode(cell, col, signal);
                 }
             }, { signal });
-            cell.appendChild(span);
-        } else if (content instanceof HTMLElement) {
-            cell.appendChild(content);
         } else {
-            cell.textContent = content != null ? String(content) : '';
+            const content = col.render(this.item);
+            if (content instanceof HTMLElement) {
+                cell.appendChild(content);
+            } else {
+                cell.textContent = content != null ? String(content) : '';
+            }
         }
+    }
+
+    private getEditableCells(): HTMLElement[] {
+        const cells: HTMLElement[] = [];
+        const startIdx = this.isMultiSelect ? 1 : 0;
+        this.columns.forEach((col, i) => {
+            if (col.editable && col.renderEditor) {
+                const cellEl = this.element.children[startIdx + i] as HTMLElement;
+                if (cellEl) cells.push(cellEl);
+            }
+        });
+        return cells;
+    }
+
+    public activateFirstEditableCell() {
+        const cells = this.getEditableCells();
+        if (cells.length > 0) {
+            cells[0].click();
+        }
+    }
+
+    public activateLastEditableCell() {
+        const cells = this.getEditableCells();
+        if (cells.length > 0) {
+            cells[cells.length - 1].click();
+        }
+    }
+
+    public commitActiveEditor(cell: HTMLElement) {
+        const commit = (cell as any).__commitEdit as (() => void) | undefined;
+        if (commit) commit();
     }
 
     getElement(): HTMLElement {
@@ -241,7 +380,9 @@ export class GridRow<ITEM> {
         this.columnSubscriptions.forEach(s => s.unsubscribe());
         this.columnSubscriptions = [];
         this.listenerAbort?.abort();
-        this.element.innerHTML = '';
+        while (this.element.firstChild) {
+            this.element.removeChild(this.element.firstChild);
+        }
         this.element.className = cn(
             GridStyles.row,
             !this.isGlass && this.index % 2 === 1 && GridStyles.rowOdd,
@@ -288,7 +429,7 @@ export class GridRow<ITEM> {
         this.columnSubscriptions.forEach(s => s.unsubscribe());
         this.columnSubscriptions = [];
         this.columns = columns;
-        
+
         const signal = this.listenerAbort?.signal;
         if (!signal) return;
 

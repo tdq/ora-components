@@ -1,4 +1,4 @@
-import { ColumnBuilder, GridColumn, ColumnType } from '../types';
+import { ColumnBuilder, GridColumn, ColumnType, CellEditor } from '../types';
 
 export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
     protected _header: string = '';
@@ -8,7 +8,6 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
     protected _editable: boolean = false;
     protected _field: string;
     protected _cellClass?: (item: ITEM) => string;
-    protected _onEdit?: (item: ITEM, field: keyof ITEM | string, newValue: string) => void;
     protected _sortValue?: (item: ITEM) => any;
 
     constructor(field: string) {
@@ -36,9 +35,8 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
         return this;
     }
 
-    asEditable(onEdit: (item: ITEM, field: keyof ITEM | string, newValue: string) => void): this {
+    asEditable(): this {
         this._editable = true;
-        this._onEdit = onEdit;
         return this;
     }
 
@@ -54,9 +52,13 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
 
     abstract build(): GridColumn<ITEM>;
 
+    protected createEditor(_item: ITEM, _isGlass: boolean): CellEditor | null {
+        return null;
+    }
+
     protected createBaseColumn(type: ColumnType): GridColumn<ITEM> {
         return {
-            id: this._field, // Simple ID generation
+            id: this._field,
             field: this._field,
             type: type,
             header: this._header,
@@ -66,7 +68,7 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
             editable: this._editable,
             cellClass: this._cellClass,
             render: (item: ITEM) => this.render(item),
-            onEdit: this._onEdit,
+            renderEditor: this._editable ? (item, isGlass) => this.createEditor(item, isGlass) : undefined,
             sortValue: this._sortValue
         };
     }

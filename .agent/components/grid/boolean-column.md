@@ -18,3 +18,7 @@ In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) met
 - **Alignment**: Center-aligned.
 - **Checkbox**: Uses the styles defined in `CheckboxBuilder`, including MD3 state layers and color tokens.
 - **Borders**: Inherits cell borders (`border-r border-border/50`).
+
+## Editing
+Built-in editor is **CheckboxBuilder** with `asInlineError()` modifier. It is not displaying any label.
+In case if grid has `asGlass()` modifier, the checkbox should be initialized with `asGlass()` modifier.

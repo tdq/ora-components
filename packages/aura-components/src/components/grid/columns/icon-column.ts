@@ -15,7 +15,7 @@ export class IconColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return this;
     }
 
-    render(item: ITEM): HTMLElement {
+    override render(item: ITEM): HTMLElement {
         const iconClass = this._iconProvider(item);
         const icon = document.createElement('i');
         icon.className = iconClass;
@@ -27,7 +27,7 @@ export class IconColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return icon;
     }
 
-    build(): GridColumn<ITEM> {
+    override build(): GridColumn<ITEM> {
         return this.createBaseColumn(ColumnType.ICON);
     }
 }

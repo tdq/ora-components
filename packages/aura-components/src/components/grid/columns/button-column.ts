@@ -23,7 +23,7 @@ export class ButtonColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return this;
     }
 
-    render(item: ITEM): HTMLElement {
+    override render(item: ITEM): HTMLElement {
         const builder = new ButtonBuilder()
             .withCaption(of(this._label))
             .withStyle(of(this._style))
@@ -36,7 +36,7 @@ export class ButtonColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return builder.build();
     }
 
-    build(): GridColumn<ITEM> {
+    override build(): GridColumn<ITEM> {
         return this.createBaseColumn(ColumnType.BUTTON);
     }
 }

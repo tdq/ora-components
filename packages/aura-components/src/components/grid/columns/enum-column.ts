@@ -9,11 +9,11 @@ export class EnumColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return this;
     }
 
-    render(item: ITEM): string {
+    override render(item: ITEM): string {
         return this._captionProvider(item);
     }
 
-    build(): GridColumn<ITEM> {
+    override build(): GridColumn<ITEM> {
         return this.createBaseColumn(ColumnType.ENUM);
     }
 }

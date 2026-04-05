@@ -15,3 +15,7 @@ In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) met
 ## Styling
 - **Text Overflow**: Uses `truncate` to handle long text gracefully within the cell.
 - **Alignment**: Left-aligned by default.
+
+## Editing
+Built-in editor is **TextFieldBuilder** with `asInlineError()` modifier. It is not displaying any label.
+In case if grid has `asGlass()` modifier, the text field should be initialized with `asGlass()` modifier.

@@ -2,14 +2,14 @@ import { BaseColumnBuilder } from './base-column-builder';
 import { ColumnType, GridColumn } from '../types';
 
 export class DateTimeColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
-    render(item: ITEM): string {
+    override render(item: ITEM): string {
         const value = (item as any)[this._field];
         if (!value) return '';
         const date = new Date(value);
         return date.toLocaleString();
     }
 
-    build(): GridColumn<ITEM> {
+    override build(): GridColumn<ITEM> {
         return this.createBaseColumn(ColumnType.DATETIME);
     }
 }

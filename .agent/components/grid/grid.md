@@ -36,7 +36,7 @@ The `GridBuilder<ITEM>` class uses a generic type `ITEM` to ensure type safety a
 - `withActions(): ActionsBuilder<ITEM>`: Adds per-row action buttons in a dedicated trailing column.
 - `withPivot(config: PivotConfig): this`: Enables the [Pivoting Mode](pivot.md) for data aggregation.
 - `asGlass(): this`: Enables translucent glass styling with backdrop blur.
-- `asEditable(): this`: Enables inline cell editing mode. Rows get `cursor-text` styling. Columns that have `asEditable(onEdit)` configured become content-editable on render. Press **Enter** to commit, **Escape** to revert.
+- `asEditable(onCommit: (item: ITEM) => void): this`: Enables inline cell editing mode. Rows get `cursor-text` styling. Columns that have `asEditable()` configured displays its editor component. Press **Enter** to commit, **Escape** to revert.
 - `asMultiSelect(): this`: Enables row selection via checkboxes and "Select All" functionality in the header.
 
 ## Column Configuration
@@ -61,7 +61,7 @@ All column builders inherit these common methods:
 - `withWidth(width: string)`: Sets CSS width (e.g., `'100px'`, `'2fr'`, `'15%'`).
 - `asSortable()`: Enables the sorting UI for the column.
 - `asResizable()`: Enables column resizing via a handle in the header.
-- `asEditable(onEdit: (item: ITEM, field: keyof ITEM | string, newValue: string) => void)`: Marks the column as inline-editable. When the parent grid has `asEditable()` called, cells for this column render as `contenteditable` spans. The `onEdit` callback fires on blur (commit). Press **Enter** to commit, **Escape** to revert without firing the callback.
+- `asEditable()`: Marks the column as inline-editable. When the parent grid has `asEditable()` called, cells for this column render as corresponding input fields. Each column defines its own editor component. It updates item on blur (commit). Press **Enter** to start editing and to commit, **Escape** to revert without firing the callback. Pressing **Tab** should move to the next editable column and enter edit mode.
 - `withClass(classProvider: (item: ITEM) => string)`: Adds custom CSS classes to all cells in this column via a provider function. Useful for conditional styling based on item data.
 
 ## Implementation Requirements

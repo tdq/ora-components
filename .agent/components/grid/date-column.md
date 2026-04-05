@@ -14,3 +14,7 @@ In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) met
 
 ## Styling
 - **Alignment**: Center or Left aligned.
+
+## Editing
+Built-in editor is **DatePickerBuilder** with `asInlineError()` modifier. It is not displaying any label.
+In case if grid has `asGlass()` modifier, the date picker should be initialized with `asGlass()` modifier.

@@ -27,11 +27,11 @@ const generateUsers = (count: number): User[] => {
         role: roles[i % 3],
         active: i % 2 === 0,
         lastLogin: new Date(Date.now() - Math.random() * 10000000000),
-        balance: { 
-            amount: Math.floor(Math.random() * 10000) / 100, 
-            currencyId: ['USD', 'EUR', 'GBP'][i % 3] 
+        balance: {
+            amount: Math.floor(Math.random() * 10000) / 100,
+            currencyId: ['USD', 'EUR', 'GBP'][i % 3]
         },
-        progress: Math.floor(Math.random() * 100)
+        progress: Math.random()
     }));
 };
 
@@ -120,23 +120,36 @@ export const WithToolbar = () => {
 };
 
 export const Editable = () => {
+    const log = document.createElement('div');
+    log.className = 'mt-4 p-3 bg-surface-container rounded text-xs font-mono max-h-32 overflow-y-auto text-on-surface-variant';
+    log.textContent = 'Edit a cell and commit with Enter to see changes here...';
+
     const grid = new GridBuilder<User>()
         .withItems(of(users.slice(0, 15)))
-        .withHeight(of(400))
-        .asEditable();
+        .withHeight(of(500))
+        .asEditable((item: User) => {
+            const entry = document.createElement('div');
+            entry.textContent = `✓ ${item.name} — id:${item.id} active:${item.active} progress:${item.progress}% balance:${item.balance.amount} ${item.balance.currencyId}`;
+            if (log.firstChild?.textContent?.startsWith('Edit')) {
+                log.innerHTML = '';
+            }
+            log.prepend(entry);
+        });
 
     const columns = grid.withColumns();
-    columns.addTextColumn('name').withHeader('Name').asEditable((item, field, val) => {
-        item.name = val;
-        alert(`Name updated: ${val}`);
-    });
-    columns.addTextColumn('email').withHeader('Email').asEditable((item, field, val) => {
-        item.email = val;
-        alert(`Email updated: ${val}`);
-    });
-    columns.addEnumColumn('role').withHeader('Role');
+    columns.addTextColumn('name').withHeader('Name').withWidth('150px').asEditable();
+    columns.addTextColumn('email').withHeader('Email').withWidth('200px').asEditable();
+    columns.addNumberColumn('id').withHeader('ID').withWidth('60px');
+    columns.addDateColumn('lastLogin').withHeader('Last Login').withWidth('140px').asEditable();
+    columns.addBooleanColumn('active').withHeader('Active').withWidth('80px').asEditable();
+    columns.addPercentageColumn('progress').withHeader('Progress').withWidth('100px').asEditable();
+    columns.addMoneyColumn('balance').withHeader('Balance').withWidth('110px').asEditable();
+    columns.addEnumColumn('role').withHeader('Role').withWidth('100px');
 
-    return grid.build();
+    const container = document.createElement('div');
+    container.appendChild(grid.build());
+    container.appendChild(log);
+    return container;
 };
 
 export const GlassEffect = () => {
@@ -263,7 +276,7 @@ export const FullHeight = () => {
     label.textContent = 'Grid in a 600px container (Default 100% height)';
 
     container.appendChild(label);
-    
+
     const gridEl = grid.build();
     gridEl.classList.add('flex-1');
     container.appendChild(gridEl);
@@ -278,13 +291,13 @@ export const ConditionalStyling = () => {
     const columns = grid.withColumns();
     columns.addTextColumn('name').withHeader('Name');
     columns.addEnumColumn('role').withHeader('Role');
-    
+
     // Demonstrate withClass using item provider
     columns.addMoneyColumn('balance').withHeader('Balance')
         .withClass(user => user.balance.amount > 50 ? 'text-green-600 font-bold' : 'text-red-600');
-    
+
     columns.addPercentageColumn('progress').withHeader('Progress')
-        .withClass(user => user.progress > 80 ? 'bg-green-50' : (user.progress < 20 ? 'bg-red-50' : ''));
+        .withClass(user => user.progress > 0.8 ? 'bg-green-50' : (user.progress < 0.2 ? 'bg-red-50' : ''));
 
     return grid.build();
 };

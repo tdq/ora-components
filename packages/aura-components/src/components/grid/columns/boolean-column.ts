@@ -1,7 +1,7 @@
+import { BehaviorSubject, of } from 'rxjs';
 import { BaseColumnBuilder } from './base-column-builder';
-import { ColumnType, GridColumn } from '../types';
+import { ColumnType, GridColumn, CellEditor } from '../types';
 import { CheckboxBuilder } from '../../checkbox/checkbox';
-import { of, BehaviorSubject } from 'rxjs';
 
 export class BooleanColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
     private _captionProvider: (value: boolean) => string = (v) => v ? 'Yes' : 'No';
@@ -17,7 +17,7 @@ export class BooleanColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return this;
     }
 
-    render(item: ITEM): HTMLElement | string {
+    override render(item: ITEM): HTMLElement | string {
         const value = !!(item as any)[this._field];
         if (this._isCheckbox) {
             return new CheckboxBuilder()
@@ -28,7 +28,18 @@ export class BooleanColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         return this._captionProvider(value);
     }
 
-    build(): GridColumn<ITEM> {
+    protected override createEditor(item: ITEM, isGlass: boolean): CellEditor {
+        const value$ = new BehaviorSubject<boolean>(!!(item as any)[this._field]);
+        const builder = new CheckboxBuilder().withValue(value$).asGlass(isGlass);
+        const element = builder.build();
+        return {
+            element,
+            getValue: () => value$.getValue(),
+            focus: () => (element.querySelector('input') as HTMLInputElement | null)?.focus(),
+        };
+    }
+
+    override build(): GridColumn<ITEM> {
         return this.createBaseColumn(ColumnType.BOOLEAN);
     }
 }
