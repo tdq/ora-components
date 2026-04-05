@@ -19,6 +19,7 @@ export class MoneyColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
         const builder = new NumberFieldBuilder()
             .withValue(value$)
             .withSuffix(of(currencySign))
+            .withPrecision(of(2))
             .asInlineError();
         if (isGlass) builder.asGlass();
         const element = builder.build();
