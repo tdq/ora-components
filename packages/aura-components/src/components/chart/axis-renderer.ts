@@ -40,7 +40,14 @@ export class AxisRenderer {
             const effectiveXStep = (xStep && xStep > 0) ? xStep : (viewWidth / Math.max(categories.length - 1, 1));
             const rotation = AxisRenderer.getLabelRotation(categories, effectiveXStep);
 
+            // Tick density: if ticks is specified, only render every Nth label
+            const tickStep = (state.xAxis.ticks && state.xAxis.ticks > 0) 
+                ? Math.ceil(categories.length / state.xAxis.ticks) 
+                : 1;
+
             categories.forEach((cat: string, i: number) => {
+                if (i % tickStep !== 0) return;
+                
                 const x = xScale(i);
                 if (state.xAxis.showGridLines) {
                     const line = this.createSvgElement('line', {

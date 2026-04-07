@@ -6,8 +6,8 @@
 [1G[0K[36mvite v5.4.21 [32mbuilding for production...[36m[39m
 
 node_modules/aura-components/dist/a1-components.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
-[2K[1Gtransforming (1) [2mindex.html[22m[2K[1Gtransforming (10) [2m../../node_modules/rxjs/dist/esm5/internal/Observable.js[22m[2K[1Gtransforming (172) [2m../../node_modules/rxjs/dist/esm5/internal/operators/bufferCount.js[22m[2K[1Gtransforming (183) [2m../../node_modules/rxjs/dist/esm5/internal/util/errorContext.js[22m[2K[1Gtransforming (258) [2m../aura-components/src/components/button/button.ts[22m[2K[1Gtransforming (285) [2m../aura-components/src/components/date-picker/date-utils.ts[22m[2K[1Gtransforming (343) [2m../aura-components/src/components/grid/grid-group-row.ts[22m[2K[1G[32m✓[39m 344 modules transformed.
+[2K[1Gtransforming (1) [2mindex.html[22m[2K[1Gtransforming (10) [2m../aura-components/src/core/component-builder.ts[22m[2K[1Gtransforming (197) [2m../aura-components/src/theme/types.ts[22m[2K[1Gtransforming (269) [2m../aura-components/src/components/chart/axis-renderer.ts[22m[2K[1Gtransforming (293) [2m../aura-components/src/components/listbox/listbox.ts[22m[2K[1Gtransforming (341) [2m../aura-components/src/components/grid/grid-group-row.ts[22m[2K[1G[32m✓[39m 344 modules transformed.
 [2K[1Grendering chunks (1)...[2K[1G[2K[1Gcomputing gzip size (0)...[2K[1Gcomputing gzip size (1)...[2K[1Gcomputing gzip size (2)...[2K[1G[2mdist/[22m[32mindex.html                [39m[1m[2m 0.40 kB[22m[1m[22m[2m │ gzip:  0.28 kB[22m
 [2mdist/[22m[2massets/[22m[36mindex-rB2aCtrd.js  [39m[1m[2m61.95 kB[22m[1m[22m[2m │ gzip: 19.61 kB[22m
-[32m✓ built in 1.13s[39m
+[32m✓ built in 1.24s[39m
 [1G[0K\[1G[0K

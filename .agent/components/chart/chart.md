@@ -57,6 +57,9 @@ Each method returns a specialized builder for that series.
 - **Cleanup**: `ChartViewport` MUST use `registerDestroy` to unsubscribe from RxJS and disconnect observers.
 
 ## Styling
+- Hovered point should be highlighted with a ring only on line and area charts.
+- Also hovered position should display vertical (or horizontal in case of horizontal chart) dashed line from axis to the end of area.
+- Axis should allow to define density of ticks.
 
 ### Glass effect
 **Chart itself is not affected by glass effect**.

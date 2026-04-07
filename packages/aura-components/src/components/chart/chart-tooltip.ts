@@ -21,15 +21,14 @@ export class ChartTooltip<ITEM> {
         return this.element;
     }
 
-    show(e: MouseEvent, svg: SVGSVGElement, state: ChartState<ITEM>) {
+    show(e: MouseEvent, svg: SVGSVGElement, state: ChartState<ITEM>, padding: { left: number, right: number }): { index: number, xPos: number } | null {
         const rect = svg.getBoundingClientRect();
-        const padding = { left: 60, right: 40 };
         const viewWidth = rect.width - padding.left - padding.right;
         
         const x = e.clientX - rect.left - padding.left;
         if (x < -10 || x > viewWidth + 10 || state.data.length === 0) {
             this.hide();
-            return;
+            return null;
         }
 
         const N = state.data.length;
@@ -46,7 +45,7 @@ export class ChartTooltip<ITEM> {
         }
 
         const item = state.data[index];
-        if (!item) return;
+        if (!item) return null;
 
         const categories = state.data.map(d => String(d[state.categoryField as keyof ITEM]));
         
@@ -91,6 +90,8 @@ export class ChartTooltip<ITEM> {
         }
         this.element.style.left = `${left}px`;
         this.element.style.top = `20px`;
+
+        return { index, xPos };
     }
 
     hide() {

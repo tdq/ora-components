@@ -27,6 +27,10 @@ export class ChartViewport<ITEM> {
     private tooltip = new ChartTooltip<ITEM>();
     
     private lastState: ChartState<ITEM> | null = null;
+    private lastPadding = { top: 20, right: 40, bottom: 40, left: 60 };
+    private lastScales: any = null;
+    private lastViewHeight = 0;
+    private hoverG: SVGGElement | null = null;
 
     constructor(private logic: ChartLogic<ITEM>) {
         this.element = document.createElement('div');
@@ -57,11 +61,17 @@ export class ChartViewport<ITEM> {
         const svg = this.svgArea.getElement();
         const handleMouseMove = (e: MouseEvent) => {
             if (!this.lastState || !this.lastState.showTooltip) return;
-            this.tooltip.show(e, svg, this.lastState);
+            const result = this.tooltip.show(e, svg, this.lastState, this.lastPadding);
+            if (result) {
+                this.renderHoverEffects(result.index, result.xPos);
+            } else {
+                this.clearHoverEffects();
+            }
         };
 
         const handleMouseLeave = () => {
             this.tooltip.hide();
+            this.clearHoverEffects();
         };
 
         svg.addEventListener('mousemove', handleMouseMove);
@@ -89,7 +99,7 @@ export class ChartViewport<ITEM> {
     }
 
     private render(state: ChartState<ITEM>) {
-        this.element.className = cn(ChartStyles.container/*, state.isGlass && ChartStyles.glass*/);
+        this.element.className = cn(ChartStyles.container, state.isGlass && ChartStyles.glass);
         if (state.height > 0) {
             this.element.style.height = `${state.height}px`;
         } else {
@@ -167,6 +177,10 @@ export class ChartViewport<ITEM> {
             }
         }
 
+        this.lastPadding = finalPadding;
+        this.lastScales = finalScales;
+        this.lastViewHeight = finalViewHeight;
+
         const mainG = this.svgArea.getMainG();
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         g.setAttribute('transform', `translate(${finalPadding.left}, ${finalPadding.top})`);
@@ -175,5 +189,66 @@ export class ChartViewport<ITEM> {
         this.axisRenderer.render(g, state, finalScales, finalViewWidth, finalViewHeight);
         this.seriesRenderer.render(g, state, finalScales);
         this.legend.render(state);
+
+        this.hoverG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        this.hoverG.setAttribute('transform', `translate(${finalPadding.left}, ${finalPadding.top})`);
+        this.hoverG.style.pointerEvents = 'none';
+        mainG.appendChild(this.hoverG);
+    }
+
+    private clearHoverEffects() {
+        if (this.hoverG) {
+            while (this.hoverG.firstChild) this.hoverG.removeChild(this.hoverG.firstChild);
+        }
+    }
+
+    private renderHoverEffects(index: number, xPos: number) {
+        if (!this.hoverG || !this.lastState || !this.lastScales) return;
+        this.clearHoverEffects();
+
+        const { yScale, secondaryYScale } = this.lastScales;
+        const item = this.lastState.data[index];
+        if (!item) return;
+
+        const hoverG = this.hoverG;
+
+        // Render vertical dashed line (from bottom axis to the top)
+        const vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        vLine.setAttribute('x1', String(xPos));
+        vLine.setAttribute('y1', '0');
+        vLine.setAttribute('x2', String(xPos));
+        vLine.setAttribute('y2', String(this.lastViewHeight));
+        vLine.setAttribute('class', ChartStyles.hoverLine);
+        vLine.setAttribute('stroke', 'var(--md-sys-color-on-surface-variant)');
+        vLine.setAttribute('stroke-opacity', '0.5');
+        vLine.setAttribute('stroke-width', '1');
+        vLine.setAttribute('stroke-dasharray', '4,4');
+        hoverG.appendChild(vLine);
+
+        // Render highlights for each chart
+        this.lastState.charts.forEach(chart => {
+            if (chart.type === 'bar') return;
+
+            const scale = chart.useSecondaryAxis && secondaryYScale ? secondaryYScale : yScale;
+            const val = Number(item[chart.field as keyof ITEM]) || 0;
+            const y = scale(val);
+
+            // Ring highlight
+            const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            ring.setAttribute('cx', String(xPos));
+            ring.setAttribute('cy', String(y));
+            ring.setAttribute('r', '6');
+            ring.setAttribute('class', ChartStyles.hoverRing);
+            ring.style.stroke = chart.color || 'currentColor';
+            hoverG.appendChild(ring);
+            
+            // Solid point (to cover the line and look better)
+            const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            point.setAttribute('cx', String(xPos));
+            point.setAttribute('cy', String(y));
+            point.setAttribute('r', '4');
+            point.style.fill = chart.color || 'currentColor';
+            hoverG.appendChild(point);
+        });
     }
 }

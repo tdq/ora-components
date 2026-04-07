@@ -260,6 +260,83 @@ describe('ChartBuilder', () => {
         expect(firstRectX).toBeCloseTo(8, 1);
     });
 
+    it('should respect X-axis tick density', () => {
+        const testDataExtended = Array.from({ length: 10 }, (_, i) => ({ category: `C${i}`, value: i }));
+        const chartBuilder = new ChartBuilder<any>()
+            .withData(of(testDataExtended))
+            .withCategoryField('category');
+        
+        chartBuilder.withXAxis(builder => builder.withTicks(5));
+        
+        const chart = chartBuilder.build();
+        
+        // Find text elements in the X-axis group
+        // X-axis group is the one with translate(0, viewHeight)
+        const texts = Array.from(chart.querySelectorAll('text')).filter(t => {
+            const parentG = t.parentElement;
+            return parentG && parentG.getAttribute('transform')?.includes('translate(0,');
+        });
+
+        // With 10 items and 5 ticks, tickStep = ceil(10/5) = 2.
+        // So it should show 0, 2, 4, 6, 8 (5 ticks).
+        expect(texts.length).toBe(5);
+    });
+
+    it('should render hover guide lines on mouse move', () => {
+        const chartBuilder = new ChartBuilder<any>()
+            .withData(of(testData))
+            .withCategoryField('category')
+            .withTooltip(true);
+        
+        chartBuilder.addLineChart('value1');
+        
+        const chart = chartBuilder.build();
+        document.body.appendChild(chart); // Need to append to body for getBoundingClientRect
+        
+        const svg = chart.querySelector('svg');
+        if (!svg) throw new Error('SVG not found');
+
+        // Mock getBoundingClientRect for SVG
+        svg.getBoundingClientRect = () => ({
+            width: 500,
+            height: 300,
+            left: 0,
+            top: 0,
+            right: 500,
+            bottom: 300,
+            x: 0,
+            y: 0,
+            toJSON: () => {}
+        });
+
+        // Simulate mouse move
+        const moveEvent = new MouseEvent('mousemove', {
+            clientX: 100, // Should be inside data area (padding-left is 60)
+            clientY: 150,
+            bubbles: true
+        });
+        svg.dispatchEvent(moveEvent);
+
+        // Check for hover lines
+        // They should be inside the last G (hoverG)
+        const mainG = svg.querySelector('g');
+        const hoverG = mainG?.lastElementChild;
+        expect(hoverG).not.toBeNull();
+        
+        const lines = hoverG?.querySelectorAll('line');
+        // 1 vertical line = 1 line
+        expect(lines?.length).toBe(1);
+
+        // Vertical line should have x1 === x2
+        const vLine = lines?.[0];
+        expect(vLine).not.toBeUndefined();
+        expect(vLine?.getAttribute('x1')).toBe(vLine?.getAttribute('x2'));
+        expect(vLine?.getAttribute('stroke')).toContain('var(--md-sys-color-on-surface-variant)');
+        expect(vLine?.getAttribute('stroke-dasharray')).toBe('4,4');
+        
+        document.body.removeChild(chart);
+    });
+
     it('should respect render order: area, then bar, then line', () => {
         const chartBuilder = new ChartBuilder<any>()
             .withData(of(testData))
