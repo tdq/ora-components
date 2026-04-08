@@ -203,3 +203,47 @@ export const ReactiveColor = () => {
 
     return container;
 };
+
+export const HighDensityPoints = () => {
+    const points = 1000;
+    const highDensityData = Array.from({ length: points }, (_, i) => ({
+        index: i,
+        value: Math.sin(i / 20) * 100 + Math.random() * 20 + 200,
+        trend: i / 2 + Math.random() * 50
+    }));
+
+    const builder = new ChartBuilder<any>()
+        .withData(of(highDensityData))
+        .withCategoryField('index')
+        .withTitle(of(`High Density Chart (${points} points)`))
+        .withHeight(400);
+
+    builder.addLineChart('value')
+        .withLabel('Sine Wave + Noise')
+        .withColor('var(--md-sys-color-primary)')
+        .withMarkers(false);
+
+    builder.addAreaChart('trend')
+        .withLabel('Linear Trend')
+        .withColor('var(--md-sys-color-secondary)')
+        .withOpacity(0.2);
+
+    const container = document.createElement('div');
+    container.className = 'flex flex-col gap-4 p-8 bg-surface text-on-surface min-h-[600px]';
+    
+    const info = document.createElement('div');
+    info.className = 'text-body-medium text-on-surface-variant mb-4 max-w-2xl';
+    info.innerHTML = `
+        <p>This chart is displaying <strong>${points}</strong> points in the dataset.</p>
+        <p class="mt-2">Based on the current implementation, the chart will automatically downsample points to maintain 
+        a maximum density of <code>width / (2 * highlightDiameter)</code>. With a highlight diameter of 12px, 
+        it shows 1 point per 24px of width.</p>
+    `;
+    
+    container.appendChild(info);
+    const chart = builder.build();
+    chart.style.width = '100%';
+    container.appendChild(chart);
+
+    return container;
+};

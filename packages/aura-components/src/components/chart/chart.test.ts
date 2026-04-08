@@ -2,6 +2,7 @@ import { ChartBuilder } from './chart-builder';
 import { ChartLogic } from './chart-logic';
 import { ChartState } from './types';
 import { AxisRenderer } from './axis-renderer';
+import { HIGHLIGHT_DIAMETER } from './constants';
 import { of, BehaviorSubject } from 'rxjs';
 import '@testing-library/jest-dom';
 
@@ -394,6 +395,7 @@ describe('ChartBuilder', () => {
 
 describe('ChartLogic.calculateScales — downsampling (ST-2)', () => {
     let logic: ChartLogic<TestItem>;
+    const DENSITY_FACTOR = 2 * HIGHLIGHT_DIAMETER;
 
     beforeEach(() => {
         logic = new ChartLogic<TestItem>();
@@ -403,60 +405,66 @@ describe('ChartLogic.calculateScales — downsampling (ST-2)', () => {
         logic.destroy();
     });
 
-    describe('no downsampling when data.length <= viewWidth', () => {
-        it('returns all points when data.length equals viewWidth exactly', () => {
-            const items = makeItems(100);
+    describe('no downsampling when data.length <= viewWidth / DENSITY_FACTOR', () => {
+        it('returns all points when data.length equals (viewWidth / DENSITY_FACTOR) exactly', () => {
+            const viewWidth = 120;
+            const maxPoints = Math.floor(viewWidth / DENSITY_FACTOR); // floor(120/24) = 5
+            const items = makeItems(maxPoints);
             const state = makeState(items);
-            const scales = logic.calculateScales(state, 100, 300);
-            expect(scales.displayData.length).toBe(100);
+            const scales = logic.calculateScales(state, viewWidth, 300);
+            expect(scales.displayData.length).toBe(maxPoints);
         });
 
-        it('returns all points when data.length is less than viewWidth', () => {
-            const items = makeItems(50);
+        it('returns all points when data.length is less than viewWidth / DENSITY_FACTOR', () => {
+            const viewWidth = 240; // floor(240/24) = 10
+            const items = makeItems(5);
             const state = makeState(items);
-            const scales = logic.calculateScales(state, 200, 300);
-            expect(scales.displayData.length).toBe(50);
+            const scales = logic.calculateScales(state, viewWidth, 300);
+            expect(scales.displayData.length).toBe(5);
         });
 
-        it('returns all points when data.length equals Math.floor(viewWidth)', () => {
-            // viewWidth=100.9 → MAX_POINTS=100; data.length=100 → no downsampling
-            const items = makeItems(100);
+        it('returns all points when data.length equals Math.floor(viewWidth / DENSITY_FACTOR)', () => {
+            // viewWidth=100.9 → MAX_POINTS=floor(100.9/24)=4; data.length=4 → no downsampling
+            const items = makeItems(4);
             const state = makeState(items);
             const scales = logic.calculateScales(state, 100.9, 300);
-            expect(scales.displayData.length).toBe(100);
+            expect(scales.displayData.length).toBe(4);
         });
 
         it('preserves original data references when no downsampling occurs', () => {
-            const items = makeItems(5);
+            const items = makeItems(2);
             const state = makeState(items);
             const scales = logic.calculateScales(state, 500, 300);
             expect(scales.displayData).toEqual(items);
         });
     });
 
-    describe('downsampling when data.length > Math.floor(viewWidth)', () => {
-        it('caps displayData length at Math.floor(viewWidth)', () => {
+    describe('downsampling when data.length > Math.floor(viewWidth / DENSITY_FACTOR)', () => {
+        it('caps displayData length at Math.floor(viewWidth / DENSITY_FACTOR)', () => {
+            const viewWidth = 240;
+            const maxPoints = Math.floor(viewWidth / DENSITY_FACTOR); // 10
             const items = makeItems(500);
             const state = makeState(items);
-            const scales = logic.calculateScales(state, 200, 300);
-            expect(scales.displayData.length).toBe(200);
+            const scales = logic.calculateScales(state, viewWidth, 300);
+            expect(scales.displayData.length).toBe(maxPoints);
         });
 
         it('uses Math.floor on a fractional viewWidth before capping', () => {
-            // viewWidth=199.9 → MAX_POINTS=199
+            // viewWidth=119.9 → floor(119.9/24) = 4
             const items = makeItems(500);
             const state = makeState(items);
-            const scales = logic.calculateScales(state, 199.9, 300);
-            expect(scales.displayData.length).toBe(199);
+            const scales = logic.calculateScales(state, 119.9, 300);
+            expect(scales.displayData.length).toBe(4);
         });
 
-        it('never renders more points than Math.floor(viewWidth) regardless of dataset size', () => {
+        it('never renders more points than Math.floor(viewWidth / DENSITY_FACTOR) regardless of dataset size', () => {
             const viewWidth = 300;
-            for (const dataSize of [301, 500, 1000, 10000]) {
+            const maxPoints = Math.floor(viewWidth / DENSITY_FACTOR); // floor(300/24) = 12
+            for (const dataSize of [13, 50, 100, 1000]) {
                 const items = makeItems(dataSize);
                 const state = makeState(items);
                 const scales = logic.calculateScales(state, viewWidth, 300);
-                expect(scales.displayData.length).toBeLessThanOrEqual(Math.floor(viewWidth));
+                expect(scales.displayData.length).toBeLessThanOrEqual(maxPoints);
             }
         });
     });

@@ -30,7 +30,7 @@ Used to configure area-based series (line with filled area below).
 - `asStacked(): this`: Sets the series to be stacked with other bar or area series.
 
 ## Implementation Details
-- **Rendering**: The `SeriesRenderer` handles the drawing of all series types.
+- **Rendering**: The `SeriesRenderer` handles the drawing of all series types. All series MUST be rendered using the downsampled `displayData` provided by `ChartScales`.
 - **X-Scale Padding**: There MUST be exactly **8px padding** between the Y-axis and the first series element (e.g., the first bar's left edge).
 - **Zero Baseline**: All value-based renderings (lines, bars, areas) MUST use `yScale(0)` as the baseline. 
 - **Path Rendering**: Lines and area boundaries MUST use `<path>` elements with standard `M` (move to) and `L` (line to) commands. 
@@ -39,7 +39,7 @@ Used to configure area-based series (line with filled area below).
 - **Shadow Application**: `SeriesRenderer` applies corresponding filters using `setAttribute('filter', 'url(#shadow-i)')`.
 - **Tooltip Content**: Handled by `ChartTooltip` class using `LabelBuilder`.
 - **Composition**: Series are rendered in the order they were added to the `logic.state$.charts` array.
-- **Markers**: Markers for line series should be animated from `baselineY` to their target position and should receive the shadow filter.
+- **Markers**: Markers for line series should be animated from `baselineY` to their target position and should receive the shadow filter. When interactive, the highlight ring MUST have a radius of **6px** (`HIGHLIGHT_RADIUS`).
 - **Filters**: The `SeriesRenderer` is responsible for updating SVG filters in the `<defs>` section of the SVG (via `SeriesRenderer.updateFilters()`).
 
 ## Render order

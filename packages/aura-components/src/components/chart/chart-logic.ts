@@ -1,5 +1,6 @@
 import { BehaviorSubject, Observable, Subscription, combineLatest, map } from 'rxjs';
 import { ChartState, IndividualChartConfig, AxisConfig, ChartScales } from './types';
+import { HIGHLIGHT_DIAMETER } from './constants';
 
 export class ChartLogic<ITEM> {
     private _data$ = new BehaviorSubject<ITEM[]>([]);
@@ -149,8 +150,8 @@ export class ChartLogic<ITEM> {
     public calculateScales(state: ChartState<ITEM>, viewWidth: number, viewHeight: number): ChartScales {
         const categories = state.data.map(d => String(d[state.categoryField as keyof ITEM]));
 
-        // Downsample: never render more points than there are pixels on the X axis
-        const MAX_POINTS = Math.max(2, Math.floor(viewWidth));
+        // Downsample: max points density = width / (2 * highlightDiameter)
+        const MAX_POINTS = Math.max(2, Math.floor(viewWidth / (2 * HIGHLIGHT_DIAMETER)));
         let displayData: ITEM[] = state.data;
         let displayCategories = categories;
 

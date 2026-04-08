@@ -6,6 +6,7 @@ import { AxisRenderer } from './axis-renderer';
 import { SeriesRenderer } from './series-renderer';
 import { ChartLegend } from './chart-legend';
 import { ChartTooltip } from './chart-tooltip';
+import { HIGHLIGHT_RADIUS } from './constants';
 import { LabelBuilder, LabelSize } from '../label';
 import { registerDestroy } from '@/core/destroyable-element';
 import { map } from 'rxjs';
@@ -206,8 +207,8 @@ export class ChartViewport<ITEM> {
         if (!this.hoverG || !this.lastState || !this.lastScales) return;
         this.clearHoverEffects();
 
-        const { yScale, secondaryYScale } = this.lastScales;
-        const item = this.lastState.data[index];
+        const { yScale, secondaryYScale, displayData } = this.lastScales;
+        const item = displayData[index];
         if (!item) return;
 
         const hoverG = this.hoverG;
@@ -237,7 +238,7 @@ export class ChartViewport<ITEM> {
             const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             ring.setAttribute('cx', String(xPos));
             ring.setAttribute('cy', String(y));
-            ring.setAttribute('r', '6');
+            ring.setAttribute('r', String(HIGHLIGHT_RADIUS));
             ring.setAttribute('class', ChartStyles.hoverRing);
             ring.style.stroke = chart.color || 'currentColor';
             hoverG.appendChild(ring);

@@ -1,0 +1,2 @@
+export const HIGHLIGHT_RADIUS = 6;
+export const HIGHLIGHT_DIAMETER = HIGHLIGHT_RADIUS * 2;

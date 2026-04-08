@@ -7,3 +7,4 @@ export * from './series-renderer';
 export * from './chart-legend';
 export * from './chart-tooltip';
 export * from './types';
+export * from './constants';
