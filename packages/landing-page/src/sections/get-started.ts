@@ -21,7 +21,7 @@ export function createGetStarted(): HTMLElement {
     const bgDec = document.createElement('div');
     bgDec.className = 'absolute inset-0 -z-10';
     bgDec.innerHTML = `
-        <div class="absolute top-1/2 right-[-100px] w-[500px] h-[500px] rounded-full -translate-y-1/2" style="background: radial-gradient(circle, rgba(2,132,199,0.05) 0%, transparent 70%);"></div>
+        <div class="absolute top-1/2 right-[-100px] w-[500px] h-[500px] rounded-full -translate-y-1/2" style="background: radial-gradient(circle, rgba(79,70,229,0.05) 0%, transparent 70%);"></div>
     `;
     section.appendChild(bgDec);
 
@@ -210,7 +210,7 @@ function createStats(): HTMLElement {
 function getCTAThemeStyle(theme: string | null): string {
     if (theme === 'dark') return 'background: linear-gradient(135deg, #4F378B 0%, #633B48 100%); box-shadow: 0 20px 60px rgba(79,55,139,0.3);';
     if (theme === 'pink') return 'background: linear-gradient(135deg, #7D2950 0%, #5F1138 100%); box-shadow: 0 20px 60px rgba(125,41,80,0.3);';
-    return 'background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%); box-shadow: 0 20px 60px rgba(2,132,199,0.3);';
+    return 'background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); box-shadow: 0 20px 60px rgba(79,70,229,0.3);';
 }
 
 function createBottomCTA(): HTMLElement {

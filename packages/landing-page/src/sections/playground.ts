@@ -11,8 +11,8 @@ export function createPlayground(): HTMLElement {
     const bgDec = document.createElement('div');
     bgDec.className = 'absolute inset-0 -z-10 overflow-hidden';
     bgDec.innerHTML = `
-        <div class="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full" style="background: radial-gradient(circle, rgba(14,165,233,0.06) 0%, transparent 70%);"></div>
-        <div class="absolute top-0 left-0 w-[400px] h-[400px] rounded-full" style="background: radial-gradient(circle, rgba(2,132,199,0.05) 0%, transparent 70%);"></div>
+        <div class="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full" style="background: radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%);"></div>
+        <div class="absolute top-0 left-0 w-[400px] h-[400px] rounded-full" style="background: radial-gradient(circle, rgba(79,70,229,0.05) 0%, transparent 70%);"></div>
     `;
     section.appendChild(bgDec);
 

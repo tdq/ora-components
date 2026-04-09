@@ -35,7 +35,7 @@ function createFooter(): HTMLElement {
     // Gradient top border
     const topBorder = document.createElement('div');
     topBorder.className = 'w-full h-px';
-    topBorder.style.cssText = 'background: linear-gradient(90deg, transparent 0%, rgba(2,132,199,0.4) 30%, rgba(14,165,233,0.4) 70%, transparent 100%);';
+    topBorder.style.cssText = 'background: linear-gradient(90deg, transparent 0%, rgba(79,70,229,0.4) 30%, rgba(99,102,241,0.4) 70%, transparent 100%);';
     footer.appendChild(topBorder);
 
     const inner = document.createElement('div');
@@ -49,7 +49,7 @@ function createFooter(): HTMLElement {
     const brand = document.createElement('div');
     brand.innerHTML = `
         <div class="flex items-center gap-px-12 mb-px-16 cursor-pointer" id="footer-logo">
-            <div class="w-9 h-9 rounded-large flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #0284c7, #0ea5e9);">
+            <div class="w-9 h-9 rounded-large flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #4f46e5, #6366f1);">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <path d="M9 2L15.5 14H2.5L9 2Z" fill="white" fill-opacity="0.9"/>
                     <circle cx="9" cy="10" r="2.5" fill="white" fill-opacity="0.6"/>
@@ -111,7 +111,7 @@ function createFooter(): HTMLElement {
         <p class="text-label-medium text-on-surface-variant" style="opacity: 0.5;">© 2026 Aura Design System. All rights reserved.</p>
         <p class="text-label-medium text-on-surface-variant flex items-center gap-px-8" style="opacity: 0.5;">
             Built with
-            <span style="background: linear-gradient(135deg, #0284c7, #0ea5e9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 600;">Aura Components</span>
+            <span style="background: linear-gradient(135deg, #4f46e5, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 600;">Aura Components</span>
             &amp; RxJS
         </p>
     `;

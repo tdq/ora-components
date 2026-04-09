@@ -40,7 +40,7 @@ export function createProblem(): HTMLElement {
     // Top border
     const topBorder = document.createElement('div');
     topBorder.className = 'absolute top-0 left-0 right-0 h-px';
-    topBorder.style.cssText = 'background: linear-gradient(90deg, transparent 0%, rgba(2,132,199,0.2) 30%, rgba(14,165,233,0.2) 70%, transparent 100%);';
+    topBorder.style.cssText = 'background: linear-gradient(90deg, transparent 0%, rgba(79,70,229,0.2) 30%, rgba(99,102,241,0.2) 70%, transparent 100%);';
     section.appendChild(topBorder);
 
     const inner = document.createElement('div');
@@ -113,11 +113,11 @@ export function createProblem(): HTMLElement {
     const resolution = document.createElement('div');
     resolution.className = 'mt-px-48 flex items-center gap-px-16';
     resolution.innerHTML = `
-        <div class="h-px flex-1" style="background: linear-gradient(90deg, rgba(2,132,199,0.2), transparent);"></div>
+        <div class="h-px flex-1" style="background: linear-gradient(90deg, rgba(79,70,229,0.2), transparent);"></div>
         <p class="text-body-large text-on-surface-variant text-center shrink-0" style="opacity: 0.7;">
             Aura Components was built to eliminate all three.
         </p>
-        <div class="h-px flex-1" style="background: linear-gradient(90deg, transparent, rgba(2,132,199,0.2));"></div>
+        <div class="h-px flex-1" style="background: linear-gradient(90deg, transparent, rgba(79,70,229,0.2));"></div>
     `;
     inner.appendChild(resolution);
 

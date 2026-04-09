@@ -6,28 +6,28 @@
 
 @layer base {
   :root {
-    --md-sys-color-primary: #0284c7;
+    --md-sys-color-primary: #4f46e5;
     --md-sys-color-on-primary: #FFFFFF;
-    --md-sys-color-primary-container: #e0f2fe;
-    --md-sys-color-on-primary-container: #0c4a6e;
-    --md-sys-color-secondary: #0369a1;
+    --md-sys-color-primary-container: #e0e7ff;
+    --md-sys-color-on-primary-container: #1e1b4b;
+    --md-sys-color-secondary: #4338ca;
     --md-sys-color-on-secondary: #FFFFFF;
-    --md-sys-color-secondary-container: #bae6fd;
-    --md-sys-color-on-secondary-container: #0c4a6e;
-    --md-sys-color-tertiary: #0ea5e9;
+    --md-sys-color-secondary-container: #c7d2fe;
+    --md-sys-color-on-secondary-container: #1e1b4b;
+    --md-sys-color-tertiary: #6366f1;
     --md-sys-color-on-tertiary: #FFFFFF;
-    --md-sys-color-tertiary-container: #e0f2fe;
-    --md-sys-color-on-tertiary-container: #0c4a6e;
+    --md-sys-color-tertiary-container: #e0e7ff;
+    --md-sys-color-on-tertiary-container: #1e1b4b;
     --md-sys-color-error: #B3261E;
     --md-sys-color-on-error: #FFFFFF;
     --md-sys-color-background: #FFFFFF;
     --md-sys-color-on-background: #0f172a;
     --md-sys-color-surface: #FFFFFF;
     --md-sys-color-on-surface: #0f172a;
-    --md-sys-color-surface-variant: #e0f2fe;
-    --md-sys-color-on-surface-variant: #1e3a5f;
-    --md-sys-color-outline: #7dd3fc;
-    --md-sys-color-surface-container-low: #f0f9ff;
+    --md-sys-color-surface-variant: #e0e7ff;
+    --md-sys-color-on-surface-variant: #1e1b4b;
+    --md-sys-color-outline: #a5b4fc;
+    --md-sys-color-surface-container-low: #eef2ff;
   }
 
   [data-theme="dark"] {
@@ -98,15 +98,15 @@
 
   :root:not([data-theme="dark"]):not([data-theme="pink"]) {
     /* Default Light Theme Accents */
-    --accent-blob-1: linear-gradient(to right, rgba(14, 165, 233, 0.25), rgba(56, 189, 248, 0.25));
-    --accent-blob-2: linear-gradient(to right, rgba(56, 189, 248, 0.25), rgba(14, 165, 233, 0.25));
-    --accent-gradient-text-1: linear-gradient(135deg, #0f172a, #0369a1, #0f172a);
-    --accent-gradient-text-2: linear-gradient(135deg, #0284c7, #0ea5e9);
-    --accent-badge-bg: rgba(2, 132, 199, 0.1);
-    --accent-badge-border: rgba(2, 132, 199, 0.2);
-    --accent-badge-text: #0369a1;
-    --accent-primary: #0284c7;
-    --accent-secondary: #0369a1;
+    --accent-blob-1: linear-gradient(to right, rgba(79, 70, 229, 0.2), rgba(99, 102, 241, 0.2));
+    --accent-blob-2: linear-gradient(to right, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.2));
+    --accent-gradient-text-1: linear-gradient(135deg, #0f172a, #3730a3, #0f172a);
+    --accent-gradient-text-2: linear-gradient(135deg, #4f46e5, #6366f1);
+    --accent-badge-bg: rgba(79, 70, 229, 0.1);
+    --accent-badge-border: rgba(79, 70, 229, 0.2);
+    --accent-badge-text: #4338ca;
+    --accent-primary: #4f46e5;
+    --accent-secondary: #4338ca;
   }
 }
 

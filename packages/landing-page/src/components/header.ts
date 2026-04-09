@@ -10,7 +10,7 @@ export function createHeader(): HTMLElement {
     const getThemeAccents = (theme: string | null) => {
         if (theme === 'dark') return { bg: 'rgba(20, 18, 24, 0.75)', gradient: 'linear-gradient(135deg, #4F378B, #633B48)', shadow: 'rgba(79,55,139,0.3)' };
         if (theme === 'pink') return { bg: 'rgba(255, 240, 245, 0.75)', gradient: 'linear-gradient(135deg, #7D2950, #5F1138)', shadow: 'rgba(125,41,80,0.3)' };
-        return { bg: 'rgba(255, 255, 255, 0.75)', gradient: 'linear-gradient(135deg, #0284c7, #0ea5e9)', shadow: 'rgba(2,132,199,0.3)' };
+        return { bg: 'rgba(255, 255, 255, 0.75)', gradient: 'linear-gradient(135deg, #4f46e5, #6366f1)', shadow: 'rgba(79,70,229,0.3)' };
     };
 
     // Update glass background + accent colors when theme changes
@@ -27,7 +27,7 @@ export function createHeader(): HTMLElement {
     const logo = document.createElement('div');
     logo.className = 'flex items-center gap-px-12 cursor-pointer group';
     logo.innerHTML = `
-        <div class="logo-icon relative w-9 h-9 rounded-large flex items-center justify-center flex-shrink-0 overflow-hidden" style="background: linear-gradient(135deg, #0284c7, #0ea5e9);">
+        <div class="logo-icon relative w-9 h-9 rounded-large flex items-center justify-center flex-shrink-0 overflow-hidden" style="background: linear-gradient(135deg, #4f46e5, #6366f1);">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 2L15.5 14H2.5L9 2Z" fill="white" fill-opacity="0.9"/>
                 <circle cx="9" cy="10" r="2.5" fill="white" fill-opacity="0.6"/>
@@ -78,7 +78,7 @@ export function createHeader(): HTMLElement {
 
     const ctaBtn = document.createElement('button');
     ctaBtn.className = 'px-px-16 py-px-8 text-label-large text-white rounded-large font-medium transition-all duration-200 hover:shadow-level-3 hover:scale-105 active:scale-95';
-    ctaBtn.style.cssText = 'background: linear-gradient(135deg, #0284c7, #0ea5e9); box-shadow: 0 2px 12px rgba(2,132,199,0.3);';
+    ctaBtn.style.cssText = 'background: linear-gradient(135deg, #4f46e5, #6366f1); box-shadow: 0 2px 12px rgba(79,70,229,0.3);';
     ctaBtn.textContent = 'View Demo';
     ctaBtn.onmouseenter = () => {
         const theme = document.documentElement.getAttribute('data-theme');
@@ -124,7 +124,7 @@ export function createHeader(): HTMLElement {
     mobileDemoBtnWrap.className = 'px-px-16 py-px-12';
     const mobileDemoBtn = document.createElement('button');
     mobileDemoBtn.className = 'w-full py-px-12 text-label-large text-white rounded-large font-medium transition-all duration-200';
-    mobileDemoBtn.style.cssText = 'background: linear-gradient(135deg, #0284c7, #0ea5e9);';
+    mobileDemoBtn.style.cssText = 'background: linear-gradient(135deg, #4f46e5, #6366f1);';
     mobileDemoBtn.textContent = 'View Demo';
     mobileDemoBtn.onclick = () => {
         closeMobileMenu();
@@ -196,7 +196,7 @@ function createThemeToggle(onThemeChange?: () => void): HTMLElement {
 
         const updateActive = () => {
             const theme = document.documentElement.getAttribute('data-theme');
-            const activeColor = theme === 'dark' ? '#D0BCFF' : theme === 'pink' ? '#FFB3D1' : '#0284c7';
+            const activeColor = theme === 'dark' ? '#D0BCFF' : theme === 'pink' ? '#FFB3D1' : '#4f46e5';
             buttons.forEach((b, i) => {
                 const isActive = themes[i].name === activeTheme;
                 b.style.cssText = isActive
@@ -218,7 +218,7 @@ function createThemeToggle(onThemeChange?: () => void): HTMLElement {
     });
 
     // Set initial state
-    buttons[0].style.cssText = 'background: white; color: #0284c7; box-shadow: 0 1px 4px rgba(0,0,0,0.15);';
+    buttons[0].style.cssText = 'background: white; color: #4f46e5; box-shadow: 0 1px 4px rgba(0,0,0,0.15);';
 
     return container;
 }

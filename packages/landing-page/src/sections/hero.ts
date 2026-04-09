@@ -71,7 +71,7 @@ export function createHero(): HTMLElement {
                         <div class="flex flex-row gap-4">
                             <button
                                 id="explore-dashboard-btn"
-                                class="ring-offset-background focus-visible:outline-hidden focus-visible:ring-ring inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-11 rounded-md text-white border-0 px-8 py-6 text-lg font-semibold group" style="background: linear-gradient(to right, #0284c7, #38bdf8);">
+                                class="ring-offset-background focus-visible:outline-hidden focus-visible:ring-ring inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-11 rounded-md text-white border-0 px-8 py-6 text-lg font-semibold group" style="background: linear-gradient(to right, #4f46e5, #818cf8);">
                                 Explore Live Dashboard<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round"
@@ -114,7 +114,7 @@ export function createHero(): HTMLElement {
             ? 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900'
             : theme === 'pink'
             ? 'bg-gradient-to-br from-white via-pink-50 to-pink-100'
-            : 'bg-gradient-to-br from-white via-sky-50 to-sky-100';
+            : 'bg-gradient-to-br from-white via-indigo-50 to-indigo-100';
 
         if (container) container.className = `min-h-screen relative overflow-hidden transition-colors duration-500 ${themeBg}`;
 
@@ -124,7 +124,7 @@ export function createHero(): HTMLElement {
                 ? 'linear-gradient(to right, #4F378B, #633B48)'
                 : theme === 'pink'
                 ? 'linear-gradient(to right, #7D2950, #db2777)'
-                : 'linear-gradient(to right, #0284c7, #38bdf8)';
+                : 'linear-gradient(to right, #4f46e5, #818cf8)';
             exploreBtn.style.background = btnGradient;
         }
     });
