@@ -5,13 +5,13 @@ description: >-
   fixes, or QA a complete module or component.
 
 mode: subagent
-model: openai/gpt-4o-mini
+model:  deepseek/deepseek-reasoner
 tools:
   bash: false
   webfetch: false
   task: false
   todowrite: false
-color: "#8B5CF6"
+color: #8B5CF6
 ---
 
 ## Role

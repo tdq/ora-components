@@ -13,6 +13,7 @@ export class RouterBuilder implements ComponentBuilder {
     private currentElement: HTMLElement | null = null;
     private currentDefinition: RouteDefinition | null = null;
     private outlet: HTMLElement | null = null;
+    private pendingNavigationId: number = 0;
 
     withFallback(path: string): this {
         this.options.fallback = path;
@@ -107,8 +108,15 @@ export class RouterBuilder implements ComponentBuilder {
     }
 
     private swapView(match: RouteMatch, definition: RouteDefinition): void {
+        // Increment navigation ID to track this navigation
+        const navigationId = ++this.pendingNavigationId;
+        
         // onLeave for old route
-        this.currentDefinition?.onLeave?.();
+        try {
+            this.currentDefinition?.onLeave?.();
+        } catch (error) {
+            console.error('Route onLeave hook failed:', error);
+        }
 
         // Remove old element (triggers registerDestroy cleanup on it)
         if (this.currentElement && this.outlet) {
@@ -118,7 +126,25 @@ export class RouterBuilder implements ComponentBuilder {
         this.currentDefinition = null;
 
         // Resolve builder — may be sync or async
-        Promise.resolve(definition.factory(match.params)).then((builder) => {
+        let factoryPromise: Promise<ComponentBuilder>;
+        try {
+            factoryPromise = Promise.resolve(definition.factory(match.params));
+        } catch (error) {
+            // Factory threw synchronously
+            if (navigationId === this.pendingNavigationId) {
+                console.error('Failed to load route component:', error);
+            }
+            return;
+        }
+
+        factoryPromise.then((builder) => {
+            // Check if this promise is for the current navigation
+            // If a newer navigation has started (navigationId < pendingNavigationId),
+            // this promise is stale and should be ignored
+            if (navigationId !== this.pendingNavigationId) {
+                return;
+            }
+
             const el = builder.build();
 
             if (this.outlet) {
@@ -129,7 +155,16 @@ export class RouterBuilder implements ComponentBuilder {
             this.currentDefinition = definition;
             this.routeSubject.next(match);
 
-            definition.onEnter?.(match);
+            try {
+                definition.onEnter?.(match);
+            } catch (hookError) {
+                console.error('Route onEnter hook failed:', hookError);
+            }
+        }).catch((error) => {
+            // Only log error if this is still the current navigation
+            if (navigationId === this.pendingNavigationId) {
+                console.error('Failed to load route component:', error);
+            }
         });
     }
 }

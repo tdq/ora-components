@@ -35,10 +35,26 @@ export class LinkBuilder implements ComponentBuilder {
         const anchor = document.createElement('a');
 
         anchor.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Read current href from the element attribute
-            const href = anchor.getAttribute('href') ?? '/';
-            this.router.navigate(href);
+            // Accessibility fix: Only prevent default for left-click without modifier keys
+            // This preserves standard browser behavior for:
+            // - Middle-click (button === 1) → opens link in new tab
+            // - Right-click (button === 2) → opens context menu
+            // - Ctrl/Cmd+click (metaKey) → opens in new tab
+            // - Shift+click → opens in new window
+            // - Alt+click → may download link
+            // Also respects if a child element already prevented default (e.defaultPrevented)
+            // And allows default browser behavior for links with target attribute
+            const isLeftClick = e.button === 0;
+            const hasModifier = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
+            const hasTarget = anchor.hasAttribute('target');
+            
+            if (isLeftClick && !hasModifier && !e.defaultPrevented && !hasTarget) {
+                e.preventDefault();
+                // Read current href from the element attribute
+                const href = anchor.getAttribute('href') ?? '/';
+                this.router.navigate(href);
+            }
+            // For all other click types, allow default browser behavior
         });
 
         const subscriptions = new Subscription();

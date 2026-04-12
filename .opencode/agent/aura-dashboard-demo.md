@@ -6,14 +6,14 @@ description: >-
   ensuring memory-safe RxJS usage throughout the demo.
 
 mode: subagent
-model: deepseek/deepseek-chat
+model: google/gemini-3-flash-preview
 tools:
   bash: false
   webfetch: false
   task: false
   todowrite: false
 mcp: aura-components
-color: "#0EA5E9"
+color: #0EA5E9
 ---
 
 ## Scope

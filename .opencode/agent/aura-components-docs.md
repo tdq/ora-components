@@ -6,13 +6,13 @@ description: >-
   .agent/ guide files in sync with the component library.
 
 mode: subagent
-model: google/gemini-3.1-flash-lite-preview
+model: google/gemini-3-flash-preview
 tools:
   bash: false
   webfetch: false
   task: false
   todowrite: false
-color: "#10B981"
+color: #10B981
 ---
 
 ## Scope

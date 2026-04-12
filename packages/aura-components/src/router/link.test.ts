@@ -63,14 +63,19 @@ describe('LinkBuilder', () => {
         expect(link.textContent).toBe('After');
     });
 
-    it('click calls router.navigate() with href and prevents default', () => {
+    it('click calls router.navigate() with href and prevents default for left-click without modifiers', () => {
         const router = makeRouter();
         const link = new LinkBuilder(router)
             .withHref('/page')
             .withCaption('Page')
             .build();
 
-        const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+        // Simulate left-click without modifiers (button: 0, no meta/ctrl/shift/alt keys)
+        const event = new MouseEvent('click', { 
+            bubbles: true, 
+            cancelable: true,
+            button: 0
+        });
         link.dispatchEvent(event);
 
         expect(router.navigate).toHaveBeenCalledWith('/page');
@@ -138,5 +143,148 @@ describe('LinkBuilder', () => {
 
         expect(link.classList.contains('router-link-active')).toBe(true);
         expect(link.classList.contains('active')).toBe(false);
+    });
+
+    it('does not prevent default for Ctrl+click (opens in new tab)', () => {
+        const router = makeRouter();
+        const link = new LinkBuilder(router)
+            .withHref('/page')
+            .withCaption('Page')
+            .build();
+
+        // Simulate Ctrl+click
+        const event = new MouseEvent('click', { 
+            bubbles: true, 
+            cancelable: true,
+            button: 0,
+            ctrlKey: true
+        });
+        link.dispatchEvent(event);
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('does not prevent default for Cmd+click (opens in new tab)', () => {
+        const router = makeRouter();
+        const link = new LinkBuilder(router)
+            .withHref('/page')
+            .withCaption('Page')
+            .build();
+
+        // Simulate Cmd+click
+        const event = new MouseEvent('click', { 
+            bubbles: true, 
+            cancelable: true,
+            button: 0,
+            metaKey: true
+        });
+        link.dispatchEvent(event);
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('does not prevent default for middle-click (button: 1)', () => {
+        const router = makeRouter();
+        const link = new LinkBuilder(router)
+            .withHref('/page')
+            .withCaption('Page')
+            .build();
+
+        // Simulate middle-click
+        const event = new MouseEvent('click', { 
+            bubbles: true, 
+            cancelable: true,
+            button: 1
+        });
+        link.dispatchEvent(event);
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('does not prevent default for Shift+click (opens in new window)', () => {
+        const router = makeRouter();
+        const link = new LinkBuilder(router)
+            .withHref('/page')
+            .withCaption('Page')
+            .build();
+
+        // Simulate Shift+click
+        const event = new MouseEvent('click', { 
+            bubbles: true, 
+            cancelable: true,
+            button: 0,
+            shiftKey: true
+        });
+        link.dispatchEvent(event);
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('does not prevent default for right-click (button: 2)', () => {
+        const router = makeRouter();
+        const link = new LinkBuilder(router)
+            .withHref('/page')
+            .withCaption('Page')
+            .build();
+
+        // Simulate right-click
+        const event = new MouseEvent('click', { 
+            bubbles: true, 
+            cancelable: true,
+            button: 2
+        });
+        link.dispatchEvent(event);
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('does not prevent default or navigate when event.defaultPrevented is already true', () => {
+        const router = makeRouter();
+        const link = new LinkBuilder(router)
+            .withHref('/page')
+            .withCaption('Page')
+            .build();
+
+        // Simulate left-click without modifiers but with defaultPrevented already true
+        const event = new MouseEvent('click', { 
+            bubbles: true, 
+            cancelable: true,
+            button: 0
+        });
+        
+        // Simulate a child element having already prevented default
+        Object.defineProperty(event, 'defaultPrevented', { value: true });
+        
+        link.dispatchEvent(event);
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(true);
+    });
+
+    it('does not prevent default or navigate when anchor has target attribute', () => {
+        const router = makeRouter();
+        const link = new LinkBuilder(router)
+            .withHref('/page')
+            .withCaption('Page')
+            .build();
+        
+        // Set target attribute (e.g., for external links)
+        link.setAttribute('target', '_blank');
+
+        // Simulate left-click without modifiers
+        const event = new MouseEvent('click', { 
+            bubbles: true, 
+            cancelable: true,
+            button: 0
+        });
+        link.dispatchEvent(event);
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
     });
 });

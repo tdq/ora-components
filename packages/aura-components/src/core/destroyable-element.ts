@@ -1,58 +1,79 @@
 export type DestroyCallback = () => void;
 
-(function () {
-    console.warn('destroyable element observer started');
+/**
+ * Internal storage of destroy callbacks.
+ * WeakMap ensures:
+ * - no memory leaks
+ * - GC works normally
+ * - no mutation of DOM nodes
+ */
+const destroyMap = new WeakMap<HTMLElement, DestroyCallback[]>();
 
-    /**
-     * Internal storage of destroy callbacks.
-     * WeakMap ensures:
-     * - no memory leaks
-     * - GC works normally
-     * - no mutation of DOM nodes
-     */
-    const destroyMap = new WeakMap<HTMLElement, DestroyCallback>();
-
-    /**
-     * Public registration API
-     */
-    function registerDestroy(
-        element: HTMLElement,
-        destroy: DestroyCallback
-    ) {
-        destroyMap.set(element, destroy);
+/**
+ * Public registration API
+ */
+export function registerDestroy(
+    element: HTMLElement,
+    destroy: DestroyCallback
+) {
+    // Get existing callbacks or create new array
+    let callbacks = destroyMap.get(element);
+    
+    if (!callbacks) {
+        // Create new array and set it
+        callbacks = [];
+        destroyMap.set(element, callbacks);
     }
+    
+    // Append to the array (mutates in place)
+    // This ensures all callbacks are preserved when called multiple times
+    callbacks.push(destroy);
+}
 
-    /**
-     * Executes destroy callback if registered
-     */
-    function tryDestroy(element: HTMLElement) {
-        const destroy = destroyMap.get(element);
+/**
+ * Executes destroy callback if registered
+ */
+function tryDestroy(element: HTMLElement) {
+    const callbacks = destroyMap.get(element);
 
-        if (typeof destroy === 'function') {
+    if (callbacks) {
+        for (const destroy of callbacks) {
             try {
                 destroy();
             } catch (e) {
                 console.error('Destroy callback error:', e);
             }
-
-            destroyMap.delete(element);
         }
+        destroyMap.delete(element);
     }
+}
 
-    /**
-     * Recursively destroy element and its subtree
-     */
-    function destroyRecursively(node: Node) {
-        if (!(node instanceof HTMLElement)) return;
+/**
+ * Recursively destroy element and its subtree
+ */
+function destroyRecursively(node: Node) {
+    if (!(node instanceof HTMLElement)) return;
 
-        // destroy self
-        tryDestroy(node);
+    // destroy self
+    tryDestroy(node);
 
-        // destroy descendants
-        node.querySelectorAll('*').forEach(child => {
-            tryDestroy(child as HTMLElement);
-        });
-    }
+    // destroy descendants
+    node.querySelectorAll('*').forEach(child => {
+        tryDestroy(child as HTMLElement);
+    });
+}
+
+// Initialize the observer only once
+let observerInitialized = false;
+
+/**
+ * Initialize the destroy observer (called automatically)
+ */
+function initializeObserver() {
+    if (observerInitialized) return;
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    
+    observerInitialized = true;
 
     /**
      * Observe DOM removals
@@ -67,20 +88,19 @@ export type DestroyCallback = () => void;
         }
     });
 
-    observer.observe(document.body, {
+    // Observe document.documentElement instead of document.body
+    // document.documentElement is always available (the <html> element)
+    // and contains the entire document subtree
+    // Safety check: if document.documentElement is somehow null, fall back to document
+    const target = document.documentElement || document;
+    
+    observer.observe(target, {
         childList: true,
         subtree: true
     });
+}
 
-    /**
-     * Expose global API
-     * You can rename this if needed.
-     */
-    (window as any).DestroyLifecycle = {
-        register: registerDestroy
-    };
-})();
-
-export const registerDestroy = (element: HTMLElement, destroy: DestroyCallback) => {
-    (window as any).DestroyLifecycle.register(element, destroy);
-};
+// Auto-initialize observer in browser environment
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    initializeObserver();
+}

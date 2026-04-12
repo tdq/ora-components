@@ -1,5 +1,5 @@
-import { Observable, Subject, BehaviorSubject, combineLatest, of, fromEvent, Subscription } from 'rxjs';
-import { map, distinctUntilChanged, startWith } from 'rxjs/operators';
+import { Observable, Subject, BehaviorSubject, ReplaySubject, combineLatest, fromEvent, Subscription } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { FieldStyle } from '../../theme';
@@ -105,7 +105,6 @@ export function buildTextField(config: TextFieldConfig, elements: TextFieldEleme
         label: label$,
         prefix: prefix$.pipe(startWith('')),
         suffix: suffix$.pipe(startWith('')),
-        currentValue: (value$ || of('')).pipe(startWith('')),
         passwordType: passwordType$
     });
 
@@ -183,13 +182,18 @@ export function buildTextField(config: TextFieldConfig, elements: TextFieldEleme
     }));
 
     if (value$) {
-        subs.add(value$.pipe(distinctUntilChanged()).subscribe(val => {
+        // For regular Subject, use startWith('') to ensure we get at least empty string
+        // For BehaviorSubject and ReplaySubject, don't use startWith to avoid flicker/double emission
+        const valueStream$ = (value$ instanceof BehaviorSubject || value$ instanceof ReplaySubject)
+            ? value$ 
+            : value$.pipe(startWith(''));
+        
+        subs.add(valueStream$.subscribe(val => {
             if (input.value !== val) input.value = val;
         }));
 
         subs.add(fromEvent(input, 'input').pipe(
-            map(e => (e.target as HTMLInputElement).value),
-            distinctUntilChanged()
+            map(e => (e.target as HTMLInputElement).value)
         ).subscribe(val => {
             value$.next(val);
         }));

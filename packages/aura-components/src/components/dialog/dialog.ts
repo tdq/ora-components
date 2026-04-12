@@ -249,6 +249,21 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
             this.element = undefined;
         });
 
+        // Add close event listener to handle native close (ESC key, backdrop click)
+        const handleClose = () => {
+            // Only remove from parent if the dialog is still connected to the DOM
+            // This prevents double removal if close() was called programmatically
+            if (dialog.isConnected && dialog.parentElement) {
+                dialog.parentElement.removeChild(dialog);
+            }
+        };
+        
+        dialog.addEventListener('close', handleClose);
+        
+        registerDestroy(dialog, () => {
+            dialog.removeEventListener('close', handleClose);
+        });
+
         this.element = dialog;
         return dialog;
     }

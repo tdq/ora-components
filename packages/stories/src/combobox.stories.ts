@@ -126,9 +126,11 @@ export const ProgrammaticControl = () => {
         .asVertical()
         .withGap(LayoutGap.LARGE);
 
+    const value$ = new BehaviorSubject<string | null>(null);
     const combobox = new ComboBoxBuilder<string>()
         .withItems(of(FRUITS))
-        .withCaption(of('Controlled ComboBox'))
+        .withValue(value$)
+        .withCaption(of('Programmatically Controlled ComboBox'))
         .build();
 
     layout.addSlot().withContent({
@@ -139,24 +141,24 @@ export const ProgrammaticControl = () => {
         .asHorizontal()
         .withGap(LayoutGap.MEDIUM);
 
-    const showButton = document.createElement('button');
-    showButton.textContent = 'Show';
-    showButton.className = 'px-4 py-2 bg-primary text-on-primary rounded-full hover:shadow-lg transition-shadow';
-    showButton.onclick = () => (combobox as any).show();
+    const appleButton = document.createElement('button');
+    appleButton.textContent = 'Select Apple';
+    appleButton.className = 'px-4 py-2 bg-primary text-on-primary rounded-full hover:shadow-lg transition-shadow';
+    appleButton.onclick = () => value$.next('Apple');
 
-    const hideButton = document.createElement('button');
-    hideButton.textContent = 'Hide';
-    hideButton.className = 'px-4 py-2 bg-secondary text-on-secondary rounded-full hover:shadow-lg transition-shadow';
-    hideButton.onclick = () => (combobox as any).hide();
+    const bananaButton = document.createElement('button');
+    bananaButton.textContent = 'Select Banana';
+    bananaButton.className = 'px-4 py-2 bg-secondary text-on-secondary rounded-full hover:shadow-lg transition-shadow';
+    bananaButton.onclick = () => value$.next('Banana');
 
-    const toggleButton = document.createElement('button');
-    toggleButton.textContent = 'Toggle';
-    toggleButton.className = 'px-4 py-2 bg-tertiary text-on-tertiary rounded-full hover:shadow-lg transition-shadow';
-    toggleButton.onclick = () => (combobox as any).toggle();
+    const clearButton = document.createElement('button');
+    clearButton.textContent = 'Clear';
+    clearButton.className = 'px-4 py-2 bg-tertiary text-on-tertiary rounded-full hover:shadow-lg transition-shadow';
+    clearButton.onclick = () => value$.next(null);
 
-    buttonsLayout.addSlot().withContent({ build: () => showButton });
-    buttonsLayout.addSlot().withContent({ build: () => hideButton });
-    buttonsLayout.addSlot().withContent({ build: () => toggleButton });
+    buttonsLayout.addSlot().withContent({ build: () => appleButton });
+    buttonsLayout.addSlot().withContent({ build: () => bananaButton });
+    buttonsLayout.addSlot().withContent({ build: () => clearButton });
 
     layout.addSlot().withContent(buttonsLayout);
 

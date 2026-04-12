@@ -5,13 +5,13 @@ description: >-
   routing. This excludes the demo area (src/demo/).
 
 mode: subagent
-model: deepseek/deepseek-chat
+model: google/gemini-3-flash-preview
 tools:
   bash: false
   webfetch: false
   task: false
   todowrite: false
-color: "#6366f1"
+color: #6366f1
 ---
 
 ## Scope

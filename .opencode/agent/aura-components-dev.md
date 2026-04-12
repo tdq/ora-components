@@ -5,14 +5,14 @@ description: >-
   updating component logic, writing tests, and creating Storybook stories.
 
 mode: subagent
-model: deepseek/deepseek-chat
+model: google/gemini-3-flash-preview
 tools:
   bash: false
   webfetch: false
   task: false
   todowrite: false
 mcp: aura-components
-color: "#F59E0B"
+color: #F59E0B
 ---
 
 ## Scope

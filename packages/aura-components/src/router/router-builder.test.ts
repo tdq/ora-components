@@ -191,4 +191,184 @@ describe('RouterBuilder', () => {
         await Promise.resolve();
         expect(captured[0]).toEqual({ userId: '5', postId: '12' });
     });
+
+    it('handles race condition with rapid navigation and async factories', async () => {
+        // This test verifies that rapid navigation doesn't cause stale promises
+        // to overwrite the current view
+        
+        const router = new RouterBuilder();
+        const mountedElements: string[] = [];
+        
+        // Route A: slow async factory (resolves after 50ms)
+        router.addRoute()
+            .withPattern('/a')
+            .withContent(async () => {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                const el = document.createElement('div');
+                el.id = 'route-a';
+                mountedElements.push('a');
+                return mockBuilder(el);
+            });
+        
+        // Route B: fast async factory (resolves immediately)
+        router.addRoute()
+            .withPattern('/b')
+            .withContent(async () => {
+                await Promise.resolve(); // microtask delay
+                const el = document.createElement('div');
+                el.id = 'route-b';
+                mountedElements.push('b');
+                return mockBuilder(el);
+            });
+        
+        const outlet = router.build();
+        await Promise.resolve(); // Let initial navigation settle
+        
+        // Navigate to A (slow)
+        router.navigate('/a');
+        // Immediately navigate to B (fast) before A resolves
+        router.navigate('/b');
+        
+        // Wait for both promises to resolve
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Should have mounted B (the later navigation), not A
+        expect(mountedElements).toEqual(['b']);
+        expect(outlet.querySelector('#route-b')).toBeTruthy();
+        expect(outlet.querySelector('#route-a')).toBeNull();
+    });
+
+    it('handles synchronous navigation from within onLeave', async () => {
+        // This test verifies that navigation triggered from within onLeave
+        // doesn't cause issues with double onLeave calls
+        
+        const router = new RouterBuilder();
+        const events: string[] = [];
+        
+        router.addRoute()
+            .withPattern('/a')
+            .withOnLeave(() => {
+                events.push('leave-a');
+                // Navigate to C synchronously from within onLeave
+                router.navigate('/c');
+            })
+            .withContent(() => {
+                events.push('enter-a');
+                return mockBuilder();
+            });
+            
+        router.addRoute()
+            .withPattern('/b')
+            .withContent(() => {
+                events.push('enter-b');
+                return mockBuilder();
+            });
+            
+        router.addRoute()
+            .withPattern('/c')
+            .withContent(() => {
+                events.push('enter-c');
+                return mockBuilder();
+            });
+        
+        router.build();
+        await Promise.resolve(); // Let initial navigation settle
+        
+        // Start at A
+        router.navigate('/a');
+        await Promise.resolve();
+        
+        // Navigate to B - this should trigger onLeave for A, which navigates to C
+        router.navigate('/b');
+        await Promise.resolve();
+        await Promise.resolve(); // Need extra microtask for nested navigation
+        
+        // Should have: enter-a, leave-a, enter-c
+        // Should NOT have: enter-b (redirected to C)
+        // Should NOT have: leave-a called twice
+        expect(events).toEqual(['enter-a', 'leave-a', 'enter-c']);
+    });
+
+    it('catches synchronous exceptions from factory function', async () => {
+        // This test verifies that synchronous exceptions thrown by factory functions
+        // are caught and don't crash the router
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        
+        const router = new RouterBuilder();
+        
+        router.addRoute()
+            .withPattern('/error')
+            .withContent(() => {
+                throw new Error('Synchronous factory error!');
+            });
+        
+        // Add a normal route for initial navigation
+        router.addRoute()
+            .withPattern('/')
+            .withContent(() => mockBuilder());
+        
+        router.build();
+        await Promise.resolve(); // Let initial navigation settle
+        
+        // Navigate to error route - this should not throw
+        router.navigate('/error');
+        
+        // Wait for promise chain to settle
+        await Promise.resolve();
+        await Promise.resolve();
+        
+        // Should have logged an error
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            'Failed to load route component:',
+            expect.any(Error)
+        );
+        
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('catches synchronous exceptions from onLeave hook', async () => {
+        // This test verifies that synchronous exceptions thrown by onLeave hooks
+        // are caught and don't crash the router
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        
+        const router = new RouterBuilder();
+        
+        router.addRoute()
+            .withPattern('/a')
+            .withOnLeave(() => {
+                throw new Error('Synchronous onLeave error!');
+            })
+            .withContent(() => mockBuilder());
+        
+        router.addRoute()
+            .withPattern('/b')
+            .withContent(() => mockBuilder());
+        
+        router.build();
+        await Promise.resolve(); // Let initial navigation settle
+        
+        // Start at route A
+        router.navigate('/a');
+        await Promise.resolve();
+        
+        // Navigate to B - onLeave for A should throw but not crash
+        router.navigate('/b');
+        
+        // Wait for navigation to complete
+        await Promise.resolve();
+        await Promise.resolve();
+        
+        // Should have logged an error for onLeave
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            'Route onLeave hook failed:',
+            expect.any(Error)
+        );
+        
+        // Should still have navigated to B
+        const paths: string[] = [];
+        router.currentRoute$.subscribe((r) => { if (r) paths.push(r.path); });
+        expect(paths[paths.length - 1]).toBe('/b');
+        
+        consoleErrorSpy.mockRestore();
+    });
 });

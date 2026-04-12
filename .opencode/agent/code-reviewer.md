@@ -5,13 +5,12 @@ description: >-
   architecture alignment, and best practices.
 
 mode: subagent
-model: google/gemini-3.1-pro-preview
-tools:
-  bash: false
-  webfetch: false
-  task: false
-  todowrite: false
-color: "#10B981"
+model: deepseek/deepseek-reasoner
+permission:
+  edit: deny
+  bash: allow
+  webfetch: allow
+color: #10B981
 ---
 
 ## Role
