@@ -1,4 +1,4 @@
-export enum ListBoxStyle {
+export enum MultiSelectListStyle {
     TONAL = 'tonal',
     OUTLINED = 'outlined',
     BORDERLESS = 'borderless',

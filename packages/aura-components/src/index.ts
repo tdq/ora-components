@@ -19,6 +19,7 @@ export * from './components/chart';
 export * from './components/grid';
 export * from './components/date-picker';
 export * from './components/listbox';
+export * from './components/multi-select-list';
 export * from './components/component-parts';
 export * from './theme';
 export * from './router';

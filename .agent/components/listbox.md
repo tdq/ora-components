@@ -5,7 +5,7 @@ ListBox component is a custom element that is used to display a scrollable list 
 It has the following methods:
 - `withCaption(caption: Observable<string>): this` - sets caption of the ListBox.
 - `withEnabled(enabled: Observable<boolean>): this` - sets enabled state of the ListBox.
-- `withStyle(style: ListBoxStyle): this` - sets style of the ListBox.
+- `withStyle(style: Observable<ListBoxStyle>): this` - sets style of the ListBox. Accepts TONAL, OUTLINED, or BORDERLESS.
 - `withClass(className: Observable<string>): this` - sets class css name of the ListBox.
 - `withItems(items: Observable<ITEM[]>): this` - sets items which are displayed in ListBox.
 - `withItemCaptionProvider(provider: (item: ITEM) => string): this` - sets item caption provider which is used for converting item into a string which will be displayed in the ListBox. Default caption provider just returns string presentation of item.
@@ -16,8 +16,9 @@ It has the following methods:
 - `asGlass(): this` - sets special styling option for ListBox as transparent with blur background (glass effect). 
 
 ListBox style is an enum with the following values:
-- tonal
-- outlined
+- `tonal` — panel with border; selected item uses secondary-container background
+- `outlined` — panel with border; selected item uses primary-container background
+- `borderless` — no panel border or rounding; selected item uses secondary-container background (same as tonal). Error state re-introduces a border.
 
 ## Requirements
 ListBox component should accept generic type ITEM. Internally ListBox uses `itemIdProvider` to generate unique IDs for each item and use it for selecting/comparing items.

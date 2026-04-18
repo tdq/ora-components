@@ -117,17 +117,20 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         const listContainer = document.createElement('div');
         
         const listStyleSub = combineLatest([
-            this.style$, 
+            this.style$,
             this.error$ ? this.error$.pipe(startWith(null)) : of(null)
-        ]).subscribe(([_style, error]) => {
-             listContainer.className = cn(
-                'rounded-large border overflow-hidden transition-all flex-1 relative flex flex-col',
+        ]).subscribe(([style, error]) => {
+            const isBorderless = style === ListBoxStyle.BORDERLESS && !this.isGlass;
+            listContainer.className = cn(
+                'overflow-hidden transition-all flex-1 relative flex flex-col',
                 !this.isGlass && 'bg-surface text-on-surface',
-               !this.isGlass && !error && 'border-outline',
+                !isBorderless && !this.isGlass && 'rounded-large border',
+                !isBorderless && !this.isGlass && !error && 'border-outline',
                 this.isGlass && 'glass-effect',
-                !!error && 'border-error'
-           );
-       });
+                !!error && !isBorderless && 'border-error',
+                !!error && isBorderless && 'rounded-large border border-error',
+            );
+        });
         registerDestroy(container, () => listStyleSub.unsubscribe());
         
         container.appendChild(listContainer);
@@ -164,7 +167,7 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
                 li.setAttribute('aria-selected', String(isSelected));
                 
                 // Styling logic mirrored from ComboBox
-                const isTonal = style === ListBoxStyle.TONAL && !this.isGlass;
+                const isTonal = (style === ListBoxStyle.TONAL || style === ListBoxStyle.BORDERLESS) && !this.isGlass;
                 const isOutlined = style === ListBoxStyle.OUTLINED && !this.isGlass;
 
                 let itemTextColor: string;

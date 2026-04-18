@@ -1,10 +1,8 @@
-import { ListBoxBuilder, ListBoxStyle } from 'aura-components';
+import { MultiSelectListBuilder, MultiSelectListStyle, LayoutBuilder, LayoutGap, LabelBuilder, LabelSize } from 'aura-components';
 import { BehaviorSubject, of } from 'rxjs';
-import { LayoutBuilder, LayoutGap } from 'aura-components';
-import { LabelBuilder, LabelSize } from 'aura-components';
 
 export default {
-    title: 'Components/ListBox',
+    title: 'Components/MultiSelectList',
 };
 
 const FRUITS = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape', 'Honeydew', 'Kiwi', 'Lemon', 'Mango', 'Nectarine', 'Orange', 'Papaya', 'Quince', 'Raspberry', 'Strawberry', 'Tangerine', 'Ugli Fruit', 'Watermelon'];
@@ -14,44 +12,41 @@ export const Styles = () => {
         .asHorizontal()
         .withGap(LayoutGap.EXTRA_LARGE);
 
-    // Tonal
     const tonalColumn = new LayoutBuilder().asVertical().withGap(LayoutGap.MEDIUM);
     tonalColumn.addSlot().withContent(
         new LabelBuilder().withCaption(of('Tonal Style')).withSize(LabelSize.MEDIUM)
     );
     tonalColumn.addSlot().withContent(
-        new ListBoxBuilder<string>()
+        new MultiSelectListBuilder<string>()
             .withItems(of(FRUITS))
-            .withCaption(of('Select a fruit'))
-            .withStyle(of(ListBoxStyle.TONAL))
+            .withCaption(of('Select fruits'))
+            .withStyle(of(MultiSelectListStyle.TONAL))
             .withHeight(of(200))
     );
     layout.addSlot().withContent(tonalColumn);
 
-    // Outlined
     const outlinedColumn = new LayoutBuilder().asVertical().withGap(LayoutGap.MEDIUM);
     outlinedColumn.addSlot().withContent(
         new LabelBuilder().withCaption(of('Outlined Style')).withSize(LabelSize.MEDIUM)
     );
     outlinedColumn.addSlot().withContent(
-        new ListBoxBuilder<string>()
+        new MultiSelectListBuilder<string>()
             .withItems(of(FRUITS))
-            .withCaption(of('Select a fruit'))
-            .withStyle(of(ListBoxStyle.OUTLINED))
+            .withCaption(of('Select fruits'))
+            .withStyle(of(MultiSelectListStyle.OUTLINED))
             .withHeight(of(200))
     );
     layout.addSlot().withContent(outlinedColumn);
 
-    // Borderless
     const borderlessColumn = new LayoutBuilder().asVertical().withGap(LayoutGap.MEDIUM);
     borderlessColumn.addSlot().withContent(
         new LabelBuilder().withCaption(of('Borderless Style')).withSize(LabelSize.MEDIUM)
     );
     borderlessColumn.addSlot().withContent(
-        new ListBoxBuilder<string>()
+        new MultiSelectListBuilder<string>()
             .withItems(of(FRUITS))
-            .withCaption(of('Select a fruit'))
-            .withStyle(of(ListBoxStyle.BORDERLESS))
+            .withCaption(of('Select fruits'))
+            .withStyle(of(MultiSelectListStyle.BORDERLESS))
             .withHeight(of(200))
     );
     layout.addSlot().withContent(borderlessColumn);
@@ -67,36 +62,65 @@ export const States = () => {
         .asHorizontal()
         .withGap(LayoutGap.EXTRA_LARGE);
 
-    // Disabled
     const disabledColumn = new LayoutBuilder().asVertical().withGap(LayoutGap.MEDIUM);
     disabledColumn.addSlot().withContent(
         new LabelBuilder().withCaption(of('Disabled State')).withSize(LabelSize.MEDIUM)
     );
     disabledColumn.addSlot().withContent(
-        new ListBoxBuilder<string>()
+        new MultiSelectListBuilder<string>()
             .withItems(of(FRUITS))
             .withEnabled(of(false))
-            .withCaption(of('Disabled ListBox'))
             .withHeight(of(150))
     );
     layout.addSlot().withContent(disabledColumn);
 
-    // Error
     const errorColumn = new LayoutBuilder().asVertical().withGap(LayoutGap.MEDIUM);
     errorColumn.addSlot().withContent(
         new LabelBuilder().withCaption(of('Error State')).withSize(LabelSize.MEDIUM)
     );
     errorColumn.addSlot().withContent(
-        new ListBoxBuilder<string>()
+        new MultiSelectListBuilder<string>()
             .withItems(of(FRUITS))
             .withError(of('Selection is required'))
-            .withCaption(of('Error ListBox'))
             .withHeight(of(150))
     );
     layout.addSlot().withContent(errorColumn);
 
     const container = layout.build();
     container.classList.add('p-4');
+
+    return container;
+};
+
+export const Interactive = () => {
+    const value$ = new BehaviorSubject<string[]>(['Apple', 'Banana']);
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new MultiSelectListBuilder<string>()
+            .withItems(of(FRUITS))
+            .withValue(value$)
+            .withHeight(of(250))
+    );
+
+    const statusLabel = new LabelBuilder()
+        .withCaption(of(''))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+
+    value$.subscribe(vals => {
+        statusLabel.textContent = `Selected (${vals.length}): ${vals.join(', ') || 'None'}`;
+    });
+
+    layout.addSlot().withContent({
+        build: () => statusLabel
+    });
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
 
     return container;
 };
@@ -122,11 +146,12 @@ export const ComplexObjects = () => {
         .withGap(LayoutGap.LARGE);
 
     layout.addSlot().withContent(
-        new ListBoxBuilder<User>()
+        new MultiSelectListBuilder<User>()
             .withItems(of(USERS))
-            .withItemCaptionProvider((user) => `${user.name} (${user.role})`)
             .withItemIdProvider((user) => user.id)
-            .withCaption(of('Select user (custom ID provider)'))
+            .withItemCaptionProvider((user) => `${user.name} (${user.role})`)
+            .withValue(new BehaviorSubject<User[]>([USERS[0]]))
+            .withCaption(of('Assign roles'))
             .withHeight(of(250))
     );
 
@@ -142,10 +167,10 @@ export const Glass = () => {
         .withGap(LayoutGap.LARGE);
 
     layout.addSlot().withContent(
-        new ListBoxBuilder<string>()
-            .withItems(of(FRUITS))
+        new MultiSelectListBuilder<string>()
+            .withItems(of(FRUITS.slice(0, 8)))
             .withCaption(of('Glass effect'))
-            .withHeight(of(200))
+            .withHeight(of(250))
             .asGlass()
     );
 
@@ -155,36 +180,38 @@ export const Glass = () => {
     return container;
 };
 
-export const Interactive = () => {
-    const value$ = new BehaviorSubject<string | null>(null);
-
+export const SelectAllToggle = () => {
     const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
+        .asHorizontal()
+        .withGap(LayoutGap.EXTRA_LARGE);
 
-    layout.addSlot().withContent(
-        new ListBoxBuilder<string>()
-            .withItems(of(FRUITS))
-            .withValue(value$)
-            .withCaption(of('Interactive Selection'))
-            .withHeight(of(200))
+    const withSelectAllColumn = new LayoutBuilder().asVertical().withGap(LayoutGap.MEDIUM);
+    withSelectAllColumn.addSlot().withContent(
+        new LabelBuilder().withCaption(of('With Select All (default)')).withSize(LabelSize.MEDIUM)
     );
+    withSelectAllColumn.addSlot().withContent(
+        new MultiSelectListBuilder<string>()
+            .withItems(of(FRUITS.slice(0, 6)))
+            .withCaption(of('Select fruits'))
+            .withHeight(of(220))
+    );
+    layout.addSlot().withContent(withSelectAllColumn);
 
-    const statusLabel = new LabelBuilder()
-        .withCaption(of('Current Selection: None'))
-        .withSize(LabelSize.MEDIUM)
-        .build();
-
-    value$.subscribe(val => {
-        statusLabel.textContent = `Current Selection: ${val || 'None'}`;
-    });
-
-    layout.addSlot().withContent({
-        build: () => statusLabel
-    });
+    const withoutSelectAllColumn = new LayoutBuilder().asVertical().withGap(LayoutGap.MEDIUM);
+    withoutSelectAllColumn.addSlot().withContent(
+        new LabelBuilder().withCaption(of('Without Select All')).withSize(LabelSize.MEDIUM)
+    );
+    withoutSelectAllColumn.addSlot().withContent(
+        new MultiSelectListBuilder<string>()
+            .withItems(of(FRUITS.slice(0, 6)))
+            .withCaption(of('Select fruits'))
+            .withSelectAll(false)
+            .withHeight(of(220))
+    );
+    layout.addSlot().withContent(withoutSelectAllColumn);
 
     const container = layout.build();
-    container.classList.add('p-4', 'max-w-md');
+    container.classList.add('p-4');
 
     return container;
 };
