@@ -214,8 +214,6 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
 
             const selectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
 
-            let focusedEl: HTMLElement | null = null;
-
             items.forEach((item, index) => {
                 const id = this.itemIdProvider(item);
                 const isSelected = selectedId === id;
@@ -274,12 +272,11 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
                     }
                 };
 
-                if (isFocused) focusedEl = li;
                 list.appendChild(li);
             });
 
             if (focusedIndex >= 0) {
-                focusedEl?.scrollIntoView({ block: 'nearest' });
+                (list.children[focusedIndex] as HTMLElement | null)?.scrollIntoView({ block: 'nearest' });
             }
         });
         registerDestroy(container, () => itemsSub.unsubscribe());

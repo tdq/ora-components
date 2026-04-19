@@ -9,7 +9,7 @@ import { TextFieldBuilder, TextFieldStyle } from 'aura-components';
 import { NumberFieldStyle } from 'aura-components';
 import { ComboBoxBuilder, ComboBoxStyle } from 'aura-components';
 import { ButtonBuilder, ButtonStyle } from 'aura-components';
-import { Icons } from '@/core/icons';
+import { Icons } from 'aura-components';
 
 export default {
     title: 'Examples/Product Management',
@@ -31,9 +31,9 @@ const generateProducts = (count: number): Product[] => {
         id: i + 1,
         name: `Product ${i + 1}`,
         category: CATEGORIES[i % CATEGORIES.length] as any,
-        price: { 
-            amount: Math.floor(Math.random() * 1000) + 10, 
-            currencyId: 'USD' 
+        price: {
+            amount: Math.floor(Math.random() * 1000) + 10,
+            currencyId: 'USD'
         },
         stock: Math.floor(Math.random() * 100),
         active: i % 5 !== 0,
@@ -85,13 +85,13 @@ export const ProductManagement = () => {
         const isEdit = !!product;
         const name$ = new BehaviorSubject(product?.name || '');
         const category$ = new BehaviorSubject(product?.category || CATEGORIES[0]);
-        const price$ = new BehaviorSubject<number | null>(product?.price?.amount ?? null);
+        const price$ = new BehaviorSubject<Money | null>(product?.price ?? null);
         const stock$ = new BehaviorSubject<number | null>(product?.stock ?? null);
         const active$ = new BehaviorSubject(product?.active ?? true);
 
         // Validation
         const nameError$ = name$.pipe(map(v => v.trim() ? '' : 'Name is required'));
-        const priceError$ = price$.pipe(map(v => v !== null && v > 0 ? '' : 'Invalid price'));
+        const priceError$ = price$.pipe(map(v => v !== null && v.amount > 0 ? '' : 'Invalid price'));
         const stockError$ = stock$.pipe(map(v => v !== null && v >= 0 ? '' : 'Invalid stock'));
 
         const isValid$ = combineLatest([nameError$, priceError$, stockError$]).pipe(
@@ -120,12 +120,12 @@ export const ProductManagement = () => {
             .withCaption(of('Active Product'))
             .withValue(active$);
 
-        fields.addNumberField(1, 1)
+        fields.addMoneyField(1, 1)
             .withLabel(of('Price'))
             .withValue(price$)
             .withError(priceError$)
             .withStyle(of(NumberFieldStyle.OUTLINED))
-            .withSuffix(of('$'));
+            .withCurrencies(['USD', 'EUR', 'GBP']);
 
         fields.addNumberField(2, 1)
             .withLabel(of('Stock'))
@@ -144,10 +144,10 @@ export const ProductManagement = () => {
             const data = {
                 name: name$.value,
                 category: category$.value as any,
-                price: { 
-                    amount: price$.value || 0, 
-                    currencyId: 'USD' 
-                },
+                price: {
+                    amount: price$.value || 0,
+                    currencyId: 'USD'
+                } as Money,
                 stock: stock$.value || 0,
                 active: active$.value
             };

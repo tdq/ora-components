@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { TextFieldBuilder } from '../text-field/text-field';
 import { NumberFieldBuilder } from '../number-field/number-field';
+import { MoneyFieldBuilder } from '../money-field';
 import { ComboBoxBuilder } from '../combobox';
 import { DatePickerBuilder } from '../date-picker';
 import { CheckboxBuilder } from '../checkbox';
@@ -44,6 +45,10 @@ export class FieldsBuilder implements IFieldsBuilder {
 
     addNumberField(column?: number, colspan?: number): NumberFieldBuilder {
         return this.addField(new NumberFieldBuilder(), column, colspan);
+    }
+
+    addMoneyField(column?: number, colspan?: number): MoneyFieldBuilder {
+        return this.addField(new MoneyFieldBuilder(), column, colspan);
     }
 
     addComboBoxField(column?: number, colspan?: number): ComboBoxBuilder<any> {

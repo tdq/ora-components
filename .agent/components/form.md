@@ -21,6 +21,7 @@ It has the folowing methods:
 - `addCheckBox(column?: number, colspan?: number): CheckBoxBuilder` - adds checkbox field component into the form.
 - `addPasswordField(column?: number, colspan?: number): TextFieldBuilder` - adds password field into the form.
 - `addEmailField(column?: number, colspan?: number): TextFieldBuilder` - adds email field with validation into the form.
+- `addMoneyField(column?: number, colspan?: number): MoneyFieldBuilder` - adds money field component into the form.
 
 "column" - defines number of column in which this component should be displayed.
 "colspan" - defines amount of columns this component takes (width in columns amount).

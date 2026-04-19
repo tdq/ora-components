@@ -4,12 +4,14 @@ import { ComboBoxBuilder } from '../combobox';
 import { DatePickerBuilder } from '../date-picker';
 import { CheckboxBuilder } from '../checkbox';
 import { LabelBuilder } from '../label';
+import { MoneyFieldBuilder } from '../money-field';
 
 export interface IFieldsBuilder {
     addTextField(column?: number, colspan?: number): TextFieldBuilder;
     addPasswordField(column?: number, colspan?: number): TextFieldBuilder;
     addEmailField(column?: number, colspan?: number): TextFieldBuilder;
     addNumberField(column?: number, colspan?: number): NumberFieldBuilder;
+    addMoneyField(column?: number, colspan?: number): MoneyFieldBuilder;
     addComboBoxField(column?: number, colspan?: number): ComboBoxBuilder<any>;
     addDatePickerField(column?: number, colspan?: number): DatePickerBuilder;
     addCheckBox(column?: number, colspan?: number): CheckboxBuilder;
