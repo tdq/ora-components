@@ -4,7 +4,7 @@
 > vite build && npm run build:css && npm run build:types && node scripts/reorganize-types.mjs && node scripts/generate-manifest.mjs
 
 [1G[0K[36mvite v5.4.21 [32mbuilding for production...[36m[39m
-[2K[1Gtransforming (1) [2msrc/components/checkbox/index.ts[22m[2K[1Gtransforming (30) [2msrc/components/tabs/tabs.ts[22m[2K[1Gtransforming (151) [2msrc/components/chart/chart-viewport.ts[22m[2K[1Gtransforming (230) [2msrc/components/grid/grid-builder.ts[22m[2K[1Gtransforming (286) [2msrc/components/grid/columns/enum-column.ts[22m[2K[1G[32m✓[39m 311 modules transformed.
+[2K[1Gtransforming (1) [2msrc/components/button/index.ts[22m[2K[1Gtransforming (37) [2msrc/components/tabs/tabs.ts[22m[2K[1Gtransforming (169) [2msrc/components/chart/chart-tooltip.ts[22m[2K[1Gtransforming (264) [2msrc/components/number-field/number-field-logic.ts[22m[2K[1G[32m✓[39m 311 modules transformed.
 [2K[1Grendering chunks (1)...[2K[1Grendering chunks (2)...[2K[1Grendering chunks (3)...[2K[1Grendering chunks (4)...[2K[1Grendering chunks (5)...[2K[1Grendering chunks (6)...[2K[1Grendering chunks (7)...[2K[1Grendering chunks (8)...[2K[1Grendering chunks (9)...[2K[1Grendering chunks (10)...[2K[1Grendering chunks (11)...[2K[1Grendering chunks (12)...[2K[1Grendering chunks (13)...[2K[1Grendering chunks (14)...[2K[1Grendering chunks (15)...[2K[1Grendering chunks (16)...[2K[1Grendering chunks (17)...[2K[1Grendering chunks (18)...[2K[1Grendering chunks (19)...[2K[1Grendering chunks (20)...[2K[1Grendering chunks (21)...[2K[1Grendering chunks (22)...[2K[1Grendering chunks (23)...[2K[1Grendering chunks (24)...[2K[1Grendering chunks (25)...[2K[1Grendering chunks (26)...[2K[1Grendering chunks (27)...[2K[1Grendering chunks (28)...[2K[1Grendering chunks (29)...[2K[1Grendering chunks (30)...[2K[1Grendering chunks (31)...[2K[1Grendering chunks (32)...[2K[1Grendering chunks (33)...[2K[1Grendering chunks (34)...[2K[1Grendering chunks (35)...[2K[1Grendering chunks (36)...[2K[1Grendering chunks (37)...[2K[1Grendering chunks (38)...[2K[1Grendering chunks (39)...[2K[1Grendering chunks (40)...[2K[1G[2K[1Gcomputing gzip size (0)...[2K[1Gcomputing gzip size (1)...[2K[1Gcomputing gzip size (2)...[2K[1Gcomputing gzip size (3)...[2K[1Gcomputing gzip size (4)...[2K[1Gcomputing gzip size (5)...[2K[1Gcomputing gzip size (6)...[2K[1Gcomputing gzip size (7)...[2K[1Gcomputing gzip size (8)...[2K[1Gcomputing gzip size (9)...[2K[1Gcomputing gzip size (10)...[2K[1Gcomputing gzip size (11)...[2K[1Gcomputing gzip size (12)...[2K[1Gcomputing gzip size (13)...[2K[1Gcomputing gzip size (14)...[2K[1Gcomputing gzip size (15)...[2K[1Gcomputing gzip size (16)...[2K[1Gcomputing gzip size (17)...[2K[1Gcomputing gzip size (18)...[2K[1Gcomputing gzip size (19)...[2K[1Gcomputing gzip size (20)...[2K[1Gcomputing gzip size (21)...[2K[1Gcomputing gzip size (22)...[2K[1Gcomputing gzip size (23)...[2K[1Gcomputing gzip size (24)...[2K[1Gcomputing gzip size (25)...[2K[1Gcomputing gzip size (26)...[2K[1Gcomputing gzip size (27)...[2K[1Gcomputing gzip size (28)...[2K[1Gcomputing gzip size (29)...[2K[1Gcomputing gzip size (30)...[2K[1Gcomputing gzip size (31)...[2K[1Gcomputing gzip size (32)...[2K[1Gcomputing gzip size (33)...[2K[1Gcomputing gzip size (34)...[2K[1Gcomputing gzip size (35)...[2K[1Gcomputing gzip size (36)...[2K[1Gcomputing gzip size (37)...[2K[1Gcomputing gzip size (38)...[2K[1Gcomputing gzip size (39)...[2K[1Gcomputing gzip size (40)...[2K[1G[2mdist/[22m[36mcheckbox/index.js                [39m[1m[2m 0.09 kB[22m[1m[22m[2m │ gzip:  0.09 kB[22m
 [2mdist/[22m[36mbutton/index.js                  [39m[1m[2m 0.10 kB[22m[1m[22m[2m │ gzip:  0.10 kB[22m
 [2mdist/[22m[36mpanel/index.js                   [39m[1m[2m 0.10 kB[22m[1m[22m[2m │ gzip:  0.11 kB[22m
@@ -24,28 +24,28 @@
 [2mdist/[22m[36mpanel-NODOH4Hd.js                [39m[1m[2m 1.53 kB[22m[1m[22m[2m │ gzip:  0.75 kB[22m
 [2mdist/[22m[36mlabel/index.js                   [39m[1m[2m 1.67 kB[22m[1m[22m[2m │ gzip:  0.70 kB[22m
 [2mdist/[22m[36mtoolbar-builder-ClRoOgCR.js      [39m[1m[2m 2.60 kB[22m[1m[22m[2m │ gzip:  0.82 kB[22m
-[2mdist/[22m[36mfield-id-D7JrP1rZ.js             [39m[1m[2m 2.98 kB[22m[1m[22m[2m │ gzip:  1.32 kB[22m
+[2mdist/[22m[36mfield-id-COgu1lkb.js             [39m[1m[2m 3.05 kB[22m[1m[22m[2m │ gzip:  1.34 kB[22m
 [2mdist/[22m[36mcheckbox-DK9r29oE.js             [39m[1m[2m 3.32 kB[22m[1m[22m[2m │ gzip:  1.21 kB[22m
 [2mdist/[22m[36micons-Cq3lvI8e.js                [39m[1m[2m 3.37 kB[22m[1m[22m[2m │ gzip:  1.37 kB[22m
 [2mdist/[22m[36mlayout-UV0C_GIK.js               [39m[1m[2m 3.66 kB[22m[1m[22m[2m │ gzip:  1.36 kB[22m
 [2mdist/[22m[36mbutton-B05R0pOl.js               [39m[1m[2m 3.99 kB[22m[1m[22m[2m │ gzip:  1.49 kB[22m
-[2mdist/[22m[36mform-builder-DOBHZIIE.js         [39m[1m[2m 4.32 kB[22m[1m[22m[2m │ gzip:  1.33 kB[22m
+[2mdist/[22m[36mform-builder-4TRmKFh3.js         [39m[1m[2m 4.32 kB[22m[1m[22m[2m │ gzip:  1.33 kB[22m
 [2mdist/[22m[36mtabs-bQsOIG6g.js                 [39m[1m[2m 4.70 kB[22m[1m[22m[2m │ gzip:  1.56 kB[22m
 [2mdist/[22m[36mdialog-OYGLDoWc.js               [39m[1m[2m 5.03 kB[22m[1m[22m[2m │ gzip:  1.71 kB[22m
-[2mdist/[22m[36mpopover-Be9ypoaO.js              [39m[1m[2m 5.88 kB[22m[1m[22m[2m │ gzip:  1.66 kB[22m
+[2mdist/[22m[36mpopover-DkEm4-_e.js              [39m[1m[2m 6.05 kB[22m[1m[22m[2m │ gzip:  1.73 kB[22m
 [2mdist/[22m[36mlistbox-Hc0-tey4.js              [39m[1m[2m 6.74 kB[22m[1m[22m[2m │ gzip:  2.35 kB[22m
-[2mdist/[22m[36mtext-field-9x7AGHId.js           [39m[1m[2m 9.00 kB[22m[1m[22m[2m │ gzip:  2.93 kB[22m
+[2mdist/[22m[36mtext-field-yYm0Vykf.js           [39m[1m[2m 9.00 kB[22m[1m[22m[2m │ gzip:  2.93 kB[22m
 [2mdist/[22m[36mstartWith-D_65pOBO.js            [39m[1m[2m10.08 kB[22m[1m[22m[2m │ gzip:  2.75 kB[22m
-[2mdist/[22m[36mcombobox-builder-CTXAN3bg.js     [39m[1m[2m10.41 kB[22m[1m[22m[2m │ gzip:  3.25 kB[22m
-[2mdist/[22m[36mnumber-field-ChRpDQPC.js         [39m[1m[2m12.40 kB[22m[1m[22m[2m │ gzip:  3.68 kB[22m
+[2mdist/[22m[36mcombobox-builder-CW1qYiS9.js     [39m[1m[2m10.41 kB[22m[1m[22m[2m │ gzip:  3.25 kB[22m
+[2mdist/[22m[36mnumber-field-C2G2b_YA.js         [39m[1m[2m12.40 kB[22m[1m[22m[2m │ gzip:  3.68 kB[22m
 [2mdist/[22m[36mmap-DqDc5iNP.js                  [39m[1m[2m13.06 kB[22m[1m[22m[2m │ gzip:  3.73 kB[22m
-[2mdist/[22m[36mdatepicker-builder-Dak6rLSP.js   [39m[1m[2m14.96 kB[22m[1m[22m[2m │ gzip:  4.55 kB[22m
-[2mdist/[22m[36mmoney-field-CqA5_vEN.js          [39m[1m[2m19.01 kB[22m[1m[22m[2m │ gzip:  5.67 kB[22m
-[2mdist/[22m[36mindex.js                         [39m[1m[2m21.11 kB[22m[1m[22m[2m │ gzip:  6.24 kB[22m
+[2mdist/[22m[36mdatepicker-builder-j_cRGPqM.js   [39m[1m[2m14.96 kB[22m[1m[22m[2m │ gzip:  4.55 kB[22m
+[2mdist/[22m[36mmoney-field-BoKR6h0g.js          [39m[1m[2m19.63 kB[22m[1m[22m[2m │ gzip:  5.78 kB[22m
+[2mdist/[22m[36mindex.js                         [39m[1m[2m21.11 kB[22m[1m[22m[2m │ gzip:  6.25 kB[22m
 [2mdist/[22m[36mchart-builder-sikujkME.js        [39m[1m[2m30.24 kB[22m[1m[22m[2m │ gzip:  7.70 kB[22m
-[2mdist/[22m[36mgrid-builder-e7ypT2Nt.js         [39m[1m[2m48.13 kB[22m[1m[22m[2m │ gzip: 11.45 kB[22m
+[2mdist/[22m[36mgrid-builder-By5Tq2MC.js         [39m[1m[2m48.13 kB[22m[1m[22m[2m │ gzip: 11.45 kB[22m
 [2mdist/[22m[36mbundle-mjs-C-fAsw3z.js           [39m[1m[2m59.63 kB[22m[1m[22m[2m │ gzip: 10.67 kB[22m
-[32m✓ built in 1.55s[39m
+[32m✓ built in 1.66s[39m
 
 > aura-components@0.1.1 build:css
 > tailwindcss -i ./src/index.css -o ./dist/a1-components.css --minify
@@ -56,7 +56,7 @@
 
 Rebuilding...
 
-Done in 907ms.
+Done in 742ms.
 [1G[0K\[1G[0K
 > aura-components@0.1.1 build:types
 > tsc -p tsconfig.build.json

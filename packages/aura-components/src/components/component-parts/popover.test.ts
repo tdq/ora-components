@@ -220,10 +220,11 @@ describe('PopoverBuilder', () => {
 
         // ── Smart direction: open upward when more space above than below ──
 
-        test('opens upward (sets bottom, sets top:auto) when anchor is near viewport bottom', () => {
+        test('opens upward (sets bottom, sets top:auto) when anchor is near viewport bottom and it does not fit below', () => {
             // jsdom default innerHeight = 768; anchor near bottom → spaceAbove(600) > spaceBelow(148)
-            // top must be 'auto' (not '') to override UA [popover] inset:0 which would otherwise
-            // conflict with bottom and cause the over-constraint rule to drop bottom.
+            // Mock offsetHeight to 200 so it doesn't fit in 148px space below
+            const offsetHeightSpy = jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(200);
+
             const anchor = makeAnchor({ top: 600, bottom: 620, left: 50, right: 200, width: 150 });
             const builder = new PopoverBuilder()
                 .withAnchor(anchor)
@@ -234,9 +235,13 @@ describe('PopoverBuilder', () => {
             expect(popover.style.top).toBe('auto');
             // bottom = innerHeight - anchorTop + offset = 768 - 600 + 4 = 172
             expect(popover.style.bottom).toBe('172px');
+
+            offsetHeightSpy.mockRestore();
         });
 
         test('upward offset is applied correctly', () => {
+            const offsetHeightSpy = jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(200);
+
             const anchor = makeAnchor({ top: 600, bottom: 620, left: 50, right: 200, width: 150 });
             const builder = new PopoverBuilder()
                 .withAnchor(anchor)
@@ -247,12 +252,16 @@ describe('PopoverBuilder', () => {
             const popover = document.body.querySelector('[popover]') as HTMLElement;
             // bottom = 768 - 600 + 10 = 178
             expect(popover.style.bottom).toBe('178px');
+
+            offsetHeightSpy.mockRestore();
         });
 
-        test('opens downward (sets top, sets bottom:auto) when anchor is near viewport top', () => {
-            // anchor near top → spaceBelow(648) > spaceAbove(100) → open below
-            // bottom must be 'auto' to prevent UA inset:0 bottom:0 from conflicting with top.
-            const anchor = makeAnchor({ top: 100, bottom: 120, left: 50, width: 150 });
+        test('opens downward (sets top, sets bottom:auto) even if spaceAbove > spaceBelow as long as it fits below', () => {
+            // anchor at 400. spaceAbove = 400. spaceBelow = 768 - 420 = 348.
+            // 400 > 348, but popover height 100 fits in 348.
+            const offsetHeightSpy = jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(100);
+
+            const anchor = makeAnchor({ top: 400, bottom: 420, left: 50, width: 150 });
             const builder = new PopoverBuilder()
                 .withAnchor(anchor)
                 .withContent(makeContent());
@@ -260,10 +269,14 @@ describe('PopoverBuilder', () => {
 
             const popover = document.body.querySelector('[popover]') as HTMLElement;
             expect(popover.style.bottom).toBe('auto');
-            expect(popover.style.top).toBe('124px'); // 120 + 4
+            expect(popover.style.top).toBe('424px'); // 420 + 4
+
+            offsetHeightSpy.mockRestore();
         });
 
-        test('switches direction on re-position when anchor moves to bottom', () => {
+        test('switches direction on re-position when anchor moves to bottom and popover no longer fits', () => {
+            const offsetHeightSpy = jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(200);
+
             let currentRect = { top: 100, bottom: 120, left: 50, right: 200, width: 150, height: 20, x: 50, y: 100, toJSON: () => {} } as DOMRect;
             const anchor = document.createElement('button');
             anchor.getBoundingClientRect = () => currentRect;
@@ -282,8 +295,11 @@ describe('PopoverBuilder', () => {
             builder.show(); // re-positions (already open, just calls _position again)
             expect(popover.style.bottom).toBe(`${768 - 650 + 4}px`); // 122
             expect(popover.style.top).toBe('auto');
+
+            offsetHeightSpy.mockRestore();
         });
     });
+
 
     // ────────────────────────────────────────────────
     // Width modes
@@ -1057,41 +1073,25 @@ describe('PopoverBuilder', () => {
             expect(rectCallCount).toBeGreaterThanOrEqual(2);
         });
 
-        test('show() does NOT call _position() a second time for "start" alignment', () => {
-            // For 'end', show() calls _position() twice (once before showPopover, once after).
-            // For 'start', show() calls _position() only once.
-            // We verify the 'end' count is strictly greater than the 'start' count.
-            let startRectCallCount = 0;
-            const startAnchor = document.createElement('button');
-            startAnchor.getBoundingClientRect = () => {
-                startRectCallCount++;
+        test('show() always calls _position() twice (pre-render + post-render)', () => {
+            let rectCallCount = 0;
+            const anchor = document.createElement('button');
+            anchor.getBoundingClientRect = () => {
+                rectCallCount++;
                 return { top: 100, bottom: 120, left: 50, right: 200, width: 150, height: 20, x: 50, y: 100, toJSON: () => {} } as DOMRect;
             };
-            document.body.appendChild(startAnchor);
+            document.body.appendChild(anchor);
 
             new PopoverBuilder()
-                .withAnchor(startAnchor)
+                .withAnchor(anchor)
                 .withContent(makeContent())
                 .withAlignment('start')
                 .show();
 
-            let endRectCallCount = 0;
-            const endAnchor = document.createElement('button');
-            endAnchor.getBoundingClientRect = () => {
-                endRectCallCount++;
-                return { top: 100, bottom: 120, left: 50, right: 200, width: 150, height: 20, x: 50, y: 100, toJSON: () => {} } as DOMRect;
-            };
-            document.body.appendChild(endAnchor);
-
-            new PopoverBuilder()
-                .withAnchor(endAnchor)
-                .withContent(makeContent())
-                .withAlignment('end')
-                .show();
-
-            // 'end' alignment makes 2× as many getBoundingClientRect calls as 'start'
-            // because it invokes _position() twice.
-            expect(endRectCallCount).toBeGreaterThan(startRectCallCount);
+            // _position() calls getBoundingClientRect() 2 times (once for anchor, once for posRef).
+            // show() calls _position() 2 times.
+            // So total calls = 2 * 2 = 4.
+            expect(rectCallCount).toBe(4);
         });
 
         test('alignment "start" sets left and clears right', () => {

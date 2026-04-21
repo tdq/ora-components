@@ -94,14 +94,11 @@ export class PopoverBuilder implements PopupBuilder {
             (this._popoverEl as any).showPopover();
             this._isOpen = true;
             _activePopover = this;
-            // Two-pass positioning for 'end' alignment:
-            // 1st pass (above): sets top, min-width, max-width so the element has layout dimensions.
-            // 2nd pass (here): reads offsetWidth — now accurate because the element is visible with
-            //    correct width constraints — and computes left = posRect.right - offsetWidth.
-            // Both passes run in the same JS task so there is no visible flash.
-            if (this._alignment === 'end') {
-                this._position();
-            }
+            
+            // Second pass: now we have accurate offsetHeight and offsetWidth because the 
+            // element is visible. This ensures smart vertical positioning and 'end' alignment
+            // work correctly based on actual rendered dimensions.
+            this._position();
         }
     }
 
@@ -216,11 +213,24 @@ export class PopoverBuilder implements PopupBuilder {
         const anchorRect = this._anchor.getBoundingClientRect();
         const posRect = (this._positionReference ?? this._anchor).getBoundingClientRect();
 
-        // Smart vertical positioning: open upward when there is more space above the anchor
-        // than below it, preventing the popover from being clipped by the viewport bottom.
+        // Smart vertical positioning: default to opening below. Only open above if there
+        // isn't enough space below AND there is more space above than below.
         const spaceBelow = window.innerHeight - anchorRect.bottom;
         const spaceAbove = anchorRect.top;
-        const openAbove = spaceAbove > spaceBelow;
+        
+        let openAbove = false;
+        const popoverHeight = this._popoverEl.offsetHeight;
+
+        if (popoverHeight > 0) {
+            // If it doesn't fit below and fits better above, open above.
+            if (spaceBelow < popoverHeight + this._offset && spaceAbove > spaceBelow) {
+                openAbove = true;
+            }
+        } else {
+            // First pass (measured height is 0 because display:none). 
+            // Default to opening below to allow measurement in the second pass.
+            openAbove = false;
+        }
 
         if (openAbove) {
             // Pin the popover's bottom edge just above the anchor.
@@ -234,6 +244,7 @@ export class PopoverBuilder implements PopupBuilder {
             this._popoverEl.style.top = `${anchorRect.bottom + this._offset}px`;
             this._popoverEl.style.bottom = 'auto';
         }
+
 
         this._popoverEl.style.right = '';   // always use left-based positioning
         if (this._alignment === 'end') {
