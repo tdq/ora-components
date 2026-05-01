@@ -33,3 +33,7 @@ Logic and state are managed by RxJS.
 - [Tabs](components/tabs.md)
 - [ListBox](components/listbox.md)
 - [Grid](components/grid/grid.md)
+
+## Packages
+
+- [Landing Page](landing-page/README.md) — Marketing site and dashboard demo showcasing the library (deployed to Azure Static Web Apps)

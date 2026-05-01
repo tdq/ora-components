@@ -16,8 +16,8 @@ The `landing-page` package is a dedicated marketing and demonstration website fo
 
 ## Directory Structure
 - `src/app.ts`: Main entry point and view switcher.
-- `src/state/`: RxJS-based global state (e.g., current view).
-- `src/components/`: Reusable landing-page-specific UI parts (Header, Footer, ThemeToggle).
+- `src/routes.ts`: Central routing configuration using `RouterBuilder` from `ora-components`.
+- `src/components/`: Reusable landing-page-specific UI parts (Header).
 - `src/sections/`: High-level landing page sections (Hero, Features, Playground, Get Started).
 - `src/demo/`: The "Ora Dashboard" demo application.
 - `src/styles.css`: Global Tailwind and Material 3 variable definitions.
@@ -29,3 +29,22 @@ To run the landing page locally:
 npm run dev --filter=landing-page
 ```
 The development server will typically start on `http://localhost:3000`.
+
+## Deployment
+
+The landing page is hosted on **Azure Static Web Apps** and deployed automatically via a **GitHub Actions CI/CD pipeline**.
+
+### CI/CD Pipeline
+
+The workflow (`.github/workflows/azure-static-web-apps-red-grass-0a3b7b603.yml`) triggers on every push or pull request to `master`:
+
+1. **Install:** `npm ci` — clean install of all dependencies.
+2. **Build:** `npx turbo run build --filter=landing-page...` — Turbo resolves the dependency chain, building `ora-components` first, then the landing page.
+3. **Deploy:** The `Azure/static-web-apps-deploy@v1` action uploads the contents of `packages/landing-page/dist/` to Azure.
+
+### `staticwebapp.config.json`
+
+The configuration file at `packages/landing-page/staticwebapp.config.json` controls Azure's behaviour in production:
+
+- **SPA fallback:** All unrecognised routes are rewritten to `/index.html` so client-side view switching works without 404s.
+- **Cache headers:** `/index.html` is served with `no-cache` to ensure fresh content on every load. Static assets under `/assets/*` are cached immutably for one year for optimal performance.
