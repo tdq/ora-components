@@ -32,4 +32,4 @@ The landing page is built and deployed via a single GitHub Actions workflow:
 
 1. **Turbo dependency chain:** `turbo run build --filter=landing-page...` ensures `ora-components` is built first (its `^build` dependency), then the landing page.
 2. **Vite production build:** `tsc && vite build` produces an optimised bundle in `packages/landing-page/dist/`.
-3. **Azure deployment:** The `Azure/static-web-apps-deploy@v1` action uploads `dist/` to Azure Static Web Apps. The `skip_app_build: true` flag tells Azure not to rebuild — the pipeline already handled it.
+ 3. **Azure deployment:** The `Azure/static-web-apps-deploy@v1` action deploys `packages/landing-page/dist/` directly to Azure Static Web Apps. The `skip_app_build: true` flag tells Azure not to rebuild — the pipeline already handled it.

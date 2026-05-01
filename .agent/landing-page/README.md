@@ -39,8 +39,8 @@ The landing page is hosted on **Azure Static Web Apps** and deployed automatical
 The workflow (`.github/workflows/azure-static-web-apps-red-grass-0a3b7b603.yml`) triggers on every push or pull request to `master`:
 
 1. **Install:** `npm ci` — clean install of all dependencies.
-2. **Build:** `npx turbo run build --filter=landing-page...` — Turbo resolves the dependency chain, building `ora-components` first, then the landing page.
-3. **Deploy:** The `Azure/static-web-apps-deploy@v1` action uploads the contents of `packages/landing-page/dist/` to Azure.
+ 2. **Build:** `npx turbo run build --filter=landing-page...` — Turbo resolves the dependency chain, building `ora-components` first, then the landing page. `staticwebapp.config.json` is also copied into `dist/` for Azure deployment.
+ 3. **Deploy:** The `Azure/static-web-apps-deploy@v1` action uploads `packages/landing-page/dist/` directly to Azure (with `skip_app_build: true`).
 
 ### `staticwebapp.config.json`
 
