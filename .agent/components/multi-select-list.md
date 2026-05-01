@@ -98,7 +98,7 @@ The panel border and border-radius match the `ListBoxBuilder` style (`rounded-la
 
 ```typescript
 import { BehaviorSubject } from 'rxjs';
-import { MultiSelectListBuilder } from '@a1/aura-components';
+import { MultiSelectListBuilder } from 'ora-components';
 
 interface Role { id: number; name: string; }
 
@@ -142,7 +142,7 @@ selectedRoles$.next([roles[0], roles[2]]);
 ## File Structure
 
 ```
-packages/aura-components/src/components/multi-select-list/
+packages/ora-components/src/components/multi-select-list/
 ├── index.ts
 ├── multi-select-list.ts
 └── types.ts

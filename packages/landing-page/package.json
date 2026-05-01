@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "aura-components": "workspace:*",
+    "ora-components": "*",
     "rxjs": "^7.8.2",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.6.1"

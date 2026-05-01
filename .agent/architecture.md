@@ -2,7 +2,7 @@
 
 ```
 packages/
-├── aura-components/       # Core UI component library (published as "aura-components")
+├── ora-components/       # Core UI component library (published as "ora-components")
 │   ├── src/
 │   │   ├── components/    # One directory per component (button, chart, grid, …)
 │   │   │   └── <name>/
@@ -25,10 +25,10 @@ packages/
 │       │   └── <name>.d.ts        # Actual class definitions
 │       └── component-manifest.json  # Generated registry consumed by MCP server
 │
-├── mcp-server/            # MCP server exposing aura-components to AI tools
+├── mcp-server/            # MCP server exposing ora-components to AI tools
 │   └── src/
 │       ├── index.ts               # McpServer wiring (list_components, get_component_api, get_usage_example)
-│       ├── manifest.ts            # Reads dist/component-manifest.json from aura-components package
+│       ├── manifest.ts            # Reads dist/component-manifest.json from ora-components package
 │       └── tools/
 │           ├── list-components.ts
 │           ├── get-component-api.ts
@@ -38,12 +38,12 @@ packages/
 └── examples/              # Usage examples
 ```
 
-## Build pipeline (aura-components)
+## Build pipeline (ora-components)
 
 ```
 npm run build
   └─ vite build               → dist/*.js  (JS bundles + per-component entries)
-  └─ build:css                → dist/a1-components.css
+  └─ build:css                → dist/ora-components.css
   └─ build:types (tsc)        → dist/components/**/*.d.ts  +  dist/index.d.ts
                                   (index.d.ts references ./components/<name>)
   └─ reorganize-types.mjs     → moves dist/components/<name>/ → dist/<name>/
@@ -67,13 +67,26 @@ npm run build
       "name": "ButtonBuilder",          // class name
       "componentName": "button",        // lowercase, used as sub-path import key
       "description": "Builder for the button component",
-      "import": "aura-components/button",
+      "import": "ora-components/button",
       "methods": ["withCaption", "withIcon", "withEnabled", "withClick", "withStyle", "build"],
-      "example": "import { ButtonBuilder } from 'aura-components/button';\n\nconst el = new ButtonBuilder().build();\ndocument.body.appendChild(el);"
+      "example": "import { ButtonBuilder } from 'ora-components/button';\n\nconst el = new ButtonBuilder().build();\ndocument.body.appendChild(el);"
     }
   ]
 }
 ```
+
+## Rename migration (2026-05-01)
+
+The monorepo was renamed from `a1-components` to `ora-components`. The mapping:
+
+| Old | New |
+|-----|-----|
+| `packages/a1-components/` | `packages/ora-components/` |
+| `a1-components.css` | `ora-components.css` |
+| `a1-monorepo` | `ora-monorepo` |
+
+All source code, configs, imports, generated CSS, and documentation have been updated.
+The npm package is published as `ora-components` and imports use `ora-components/<entry>` paths.
 
 ## MCP server tools
 

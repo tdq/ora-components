@@ -1,4 +1,4 @@
-import { FormBuilder, LabelSize, TabsBuilder } from 'aura-components';
+import { FormBuilder, LabelSize, TabsBuilder } from 'ora-components';
 import { of, BehaviorSubject } from 'rxjs';
 
 export function createSettings(): HTMLElement {

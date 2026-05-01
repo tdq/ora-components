@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/html';
-import { TabsBuilder } from 'aura-components';
-import { LabelBuilder } from 'aura-components';
+import { TabsBuilder } from 'ora-components';
+import { LabelBuilder } from 'ora-components';
 import { of, BehaviorSubject } from 'rxjs';
 
 const meta: Meta = {

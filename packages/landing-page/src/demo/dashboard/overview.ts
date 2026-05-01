@@ -1,4 +1,4 @@
-import { PanelBuilder, ChartBuilder, GridBuilder, LabelBuilder, registerDestroy, Money } from 'aura-components';
+import { PanelBuilder, ChartBuilder, GridBuilder, LabelBuilder, registerDestroy, Money } from 'ora-components';
 import { of, timer, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { renderStatusChip } from './chip-utils';

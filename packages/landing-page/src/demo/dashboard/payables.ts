@@ -1,4 +1,4 @@
-import { GridBuilder, TabsBuilder, LabelBuilder, PanelBuilder, ButtonBuilder, ButtonStyle, TextFieldBuilder, DatePickerBuilder, MoneyFieldBuilder, Money } from 'aura-components';
+import { GridBuilder, TabsBuilder, LabelBuilder, PanelBuilder, ButtonBuilder, ButtonStyle, TextFieldBuilder, DatePickerBuilder, MoneyFieldBuilder, Money } from 'ora-components';
 import { of, BehaviorSubject } from 'rxjs';
 
 interface Invoice {

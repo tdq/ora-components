@@ -1,7 +1,7 @@
 import { Meta, StoryObj } from '@storybook/html';
-import { GridBuilder } from 'aura-components';
+import { GridBuilder } from 'ora-components';
 import { of } from 'rxjs';
-import { AggregationType } from 'aura-components';
+import { AggregationType } from 'ora-components';
 
 const meta: Meta = {
   title: 'Components/Grid/Pivot',

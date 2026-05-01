@@ -9,9 +9,9 @@ const config: StorybookConfig = {
         config.resolve ??= {};
         config.resolve.alias = {
             ...config.resolve.alias,
-            'aura-components/style.css': resolve(__dirname, '../../aura-components/src/index.css'),
-            'aura-components': resolve(__dirname, '../../aura-components/src/index.ts'),
-            '@': resolve(__dirname, '../../aura-components/src'),
+            'ora-components/style.css': resolve(__dirname, '../../ora-components/src/index.css'),
+            'ora-components': resolve(__dirname, '../../ora-components/src/index.ts'),
+            '@': resolve(__dirname, '../../ora-components/src'),
         };
         return config;
     },

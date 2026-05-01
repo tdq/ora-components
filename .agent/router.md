@@ -3,18 +3,18 @@
 ## Description
 
 The router provides client-side SPA navigation using the browser History API (pushState/replaceState).
-It is built into `aura-components` with zero external dependencies beyond the existing RxJS peer dependency.
+It is built into `ora-components` with zero external dependencies beyond the existing RxJS peer dependency.
 
 Import from the dedicated entry point:
 
 ```typescript
-import { RouterBuilder, LinkBuilder } from 'aura-components/router';
+import { RouterBuilder, LinkBuilder } from 'ora-components/router';
 ```
 
 Or from the main barrel:
 
 ```typescript
-import { RouterBuilder, LinkBuilder } from 'aura-components';
+import { RouterBuilder, LinkBuilder } from 'ora-components';
 ```
 
 ---
@@ -185,8 +185,8 @@ new LinkBuilder(router)
 ## Full example
 
 ```typescript
-import { RouterBuilder, LinkBuilder } from 'aura-components/router';
-import { LayoutBuilder } from 'aura-components/layout';
+import { RouterBuilder, LinkBuilder } from 'ora-components/router';
+import { LayoutBuilder } from 'ora-components/layout';
 import { of } from 'rxjs';
 
 const router = new RouterBuilder().withFallback('/');

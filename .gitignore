@@ -3,5 +3,5 @@ dist
 storybook-static
 *.tgz
 .turbo
-aura-components/.turbo/*
+ora-components/.turbo/*
 .claude

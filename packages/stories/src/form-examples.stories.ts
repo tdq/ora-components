@@ -1,11 +1,11 @@
-import { TextFieldStyle } from 'aura-components';
+import { TextFieldStyle } from 'ora-components';
 import { BehaviorSubject, combineLatest, of, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { FormBuilder } from 'aura-components';
-import { PanelBuilder, PanelGap } from 'aura-components';
-import { ButtonBuilder, ButtonStyle } from 'aura-components';
-import { Alignment, LayoutBuilder } from 'aura-components';
-import { DialogBuilder } from 'aura-components';
+import { FormBuilder } from 'ora-components';
+import { PanelBuilder, PanelGap } from 'ora-components';
+import { ButtonBuilder, ButtonStyle } from 'ora-components';
+import { Alignment, LayoutBuilder } from 'ora-components';
+import { DialogBuilder } from 'ora-components';
 
 export default {
     title: 'Examples/Forms',

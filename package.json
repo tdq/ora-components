@@ -1,21 +1,24 @@
 {
-  "name": "a1-monorepo",
+  "name": "ora-monorepo",
   "private": true,
   "type": "module",
   "packageManager": "npm@10.7.0",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo build",
     "test": "turbo test",
     "dev": "turbo dev",
     "storybook": "turbo storybook",
-    "pack:local": "turbo run pack:local --filter=aura-components",
+    "pack:local": "turbo run pack:local --filter=ora-components",
     "mcp:build": "turbo run build --filter=aura-mcp-server",
     "mcp:start": "node packages/mcp-server/dist/index.js",
     "landing:build": "turbo run build --filter=landing-page",
     "landing:start": "turbo run dev --filter=landing-page"
   },
   "devDependencies": {
+    "ts-node": "^10.9.2",
     "turbo": "^2.0.0"
   }
 }

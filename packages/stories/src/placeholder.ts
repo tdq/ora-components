@@ -1,4 +1,4 @@
-import { ComponentBuilder } from 'aura-components';
+import { ComponentBuilder } from 'ora-components';
 
 export class Placeholder implements ComponentBuilder {
     constructor(private text: string, private color: string = '#E5E7EB') { }

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "aura-components": "*",
+    "ora-components": "*",
     "aura-examples": "*",
     "zod": "^3.0.0"
   },

@@ -1,6 +1,6 @@
-import { PanelBuilder, PanelGap } from 'aura-components';
+import { PanelBuilder, PanelGap } from 'ora-components';
 import { createPlaceholder } from './placeholder';
-import { LayoutBuilder, LayoutGap } from 'aura-components';
+import { LayoutBuilder, LayoutGap } from 'ora-components';
 
 export default {
     title: 'Components/Panel',

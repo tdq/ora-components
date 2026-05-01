@@ -1,4 +1,4 @@
-import { LabelBuilder, LabelSize, ButtonBuilder, ButtonStyle } from 'aura-components';
+import { LabelBuilder, LabelSize, ButtonBuilder, ButtonStyle } from 'ora-components';
 import { of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { router } from '../../routes';

@@ -1,6 +1,6 @@
 # Dashboard Demo Documentation (`src/demo/dashboard.ts`)
 
-The "Aura Dashboard" is a comprehensive application demo designed to show the `a1-components` library in a realistic, high-density environment.
+The "Ora Dashboard" is a comprehensive application demo designed to show the `ora-components` library in a realistic, high-density environment.
 
 ## 1. Application Layout
 The dashboard uses the `LayoutBuilder` with an `asHorizontal()` orientation to create:
@@ -29,4 +29,4 @@ The dashboard uses the `LayoutBuilder` with an `asHorizontal()` orientation to c
 - `ButtonBuilder`: For navigation and call-to-action buttons.
 
 ## 5. Usage in Marketing
-The Dashboard serves as the "Wow Factor" for the library. It proves that Aura is not just for simple UI pieces but can power a full-featured, reactive application shell.
+The Dashboard serves as the "Wow Factor" for the library. It proves that Ora is not just for simple UI pieces but can power a full-featured, reactive application shell.

@@ -55,7 +55,7 @@ function createFooter(): HTMLElement {
                     <circle cx="9" cy="10" r="2.5" fill="white" fill-opacity="0.6"/>
                 </svg>
             </div>
-            <span class="text-title-large text-on-surface font-semibold tracking-tight">Aura Components</span>
+            <span class="text-title-large text-on-surface font-semibold tracking-tight">Ora Components</span>
         </div>
         <p class="text-body-medium text-on-surface-variant max-w-xs leading-relaxed" style="opacity: 0.65;">
             Modern, reactive UI components for the web. Built on TypeScript, RxJS, and Material 3 principles.
@@ -108,10 +108,10 @@ function createFooter(): HTMLElement {
     bottomBar.className = 'flex flex-col md:flex-row items-center justify-between pt-px-32 border-t gap-px-16';
     bottomBar.style.cssText = 'border-color: rgba(121,116,126,0.1);';
     bottomBar.innerHTML = `
-        <p class="text-label-medium text-on-surface-variant" style="opacity: 0.5;">© 2026 Aura Design System. All rights reserved.</p>
+        <p class="text-label-medium text-on-surface-variant" style="opacity: 0.5;">© 2026 Ora Design System. All rights reserved.</p>
         <p class="text-label-medium text-on-surface-variant flex items-center gap-px-8" style="opacity: 0.5;">
             Built with
-            <span style="background: linear-gradient(135deg, #4f46e5, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 600;">Aura Components</span>
+            <span style="background: linear-gradient(135deg, #4f46e5, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 600;">Ora Components</span>
             &amp; RxJS
         </p>
     `;

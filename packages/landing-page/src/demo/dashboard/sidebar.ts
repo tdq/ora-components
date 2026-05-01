@@ -1,4 +1,4 @@
-import { registerDestroy } from 'aura-components';
+import { registerDestroy } from 'ora-components';
 import { router } from '../../routes';
 import { map } from 'rxjs/operators';
 
@@ -20,7 +20,7 @@ export function createSidebar(): HTMLElement {
                 </svg>
             </div>
             <div class="flex flex-col">
-                <span class="text-title-small font-semibold text-on-surface group-hover:text-primary transition-colors duration-200">Aura Dashboard</span>
+                <span class="text-title-small font-semibold text-on-surface group-hover:text-primary transition-colors duration-200">Ora Dashboard</span>
                 <span class="text-label-small text-on-surface-variant" style="opacity: 0.5;">v2.0 Demo</span>
             </div>
         </div>

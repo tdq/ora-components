@@ -2,11 +2,11 @@
     "$schema": "https://opencode.ai/config.json",
     "autoupdate": true,
     "mcp": {
-        "aura-components": {
+        "ora-components": {
             "type": "local",
             "command": [
                 "node",
-                "/Users/nikolaigorokhov/Projects/1A/a1-components/packages/mcp-server/dist/index.js"
+                "/Users/nikolaigorokhov/Projects/1A/ora-components/packages/mcp-server/dist/index.js"
             ],
             "enabled": true
         }

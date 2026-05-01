@@ -1,15 +1,15 @@
 import { BehaviorSubject, combineLatest, of, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { GridBuilder, Money, MoneyFieldStyle } from 'aura-components';
-import { FormBuilder } from 'aura-components';
-import { PanelBuilder, PanelGap } from 'aura-components';
-import { LayoutBuilder, LayoutGap, Alignment } from 'aura-components';
-import { DialogBuilder, DialogSize } from 'aura-components';
-import { TextFieldBuilder, TextFieldStyle } from 'aura-components';
-import { NumberFieldStyle } from 'aura-components';
-import { ComboBoxBuilder, ComboBoxStyle } from 'aura-components';
-import { ButtonBuilder, ButtonStyle } from 'aura-components';
-import { Icons } from 'aura-components';
+import { GridBuilder, Money, MoneyFieldStyle } from 'ora-components';
+import { FormBuilder } from 'ora-components';
+import { PanelBuilder, PanelGap } from 'ora-components';
+import { LayoutBuilder, LayoutGap, Alignment } from 'ora-components';
+import { DialogBuilder, DialogSize } from 'ora-components';
+import { TextFieldBuilder, TextFieldStyle } from 'ora-components';
+import { NumberFieldStyle } from 'ora-components';
+import { ComboBoxBuilder, ComboBoxStyle } from 'ora-components';
+import { ButtonBuilder, ButtonStyle } from 'ora-components';
+import { Icons } from 'ora-components';
 
 export default {
     title: 'Examples/Product Management',

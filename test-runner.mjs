@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = __dirname;
-const packagePath = path.join(projectRoot, 'packages', 'aura-components');
+const packagePath = path.join(projectRoot, 'packages', 'ora-components');
 
 console.log('Running tests for number-column...');
 try {

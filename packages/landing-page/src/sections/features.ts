@@ -253,7 +253,7 @@ my-btn::part(label) { ... }    /* good luck */</code></pre>
     after.innerHTML = `
         <div class="flex items-center gap-px-8 mb-px-12">
             <span class="w-4 h-4 rounded-full flex items-center justify-center text-white bg-primary" style="font-size: 9px; font-weight: 700;">✓</span>
-            <span class="text-label-small font-medium text-primary" style="font-size: 11px;">Aura Components (Direct DOM)</span>
+            <span class="text-label-small font-medium text-primary" style="font-size: 11px;">Ora Components (Direct DOM)</span>
         </div>
         <pre style="margin:0; font-family: 'Fira Code', monospace; font-size: 11.5px; line-height: 1.7; color: var(--md-sys-color-on-surface-variant);"><code><span class="text-primary-alpha-80">/* Standard CSS. Just works. */</span>
 .my-button { color: blue; }

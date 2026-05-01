@@ -3,7 +3,7 @@ export default {
     content: [
         "./index.html",
         "./src/**/*.{ts,html,css}",
-        "../aura-components/src/**/*.{ts,html,css}",
+        "../ora-components/src/**/*.{ts,html,css}",
     ],
     darkMode: ['selector', '[data-theme="dark"]'],
     theme: {

@@ -5,6 +5,6 @@
 
 ## Subtasks
 
-- [x] 1. Add FullCoverage story to grid.stories.ts — aura-components-dev — Add story with 22+ columns (all column types), 3 actions, 1000 rows
+- [x] 1. Add FullCoverage story to grid.stories.ts — ora-components-dev — Add story with 22+ columns (all column types), 3 actions, 1000 rows
 - [x] 2. Code review: FullCoverage story — code-reviewer — Review acceptance criteria, code quality, patterns
 - [x] 3. QA: FullCoverage story — qa-tester — Validate story renders, verify type coverage, add missing tests

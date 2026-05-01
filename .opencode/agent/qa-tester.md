@@ -32,7 +32,7 @@ from the spec.
    - Happy path (typical inputs produce correct outputs)
    - Edge cases (empty arrays, null/undefined, boundary values)
    - Error paths (invalid input, failed streams, disconnected elements)
-   - Lifecycle (for aura-components: connect → update → disconnect)
+   - Lifecycle (for ora-components: connect → update → disconnect)
 
 3. **Bug verification** — When reviewing a bug fix, confirm the fix resolves the
    reported issue and does not regress neighbouring behaviour. Add a regression
@@ -40,8 +40,8 @@ from the spec.
 
 ## Project test conventions
 
-- **Framework**: Jest (`packages/aura-components/src/__tests__/`)
-- **Stories**: Storybook (`packages/aura-components/src/stories/`) — add or
+- **Framework**: Jest (`packages/ora-components/src/__tests__/`)
+- **Stories**: Storybook (`packages/ora-components/src/stories/`) — add or
   update a story to demonstrate the tested behaviour visually
 - Test files mirror source: `MyComponent` → `MyComponent.test.ts`
 - Use `of(...)` for static test data (completes immediately, no cleanup)
@@ -76,6 +76,6 @@ not pad with unnecessary tests.
 2. Build the validation table by checking each requirement against the code.
 3. Identify gaps in test coverage by reading existing test files.
 4. Write new/updated tests. Follow the project test conventions above.
-5. For aura-components changes, also add or update a Storybook story.
+5. For ora-components changes, also add or update a Storybook story.
 6. Do not modify production source unless fixing a trivially obvious typo or
    missing export that directly blocks a test from compiling.

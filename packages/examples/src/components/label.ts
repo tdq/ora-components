@@ -1,4 +1,4 @@
-import { LabelBuilder, LabelSize } from 'aura-components';
+import { LabelBuilder, LabelSize } from 'ora-components';
 import { of } from 'rxjs';
 
 /**

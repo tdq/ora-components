@@ -1,5 +1,5 @@
 import type { Preview } from "@storybook/html";
-import '../../aura-components/src/index.css';
+import '../../ora-components/src/index.css';
 import './storybook-layout.css';
 
 const preview: Preview = {

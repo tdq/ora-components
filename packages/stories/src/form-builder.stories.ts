@@ -1,4 +1,4 @@
-import { FormBuilder } from 'aura-components';
+import { FormBuilder } from 'ora-components';
 import { of, BehaviorSubject, Subject } from 'rxjs';
 
 export default {

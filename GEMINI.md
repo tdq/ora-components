@@ -1,6 +1,6 @@
-# Project Overview: a1-components
+# Project Overview: ora-components
 
-`a1-components` is a high-performance UI component library for the 1A platform. It is built using **Vanilla TypeScript**, **RxJS** for reactive state management, and **Tailwind CSS** for styling, following **Material Design 3** principles.
+`ora-components` is a high-performance UI component library for the 1A platform. It is built using **Vanilla TypeScript**, **RxJS** for reactive state management, and **Tailwind CSS** for styling, following **Material Design 3** principles.
 
 ## Core Technology Stack
 - **Framework:** Vanilla TypeScript (Native DOM manipulation, No Shadow DOM).

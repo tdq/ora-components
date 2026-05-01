@@ -1,4 +1,4 @@
-import { ChartBuilder, ButtonBuilder } from 'aura-components';
+import { ChartBuilder, ButtonBuilder } from 'ora-components';
 import { of, BehaviorSubject } from 'rxjs';
 
 export default {

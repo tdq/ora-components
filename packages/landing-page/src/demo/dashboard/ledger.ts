@@ -1,4 +1,4 @@
-import { PanelBuilder, GridBuilder, LabelBuilder, Money } from 'aura-components';
+import { PanelBuilder, GridBuilder, LabelBuilder, Money } from 'ora-components';
 import { of } from 'rxjs';
 
 interface LedgerEntry {

@@ -30,18 +30,18 @@ For every change, check:
    issues. No secrets, credentials, or sensitive data in code or logs.
 
 3. **Architecture alignment** — Does the change follow the patterns already in the
-   codebase? For aura-components: builder pattern, RxJS memory safety, custom
+   codebase? For ora-components: builder pattern, RxJS memory safety, custom
    elements. For the landing page: no framework imports, semantic HTML, no demo
    folder touched.
 
-4. **RxJS memory safety** (aura-components only) — Every `subscribe()` must be
+4. **RxJS memory safety** (ora-components only) — Every `subscribe()` must be
    paired with a `registerDestroy` cleanup. No subscriptions left open on
    disconnect.
 
 5. **Scope creep** — Were only the requested files changed? No unrelated
    refactors, no speculative abstractions, no extra files.
 
-6. **Exports** (aura-components only) — New builders and public types exported
+6. **Exports** (ora-components only) — New builders and public types exported
    from `src/index.ts`. Internal element classes not exported.
 
 ## What NOT to flag
@@ -75,6 +75,6 @@ If LGTM, output the verdict and stop — do not pad with generic praise.
 1. Read the changed files in full before forming any opinion.
 2. Check adjacent files if the change touches an interface boundary (exports,
    builder APIs, routing config).
-3. For aura-components changes, scan the relevant `.agent/` guide to verify
+3. For ora-components changes, scan the relevant `.agent/` guide to verify
    pattern compliance.
 4. Report findings concisely. One sentence per finding is usually enough.

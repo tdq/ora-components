@@ -1,5 +1,5 @@
 import { ButtonBuilder, ButtonStyle } from '@/components/button';
-import { LayoutBuilder, LayoutGap, SlotSize, Alignment } from 'aura-components';
+import { LayoutBuilder, LayoutGap, SlotSize, Alignment } from 'ora-components';
 import { createPlaceholder } from './placeholder';
 import { BehaviorSubject, of, Subject } from 'rxjs';
 

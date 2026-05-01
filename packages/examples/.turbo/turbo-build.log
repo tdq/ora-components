@@ -1,13 +1,14 @@
 
-
 > aura-examples@0.1.0 build
 > vite build
 
-[1G[0K[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+vite v5.4.21 building for production...
 
-node_modules/aura-components/dist/a1-components.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
-[2K[1Gtransforming (1) [2mindex.html[22m[2K[1Gtransforming (12) [2m../aura-components/src/core/icons.ts[22m[2K[1Gtransforming (200) [2m../aura-components/src/theme/types.ts[22m[2K[1Gtransforming (265) [2m../../node_modules/rxjs/dist/esm5/internal/scheduler/immediateProvider.js[22m[2K[1Gtransforming (435) [2m../aura-components/src/components/grid/actions-builder.ts[22m[2K[1Gtransforming (491) [2m../aura-components/src/components/dialog/dialog.ts[22m[2K[1Gtransforming (537) [2m../aura-components/src/components/text-field/text-field.ts[22m[2K[1G[32m✓[39m 578 modules transformed.
-[2K[1Grendering chunks (1)...[2K[1G[2K[1Gcomputing gzip size (0)...[2K[1Gcomputing gzip size (1)...[2K[1Gcomputing gzip size (2)...[2K[1G[2mdist/[22m[32mindex.html                [39m[1m[2m 0.40 kB[22m[1m[22m[2m │ gzip:  0.29 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-CBovjFZa.js  [39m[1m[2m77.94 kB[22m[1m[22m[2m │ gzip: 24.69 kB[22m
-[32m✓ built in 1.38s[39m
-[1G[0K\[1G[0K
+node_modules/ora-components/dist/ora-components.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
+transforming...
+✓ 354 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                 0.40 kB │ gzip:  0.28 kB
+dist/assets/index-CcpOiv2s.js  63.02 kB │ gzip: 19.96 kB
+✓ built in 5.03s

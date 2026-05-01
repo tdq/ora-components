@@ -1,4 +1,4 @@
-import { GridBuilder, Money } from 'aura-components';
+import { GridBuilder, Money } from 'ora-components';
 import { BehaviorSubject, of } from 'rxjs';
 
 export default {

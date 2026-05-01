@@ -4,8 +4,8 @@ import { resolve } from 'path';
 export default defineConfig({
   resolve: {
     alias: {
-      'aura-components': resolve(__dirname, '../aura-components/src/index.ts'),
-      '@': resolve(__dirname, '../aura-components/src'),
+      'ora-components': resolve(__dirname, '../ora-components/src/index.ts'),
+      '@': resolve(__dirname, '../ora-components/src'),
     },
   },
 });

@@ -8,7 +8,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "aura-components": "*"
+    "ora-components": "*"
   },
   "devDependencies": {
     "@storybook/html-vite": "^7.6.21",

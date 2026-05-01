@@ -5,9 +5,9 @@
 
 ## Subtasks
 
-- [x] 1. Extend GridColumn and BaseColumnBuilder with alignment support — aura-components-dev — Added `align` and `withAlign()`
-- [x] 2. Implement alignment classes in GridHeader and GridRow — aura-components-dev — Applied justify/text-align classes
-- [x] 3. Update Money, Number, and Percentage columns to right-align by default — aura-components-dev — Set default alignment in constructors
-- [x] 4. Update MoneyColumn to use MoneyFieldBuilder editor — aura-components-dev — Switched from NumberField to MoneyField
+- [x] 1. Extend GridColumn and BaseColumnBuilder with alignment support — ora-components-dev — Added `align` and `withAlign()`
+- [x] 2. Implement alignment classes in GridHeader and GridRow — ora-components-dev — Applied justify/text-align classes
+- [x] 3. Update Money, Number, and Percentage columns to right-align by default — ora-components-dev — Set default alignment in constructors
+- [x] 4. Update MoneyColumn to use MoneyFieldBuilder editor — ora-components-dev — Switched from NumberField to MoneyField
 - [x] 5. Code review: Grid alignment and MoneyColumn changes — code-reviewer
 - [x] 6. QA: Validate grid alignment and MoneyColumn editor — qa-tester

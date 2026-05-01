@@ -1,9 +1,9 @@
-import { TextFieldBuilder, TextFieldStyle } from 'aura-components';
+import { TextFieldBuilder, TextFieldStyle } from 'ora-components';
 import { BehaviorSubject, of, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { LayoutBuilder, LayoutGap } from 'aura-components';
-import { LabelBuilder, LabelSize } from 'aura-components';
-import { ButtonBuilder, ButtonStyle } from 'aura-components';
+import { LayoutBuilder, LayoutGap } from 'ora-components';
+import { LabelBuilder, LabelSize } from 'ora-components';
+import { ButtonBuilder, ButtonStyle } from 'ora-components';
 
 export default {
     title: 'Components/TextField',

@@ -1,5 +1,5 @@
 import { router } from '../routes';
-import { ThemeManager } from 'aura-components';
+import { ThemeManager } from 'ora-components';
 
 export function createHeader(): HTMLElement {
     const header = document.createElement('header');
@@ -34,7 +34,7 @@ export function createHeader(): HTMLElement {
             </svg>
             <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style="background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);"></div>
         </div>
-        <span class="text-title-large text-on-surface font-semibold tracking-tight group-hover:text-primary transition-colors duration-200">Aura Components</span>
+        <span class="text-title-large text-on-surface font-semibold tracking-tight group-hover:text-primary transition-colors duration-200">Ora Components</span>
     `;
     logo.onclick = () => router.navigate('/');
     const logoIcon = logo.querySelector('.logo-icon') as HTMLElement;

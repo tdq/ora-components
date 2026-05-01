@@ -2,8 +2,8 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "aura-components": ["../aura-components/src/index.ts"],
-      "aura-components/*": ["../aura-components/src/*"]
+      "ora-components": ["../ora-components/src/index.ts"],
+      "ora-components/*": ["../ora-components/src/*"]
     }
   },
   "include": ["src/**/*", ".storybook/**/*"]

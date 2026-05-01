@@ -1,7 +1,7 @@
-import { ListBoxBuilder, ListBoxStyle } from 'aura-components';
+import { ListBoxBuilder, ListBoxStyle } from 'ora-components';
 import { BehaviorSubject, of } from 'rxjs';
-import { LayoutBuilder, LayoutGap } from 'aura-components';
-import { LabelBuilder, LabelSize } from 'aura-components';
+import { LayoutBuilder, LayoutGap } from 'ora-components';
+import { LabelBuilder, LabelSize } from 'ora-components';
 
 export default {
     title: 'Components/ListBox',

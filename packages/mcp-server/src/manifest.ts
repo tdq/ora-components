@@ -35,9 +35,9 @@ let _manifest: ComponentManifest | null = null;
 export function getManifest(): ComponentManifest {
   if (_manifest) return _manifest;
 
-  // Resolve aura-components package location
+  // Resolve ora-components package location
   const require = createRequire(import.meta.url);
-  const pkgPath = require.resolve('aura-components/package.json');
+  const pkgPath = require.resolve('ora-components/package.json');
   const pkgDir = dirname(pkgPath);
   const manifestPath = join(pkgDir, 'dist', 'component-manifest.json');
 

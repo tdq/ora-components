@@ -115,7 +115,7 @@ export function createProblem(): HTMLElement {
     resolution.innerHTML = `
         <div class="h-px flex-1" style="background: linear-gradient(90deg, rgba(79,70,229,0.2), transparent);"></div>
         <p class="text-body-large text-on-surface-variant text-center shrink-0" style="opacity: 0.7;">
-            Aura Components was built to eliminate all three.
+            Ora Components was built to eliminate all three.
         </p>
         <div class="h-px flex-1" style="background: linear-gradient(90deg, transparent, rgba(79,70,229,0.2));"></div>
     `;

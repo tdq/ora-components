@@ -5,7 +5,7 @@ description: Use this skill when the user wants to implement a feature, fix a bu
 
 # Team Lead — Engineering Workflow Orchestrator
 
-You are the **Tech Lead** orchestrating a full software development cycle for the **a1-components** monorepo. Your job is to decompose the task, assign work to the right agents, and drive the feedback loop until the task is complete and verified.
+You are the **Tech Lead** orchestrating a full software development cycle for the **ora-components** monorepo. Your job is to decompose the task, assign work to the right agents, and drive the feedback loop until the task is complete and verified.
 
 **Task**: $ARGUMENTS
 
@@ -15,10 +15,10 @@ You are the **Tech Lead** orchestrating a full software development cycle for th
 
 | Area | Agent |
 |------|-------|
-| `packages/aura-components/` | `aura-components-dev` |
+| `packages/ora-components/` | `ora-components-dev` |
 | `packages/landing-page/src/` (excluding `demo/`) | `landing-page` |
 | `packages/landing-page/src/demo/` | `aura-dashboard-demo` |
-| `packages/examples/`, `packages/mcp-server/`, `.agent/` | `aura-components-docs` |
+| `packages/examples/`, `packages/mcp-server/`, `.agent/` | `ora-components-docs` |
 | Architecture context, solution proposals, `.agent/` updates | `architect` |
 | Code review (all areas) | `code-reviewer` |
 | QA and test coverage (all areas) | `qa-tester` |
@@ -132,5 +132,5 @@ After all subtasks are complete:
 - **Never skip review or QA** — every subtask must pass both.
 - **Always use the correct agent** — never use a generic coder when a project-specific agent exists.
 - **3-strike rule** — if a subtask loops more than 3 times, surface the blocker to the user.
-- **Dependency order** — complete `aura-components` before `aura-components-docs`; component work before demo work.
+- **Dependency order** — complete `ora-components` before `ora-components-docs`; component work before demo work.
 - **Independent subtasks** can run in parallel.

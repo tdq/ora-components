@@ -5,6 +5,6 @@
 
 ## Subtasks
 
-- [x] 1. Add widths and asResizable to FullCoverage story — aura-components-dev — Add withWidth() to all 22 columns and asResizable() to text/date/money/number columns
+- [x] 1. Add widths and asResizable to FullCoverage story — ora-components-dev — Add withWidth() to all 22 columns and asResizable() to text/date/money/number columns
 - [x] 2. Code review: FullCoverage widths and resizing — code-reviewer
 - [x] 3. QA: FullCoverage widths and resizing — qa-tester

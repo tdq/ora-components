@@ -1,4 +1,4 @@
-import { GridBuilder, TabsBuilder } from 'aura-components';
+import { GridBuilder, TabsBuilder } from 'ora-components';
 import { of } from 'rxjs';
 import { renderStatusChip } from './chip-utils';
 

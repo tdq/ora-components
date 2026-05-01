@@ -1,4 +1,4 @@
-import { PanelBuilder, ChartBuilder, LabelBuilder, registerDestroy } from 'aura-components';
+import { PanelBuilder, ChartBuilder, LabelBuilder, registerDestroy } from 'ora-components';
 import { of, timer, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 

@@ -1,4 +1,4 @@
-import { ButtonBuilder, ButtonStyle, Icons } from 'aura-components';
+import { ButtonBuilder, ButtonStyle, Icons } from 'ora-components';
 import { of } from 'rxjs';
 
 /**

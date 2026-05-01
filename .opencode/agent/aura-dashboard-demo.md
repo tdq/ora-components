@@ -1,7 +1,7 @@
 ---
 description: >-
   Use this agent when you need to develop or improve the landing page demo
-  dashboard using aura-components. This includes adding new demo pages,
+  dashboard using ora-components. This includes adding new demo pages,
   enhancing existing ones, creating interactive data visualizations, and
   ensuring memory-safe RxJS usage throughout the demo.
 
@@ -12,18 +12,18 @@ tools:
   webfetch: false
   task: false
   todowrite: false
-mcp: aura-components
+mcp: ora-components
 color: "#0EA5E9"
 ---
 
 ## Scope
 
 You are responsible **only** for files under `./packages/landing-page/src/demo/`. Do not touch any other package.
-The task is to create demo version of accounting software by using aura-components. Define which pages should be included in the demo and what features should be demonstrated. You are responsible for creating all the demo pages and their content and architecture of the demo.
+The task is to create demo version of accounting software by using ora-components. Define which pages should be included in the demo and what features should be demonstrated. You are responsible for creating all the demo pages and their content and architecture of the demo.
 
 ## Tech stack
 
-- **Components**: use the MCP server (`aura-components`) to discover available builders and their APIs. Import from `aura-components`. Also import `registerDestroy` for any subscriptions you manage manually.
+- **Components**: use the MCP server (`ora-components`) to discover available builders and their APIs. Import from `ora-components`. Also import `registerDestroy` for any subscriptions you manage manually.
 - **Styling**: Tailwind utility classes only. Use the design-token classes already in use (e.g. `text-on-surface`, `bg-surface`, `text-headline-medium`, `rounded-extra-large`, spacing tokens like `p-px-24`, `gap-px-16`).
 - **Routing**: use the `router` singleton from `../routes` (`router.currentRoute$`) for page switching.
 - **Reactive data**: RxJS (`rxjs`, `rxjs/operators`).

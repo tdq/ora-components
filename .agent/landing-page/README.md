@@ -1,12 +1,12 @@
 # Landing Page Package (`packages/landing-page`)
 
-The `landing-page` package is a dedicated marketing and demonstration website for the `a1-components` library. Its primary goal is to attract new users by showcasing the library's aesthetics, performance, and reactive capabilities in a real-world context.
+The `landing-page` package is a dedicated marketing and demonstration website for the `ora-components` library. Its primary goal is to attract new users by showcasing the library's aesthetics, performance, and reactive capabilities in a real-world context.
 
 ## Core Objectives
-1.  **Marketing:** High-impact introduction to the "Aura" design system.
+1.  **Marketing:** High-impact introduction to the "Ora" design system.
 2.  **Getting Started:** Clear path for developers to install and use the library.
 3.  **Interactive Playground:** Live, editable-in-spirit component demos.
-4.  **Dashboard Demo:** A complex, full-screen application example showing "Aura" in a high-density, data-driven environment.
+4.  **Dashboard Demo:** A complex, full-screen application example showing "Ora" in a high-density, data-driven environment.
 
 ## Key Features
 - **Modern Aesthetic:** Built with Material 3 principles, Tailwind CSS, and glassmorphism.
@@ -19,7 +19,7 @@ The `landing-page` package is a dedicated marketing and demonstration website fo
 - `src/state/`: RxJS-based global state (e.g., current view).
 - `src/components/`: Reusable landing-page-specific UI parts (Header, Footer, ThemeToggle).
 - `src/sections/`: High-level landing page sections (Hero, Features, Playground, Get Started).
-- `src/demo/`: The "Aura Dashboard" demo application.
+- `src/demo/`: The "Ora Dashboard" demo application.
 - `src/styles.css`: Global Tailwind and Material 3 variable definitions.
 
 ## Getting Started for Developers

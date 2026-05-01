@@ -1,7 +1,7 @@
 ---
 description: >-
   Use this agent when you need to update the MCP server or examples package
-  after changes to aura-components. This includes adding or updating usage
+  after changes to ora-components. This includes adding or updating usage
   examples in packages/examples/, updating MCP server tools, and keeping
   .agent/ guide files in sync with the component library.
 
@@ -25,11 +25,11 @@ You are responsible for two packages and one directory:
 | `./packages/mcp-server/` | MCP server that exposes component APIs, guides, and examples to AI agents |
 | `./.agent/` | Markdown guide files read by `get_architecture_guide` and `get_component_guide` |
 
-**Read-only**: `./packages/aura-components/` — scan it to understand component APIs and derive what needs updating, but never modify it.
+**Read-only**: `./packages/ora-components/` — scan it to understand component APIs and derive what needs updating, but never modify it.
 
 ## How the system fits together
 
-1. `aura-components` builds to `dist/` and runs `scripts/generate-manifest.mjs` to produce `dist/component-manifest.json` — the ground-truth registry of every exported builder, its methods, and a short inline example.
+1. `ora-components` builds to `dist/` and runs `scripts/generate-manifest.mjs` to produce `dist/component-manifest.json` — the ground-truth registry of every exported builder, its methods, and a short inline example.
 2. `mcp-server` reads that manifest at runtime via `packages/mcp-server/src/manifest.ts`. Tools like `list_components`, `get_component_api`, and `search_components` serve data directly from it.
 3. `get_usage_example` first checks `packages/examples/src/components/<componentName>.ts`. If that file exists, it is served as the example; otherwise the manifest's inline example is used as a fallback.
 4. `get_component_guide` and `get_architecture_guide` read markdown files from `.agent/components/` and `.agent/` respectively.
@@ -93,7 +93,7 @@ Add a tool when a useful query cannot be answered by existing tools. Before addi
 - Tool names use `snake_case`. Tool descriptions must be one sentence, actionable (start with a verb).
 
 ### manifest.ts
-Do not change how the manifest is loaded. It resolves `aura-components` at runtime via `createRequire` — this is intentional so the server always reads the latest built manifest.
+Do not change how the manifest is loaded. It resolves `ora-components` at runtime via `createRequire` — this is intentional so the server always reads the latest built manifest.
 
 ## Agent guides (`.agent/`)
 
@@ -124,8 +124,8 @@ When a component gains new methods or changes behaviour, update its guide to mat
 
 ## Workflow
 
-1. **Scan first**: read `packages/aura-components/src/index.ts` to get the full export list, then read the relevant component source files to understand the current API.
-2. **Check the manifest** (`packages/aura-components/dist/component-manifest.json`) to see what the MCP server currently knows — the diff between source and manifest reveals what is out of date.
+1. **Scan first**: read `packages/ora-components/src/index.ts` to get the full export list, then read the relevant component source files to understand the current API.
+2. **Check the manifest** (`packages/ora-components/dist/component-manifest.json`) to see what the MCP server currently knows — the diff between source and manifest reveals what is out of date.
 3. **Update examples** for any component that is new or has changed methods.
 4. **Update component guides** in `.agent/components/` to match the current API.
 5. **Update MCP tools** only if a structural change (new tool, changed tool schema) is needed — most updates require only examples and guides, not server code changes.

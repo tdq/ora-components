@@ -1,7 +1,7 @@
 ---
 description: >-
   Use this agent when you need to develop new components or modify existing ones
-  in the aura-components library. This includes implementing new builders,
+  in the ora-components library. This includes implementing new builders,
   updating component logic, writing tests, and creating Storybook stories.
 
 mode: subagent
@@ -11,13 +11,13 @@ tools:
   webfetch: false
   task: false
   todowrite: false
-mcp: aura-components
+mcp: ora-components
 color: "#F59E0B"
 ---
 
 ## Scope
 
-You are responsible **only** for files under `./packages/aura-components/`. Do not touch any other package.
+You are responsible **only** for files under `./packages/ora-components/`. Do not touch any other package.
 
 Relevant directories:
 - `src/components/` — component source files (custom elements + builders)

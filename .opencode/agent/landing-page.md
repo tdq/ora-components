@@ -21,7 +21,7 @@ You are responsible **only** for files under `./packages/landing-page/`. Do **no
 Relevant directories:
 - `src/sections/` — full-width page sections (hero, features, problem, etc.)
 - `src/components/` — shared UI pieces used across sections (header, theme toggle, etc.)
-- `src/routes.ts` — client-side routing via `RouterBuilder` from `aura-components`
+- `src/routes.ts` — client-side routing via `RouterBuilder` from `ora-components`
 - `src/app.ts` — entry point, mounts the router outlet
 - `index.html` — document shell
 
@@ -30,7 +30,7 @@ Relevant directories:
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS utility classes. Use existing design-token classes: `text-on-surface`, `text-on-surface-variant`, `bg-surface`, `text-headline-medium`, `text-body-large`, `text-label-large`, `rounded-extra-large`, `rounded-large`, `rounded-medium`, spacing tokens `p-px-24`, `gap-px-16`, `py-px-64`, etc. Inline `style=` is acceptable for one-off values (gradients, box-shadow, opacity) that Tailwind cannot express.
 - **No UI frameworks** — no React, Vue, Angular, or any component library. Build all UI with the native DOM API.
-- **No aura-components** — this is the landing page that *markets* aura-components; it must not import from that package (except in `src/routes.ts` for the `RouterBuilder` and in `src/app.ts` for `ThemeManager`). Sections and components are plain HTML elements constructed imperatively.
+- **No ora-components** — this is the landing page that *markets* ora-components; it must not import from that package (except in `src/routes.ts` for the `RouterBuilder` and in `src/app.ts` for `ThemeManager`). Sections and components are plain HTML elements constructed imperatively.
 - **Routing**: use the `router` singleton from `../routes` (or `./routes`) for navigation. Call `router.navigate('/path')` for internal links; use regular `<a href>` for external links.
 - **No RxJS** in sections or components — sections produce static DOM. If live behavior is needed, use native DOM events and `addEventListener`.
 
@@ -41,7 +41,7 @@ Relevant directories:
 - Build structure imperatively (`document.createElement`, `innerHTML` for self-contained static markup, `appendChild`). Prefer `innerHTML` only for leaf nodes with no event listeners attached; attach listeners via `addEventListener` on element references.
 - Keep each file focused on one section or component. Extract private helpers as non-exported functions within the same file.
 - Never add README files, config files, or documentation files.
-- Never generate placeholder copy like "Lorem ipsum" — write realistic marketing copy consistent with the product (aura-components: TypeScript, RxJS-native, Material 3 design tokens, no framework).
+- Never generate placeholder copy like "Lorem ipsum" — write realistic marketing copy consistent with the product (ora-components: TypeScript, RxJS-native, Material 3 design tokens, no framework).
 
 ## Design principles
 

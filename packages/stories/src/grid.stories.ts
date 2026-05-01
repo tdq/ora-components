@@ -1,7 +1,7 @@
-import { GridBuilder, Icons } from 'aura-components';
-import { SortDirection } from 'aura-components';
+import { GridBuilder, Icons } from 'ora-components';
+import { SortDirection } from 'ora-components';
 import { of, Subject } from 'rxjs';
-import { Money } from 'aura-components';
+import { Money } from 'ora-components';
 
 export default {
     title: 'Components/Grid',
