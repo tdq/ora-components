@@ -1,8 +1,8 @@
 import { router } from '../routes';
 
-const INSTALL_CODE = `npm install ora-components rxjs`;
+const INSTALL_CODE = `npm install @tdq/ora-components rxjs`;
 
-const USAGE_CODE = `import { ButtonBuilder, ButtonStyle } from 'ora-components';
+const USAGE_CODE = `import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
 import { of } from 'rxjs';
 
 const btn = new ButtonBuilder()
@@ -159,17 +159,17 @@ function createTermTab(label: string, active: boolean): HTMLButtonElement {
 }
 
 function renderInstallCode(): string {
-    return `<pre style="margin:0; color: rgba(255,255,255,0.85);"><code><span style="color: #a78bfa;">$</span> <span style="color: #34d399;">npm</span> <span style="color: #e2e8f0;">install</span> <span style="color: #93c5fd;">ora-components</span> <span style="color: #93c5fd;">rxjs</span>
+    return `<pre style="margin:0; color: rgba(255,255,255,0.85);"><code><span style="color: #a78bfa;">$</span> <span style="color: #34d399;">npm</span> <span style="color: #e2e8f0;">install</span> <span style="color: #93c5fd;">@tdq/ora-components</span> <span style="color: #93c5fd;">rxjs</span>
 
 <span style="color: rgba(255,255,255,0.3);"># or with yarn</span>
-<span style="color: #a78bfa;">$</span> <span style="color: #34d399;">yarn</span> <span style="color: #e2e8f0;">add</span> <span style="color: #93c5fd;">ora-components</span> <span style="color: #93c5fd;">rxjs</span>
+<span style="color: #a78bfa;">$</span> <span style="color: #34d399;">yarn</span> <span style="color: #e2e8f0;">add</span> <span style="color: #93c5fd;">@tdq/ora-components</span> <span style="color: #93c5fd;">rxjs</span>
 
 <span style="color: rgba(255,255,255,0.3);"># or with pnpm</span>
-<span style="color: #a78bfa;">$</span> <span style="color: #34d399;">pnpm</span> <span style="color: #e2e8f0;">add</span> <span style="color: #93c5fd;">ora-components</span> <span style="color: #93c5fd;">rxjs</span></code></pre>`;
+<span style="color: #a78bfa;">$</span> <span style="color: #34d399;">pnpm</span> <span style="color: #e2e8f0;">add</span> <span style="color: #93c5fd;">@tdq/ora-components</span> <span style="color: #93c5fd;">rxjs</span></code></pre>`;
 }
 
 function renderUsageCode(): string {
-    return `<pre style="margin:0; color: rgba(255,255,255,0.85);"><code><span style="color: #a78bfa;">import</span> <span style="color: #e2e8f0;">{</span> <span style="color: #93c5fd;">ButtonBuilder</span><span style="color: #e2e8f0;">,</span> <span style="color: #93c5fd;">ButtonStyle</span> <span style="color: #e2e8f0;">}</span> <span style="color: #a78bfa;">from</span> <span style="color: #fbbf24;">'ora-components'</span><span style="color: #e2e8f0;">;</span>
+    return `<pre style="margin:0; color: rgba(255,255,255,0.85);"><code><span style="color: #a78bfa;">import</span> <span style="color: #e2e8f0;">{</span> <span style="color: #93c5fd;">ButtonBuilder</span><span style="color: #e2e8f0;">,</span> <span style="color: #93c5fd;">ButtonStyle</span> <span style="color: #e2e8f0;">}</span> <span style="color: #a78bfa;">from</span> <span style="color: #fbbf24;">'@tdq/ora-components'</span><span style="color: #e2e8f0;">;</span>
 <span style="color: #a78bfa;">import</span> <span style="color: #e2e8f0;">{</span> <span style="color: #93c5fd;">of</span> <span style="color: #e2e8f0;">}</span> <span style="color: #a78bfa;">from</span> <span style="color: #fbbf24;">'rxjs'</span><span style="color: #e2e8f0;">;</span>
 
 <span style="color: #a78bfa;">const</span> <span style="color: #34d399;">btn</span> <span style="color: #e2e8f0;">=</span> <span style="color: #a78bfa;">new</span> <span style="color: #93c5fd;">ButtonBuilder</span><span style="color: #e2e8f0;">()</span>
@@ -231,7 +231,7 @@ function createBottomCTA(): HTMLElement {
             <div class="absolute inset-0 opacity-[0.04]" style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;);"></div>
         </div>
         <div class="relative z-10">
-            <h3 class="text-[36px] font-bold text-white leading-tight tracking-tight" style="letter-spacing: -0.025em;">npm install ora-components rxjs<br><span style="opacity: 0.7; font-size: 0.75em; font-weight: 400;">— and you're done.</span></h3>
+            <h3 class="text-[36px] font-bold text-white leading-tight tracking-tight" style="letter-spacing: -0.025em;">npm install @tdq/ora-components rxjs<br><span style="opacity: 0.7; font-size: 0.75em; font-weight: 400;">— and you're done.</span></h3>
             <p class="mt-px-16 text-white max-w-lg mx-auto text-body-large" style="opacity: 0.75;">No config. No boilerplate. Pass your first observable to a component and watch it react.</p>
             <div class="mt-px-40 flex flex-wrap gap-px-16 justify-center">
                 <button class="px-px-32 py-px-16 text-label-large font-semibold rounded-extra-large transition-all duration-200 hover:scale-105 active:scale-95 cta-primary-btn" style="background: white; color: var(--md-sys-color-primary); box-shadow: 0 4px 20px rgba(0,0,0,0.15);">

@@ -3,5 +3,6 @@ dist
 storybook-static
 *.tgz
 .turbo
+.npmrc
 ora-components/.turbo/*
 .claude

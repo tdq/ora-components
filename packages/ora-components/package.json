@@ -1,5 +1,5 @@
 {
-  "name": "ora-components",
+  "name": "@tdq/ora-components",
   "version": "0.1.1",
   "description": "A1 Web Components library",
   "type": "module",
@@ -84,6 +84,9 @@
       "types": "./dist/router/index.d.ts"
     },
     "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
     "dist"
