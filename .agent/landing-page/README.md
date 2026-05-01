@@ -30,6 +30,12 @@ npm run dev --filter=landing-page
 ```
 The development server will typically start on `http://localhost:3000`.
 
+**Important**: The `ora-components` package's `dist/` directory is gitignored. The Turbo pipeline (`turbo.json`) builds `ora-components` first when using `--filter=landing-page...`, so the commands above work automatically. However, if you run `npm run build` inside `packages/landing-page` directly (bypassing Turbo), you must first generate the `ora-components` type declarations:
+```bash
+npm run build --filter=ora-components    # or: cd packages/ora-components && npm run build:types
+```
+Without this step, `tsc` in the landing page will report ~23 errors about missing `.d.ts` files.
+
 ## Deployment
 
 The landing page is hosted on **Azure Static Web Apps** and deployed automatically via a **GitHub Actions CI/CD pipeline**.

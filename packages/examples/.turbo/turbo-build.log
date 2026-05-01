@@ -1,14 +1,15 @@
 
+
 > aura-examples@0.1.0 build
 > vite build
 
-vite v5.4.21 building for production...
+[1G[0K[36mvite v8.0.10 [32mbuilding client environment for production...[36m[39m
 
 node_modules/ora-components/dist/ora-components.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
-transforming...
-✓ 354 modules transformed.
-rendering chunks...
-computing gzip size...
-dist/index.html                 0.40 kB │ gzip:  0.28 kB
-dist/assets/index-CcpOiv2s.js  63.02 kB │ gzip: 19.96 kB
-✓ built in 5.03s
+[2K[32m✓[39m 355 modules transformed.
+[2Krendering chunks (1)...[2Kcomputing gzip size...
+[2K[2mdist/[0m[32mindex.html                [39m[2m[1m 0.40 kB[0m[0m[2m │ gzip:  0.28 kB[0m
+[2mdist/[0m[2massets/[0m[36mindex-DYcAJQ7-.js  [39m[2m[1m62.66 kB[0m[0m[2m │ gzip: 20.01 kB[0m
+
+[32m✓ built in 187ms[39m
+[1G[0K\[1G[0K
