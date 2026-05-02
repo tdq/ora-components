@@ -1,5 +1,6 @@
 import { GridBuilder, TabsBuilder, LabelBuilder, PanelBuilder, ButtonBuilder, ButtonStyle, TextFieldBuilder, DatePickerBuilder, MoneyFieldBuilder, Money } from '@tdq/ora-components';
 import { of, BehaviorSubject } from 'rxjs';
+import { KPICardBuilder } from './kpi-card';
 
 interface Invoice {
     id: string;
@@ -55,23 +56,22 @@ function computeAgingCard(label: string, filter: (inv: Invoice) => boolean, acce
     const subset = ALL_INVOICES.filter(filter);
     const total = subset.reduce((s, i) => s + i.amount.amount, 0);
 
-    const card = document.createElement('div');
-    card.className = 'p-px-24 rounded-extra-large border';
-    card.style.cssText = `background: var(--md-sys-color-surface); border-color: rgba(121,116,126,0.1); position: relative; overflow: hidden;`;
-    card.innerHTML = `
-        <div class="absolute top-0 right-0 w-20 h-20 rounded-full -translate-y-1/2 translate-x-1/2" style="background: radial-gradient(circle, ${lightColor}, transparent);"></div>
-        <div class="flex items-center justify-between mb-px-12">
-            <span class="text-label-medium text-on-surface-variant" style="opacity: 0.6;">${label}</span>
-            <div class="w-8 h-8 rounded-large flex items-center justify-center" style="background: ${lightColor};">
-                <span class="w-2 h-2 rounded-full" style="background: ${accentColor};"></span>
-            </div>
-        </div>
-        <span class="text-headline-medium text-on-surface font-bold" style="letter-spacing: -0.02em;">
-            €${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </span>
-        <div class="text-label-small text-on-surface-variant mt-px-4" style="opacity: 0.5;">${subset.length} invoice${subset.length !== 1 ? 's' : ''}</div>
-    `;
-    return card;
+    const footerBuilder = {
+        build: (): HTMLElement => {
+            const div = document.createElement('div');
+            div.className = 'text-label-small text-on-surface-variant mt-px-4';
+            div.style.opacity = '0.5';
+            div.textContent = `${subset.length} invoice${subset.length !== 1 ? 's' : ''}`;
+            return div;
+        }
+    };
+
+    return new KPICardBuilder()
+        .withLabel(of(label))
+        .withValue(of(`€${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`))
+        .withAccentColor(of(accentColor), of(lightColor))
+        .withFooter(footerBuilder)
+        .build();
 }
 
 function createAgingSummary(): HTMLElement {

@@ -150,3 +150,35 @@ Used for overlays and elevated components on top of content.
 - **Backdrop Blur**: 12px
 - **Border**: white/20
 - **Label Color**: #FFFFFF (White)
+
+## 10. Using Theme Colors with Builders
+
+When applying theme colors dynamically via `withClass()`, always use exact
+Tailwind class names — never arbitrary `text-[#hex]` values interpolated in
+template literals. Tailwind's static scanner cannot resolve those at build time.
+
+**Setup in tailwind.config.mjs:**
+```javascript
+theme: {
+    extend: {
+        colors: {
+            'accent': '#0F52BA',        // light primary
+            'accent-dark': '#60A5FA',   // dark primary
+        },
+    },
+},
+safelist: ['text-accent', 'text-accent-dark'],
+```
+
+**Builder usage:**
+```typescript
+const HEX_TO_CLASS: Record<string, string> = {
+    '#0F52BA': 'text-accent',
+    '#60A5FA': 'text-accent-dark',
+};
+const class$ = color$.pipe(map(c => HEX_TO_CLASS[c] ?? 'text-on-surface'));
+new LabelBuilder().withCaption(of('Value')).withClass(class$);
+```
+
+This ensures classes are discoverable by Tailwind's scanner and validated
+against the theme configuration.

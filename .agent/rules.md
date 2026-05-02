@@ -8,3 +8,4 @@ Follow this steps when creating component:
 6. Implement story
 
 Use existing components, especially LayoutBuilder for compositions. Prepare custom components only if existing components are not covering some use cases.
+- NEVER modify the HTMLElement returned by build() — all configuration must happen via builder methods BEFORE build()

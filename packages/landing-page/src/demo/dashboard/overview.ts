@@ -1,4 +1,5 @@
 import { PanelBuilder, ChartBuilder, GridBuilder, LabelBuilder, registerDestroy, Money } from '@tdq/ora-components';
+import { KPICardBuilder } from './kpi-card';
 import { of, timer, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { renderStatusChip } from './chip-utils';
@@ -35,24 +36,12 @@ function createStatsGrid(): HTMLElement {
     ];
 
     stats.forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'p-px-24 rounded-extra-large border';
-        card.style.cssText = `background: var(--md-sys-color-surface); border-color: rgba(121,116,126,0.1); position: relative; overflow: hidden;`;
-
-        card.innerHTML = `
-            <div class="absolute top-0 right-0 w-20 h-20 rounded-full -translate-y-1/2 translate-x-1/2" style="background: radial-gradient(circle, ${s.colorLight}, transparent);"></div>
-            <div class="flex items-center justify-between mb-px-12">
-                <span class="text-label-medium text-on-surface-variant" style="opacity: 0.6;">${s.label}</span>
-                <div class="w-8 h-8 rounded-large flex items-center justify-center" style="background: ${s.colorLight};">
-                    <span class="w-2 h-2 rounded-full" style="background: ${s.color};"></span>
-                </div>
-            </div>
-            <div class="flex items-baseline justify-between">
-                <span class="text-headline-medium text-on-surface font-bold" style="letter-spacing: -0.02em;">${s.value}</span>
-                <span class="text-label-small font-semibold px-px-8 py-px-4 rounded-full" style="background: ${s.positive ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)'}; color: ${s.positive ? '#16a34a' : '#dc2626'};">${s.trend}</span>
-            </div>
-        `;
-
+        const card = new KPICardBuilder()
+            .withLabel(of(s.label))
+            .withValue(of(s.value))
+            .withTrend(of(s.trend), of(s.positive))
+            .withAccentColor(of(s.color), of(s.colorLight))
+            .build();
         grid.appendChild(card);
     });
 
