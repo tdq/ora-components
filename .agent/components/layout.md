@@ -41,3 +41,17 @@ Alignment is an enum with values:
 SlotSize defines the size of the slot. Default value is calculated based on the number of slots (min QUARTER, max FULL). 
 For vertical layout default slot size is not set (size of content).
 Slot size can be shrinked or growed based on available space.
+
+## Usage
+
+```typescript
+// Vertical layout with two slots
+const layout = new LayoutBuilder()
+    .asVertical()
+    .withGap(LayoutGap.MEDIUM);
+
+layout.addSlot().withContent(new LabelBuilder().withCaption(of('Header')));
+layout.addSlot().withContent(new LabelBuilder().withCaption(of('Body')));
+
+const element = layout.build();
+```

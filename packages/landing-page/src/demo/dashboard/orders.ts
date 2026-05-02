@@ -1,6 +1,7 @@
 import { GridBuilder, TabsBuilder, PanelBuilder, ChartBuilder, LabelBuilder, Money } from '@tdq/ora-components';
 import { of } from 'rxjs';
 import { renderStatusChip } from './chip-utils';
+import { KPICardBuilder } from './kpi-card';
 
 interface Order {
     id: string;
@@ -76,22 +77,11 @@ function createSummaryStats(): HTMLElement {
     ];
 
     for (const stat of stats) {
-        const card = document.createElement('div');
-        card.className = 'p-px-16 rounded-extra-large border';
-        card.style.cssText = 'background: var(--md-sys-color-surface); border-color: rgba(121,116,126,0.1);';
-
-        const label = document.createElement('span');
-        label.className = 'text-label-medium text-on-surface-variant';
-        label.style.cssText = 'display: block; opacity: 0.6; margin-bottom: 8px;';
-        label.textContent = stat.label;
-
-        const value = document.createElement('span');
-        value.className = 'text-headline-medium text-on-surface font-bold';
-        value.style.cssText = 'display: block; letter-spacing: -0.02em;';
-        value.textContent = stat.value;
-
-        card.appendChild(label);
-        card.appendChild(value);
+        const card = new KPICardBuilder()
+            .asMinimal()
+            .withLabel(of(stat.label))
+            .withValue(of(stat.value))
+            .build();
         wrapper.appendChild(card);
     }
 

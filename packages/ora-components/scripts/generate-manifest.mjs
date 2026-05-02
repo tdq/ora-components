@@ -151,6 +151,31 @@ function extractMethods(classBody) {
 }
 
 /**
+ * Extract enum declarations from .d.ts content.
+ * Parses `export declare enum Name { MEMBER = "VALUE", ... }` blocks
+ * and returns an array of { name, values } objects.
+ */
+function extractEnums(dtsContent) {
+  const enums = [];
+  const enumRegex = /export\s+declare\s+enum\s+(\w+)\s*\{([\s\S]*?)\}/g;
+  let match;
+  while ((match = enumRegex.exec(dtsContent)) !== null) {
+    const [, enumName, body] = match;
+    // Extract member identifiers (the ^\s*(\w+) part before = or EOL)
+    const memberRegex = /^\s*(\w+)/gm;
+    const values = [];
+    let memberMatch;
+    while ((memberMatch = memberRegex.exec(body)) !== null) {
+      values.push(memberMatch[1]);
+    }
+    if (values.length > 0) {
+      enums.push({ name: enumName, values });
+    }
+  }
+  return enums;
+}
+
+/**
  * Load and parse the .agent/components/{componentName}.md file.
  * Returns { description, methodDescriptions } where methodDescriptions is a
  * Map<string, string> from method name to description text.
@@ -229,6 +254,8 @@ const components = [];
 for (const [, componentPath] of exportMatches) {
   const raw = readAllDts(join(distDir, componentPath));
   if (!raw) continue;
+  // Extract enums from this component's .d.ts content
+  const enums = extractEnums(raw);
   // Append sentinel so the lookahead always matches after the last class body
   const content = raw + '\nexport {}';
 
@@ -255,13 +282,41 @@ for (const [, componentPath] of exportMatches) {
       returnType: m.returnType,
     }));
 
+    // Generate example: custom templates for builders that benefit from showing chaining
+    let example;
+    if (className === 'LabelBuilder') {
+      example = `import { LabelBuilder } from '@tdq/ora-components/label';
+
+const el = new LabelBuilder()
+    .withCaption(of('Hello'))
+    .withClass(of('text-headline-medium font-bold'))
+    .build();
+document.body.appendChild(el);`;
+    } else if (className === 'PanelBuilder') {
+      example = `import { PanelBuilder } from '@tdq/ora-components/panel';
+import { LabelBuilder } from '@tdq/ora-components/label';
+
+const el = new PanelBuilder()
+    .asGlass()
+    .withClass(of('max-w-lg'))
+    .withContent(new LabelBuilder().withCaption(of('Hello')))
+    .build();
+document.body.appendChild(el);`;
+    } else {
+      example = `import { ${className} } from '@tdq/ora-components/${componentName}';
+
+const el = new ${className}().build();
+document.body.appendChild(el);`;
+    }
+
     components.push({
       name: className,
       componentName,
       description,
       import: `@tdq/ora-components/${componentName}`,
       methods: enrichedMethods,
-      example: `import { ${className} } from '@tdq/ora-components/${componentName}';\n\nconst el = new ${className}().build();\ndocument.body.appendChild(el);`
+      example,
+      enums: enums.length > 0 ? enums : undefined
     });
   }
 }

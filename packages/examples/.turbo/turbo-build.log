@@ -11,5 +11,5 @@ node_modules/ora-components/dist/ora-components.css doesn't exist at build time,
 [2K[2mdist/[0m[32mindex.html                [39m[2m[1m 0.40 kB[0m[0m[2m │ gzip:  0.28 kB[0m
 [2mdist/[0m[2massets/[0m[36mindex-DYcAJQ7-.js  [39m[2m[1m62.66 kB[0m[0m[2m │ gzip: 20.01 kB[0m
 
-[32m✓ built in 139ms[39m
+[32m✓ built in 115ms[39m
 [1G[0K\[1G[0K

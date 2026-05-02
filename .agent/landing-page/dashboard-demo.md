@@ -8,9 +8,9 @@ The dashboard uses the `LayoutBuilder` with an `asHorizontal()` orientation to c
 - **Main View:** A scrollable content area containing the dashboard widgets.
 
 ## 2. Core Widgets
-- **Stats Grid:** A 4-column grid of summary cards (Sales, Active Users, etc.) built with `PanelBuilder` and `asGlass()`.
+- **Stats Grid:** An 8-card grid of summary KPIs (Total Revenue, Active Users, Orders, Conversion, etc.) built with `KPICardBuilder` — a demo-local builder that wraps `PanelBuilder`, `LayoutBuilder`, and `LabelBuilder`.
 - **Sales Chart:** A dynamic line chart created using `ChartBuilder`. It uses an RxJS `timer(0, 5000)` to simulate real-time data updates every 5 seconds.
-- **Transactions Grid:** A data table built with `GridBuilder`, showing recent transaction history with custom column definitions.
+- **Transactions Grid:** A data table built with `GridBuilder`, showing recent transaction history with custom column definitions. The overview transactions grid sits inside a flex container, so it uses `flex-1 min-h-0` on the built element (via `classList.add(...)`) rather than `.withHeight()`. Other pages — such as orders — use explicit `.withHeight(of(400))`.
 
 ## 3. Implementation Highlights
 - **`LayoutBuilder`:** Used to handle the high-level application shell.

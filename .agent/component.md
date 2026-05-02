@@ -50,12 +50,15 @@ Theme has color schemes:
 - withVisible(visible: Observable<boolean>): this - sets the visibility of the component
 
 ## Example
+
 ```typescript
+// Example builder that delegates to existing components
+// (See builder-pattern.md for the full pattern)
 class ExampleBuilder implements ComponentBuilder {
     build(): HTMLElement {
-        const element = document.createElement('div');
-        element.className = 'flex flex-col gap-4';
-        return element;
+        return new PanelBuilder()
+            .withContent(new LabelBuilder().withCaption(of('Hello')))
+            .build();
     }
 }
 ```

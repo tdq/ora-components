@@ -1,6 +1,7 @@
 import { PanelBuilder, ChartBuilder, GridBuilder, LabelBuilder, TabsBuilder, Money, registerDestroy } from '@tdq/ora-components';
 import { of, timer, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { KPICardBuilder } from './kpi-card';
 
 interface PLLineItem {
     category: string;
@@ -98,28 +99,20 @@ function createSummaryCards(period: PeriodData): HTMLElement {
     const isProfit = net >= 0;
 
     const cards = [
-        { label: 'Total Revenue',  value: fmt(period.revenue.total),  color: '#10B981', colorLight: 'rgba(16,185,129,0.08)'  },
-        { label: 'Total Expenses', value: fmt(period.expenses.total), color: '#EF4444', colorLight: 'rgba(239,68,68,0.08)'   },
-        { label: 'Net Income',     value: fmt(Math.abs(net)),          color: isProfit ? '#6750A4' : '#EF4444', colorLight: isProfit ? 'rgba(103,80,164,0.08)' : 'rgba(239,68,68,0.08)' },
+        { label: 'Total Revenue',  value: fmt(period.revenue.total),  color: '#10B981' },
+        { label: 'Total Expenses', value: fmt(period.expenses.total), color: '#EF4444' },
+        { label: 'Net Income',     value: fmt(Math.abs(net)),          color: isProfit ? '#6750A4' : '#EF4444' },
     ];
 
     const grid = document.createElement('div');
     grid.className = 'grid grid-cols-1 sm:grid-cols-3 gap-px-16 mb-px-24';
 
     cards.forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'p-px-24 rounded-extra-large border';
-        card.style.cssText = `background: var(--md-sys-color-surface); border-color: rgba(121,116,126,0.1); position: relative; overflow: hidden;`;
-        card.innerHTML = `
-            <div class="absolute top-0 right-0 w-20 h-20 rounded-full -translate-y-1/2 translate-x-1/2" style="background: radial-gradient(circle, ${s.colorLight}, transparent);"></div>
-            <div class="flex items-center justify-between mb-px-12">
-                <span class="text-label-medium text-on-surface-variant" style="opacity: 0.6;">${s.label}</span>
-                <div class="w-8 h-8 rounded-large flex items-center justify-center" style="background: ${s.colorLight};">
-                    <span class="w-2 h-2 rounded-full" style="background: ${s.color};"></span>
-                </div>
-            </div>
-            <span class="text-headline-medium font-bold" style="letter-spacing: -0.02em; color: ${s.color};">${s.value}</span>
-        `;
+        const card = new KPICardBuilder()
+            .withLabel(of(s.label))
+            .withValue(of(s.value))
+            .withValueColor(of(s.color))
+            .build();
         grid.appendChild(card);
     });
 
@@ -130,7 +123,7 @@ function createRevenueExpensesChart(period: PeriodData): HTMLElement {
     const panel = new PanelBuilder()
         .withContent(new LabelBuilder().withCaption(of('Revenue vs Expenses')))
         .build();
-    panel.classList.add('min-h-[300px]', 'flex', 'flex-col', 'mb-px-24');
+    panel.classList.add('min-h-[300px]', 'flex', 'flex-col', 'flex-shrink-0', 'mb-px-24');
 
     type ChartRow = { x: string; revenue: number; expenses: number };
     const BASE: ChartRow[] = period.chartMonths.map((x, i) => ({
@@ -170,8 +163,9 @@ function createRevenueExpensesChart(period: PeriodData): HTMLElement {
 function createBreakdownGrid(title: string, items: PLLineItem[]): HTMLElement {
     const panel = new PanelBuilder()
         .withContent(new LabelBuilder().withCaption(of(title)))
+        .withClass(of('h-full'))
         .build();
-    panel.classList.add('flex', 'flex-col');
+    panel.classList.add('flex', 'flex-col', 'min-h-0');
 
     const grid = new GridBuilder<PLLineItem>()
         .withItems(of(items));
@@ -186,13 +180,13 @@ function createBreakdownGrid(title: string, items: PLLineItem[]): HTMLElement {
 
 function buildPeriodContent(period: PeriodData): HTMLElement {
     const wrapper = document.createElement('div');
-    wrapper.className = 'flex flex-col';
+    wrapper.className = 'flex flex-col h-full';
 
     wrapper.appendChild(createSummaryCards(period));
     wrapper.appendChild(createRevenueExpensesChart(period));
 
     const breakdownRow = document.createElement('div');
-    breakdownRow.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24';
+    breakdownRow.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24 flex-1 min-h-0';
     breakdownRow.appendChild(createBreakdownGrid('Revenue Breakdown', period.revenue.items));
     breakdownRow.appendChild(createBreakdownGrid('Expense Breakdown', period.expenses.items));
     wrapper.appendChild(breakdownRow);
@@ -202,7 +196,7 @@ function buildPeriodContent(period: PeriodData): HTMLElement {
 
 export function createPL(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    container.className = 'flex-1 flex flex-col p-px-24';
 
     const tabs = new TabsBuilder();
     PERIODS.forEach(period => {
@@ -212,7 +206,7 @@ export function createPL(): HTMLElement {
     });
 
     const tabsEl = tabs.build();
-    tabsEl.classList.add('flex', 'flex-col');
+    tabsEl.classList.add('flex', 'flex-col', 'flex-1', 'min-h-0');
     container.appendChild(tabsEl);
 
     return container;

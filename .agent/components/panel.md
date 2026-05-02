@@ -21,3 +21,21 @@ It should have full width
 
 ### Glass styling
 No shadow.
+
+## Usage
+
+```typescript
+// Panel with content — all configuration before build()
+const panel = new PanelBuilder()
+    .withGap(PanelGap.LARGE)
+    .withContent(new LabelBuilder().withCaption(of('Hello')))
+    .build();
+
+// Glass panel with custom class
+const glassPanel = new PanelBuilder()
+    .asGlass()
+    .withGap(PanelGap.SMALL)
+    .withContent(/* any ComponentBuilder */)
+    .withClass(of('max-w-lg'))
+    .build();
+```

@@ -37,3 +37,5 @@ Logic and state are managed by RxJS.
 ## Packages
 
 - [Landing Page](landing-page/README.md) — Marketing site and dashboard demo showcasing the library (deployed to Azure Static Web Apps)
+  - [Dashboard Demo](landing-page/dashboard-demo.md) — Main dashboard layout, overview widgets, and grid height conventions
+  - [Accounting Demo](landing-page/accounting-demo.md) — Ledger, P&L, Balance Sheet, and Payables pages

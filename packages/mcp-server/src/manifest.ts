@@ -15,6 +15,11 @@ export interface MethodEntry {
   returnType: string;
 }
 
+export interface EnumEntry {
+  name: string;
+  values: string[];
+}
+
 export interface ComponentEntry {
   name: string;
   componentName: string;
@@ -22,6 +27,7 @@ export interface ComponentEntry {
   import: string;
   methods: MethodEntry[];
   example: string;
+  enums?: EnumEntry[];
 }
 
 export interface ComponentManifest {
