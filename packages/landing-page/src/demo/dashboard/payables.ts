@@ -258,15 +258,15 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
             if (!valid) return;
 
             const toISO = (d: Date) => d.toISOString().split('T')[0];
-            const past = daysPast(toISO(dueDateVal));
+            const past = daysPast(toISO(dueDateVal!));
             const status = past > 0 ? 'Overdue' : past >= -7 ? 'Due Soon' : 'Current';
 
             const newInvoice: Invoice = {
                 id: invoiceNum,
                 vendor,
-                issueDate: toISO(issueDateVal),
-                dueDate: toISO(dueDateVal),
-                amount: amountVal,
+                issueDate: toISO(issueDateVal!),
+                dueDate: toISO(dueDateVal!),
+                amount: amountVal!,
                 status,
             };
 
