@@ -19,8 +19,6 @@ export class KPICardBuilder implements ComponentBuilder {
     private valueColor$?: Observable<string>;
     private trend$?: Observable<string>;
     private isPositive$?: Observable<boolean>;
-    private accentColor$?: Observable<string>;
-    private accentLight$?: Observable<string>;
     private footerBuilder?: ComponentBuilder;
     private minimal = false;
 
