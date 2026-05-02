@@ -11,7 +11,9 @@ It has the following methods:
 - `asScrollable(): this` - sets content of the dialog scrollable.
 - `withHeight(height: Observable<number>): this` - if defined then limits height of the dialog. Otherwise height is defined by the content.
 - `withToolbar(): ToolbarBuilder` - defines toolbar in the dialog.
-- `asGlass(): this` - sets special styling option for dialog and its content as transparent with blur background (glass effect). 
+- `asGlass(): this` - sets special styling option for dialog and its content as transparent with blur background (glass effect).
+- `show(): void` - opens the dialog modally (appends to `document.body`, calls `showModal()`). Must be called after builder configuration is complete.
+- `close(): void` - closes the dialog and removes it from `document.body`. Clears inline positioning styles so the dialog re-centers on next `show()`. 
 
 DialogSize is an enum with values:
 - `SMALL`. 30vw

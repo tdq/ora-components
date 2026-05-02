@@ -228,10 +228,12 @@ A green "Balanced ✓" banner at the bottom confirms Assets = Liabilities + Equi
 │  All | Due Soon | Overdue                              │
 │  Vendor | Invoice # | Issue Date | Due Date | Amt | Status │
 └────────────────────────────────────────────────────────┘
-┌─ New Invoice Entry Form ───────────────────────────────┐
-│  [Vendor TextField] [Invoice # TextField]              │
-│  [Issue DatePicker] [Due DatePicker]                   │
-│  [Amount MoneyField]          [Add Invoice Button]     │
+┌─ [Add New Invoice Button] ─────────────────────────────┐
+│  → opens DialogSize.MEDIUM dialog with form fields     │
+│    [Vendor TextField] [Invoice # TextField]            │
+│    [Issue DatePicker]  [Due DatePicker]                │
+│    [Amount MoneyField]                                 │
+│    [Cancel]                     [Add Invoice]          │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -268,15 +270,20 @@ Status chip colors:
 - Overdue → red (`#EF4444`)
 - Paid → green (`#10B981`)
 
-### New Invoice Form
+### New Invoice Dialog
 
-Use `FormBuilder` if available, otherwise a styled `div` container with the following components:
+An "Add New Invoice" button (`ButtonBuilder`, FILLED style) opens a `DialogBuilder` modal (`DialogSize.MEDIUM`) containing the entry form. The dialog is built fresh on every invocation (new `BehaviorSubject`s, new builder) to avoid stale state.
+
+Form fields inside the dialog:
 - `TextFieldBuilder` for Vendor and Invoice #
-- Two `DatePickerBuilder` instances for Issue Date and Due Date
-- `MoneyFieldBuilder` for Amount (pre-populated currency EUR)
-- `ButtonBuilder` (FILLED style) labeled "Add Invoice"
+- Two `DatePickerBuilder` instances for Issue Date and Due Date (format `DD-MM-YYYY`)
+- `MoneyFieldBuilder` for Amount (currencies: EUR, USD, GBP)
 
-The form is for visual demo only — clicking "Add Invoice" appends a new row to the invoice grid using a `BehaviorSubject` and `GridBuilder.withItems(invoices$)`.
+Toolbar buttons:
+- **Cancel** (`addSecondaryButton`) — closes the dialog via `DialogBuilder.close()`
+- **Add Invoice** (`withPrimaryButton`) — validates all fields non-empty, computes status from due date, prepends the new invoice to the `BehaviorSubject<Invoice[]>`, then closes the dialog
+
+The dialog is purely for visual demo — added invoices appear immediately in the grid via the shared `BehaviorSubject`. 
 
 ### Aging Summary Computation
 Compute from invoice data at build time:
@@ -296,7 +303,7 @@ Show count AND total amount in each card.
 | Ledger | `GridBuilder` (6 cols, 2× money), summary stat cards |
 | P&L | `ChartBuilder` (dual-area), `TabsBuilder`, `GridBuilder` (money col) |
 | Balance Sheet | `PanelBuilder`, custom HTML statement layout |
-| Payables | `MoneyField`, `DatePicker`, `GridBuilder`, `TabsBuilder`, `ButtonBuilder` |
+| Payables | `MoneyField`, `DatePicker`, `GridBuilder`, `TabsBuilder`, `ButtonBuilder`, `DialogBuilder` |
 
 ---
 

@@ -123,7 +123,7 @@ function createRevenueExpensesChart(period: PeriodData): HTMLElement {
     const panel = new PanelBuilder()
         .withContent(new LabelBuilder().withCaption(of('Revenue vs Expenses')))
         .build();
-    panel.classList.add('min-h-[300px]', 'flex', 'flex-col', 'mb-px-24');
+    panel.classList.add('min-h-[300px]', 'flex', 'flex-col', 'flex-shrink-0', 'mb-px-24');
 
     type ChartRow = { x: string; revenue: number; expenses: number };
     const BASE: ChartRow[] = period.chartMonths.map((x, i) => ({
@@ -163,8 +163,9 @@ function createRevenueExpensesChart(period: PeriodData): HTMLElement {
 function createBreakdownGrid(title: string, items: PLLineItem[]): HTMLElement {
     const panel = new PanelBuilder()
         .withContent(new LabelBuilder().withCaption(of(title)))
+        .withClass(of('h-full'))
         .build();
-    panel.classList.add('flex', 'flex-col');
+    panel.classList.add('flex', 'flex-col', 'min-h-0');
 
     const grid = new GridBuilder<PLLineItem>()
         .withItems(of(items));
@@ -179,13 +180,13 @@ function createBreakdownGrid(title: string, items: PLLineItem[]): HTMLElement {
 
 function buildPeriodContent(period: PeriodData): HTMLElement {
     const wrapper = document.createElement('div');
-    wrapper.className = 'flex flex-col';
+    wrapper.className = 'flex flex-col h-full';
 
     wrapper.appendChild(createSummaryCards(period));
     wrapper.appendChild(createRevenueExpensesChart(period));
 
     const breakdownRow = document.createElement('div');
-    breakdownRow.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24';
+    breakdownRow.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24 flex-1 min-h-0';
     breakdownRow.appendChild(createBreakdownGrid('Revenue Breakdown', period.revenue.items));
     breakdownRow.appendChild(createBreakdownGrid('Expense Breakdown', period.expenses.items));
     wrapper.appendChild(breakdownRow);
@@ -195,7 +196,7 @@ function buildPeriodContent(period: PeriodData): HTMLElement {
 
 export function createPL(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    container.className = 'flex-1 flex flex-col p-px-24';
 
     const tabs = new TabsBuilder();
     PERIODS.forEach(period => {
@@ -205,7 +206,7 @@ export function createPL(): HTMLElement {
     });
 
     const tabsEl = tabs.build();
-    tabsEl.classList.add('flex', 'flex-col');
+    tabsEl.classList.add('flex', 'flex-col', 'flex-1', 'min-h-0');
     container.appendChild(tabsEl);
 
     return container;

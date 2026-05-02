@@ -162,4 +162,109 @@ describe('DialogBuilder', () => {
         expect(element.style.left).toBe('');
         expect(element.style.top).toBe('');
     });
+
+    // ── Tests covering the payables dialog refactor patterns ──
+
+    it('should accept inline ComponentBuilder content', () => {
+        const content = document.createElement('div');
+        content.textContent = 'Form content';
+        content.className = 'form-content';
+
+        const dialog = new DialogBuilder()
+            .withCaption(of('Test Dialog'))
+            .withContent({ build: () => content })
+            .build();
+
+        const contentContainer = dialog.querySelector('.flex-1');
+        expect(contentContainer?.contains(content)).toBe(true);
+        expect(content.textContent).toBe('Form content');
+    });
+
+    it('should support both secondary and primary toolbar buttons with click handlers', () => {
+        const secondaryClick = jest.fn();
+        const primaryClick = jest.fn();
+        const dialogBuilder = new DialogBuilder();
+
+        dialogBuilder.withToolbar().addSecondaryButton()
+            .withCaption(of('Cancel'))
+            .withClick(secondaryClick);
+
+        dialogBuilder.withToolbar().withPrimaryButton()
+            .withCaption(of('Submit'))
+            .withClick(primaryClick);
+
+        const dialog = dialogBuilder.build();
+        const buttons = dialog.querySelectorAll('button');
+        expect(buttons.length).toBe(2);
+
+        const captions = Array.from(buttons).map(b => b.textContent);
+        expect(captions).toContain('Cancel');
+        expect(captions).toContain('Submit');
+
+        // Click Cancel → secondary handler fires
+        const cancelBtn = Array.from(buttons).find(b => b.textContent === 'Cancel')!;
+        cancelBtn.click();
+        expect(secondaryClick).toHaveBeenCalledTimes(1);
+        expect(primaryClick).not.toHaveBeenCalled();
+
+        // Click Submit → primary handler fires
+        const submitBtn = Array.from(buttons).find(b => b.textContent === 'Submit')!;
+        submitBtn.click();
+        expect(primaryClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('should show and close dialog with content and toolbar buttons', () => {
+        const dialogBuilder = new DialogBuilder()
+            .withCaption(of('Payables Dialog'))
+            .withContent({ build: () => document.createElement('div') });
+
+        dialogBuilder.withToolbar().addSecondaryButton()
+            .withCaption(of('Cancel'))
+            .withClick(() => dialogBuilder.close());
+
+        dialogBuilder.withToolbar().withPrimaryButton()
+            .withCaption(of('Add Invoice'))
+            .withClick(() => dialogBuilder.close());
+
+        dialogBuilder.show();
+        const element = dialogBuilder.build() as HTMLDialogElement;
+        expect(document.body.contains(element)).toBe(true);
+        expect(element.open).toBe(true);
+
+        // Verify both buttons are in the DOM
+        const buttons = element.querySelectorAll('button');
+        expect(buttons.length).toBe(2);
+
+        // Close via close() method
+        dialogBuilder.close();
+        expect(document.body.contains(element)).toBe(false);
+        expect(element.open).toBe(false);
+    });
+
+    it('should support show/close/show cycle with inline content', () => {
+        // Simulates what showNewInvoiceDialog does: fresh builder each time
+        const runCycle = () => {
+            const db = new DialogBuilder()
+                .withCaption(of('Cycle Test'))
+                .withContent({ build: () => {
+                    const el = document.createElement('input');
+                    el.placeholder = 'test';
+                    return el;
+                }});
+
+            db.withToolbar().withPrimaryButton()
+                .withCaption(of('OK'))
+                .withClick(() => db.close());
+
+            db.show();
+            // Dialog is shown...
+            db.close();
+        };
+
+        // Cycle twice — second call should work with a fresh builder
+        expect(() => {
+            runCycle();
+            runCycle();
+        }).not.toThrow();
+    });
 });

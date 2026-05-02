@@ -1,4 +1,4 @@
-import { GridBuilder, TabsBuilder, LabelBuilder, PanelBuilder, ButtonBuilder, ButtonStyle, TextFieldBuilder, DatePickerBuilder, MoneyFieldBuilder, Money } from '@tdq/ora-components';
+import { GridBuilder, TabsBuilder, LabelBuilder, PanelBuilder, ButtonBuilder, ButtonStyle, TextFieldBuilder, DatePickerBuilder, MoneyFieldBuilder, Money, DialogBuilder, DialogSize } from '@tdq/ora-components';
 import { of, BehaviorSubject } from 'rxjs';
 import { KPICardBuilder } from './kpi-card';
 
@@ -101,7 +101,7 @@ function buildInvoiceGrid(invoices$: BehaviorSubject<Invoice[]>): HTMLElement {
     const panel = new PanelBuilder()
         .withContent(new LabelBuilder().withCaption(of('Invoices')))
         .build();
-    panel.classList.add('flex', 'flex-col', 'mb-px-24');
+    panel.classList.add('flex', 'flex-col', 'flex-1', 'min-h-0');
 
     const tabs = new TabsBuilder();
 
@@ -112,7 +112,7 @@ function buildInvoiceGrid(invoices$: BehaviorSubject<Invoice[]>): HTMLElement {
         // keep filtered$ in sync when invoices$ updates
         invoices$.subscribe(all => filtered$.next(filterFn ? all.filter(filterFn) : all));
 
-        const grid = new GridBuilder<Invoice>().withItems(filtered$).withHeight(of(280));
+        const grid = new GridBuilder<Invoice>().withItems(filtered$);
         const cols = grid.withColumns();
         cols.addTextColumn('vendor').withHeader('Vendor').withWidth('1fr');
         cols.addTextColumn('id').withHeader('Invoice #').withWidth('100px');
@@ -129,122 +129,173 @@ function buildInvoiceGrid(invoices$: BehaviorSubject<Invoice[]>): HTMLElement {
     tabs.addTab().withCaption(of('Paid')).withContent(makeGrid(i => i.status === 'Paid'));
 
     const tabsEl = tabs.build();
+    tabsEl.classList.add('flex-1', 'min-h-0');
     panel.appendChild(tabsEl);
 
     return panel;
 }
 
-function createNewInvoiceForm(invoices$: BehaviorSubject<Invoice[]>): HTMLElement {
-    const panel = new PanelBuilder()
-        .withContent(new LabelBuilder().withCaption(of('Add New Invoice')))
-        .build();
-    panel.classList.add('flex', 'flex-col');
+function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
+    // Fresh BehaviorSubjects for every dialog invocation
+    const vendor$ = new BehaviorSubject<string>('');
+    const invoiceNum$ = new BehaviorSubject<string>('');
+    const issueDate$ = new BehaviorSubject<Date | null>(null);
+    const dueDate$ = new BehaviorSubject<Date | null>(null);
+    const amount$ = new BehaviorSubject<Money | null>(null);
 
-    const form = document.createElement('div');
-    form.className = 'p-px-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px-16';
+    // Error subjects per field
+    const vendorError$ = new BehaviorSubject<string>('');
+    const invoiceNumError$ = new BehaviorSubject<string>('');
+    const issueDateError$ = new BehaviorSubject<string>('');
+    const dueDateError$ = new BehaviorSubject<string>('');
+    const amountError$ = new BehaviorSubject<string>('');
 
-    // Text fields
+    // Form fields
     const vendorField = new TextFieldBuilder()
         .withLabel(of('Vendor'))
         .withPlaceholder(of('e.g. Amazon Web Services'))
+        .withValue(vendor$)
+        .withError(vendorError$)
         .build();
 
     const invoiceNumField = new TextFieldBuilder()
         .withLabel(of('Invoice #'))
         .withPlaceholder(of('e.g. INV-P016'))
+        .withValue(invoiceNum$)
+        .withError(invoiceNumError$)
         .build();
 
-    // Date pickers
-    const issueDate$ = new BehaviorSubject<Date | null>(null);
-    const dueDate$   = new BehaviorSubject<Date | null>(null);
-
     const issueDatePicker = new DatePickerBuilder()
-        .withValue(issueDate$)
         .withCaption(of('Issue Date'))
+        .withValue(issueDate$)
         .withFormat('DD-MM-YYYY')
+        .withError(issueDateError$)
         .build();
 
     const dueDatePicker = new DatePickerBuilder()
-        .withValue(dueDate$)
         .withCaption(of('Due Date'))
+        .withValue(dueDate$)
         .withFormat('DD-MM-YYYY')
+        .withError(dueDateError$)
         .build();
 
-    // Money field
-    const amount$ = new BehaviorSubject<Money | null>(null);
     const amountField = new MoneyFieldBuilder()
-        .withValue(amount$)
         .withLabel(of('Amount'))
+        .withValue(amount$)
         .withCurrencies(['EUR', 'USD', 'GBP'])
+        .withPrecision(of(2))
+        .withError(amountError$)
         .build();
 
-    // Add button
-    const addBtn = new ButtonBuilder()
-        .withCaption(of('Add Invoice'))
-        .withStyle(of(ButtonStyle.FILLED))
-        .build();
-    addBtn.classList.add('self-end');
-
-    addBtn.addEventListener('click', () => {
-        const vendorInput = vendorField.querySelector('input') as HTMLInputElement;
-        const invoiceInput = invoiceNumField.querySelector('input') as HTMLInputElement;
-
-        const vendor = vendorInput?.value?.trim();
-        const invoiceNum = invoiceInput?.value?.trim();
-        const amountVal = amount$.value;
-        const issueDateVal = issueDate$.value;
-        const dueDateVal = dueDate$.value;
-
-        if (!vendor || !invoiceNum || !amountVal || !issueDateVal || !dueDateVal) return;
-
-        const toISO = (d: Date) => d.toISOString().split('T')[0];
-
-        const past = daysPast(toISO(dueDateVal));
-        const status = past > 0 ? 'Overdue' : past >= -7 ? 'Due Soon' : 'Current';
-
-        const newInvoice: Invoice = {
-            id: invoiceNum,
-            vendor,
-            issueDate: toISO(issueDateVal),
-            dueDate:   toISO(dueDateVal),
-            amount: amountVal,
-            status,
-        };
-
-        invoices$.next([newInvoice, ...invoices$.value]);
-
-        // Reset
-        if (vendorInput) vendorInput.value = '';
-        if (invoiceInput) invoiceInput.value = '';
-        issueDate$.next(null);
-        dueDate$.next(null);
-        amount$.next(null);
-    });
-
-    const buttonWrapper = document.createElement('div');
-    buttonWrapper.className = 'flex items-end';
-    buttonWrapper.appendChild(addBtn);
-
-    form.appendChild(vendorField);
+    // Form layout inside the dialog (grid, same field order as before)
+    const form = document.createElement('div');
+    form.className = 'grid grid-cols-1 sm:grid-cols-2 gap-px-16';
+    const vendorWrapper = document.createElement('div');
+    vendorWrapper.className = 'sm:col-span-2';
+    vendorWrapper.appendChild(vendorField);
+    form.appendChild(vendorWrapper);
     form.appendChild(invoiceNumField);
     form.appendChild(issueDatePicker);
     form.appendChild(dueDatePicker);
     form.appendChild(amountField);
-    form.appendChild(buttonWrapper);
 
-    panel.appendChild(form);
-    return panel;
+    // Build dialog
+    const dialog = new DialogBuilder()
+        .withCaption(of('Add New Invoice'))
+        .withSize(DialogSize.MEDIUM)
+        .withContent({ build: () => form });
+
+    // Toolbar: Cancel (secondary) closes dialog, Add Invoice (primary) validates & saves
+    dialog.withToolbar().addSecondaryButton()
+        .withCaption(of('Cancel'))
+        .withClick(() => dialog.close());
+
+    dialog.withToolbar().withPrimaryButton()
+        .withCaption(of('Add Invoice'))
+        .withClick(() => {
+            // Clear previous errors
+            vendorError$.next('');
+            invoiceNumError$.next('');
+            issueDateError$.next('');
+            dueDateError$.next('');
+            amountError$.next('');
+
+            const vendor = vendor$.value?.trim();
+            const invoiceNum = invoiceNum$.value?.trim();
+            const amountVal = amount$.value;
+            const issueDateVal = issueDate$.value;
+            const dueDateVal = dueDate$.value;
+
+            let valid = true;
+
+            if (!vendor) {
+                vendorError$.next('Vendor is required');
+                valid = false;
+            }
+            if (!invoiceNum) {
+                invoiceNumError$.next('Invoice # is required');
+                valid = false;
+            }
+            if (!issueDateVal) {
+                issueDateError$.next('Issue date is required');
+                valid = false;
+            }
+            if (!dueDateVal) {
+                dueDateError$.next('Due date is required');
+                valid = false;
+            } else if (issueDateVal && dueDateVal < issueDateVal) {
+                dueDateError$.next('Due date must be on or after issue date');
+                valid = false;
+            }
+            if (!amountVal) {
+                amountError$.next('Amount is required');
+                valid = false;
+            } else if (amountVal.amount <= 0) {
+                amountError$.next('Amount must be greater than 0');
+                valid = false;
+            }
+
+            if (!valid) return;
+
+            const toISO = (d: Date) => d.toISOString().split('T')[0];
+            const past = daysPast(toISO(dueDateVal));
+            const status = past > 0 ? 'Overdue' : past >= -7 ? 'Due Soon' : 'Current';
+
+            const newInvoice: Invoice = {
+                id: invoiceNum,
+                vendor,
+                issueDate: toISO(issueDateVal),
+                dueDate: toISO(dueDateVal),
+                amount: amountVal,
+                status,
+            };
+
+            invoices$.next([newInvoice, ...invoices$.value]);
+            dialog.close();
+        });
+
+    dialog.show();
+}
+
+function createNewInvoiceButton(invoices$: BehaviorSubject<Invoice[]>): HTMLElement {
+    return new ButtonBuilder()
+        .withCaption(of('Add New Invoice'))
+        .withStyle(of(ButtonStyle.FILLED))
+        .withClick(() => showNewInvoiceDialog(invoices$))
+        .build();
 }
 
 export function createPayables(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    container.className = 'flex-1 flex flex-col p-px-24';
 
     const invoices$ = new BehaviorSubject<Invoice[]>(ALL_INVOICES);
 
     container.appendChild(createAgingSummary());
+    const btn = createNewInvoiceButton(invoices$);
+    btn.classList.add('self-start', 'mb-px-24', 'flex-shrink-0');
+    container.appendChild(btn);
     container.appendChild(buildInvoiceGrid(invoices$));
-    container.appendChild(createNewInvoiceForm(invoices$));
 
     return container;
 }

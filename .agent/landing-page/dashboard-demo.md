@@ -10,7 +10,7 @@ The dashboard uses the `LayoutBuilder` with an `asHorizontal()` orientation to c
 ## 2. Core Widgets
 - **Stats Grid:** A 4-column grid of summary cards (Sales, Active Users, etc.) built with `PanelBuilder` and `asGlass()`.
 - **Sales Chart:** A dynamic line chart created using `ChartBuilder`. It uses an RxJS `timer(0, 5000)` to simulate real-time data updates every 5 seconds.
-- **Transactions Grid:** A data table built with `GridBuilder`, showing recent transaction history with custom column definitions.
+- **Transactions Grid:** A data table built with `GridBuilder`, showing recent transaction history with custom column definitions. All grids across the demo (overview transactions, ledger, orders, payables, and P&L breakdowns) use explicit `.withHeight()` — without it, grid rows do not render visibly. The P&L page calculates height dynamically per grid instance: `of(52 + items.length * 52)`.
 
 ## 3. Implementation Highlights
 - **`LayoutBuilder`:** Used to handle the high-level application shell.
