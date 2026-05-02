@@ -1,5 +1,5 @@
-import 'ora-components/style.css'
-import { ThemeManager } from 'ora-components';
+import '@tdq/ora-components/style.css'
+import { ThemeManager } from '@tdq/ora-components';
 import { router } from './routes';
 
 const app = document.getElementById('app')!;

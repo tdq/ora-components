@@ -1,7 +1,7 @@
-import { LabelBuilder, LabelSize } from 'ora-components';
+import { LabelBuilder, LabelSize } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
-import { LayoutBuilder, LayoutGap, SlotSize } from 'ora-components';
-import { TextFieldBuilder } from 'ora-components';
+import { LayoutBuilder, LayoutGap, SlotSize } from '@tdq/ora-components';
+import { TextFieldBuilder } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Label',

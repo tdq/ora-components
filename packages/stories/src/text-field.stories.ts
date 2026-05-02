@@ -1,9 +1,9 @@
-import { TextFieldBuilder, TextFieldStyle } from 'ora-components';
+import { TextFieldBuilder, TextFieldStyle } from '@tdq/ora-components';
 import { BehaviorSubject, of, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { LayoutBuilder, LayoutGap } from 'ora-components';
-import { LabelBuilder, LabelSize } from 'ora-components';
-import { ButtonBuilder, ButtonStyle } from 'ora-components';
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
+import { LabelBuilder, LabelSize } from '@tdq/ora-components';
+import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
 
 export default {
     title: 'Components/TextField',

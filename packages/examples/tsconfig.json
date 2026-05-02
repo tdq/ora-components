@@ -2,8 +2,8 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "ora-components": ["../ora-components/src/index.ts"],
-      "ora-components/*": ["../ora-components/src/*"]
+      "@tdq/ora-components": ["../ora-components/src/index.ts"],
+      "@tdq/ora-components/*": ["../ora-components/src/*"]
     }
   },
   "include": ["src/**/*"]

@@ -8,11 +8,11 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "ora-components": "*"
+    "@tdq/ora-components": "*"
   },
   "devDependencies": {
-    "@storybook/addon-essentials": "^8.6.14",
-    "@storybook/addon-links": "^7.6.21",
+    "@storybook/addon-docs": "^10.3.6",
+    "@storybook/addon-links": "^10.3.6",
     "@storybook/html-vite": "^10.3.6",
     "storybook": "^10.3.6",
     "typescript": "^5.9.3",

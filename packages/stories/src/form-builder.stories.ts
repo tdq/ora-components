@@ -1,4 +1,4 @@
-import { FormBuilder } from 'ora-components';
+import { FormBuilder } from '@tdq/ora-components';
 import { of, BehaviorSubject, Subject } from 'rxjs';
 
 export default {

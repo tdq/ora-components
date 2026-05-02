@@ -1,4 +1,4 @@
-import { TextFieldBuilder } from 'ora-components';
+import { TextFieldBuilder } from '@tdq/ora-components';
 import { of } from 'rxjs';
 
 /**

@@ -10,7 +10,7 @@ import { getRouterDocs } from './tools/get-router-docs.js';
 import { getArchitectureGuide } from './tools/get-architecture-guide.js';
 
 const server = new McpServer({
-  name: 'ora-components',
+  name: '@tdq/ora-components',
   version: '0.1.0',
 });
 

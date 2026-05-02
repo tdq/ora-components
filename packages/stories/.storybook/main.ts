@@ -9,8 +9,8 @@ const config: StorybookConfig = {
         config.resolve ??= {};
         config.resolve.alias = {
             ...config.resolve.alias,
-            'ora-components/style.css': resolve(__dirname, '../../ora-components/src/index.css'),
-            'ora-components': resolve(__dirname, '../../ora-components/src/index.ts'),
+            '@tdq/ora-components/style.css': resolve(__dirname, '../../ora-components/src/index.css'),
+            '@tdq/ora-components': resolve(__dirname, '../../ora-components/src/index.ts'),
             '@': resolve(__dirname, '../../ora-components/src'),
         };
         return config;
@@ -18,7 +18,7 @@ const config: StorybookConfig = {
     stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
     addons: [
         "@storybook/addon-links",
-        "@storybook/addon-essentials",
+        "@storybook/addon-docs",
     ],
     framework: {
         name: "@storybook/html-vite",

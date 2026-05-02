@@ -1,4 +1,4 @@
-import { PanelBuilder, LayoutBuilder, LayoutGap, LabelBuilder, LabelSize } from 'ora-components';
+import { PanelBuilder, LayoutBuilder, LayoutGap, LabelBuilder, LabelSize } from '@tdq/ora-components';
 import { of } from 'rxjs';
 
 /**

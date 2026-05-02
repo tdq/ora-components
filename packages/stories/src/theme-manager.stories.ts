@@ -1,7 +1,7 @@
-import { ButtonBuilder } from 'ora-components';
-import { LayoutBuilder, LayoutGap } from 'ora-components';
-import { themeManager } from 'ora-components';
-import { Theme } from 'ora-components';
+import { ButtonBuilder } from '@tdq/ora-components';
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
+import { themeManager } from '@tdq/ora-components';
+import { Theme } from '@tdq/ora-components';
 import { of, Subject } from 'rxjs';
 
 export default {

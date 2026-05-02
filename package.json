@@ -11,11 +11,14 @@
     "test": "turbo test",
     "dev": "turbo dev",
     "storybook": "turbo storybook",
-    "pack:local": "turbo run pack:local --filter=ora-components",
+    "pack:local": "turbo run pack:local --filter=@tdq/ora-components",
     "mcp:build": "turbo run build --filter=aura-mcp-server",
     "mcp:start": "node packages/mcp-server/dist/index.js",
     "landing:build": "turbo run build --filter=landing-page",
     "landing:start": "turbo run dev --filter=landing-page"
+  },
+  "overrides": {
+    "storybook": "10.3.6"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

@@ -1,7 +1,7 @@
-import { GridBuilder, Icons } from 'ora-components';
-import { SortDirection } from 'ora-components';
+import { GridBuilder, Icons } from '@tdq/ora-components';
+import { SortDirection } from '@tdq/ora-components';
 import { of, Subject } from 'rxjs';
-import { Money } from 'ora-components';
+import { Money } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Grid',

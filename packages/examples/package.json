@@ -8,7 +8,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "ora-components": "*"
+    "@tdq/ora-components": "*"
   },
   "devDependencies": {
     "vite": "^8.0.10"

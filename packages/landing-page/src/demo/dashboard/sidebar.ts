@@ -1,4 +1,4 @@
-import { registerDestroy } from 'ora-components';
+import { registerDestroy } from '@tdq/ora-components';
 import { router } from '../../routes';
 import { map } from 'rxjs/operators';
 

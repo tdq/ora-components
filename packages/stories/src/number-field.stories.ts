@@ -1,8 +1,8 @@
-import { NumberFieldBuilder, NumberFieldStyle } from 'ora-components';
+import { NumberFieldBuilder, NumberFieldStyle } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { LayoutBuilder, LayoutGap } from 'ora-components';
-import { LabelBuilder, LabelSize } from 'ora-components';
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
+import { LabelBuilder, LabelSize } from '@tdq/ora-components';
 
 export default {
     title: 'Components/NumberField',

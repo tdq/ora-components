@@ -1,4 +1,4 @@
-import { MoneyFieldBuilder, MoneyFieldStyle, Money, LayoutBuilder, LayoutGap, LabelBuilder, LabelSize } from 'ora-components';
+import { MoneyFieldBuilder, MoneyFieldStyle, Money, LayoutBuilder, LayoutGap, LabelBuilder, LabelSize } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 

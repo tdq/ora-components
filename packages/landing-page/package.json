@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
-    "ora-components": "*",
+    "@tdq/ora-components": "*",
     "rxjs": "^7.8.2",
     "tailwind-merge": "^2.6.1"
   },

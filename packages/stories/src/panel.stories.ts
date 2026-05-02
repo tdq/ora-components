@@ -1,6 +1,6 @@
-import { PanelBuilder, PanelGap } from 'ora-components';
+import { PanelBuilder, PanelGap } from '@tdq/ora-components';
 import { createPlaceholder } from './placeholder';
-import { LayoutBuilder, LayoutGap } from 'ora-components';
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Panel',

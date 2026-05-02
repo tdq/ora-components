@@ -1,4 +1,4 @@
-import { ButtonBuilder, TextFieldBuilder, CheckboxBuilder, ComboBoxBuilder, ButtonStyle } from 'ora-components';
+import { ButtonBuilder, TextFieldBuilder, CheckboxBuilder, ComboBoxBuilder, ButtonStyle } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
 
 export function createPlayground(): HTMLElement {

@@ -1,8 +1,8 @@
-import { DialogBuilder, DialogSize, Money } from 'ora-components';
+import { DialogBuilder, DialogSize, Money } from '@tdq/ora-components';
 import { of, Subject, BehaviorSubject } from 'rxjs';
-import { ButtonBuilder } from 'ora-components';
-import { TabsBuilder } from 'ora-components';
-import { FormBuilder } from 'ora-components';
+import { ButtonBuilder } from '@tdq/ora-components';
+import { TabsBuilder } from '@tdq/ora-components';
+import { FormBuilder } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Dialog',

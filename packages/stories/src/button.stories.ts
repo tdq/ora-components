@@ -1,7 +1,7 @@
-import { ButtonBuilder, ButtonStyle } from 'ora-components';
+import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
 import { BehaviorSubject, of, Subject } from 'rxjs';
-import { LayoutBuilder, LayoutGap } from 'ora-components';
-import { Icons } from 'ora-components';
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
+import { Icons } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Button',

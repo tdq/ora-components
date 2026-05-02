@@ -1,5 +1,5 @@
 import { router } from '../routes';
-import { ThemeManager } from 'ora-components';
+import { ThemeManager } from '@tdq/ora-components';
 
 export function createHeader(): HTMLElement {
     const header = document.createElement('header');

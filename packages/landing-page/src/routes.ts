@@ -1,4 +1,4 @@
-import { RouterBuilder } from 'ora-components';
+import { RouterBuilder } from '@tdq/ora-components';
 import { createLandingPage } from './sections/landing-page';
 import { createDashboardDemo } from './demo/dashboard';
 import { createFinanceDemo } from './demo/finance';

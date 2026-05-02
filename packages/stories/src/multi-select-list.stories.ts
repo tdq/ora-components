@@ -1,4 +1,4 @@
-import { MultiSelectListBuilder, MultiSelectListStyle, LayoutBuilder, LayoutGap, LabelBuilder, LabelSize } from 'ora-components';
+import { MultiSelectListBuilder, MultiSelectListStyle, LayoutBuilder, LayoutGap, LabelBuilder, LabelSize } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
 
 export default {

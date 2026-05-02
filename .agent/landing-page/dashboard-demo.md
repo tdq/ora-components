@@ -1,6 +1,6 @@
 # Dashboard Demo Documentation (`src/demo/dashboard.ts`)
 
-The "Ora Dashboard" is a comprehensive application demo designed to show the `ora-components` library in a realistic, high-density environment.
+The "Ora Dashboard" is a comprehensive application demo designed to show the `@tdq/ora-components` library in a realistic, high-density environment.
 
 ## 1. Application Layout
 The dashboard uses the `LayoutBuilder` with an `asHorizontal()` orientation to create:

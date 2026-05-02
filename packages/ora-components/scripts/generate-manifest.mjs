@@ -259,9 +259,9 @@ for (const [, componentPath] of exportMatches) {
       name: className,
       componentName,
       description,
-      import: `ora-components/${componentName}`,
+      import: `@tdq/ora-components/${componentName}`,
       methods: enrichedMethods,
-      example: `import { ${className} } from 'ora-components/${componentName}';\n\nconst el = new ${className}().build();\ndocument.body.appendChild(el);`
+      example: `import { ${className} } from '@tdq/ora-components/${componentName}';\n\nconst el = new ${className}().build();\ndocument.body.appendChild(el);`
     });
   }
 }

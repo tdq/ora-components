@@ -1,4 +1,4 @@
-import { ButtonBuilder, ButtonStyle } from 'ora-components';
+import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
 import { of } from 'rxjs';
 import { router } from '../routes';
 

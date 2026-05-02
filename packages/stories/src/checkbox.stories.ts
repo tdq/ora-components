@@ -1,6 +1,6 @@
-import { CheckboxBuilder } from 'ora-components';
+import { CheckboxBuilder } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
-import { LayoutBuilder, LayoutGap } from 'ora-components';
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Checkbox',

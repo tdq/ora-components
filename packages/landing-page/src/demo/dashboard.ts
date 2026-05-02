@@ -1,4 +1,4 @@
-import { LayoutBuilder, LayoutGap, SlotSize, registerDestroy } from 'ora-components';
+import { LayoutBuilder, LayoutGap, SlotSize, registerDestroy } from '@tdq/ora-components';
 import { router } from '../routes';
 import { createSidebar } from './dashboard/sidebar';
 import { createDashboardHeader } from './dashboard/header';

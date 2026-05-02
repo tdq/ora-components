@@ -1,7 +1,7 @@
-import { ComboBoxBuilder, ComboBoxStyle } from 'ora-components';
+import { ComboBoxBuilder, ComboBoxStyle } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
-import { LayoutBuilder, LayoutGap } from 'ora-components';
-import { LabelBuilder, LabelSize } from 'ora-components';
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
+import { LabelBuilder, LabelSize } from '@tdq/ora-components';
 
 export default {
     title: 'Components/ComboBox',

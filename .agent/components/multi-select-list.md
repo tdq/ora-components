@@ -98,7 +98,7 @@ The panel border and border-radius match the `ListBoxBuilder` style (`rounded-la
 
 ```typescript
 import { BehaviorSubject } from 'rxjs';
-import { MultiSelectListBuilder } from 'ora-components';
+import { MultiSelectListBuilder } from '@tdq/ora-components';
 
 interface Role { id: number; name: string; }
 

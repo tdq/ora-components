@@ -2,7 +2,7 @@
 
 ```
 packages/
-├── ora-components/       # Core UI component library (published as "ora-components")
+├── ora-components/       # Core UI component library (published as "@tdq/ora-components")
 │   ├── src/
 │   │   ├── components/    # One directory per component (button, chart, grid, …)
 │   │   │   └── <name>/
@@ -25,10 +25,10 @@ packages/
 │       │   └── <name>.d.ts        # Actual class definitions
 │       └── component-manifest.json  # Generated registry consumed by MCP server
 │
-├── mcp-server/            # MCP server exposing ora-components to AI tools
+├── mcp-server/            # MCP server exposing @tdq/ora-components to AI tools
 │   └── src/
 │       ├── index.ts               # McpServer wiring (list_components, get_component_api, get_usage_example)
-│       ├── manifest.ts            # Reads dist/component-manifest.json from ora-components package
+│       ├── manifest.ts            # Reads dist/component-manifest.json from @tdq/ora-components package
 │       └── tools/
 │           ├── list-components.ts
 │           ├── get-component-api.ts
@@ -38,7 +38,7 @@ packages/
 └── examples/              # Usage examples
 ```
 
-## Build pipeline (ora-components)
+## Build pipeline (@tdq/ora-components)
 
 ```
 npm run build
@@ -67,9 +67,9 @@ npm run build
       "name": "ButtonBuilder",          // class name
       "componentName": "button",        // lowercase, used as sub-path import key
       "description": "Builder for the button component",
-      "import": "ora-components/button",
+      "import": "@tdq/ora-components/button",
       "methods": ["withCaption", "withIcon", "withEnabled", "withClick", "withStyle", "build"],
-      "example": "import { ButtonBuilder } from 'ora-components/button';\n\nconst el = new ButtonBuilder().build();\ndocument.body.appendChild(el);"
+      "example": "import { ButtonBuilder } from '@tdq/ora-components/button';\n\nconst el = new ButtonBuilder().build();\ndocument.body.appendChild(el);"
     }
   ]
 }
@@ -77,7 +77,7 @@ npm run build
 
 ## Rename migration (2026-05-01)
 
-The monorepo was renamed from `a1-components` to `ora-components`. The mapping:
+The monorepo was renamed from `a1-components` to `ora-components`, and later scoped to `@tdq/ora-components`. The mapping:
 
 | Old | New |
 |-----|-----|
@@ -86,7 +86,7 @@ The monorepo was renamed from `a1-components` to `ora-components`. The mapping:
 | `a1-monorepo` | `ora-monorepo` |
 
 All source code, configs, imports, generated CSS, and documentation have been updated.
-The npm package is published as `ora-components` and imports use `ora-components/<entry>` paths.
+The npm package is published as `@tdq/ora-components` and imports use `@tdq/ora-components/<entry>` paths.
 
 ## MCP server tools
 

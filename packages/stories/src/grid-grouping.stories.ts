@@ -1,4 +1,4 @@
-import { GridBuilder, Money } from 'ora-components';
+import { GridBuilder, Money } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
 
 export default {

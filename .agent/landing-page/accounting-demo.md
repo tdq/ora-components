@@ -2,7 +2,7 @@
 
 ## Overview
 
-The accounting demo extends the existing Ora Dashboard with a dedicated **Accounting** navigation section. It demonstrates `ora-components` in a realistic double-entry bookkeeping context, showcasing `MoneyField`, `DatePicker`, `GridBuilder` (with money columns), `ChartBuilder`, and `TabsBuilder` together in domain-appropriate screens.
+The accounting demo extends the existing Ora Dashboard with a dedicated **Accounting** navigation section. It demonstrates `@tdq/ora-components` in a realistic double-entry bookkeeping context, showcasing `MoneyField`, `DatePicker`, `GridBuilder` (with money columns), `ChartBuilder`, and `TabsBuilder` together in domain-appropriate screens.
 
 ---
 

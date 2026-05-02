@@ -28,7 +28,7 @@ export default defineConfig({
                 textfield: resolve(__dirname, 'src/components/text-field/index.ts'),
                 toolbar: resolve(__dirname, 'src/components/toolbar/index.ts')
             },
-            name: 'ora-components',
+            name: '@tdq/ora-components',
             formats: ['es']
         },
         rollupOptions: {

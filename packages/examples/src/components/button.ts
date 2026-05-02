@@ -1,4 +1,4 @@
-import { ButtonBuilder, ButtonStyle, Icons } from 'ora-components';
+import { ButtonBuilder, ButtonStyle, Icons } from '@tdq/ora-components';
 import { of } from 'rxjs';
 
 /**

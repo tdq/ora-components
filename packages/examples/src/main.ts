@@ -4,7 +4,7 @@ import { createPanelExample } from './components/panel';
 import { createLabelExample } from './components/label';
 import { createTextFieldExample } from './components/textfield';
 
-import { LayoutBuilder, LayoutGap } from 'ora-components';
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
 
 const app = document.getElementById('app')!;
 

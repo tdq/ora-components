@@ -32,7 +32,7 @@ This interface is located in `src/types/money.ts`.
 
 ## Example
 ```typescript
-import { MoneyFieldBuilder, MoneyFieldStyle } from 'ora-components';
+import { MoneyFieldBuilder, MoneyFieldStyle } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
 
 const value$ = new BehaviorSubject({ amount: 1250.50, currencyId: 'USD' });

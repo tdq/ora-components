@@ -8,7 +8,7 @@ import {
     themeManager,
     registerDestroy,
     Money
-} from 'ora-components';
+} from '@tdq/ora-components';
 import { of } from 'rxjs';
 import { map } from 'rxjs/operators';
 

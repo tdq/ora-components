@@ -12,3 +12,6 @@
 [ ] **GridBuilder** Implement editors for enum-column and datetime-column
 [ ] Implement DateRangePickerBuilder
 [ ] Implement TreeGridBuilder
+[ ] **GridBuilder** multiselect mode checkboxes are not working properly. You have to click on the left side of checkbox to select/deselect it. The issue is only in grouping mode. Also it should use CheckBoxBuilder instead of custom element.
+[ ] **GridBuilder** Rows bottom border is displayed only for visible columns. It should be displayed for all columns.
+[ ] **GridBuilder** Actions panel rows have even and odd styling. It should be same style for all rows in actions panel.

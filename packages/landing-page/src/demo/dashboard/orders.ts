@@ -1,4 +1,4 @@
-import { GridBuilder, TabsBuilder, PanelBuilder, ChartBuilder, LabelBuilder, Money } from 'ora-components';
+import { GridBuilder, TabsBuilder, PanelBuilder, ChartBuilder, LabelBuilder, Money } from '@tdq/ora-components';
 import { of } from 'rxjs';
 import { renderStatusChip } from './chip-utils';
 
