@@ -4,6 +4,7 @@ import { createProblem } from './problem';
 import { createFeatures } from './features';
 import { createGetStarted } from './get-started';
 import { createPlayground } from './playground';
+import { createLogo } from '../components/logo';
 import { router } from '../routes';
 
 export function createLandingPage(): HTMLElement {
@@ -47,23 +48,12 @@ function createFooter(): HTMLElement {
 
     // Brand column
     const brand = document.createElement('div');
-    brand.innerHTML = `
-        <div class="flex items-center gap-px-12 mb-px-16 cursor-pointer" id="footer-logo">
-            <div class="w-9 h-9 rounded-large flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #4f46e5, #6366f1);">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M9 2L15.5 14H2.5L9 2Z" fill="white" fill-opacity="0.9"/>
-                    <circle cx="9" cy="10" r="2.5" fill="white" fill-opacity="0.6"/>
-                </svg>
-            </div>
-            <span class="text-title-large text-on-surface font-semibold tracking-tight">Ora Components</span>
-        </div>
-        <p class="text-body-medium text-on-surface-variant max-w-xs leading-relaxed" style="opacity: 0.65;">
-            Modern, reactive UI components for the web. Built on TypeScript, RxJS, and Material 3 principles.
-        </p>
-    `;
-    brand.querySelector('#footer-logo')?.addEventListener('click', () => {
-        router.navigate('/');
-    });
+    brand.appendChild(createLogo({ text: 'Ora Components', onClick: () => router.navigate('/') }));
+    const desc = document.createElement('p');
+    desc.className = 'text-body-medium text-on-surface-variant max-w-xs leading-relaxed mt-px-16';
+    desc.style.cssText = 'opacity: 0.65;';
+    desc.textContent = 'Modern, reactive UI components for the web. Built on TypeScript, RxJS, and Material 3 principles.';
+    brand.appendChild(desc);
 
     // Links column
     const linksCol = document.createElement('div');

@@ -1,6 +1,7 @@
 import { registerDestroy } from '@tdq/ora-components';
 import { router } from '../../routes';
 import { map } from 'rxjs/operators';
+import { createLogo } from '../../components/logo';
 
 export function createSidebar(): HTMLElement {
     const container = document.createElement('div');
@@ -11,23 +12,7 @@ export function createSidebar(): HTMLElement {
     const logoArea = document.createElement('div');
     logoArea.className = 'px-px-16 py-px-16 border-b';
     logoArea.style.cssText = 'border-color: rgba(121,116,126,0.08);';
-    logoArea.innerHTML = `
-        <div class="flex items-center gap-px-12 cursor-pointer group" id="sidebar-logo">
-            <div class="w-8 h-8 rounded-large flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #6750A4, #7D5260);">
-                <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                    <path d="M9 2L15.5 14H2.5L9 2Z" fill="white" fill-opacity="0.9"/>
-                    <circle cx="9" cy="10" r="2.5" fill="white" fill-opacity="0.6"/>
-                </svg>
-            </div>
-            <div class="flex flex-col">
-                <span class="text-title-small font-semibold text-on-surface group-hover:text-primary transition-colors duration-200">Ora Dashboard</span>
-                <span class="text-label-small text-on-surface-variant" style="opacity: 0.5;">v2.0 Demo</span>
-            </div>
-        </div>
-    `;
-    logoArea.querySelector('#sidebar-logo')?.addEventListener('click', () => {
-        router.navigate('/');
-    });
+    logoArea.appendChild(createLogo({ text: 'Ora Dashboard', subtitle: 'v1.0 Demo', onClick: () => router.navigate('/') }));
 
     // Nav section
     const navSection = document.createElement('div');

@@ -61,6 +61,7 @@
     --subscribe-panel-bg: rgba(50, 50, 255, 0.1);
 
     /* Theme Accents */
+    --logo-gradient: linear-gradient(135deg, #4F378B, #633B48);
     --accent-blob-1: linear-gradient(to right, rgba(103, 80, 164, 0.35), rgba(125, 82, 96, 0.35));
     --accent-blob-2: linear-gradient(to right, rgba(125, 82, 96, 0.35), rgba(103, 80, 164, 0.35));
     --accent-gradient-text-1: linear-gradient(135deg, #ffffff, #dbeafe, #e9d5ff);
@@ -100,6 +101,7 @@
     --subscribe-panel-bg: rgba(255, 100, 100, 0.1);
 
     /* Theme Accents */
+    --logo-gradient: linear-gradient(135deg, #7D2950, #5F1138);
     --accent-blob-1: linear-gradient(to right, rgba(244, 114, 182, 0.2), rgba(251, 113, 133, 0.2));
     --accent-blob-2: linear-gradient(to right, rgba(251, 113, 133, 0.2), rgba(244, 114, 182, 0.2));
     --accent-gradient-text-1: linear-gradient(135deg, #0f172a, #9d174d, #0f172a);
@@ -113,6 +115,7 @@
 
   :root:not([data-theme="dark"]):not([data-theme="pink"]) {
     /* Default Light Theme Accents */
+    --logo-gradient: linear-gradient(135deg, #4f46e5, #6366f1);
     --accent-blob-1: linear-gradient(to right, rgba(79, 70, 229, 0.2), rgba(99, 102, 241, 0.2));
     --accent-blob-2: linear-gradient(to right, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.2));
     --accent-gradient-text-1: linear-gradient(135deg, #0f172a, #3730a3, #0f172a);

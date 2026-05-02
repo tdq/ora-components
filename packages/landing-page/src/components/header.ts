@@ -1,43 +1,23 @@
 import { router } from '../routes';
 import { ThemeManager } from '@tdq/ora-components';
+import { createLogo, getThemeAccents } from './logo';
 
 export function createHeader(): HTMLElement {
     const header = document.createElement('header');
     header.className = 'sticky top-0 z-50 px-px-24 py-px-16 flex flex-wrap items-center justify-between';
     header.style.cssText = 'position: relative; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(121, 116, 126, 0.12);';
 
-    // Theme-specific accent values
-    const getThemeAccents = (theme: string | null) => {
-        if (theme === 'dark') return { bg: 'rgba(20, 18, 24, 0.75)', gradient: 'linear-gradient(135deg, #4F378B, #633B48)', shadow: 'rgba(79,55,139,0.3)' };
-        if (theme === 'pink') return { bg: 'rgba(255, 240, 245, 0.75)', gradient: 'linear-gradient(135deg, #7D2950, #5F1138)', shadow: 'rgba(125,41,80,0.3)' };
-        return { bg: 'rgba(255, 255, 255, 0.75)', gradient: 'linear-gradient(135deg, #4f46e5, #6366f1)', shadow: 'rgba(79,70,229,0.3)' };
-    };
-
     // Update glass background + accent colors when theme changes
     const updateGlass = () => {
         const theme = document.documentElement.getAttribute('data-theme');
         const accents = getThemeAccents(theme);
         header.style.cssText = `position: relative; background: ${accents.bg}; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(121, 116, 126, 0.12);`;
-        logoIcon.style.background = accents.gradient;
         ctaBtn.style.cssText = `background: ${accents.gradient}; box-shadow: 0 2px 12px ${accents.shadow};`;
         mobileDemoBtn.style.cssText = `background: ${accents.gradient};`;
     };
 
     // Logo
-    const logo = document.createElement('div');
-    logo.className = 'flex items-center gap-px-12 cursor-pointer group';
-    logo.innerHTML = `
-        <div class="logo-icon relative w-9 h-9 rounded-large flex items-center justify-center flex-shrink-0 overflow-hidden" style="background: linear-gradient(135deg, #4f46e5, #6366f1);">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 2L15.5 14H2.5L9 2Z" fill="white" fill-opacity="0.9"/>
-                <circle cx="9" cy="10" r="2.5" fill="white" fill-opacity="0.6"/>
-            </svg>
-            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style="background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);"></div>
-        </div>
-        <span class="text-title-large text-on-surface font-semibold tracking-tight group-hover:text-primary transition-colors duration-200">Ora Components</span>
-    `;
-    logo.onclick = () => router.navigate('/');
-    const logoIcon = logo.querySelector('.logo-icon') as HTMLElement;
+    const logo = createLogo({ text: 'Ora Components', onClick: () => router.navigate('/') });
 
     // Nav
     const nav = document.createElement('nav');
