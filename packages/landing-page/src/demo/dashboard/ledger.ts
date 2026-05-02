@@ -48,10 +48,10 @@ function createSummaryStats(): HTMLElement {
     const netBalance   = totalCredits - totalDebits;
 
     const stats = [
-        { label: 'Total Debits',  value: fmt(totalDebits),     color: '#EF4444', colorLight: 'rgba(239,68,68,0.08)'    },
-        { label: 'Total Credits', value: fmt(totalCredits),    color: '#10B981', colorLight: 'rgba(16,185,129,0.08)'   },
-        { label: 'Net Balance',   value: fmt(Math.abs(netBalance)), color: '#6750A4', colorLight: 'rgba(103,80,164,0.08)' },
-        { label: 'Entries',       value: String(LEDGER_DATA.length), color: '#0EA5E9', colorLight: 'rgba(14,165,233,0.08)' },
+        { label: 'Total Debits',  value: fmt(totalDebits) },
+        { label: 'Total Credits', value: fmt(totalCredits) },
+        { label: 'Net Balance',   value: fmt(Math.abs(netBalance)) },
+        { label: 'Entries',       value: String(LEDGER_DATA.length) },
     ];
 
     const grid = document.createElement('div');
@@ -61,7 +61,6 @@ function createSummaryStats(): HTMLElement {
         const card = new KPICardBuilder()
             .withLabel(of(s.label))
             .withValue(of(s.value))
-            .withAccentColor(of(s.color), of(s.colorLight))
             .build();
         grid.appendChild(card);
     });

@@ -43,12 +43,6 @@ export class KPICardBuilder implements ComponentBuilder {
         return this;
     }
 
-    withAccentColor(color: Observable<string>, light: Observable<string>): this {
-        this.accentColor$ = color;
-        this.accentLight$ = light;
-        return this;
-    }
-
     withFooter(footer: ComponentBuilder): this {
         this.footerBuilder = footer;
         return this;

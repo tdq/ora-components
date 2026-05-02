@@ -99,9 +99,9 @@ function createSummaryCards(period: PeriodData): HTMLElement {
     const isProfit = net >= 0;
 
     const cards = [
-        { label: 'Total Revenue',  value: fmt(period.revenue.total),  color: '#10B981', colorLight: 'rgba(16,185,129,0.08)'  },
-        { label: 'Total Expenses', value: fmt(period.expenses.total), color: '#EF4444', colorLight: 'rgba(239,68,68,0.08)'   },
-        { label: 'Net Income',     value: fmt(Math.abs(net)),          color: isProfit ? '#6750A4' : '#EF4444', colorLight: isProfit ? 'rgba(103,80,164,0.08)' : 'rgba(239,68,68,0.08)' },
+        { label: 'Total Revenue',  value: fmt(period.revenue.total),  color: '#10B981' },
+        { label: 'Total Expenses', value: fmt(period.expenses.total), color: '#EF4444' },
+        { label: 'Net Income',     value: fmt(Math.abs(net)),          color: isProfit ? '#6750A4' : '#EF4444' },
     ];
 
     const grid = document.createElement('div');
@@ -112,7 +112,6 @@ function createSummaryCards(period: PeriodData): HTMLElement {
             .withLabel(of(s.label))
             .withValue(of(s.value))
             .withValueColor(of(s.color))
-            .withAccentColor(of(s.color), of(s.colorLight))
             .build();
         grid.appendChild(card);
     });

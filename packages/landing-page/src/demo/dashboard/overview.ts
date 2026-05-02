@@ -25,14 +25,14 @@ function createStatsGrid(): HTMLElement {
     grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px-16';
 
     const stats = [
-        { label: 'Total Revenue',  value: '€248,592', trend: '+14.2%', positive: true,  color: '#6750A4', colorLight: 'rgba(103,80,164,0.08)' },
-        { label: 'Active Users',   value: '24,891',   trend: '+8.7%',  positive: true,  color: '#625B71', colorLight: 'rgba(98,91,113,0.08)'  },
-        { label: 'Orders (Apr)',   value: '2,847',    trend: '-1.4%',  positive: false, color: '#7D5260', colorLight: 'rgba(125,82,96,0.08)'  },
-        { label: 'Conversion',     value: '4.1%',     trend: '+0.6%',  positive: true,  color: '#6750A4', colorLight: 'rgba(103,80,164,0.08)' },
-        { label: 'New Signups',     value: '1,284',    trend: '+22.3%', positive: true,  color: '#0EA5E9', colorLight: 'rgba(14,165,233,0.08)'  },
-        { label: 'MRR',             value: '€31,240',  trend: '+9.1%',  positive: true,  color: '#10B981', colorLight: 'rgba(16,185,129,0.08)'  },
-        { label: 'Avg Order Value', value: '€447.30',  trend: '+3.8%',  positive: true,  color: '#F59E0B', colorLight: 'rgba(245,158,11,0.08)'  },
-        { label: 'Churn Rate',      value: '2.4%',     trend: '-0.3%',  positive: true,  color: '#EC4899', colorLight: 'rgba(236,72,153,0.08)'  },
+        { label: 'Total Revenue',  value: '€248,592', trend: '+14.2%', positive: true },
+        { label: 'Active Users',   value: '24,891',   trend: '+8.7%',  positive: true },
+        { label: 'Orders (Apr)',   value: '2,847',    trend: '-1.4%',  positive: false },
+        { label: 'Conversion',     value: '4.1%',     trend: '+0.6%',  positive: true },
+        { label: 'New Signups',     value: '1,284',    trend: '+22.3%', positive: true },
+        { label: 'MRR',             value: '€31,240',  trend: '+9.1%',  positive: true },
+        { label: 'Avg Order Value', value: '€447.30',  trend: '+3.8%',  positive: true },
+        { label: 'Churn Rate',      value: '2.4%',     trend: '-0.3%',  positive: true },
     ];
 
     stats.forEach(s => {
@@ -40,7 +40,6 @@ function createStatsGrid(): HTMLElement {
             .withLabel(of(s.label))
             .withValue(of(s.value))
             .withTrend(of(s.trend), of(s.positive))
-            .withAccentColor(of(s.color), of(s.colorLight))
             .build();
         grid.appendChild(card);
     });

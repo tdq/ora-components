@@ -52,7 +52,7 @@ function renderPayableChip(status: string): HTMLElement {
     return chip;
 }
 
-function computeAgingCard(label: string, filter: (inv: Invoice) => boolean, accentColor: string, lightColor: string): HTMLElement {
+function computeAgingCard(label: string, filter: (inv: Invoice) => boolean): HTMLElement {
     const subset = ALL_INVOICES.filter(filter);
     const total = subset.reduce((s, i) => s + i.amount.amount, 0);
 
@@ -69,7 +69,6 @@ function computeAgingCard(label: string, filter: (inv: Invoice) => boolean, acce
     return new KPICardBuilder()
         .withLabel(of(label))
         .withValue(of(`€${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`))
-        .withAccentColor(of(accentColor), of(lightColor))
         .withFooter(footerBuilder)
         .build();
 }
@@ -80,23 +79,19 @@ function createAgingSummary(): HTMLElement {
 
     grid.appendChild(computeAgingCard(
         'Current',
-        inv => inv.status === 'Current',
-        '#0EA5E9', 'rgba(14,165,233,0.08)'
+        inv => inv.status === 'Current'
     ));
     grid.appendChild(computeAgingCard(
         '1–30 Days Overdue',
-        inv => { const d = daysPast(inv.dueDate); return d >= 1 && d <= 30 && inv.status !== 'Paid'; },
-        '#F59E0B', 'rgba(245,158,11,0.08)'
+        inv => { const d = daysPast(inv.dueDate); return d >= 1 && d <= 30 && inv.status !== 'Paid'; }
     ));
     grid.appendChild(computeAgingCard(
         '31–60 Days Overdue',
-        inv => { const d = daysPast(inv.dueDate); return d >= 31 && d <= 60 && inv.status !== 'Paid'; },
-        '#EF4444', 'rgba(239,68,68,0.08)'
+        inv => { const d = daysPast(inv.dueDate); return d >= 31 && d <= 60 && inv.status !== 'Paid'; }
     ));
     grid.appendChild(computeAgingCard(
         '60+ Days Overdue',
-        inv => { const d = daysPast(inv.dueDate); return d > 60 && inv.status !== 'Paid'; },
-        '#7D5260', 'rgba(125,82,96,0.08)'
+        inv => { const d = daysPast(inv.dueDate); return d > 60 && inv.status !== 'Paid'; }
     ));
 
     return grid;
