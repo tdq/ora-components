@@ -156,7 +156,6 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withPlaceholder(of('e.g. Amazon Web Services'))
         .withValue(vendor$)
         .withError(vendorError$)
-        .asGlass()
         .build();
 
     const invoiceNumField = new TextFieldBuilder()
@@ -164,7 +163,6 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withPlaceholder(of('e.g. INV-P016'))
         .withValue(invoiceNum$)
         .withError(invoiceNumError$)
-        .asGlass()
         .build();
 
     const issueDatePicker = new DatePickerBuilder()
@@ -172,7 +170,6 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withValue(issueDate$)
         .withFormat('DD-MM-YYYY')
         .withError(issueDateError$)
-        .asGlass()
         .build();
 
     const dueDatePicker = new DatePickerBuilder()
@@ -180,7 +177,6 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withValue(dueDate$)
         .withFormat('DD-MM-YYYY')
         .withError(dueDateError$)
-        .asGlass()
         .build();
 
     const amountField = new MoneyFieldBuilder()
@@ -189,7 +185,6 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withCurrencies(['EUR', 'USD', 'GBP'])
         .withPrecision(of(2))
         .withError(amountError$)
-        .asGlass()
         .build();
 
     // Form layout inside the dialog (grid, same field order as before)
@@ -208,8 +203,7 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
     const dialog = new DialogBuilder()
         .withCaption(of('Add New Invoice'))
         .withSize(DialogSize.MEDIUM)
-        .withContent({ build: () => form })
-        .asGlass();
+        .withContent({ build: () => form });
 
     // Toolbar: Cancel (secondary) closes dialog, Add Invoice (primary) validates & saves
     dialog.withToolbar().addSecondaryButton()
