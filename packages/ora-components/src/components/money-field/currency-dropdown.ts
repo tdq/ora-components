@@ -98,7 +98,7 @@ export function createCurrencyDropdown(
         .withItemIdProvider(item => item.id)
         .withStyle(of(ListBoxStyle.BORDERLESS));
 
-    const listBoxEl = listBox.build();
+    const listBoxEl = isGlass ? listBox.asGlass().build() : listBox.build();
 
     // Assign the listId to the inner <ul> so aria-controls on the button points to it
     const ul = listBoxEl.querySelector('ul[role="listbox"]') as HTMLUListElement | null;

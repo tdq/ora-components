@@ -20,31 +20,31 @@ function daysPast(dueDate: string): number {
 }
 
 const ALL_INVOICES: Invoice[] = [
-    { id: 'INV-P001', vendor: 'Amazon Web Services',   issueDate: '2026-04-01', dueDate: '2026-04-30', amount: { amount:  742.80, currencyId: 'EUR' }, status: 'Current'  },
-    { id: 'INV-P002', vendor: 'Stripe Inc.',            issueDate: '2026-04-01', dueDate: '2026-04-30', amount: { amount:  119.00, currencyId: 'EUR' }, status: 'Current'  },
-    { id: 'INV-P003', vendor: 'Figma Inc.',             issueDate: '2026-04-01', dueDate: '2026-04-30', amount: { amount:   75.00, currencyId: 'EUR' }, status: 'Current'  },
-    { id: 'INV-P004', vendor: 'HubSpot CRM',            issueDate: '2026-03-25', dueDate: '2026-04-24', amount: { amount:  540.00, currencyId: 'EUR' }, status: 'Current'  },
-    { id: 'INV-P005', vendor: 'Office Landlord GmbH',   issueDate: '2026-04-01', dueDate: '2026-04-05', amount: { amount: 2800.00, currencyId: 'EUR' }, status: 'Due Soon' },
-    { id: 'INV-P006', vendor: 'Slack Technologies',     issueDate: '2026-03-20', dueDate: '2026-04-19', amount: { amount:  156.00, currencyId: 'EUR' }, status: 'Due Soon' },
-    { id: 'INV-P007', vendor: 'Loom Inc.',               issueDate: '2026-03-18', dueDate: '2026-04-17', amount: { amount:   32.00, currencyId: 'EUR' }, status: 'Due Soon' },
-    { id: 'INV-P008', vendor: 'Linear B.V.',             issueDate: '2026-03-10', dueDate: '2026-04-09', amount: { amount:   96.00, currencyId: 'EUR' }, status: 'Overdue'  },
-    { id: 'INV-P009', vendor: 'Freelancer — J. Müller', issueDate: '2026-02-28', dueDate: '2026-03-28', amount: { amount: 1200.00, currencyId: 'EUR' }, status: 'Overdue'  },
-    { id: 'INV-P010', vendor: 'Google Workspace',       issueDate: '2026-03-01', dueDate: '2026-03-31', amount: { amount:  216.00, currencyId: 'EUR' }, status: 'Overdue'  },
-    { id: 'INV-P011', vendor: 'Office Landlord GmbH',   issueDate: '2026-03-01', dueDate: '2026-03-05', amount: { amount: 2800.00, currencyId: 'EUR' }, status: 'Paid'     },
-    { id: 'INV-P012', vendor: 'Amazon Web Services',    issueDate: '2026-03-01', dueDate: '2026-03-31', amount: { amount:  698.40, currencyId: 'EUR' }, status: 'Paid'     },
-    { id: 'INV-P013', vendor: 'Stripe Inc.',             issueDate: '2026-03-01', dueDate: '2026-03-31', amount: { amount:  119.00, currencyId: 'EUR' }, status: 'Paid'     },
-    { id: 'INV-P014', vendor: 'Figma Inc.',              issueDate: '2026-03-01', dueDate: '2026-03-31', amount: { amount:   75.00, currencyId: 'EUR' }, status: 'Paid'     },
-    { id: 'INV-P015', vendor: 'HubSpot CRM',             issueDate: '2026-02-25', dueDate: '2026-03-26', amount: { amount:  540.00, currencyId: 'EUR' }, status: 'Paid'     },
+    { id: 'INV-P001', vendor: 'Amazon Web Services', issueDate: '2026-04-01', dueDate: '2026-04-30', amount: { amount: 742.80, currencyId: 'EUR' }, status: 'Current' },
+    { id: 'INV-P002', vendor: 'Stripe Inc.', issueDate: '2026-04-01', dueDate: '2026-04-30', amount: { amount: 119.00, currencyId: 'EUR' }, status: 'Current' },
+    { id: 'INV-P003', vendor: 'Figma Inc.', issueDate: '2026-04-01', dueDate: '2026-04-30', amount: { amount: 75.00, currencyId: 'EUR' }, status: 'Current' },
+    { id: 'INV-P004', vendor: 'HubSpot CRM', issueDate: '2026-03-25', dueDate: '2026-04-24', amount: { amount: 540.00, currencyId: 'EUR' }, status: 'Current' },
+    { id: 'INV-P005', vendor: 'Office Landlord GmbH', issueDate: '2026-04-01', dueDate: '2026-04-05', amount: { amount: 2800.00, currencyId: 'EUR' }, status: 'Due Soon' },
+    { id: 'INV-P006', vendor: 'Slack Technologies', issueDate: '2026-03-20', dueDate: '2026-04-19', amount: { amount: 156.00, currencyId: 'EUR' }, status: 'Due Soon' },
+    { id: 'INV-P007', vendor: 'Loom Inc.', issueDate: '2026-03-18', dueDate: '2026-04-17', amount: { amount: 32.00, currencyId: 'EUR' }, status: 'Due Soon' },
+    { id: 'INV-P008', vendor: 'Linear B.V.', issueDate: '2026-03-10', dueDate: '2026-04-09', amount: { amount: 96.00, currencyId: 'EUR' }, status: 'Overdue' },
+    { id: 'INV-P009', vendor: 'Freelancer — J. Müller', issueDate: '2026-02-28', dueDate: '2026-03-28', amount: { amount: 1200.00, currencyId: 'EUR' }, status: 'Overdue' },
+    { id: 'INV-P010', vendor: 'Google Workspace', issueDate: '2026-03-01', dueDate: '2026-03-31', amount: { amount: 216.00, currencyId: 'EUR' }, status: 'Overdue' },
+    { id: 'INV-P011', vendor: 'Office Landlord GmbH', issueDate: '2026-03-01', dueDate: '2026-03-05', amount: { amount: 2800.00, currencyId: 'EUR' }, status: 'Paid' },
+    { id: 'INV-P012', vendor: 'Amazon Web Services', issueDate: '2026-03-01', dueDate: '2026-03-31', amount: { amount: 698.40, currencyId: 'EUR' }, status: 'Paid' },
+    { id: 'INV-P013', vendor: 'Stripe Inc.', issueDate: '2026-03-01', dueDate: '2026-03-31', amount: { amount: 119.00, currencyId: 'EUR' }, status: 'Paid' },
+    { id: 'INV-P014', vendor: 'Figma Inc.', issueDate: '2026-03-01', dueDate: '2026-03-31', amount: { amount: 75.00, currencyId: 'EUR' }, status: 'Paid' },
+    { id: 'INV-P015', vendor: 'HubSpot CRM', issueDate: '2026-02-25', dueDate: '2026-03-26', amount: { amount: 540.00, currencyId: 'EUR' }, status: 'Paid' },
 ];
 
 function renderPayableChip(status: string): HTMLElement {
     const chip = document.createElement('span');
     chip.className = 'px-3 py-1 rounded-full text-xs font-medium';
     const colors: Record<string, { bg: string; text: string }> = {
-        'Current':  { bg: 'rgba(14,165,233,0.1)',   text: '#0369a1' },
-        'Due Soon': { bg: 'rgba(245,158,11,0.1)',   text: '#b45309' },
-        'Overdue':  { bg: 'rgba(239,68,68,0.1)',    text: '#b91c1c' },
-        'Paid':     { bg: 'rgba(16,185,129,0.1)',   text: '#047857' },
+        'Current': { bg: 'rgba(14,165,233,0.1)', text: '#0369a1' },
+        'Due Soon': { bg: 'rgba(245,158,11,0.1)', text: '#b45309' },
+        'Overdue': { bg: 'rgba(239,68,68,0.1)', text: '#b91c1c' },
+        'Paid': { bg: 'rgba(16,185,129,0.1)', text: '#047857' },
     };
     const c = colors[status] ?? { bg: 'rgba(121,116,126,0.1)', text: 'var(--md-sys-color-on-surface-variant)' };
     chip.style.cssText = `background: ${c.bg}; color: ${c.text};`;
@@ -156,6 +156,7 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withPlaceholder(of('e.g. Amazon Web Services'))
         .withValue(vendor$)
         .withError(vendorError$)
+        .asGlass()
         .build();
 
     const invoiceNumField = new TextFieldBuilder()
@@ -163,6 +164,7 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withPlaceholder(of('e.g. INV-P016'))
         .withValue(invoiceNum$)
         .withError(invoiceNumError$)
+        .asGlass()
         .build();
 
     const issueDatePicker = new DatePickerBuilder()
@@ -170,6 +172,7 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withValue(issueDate$)
         .withFormat('DD-MM-YYYY')
         .withError(issueDateError$)
+        .asGlass()
         .build();
 
     const dueDatePicker = new DatePickerBuilder()
@@ -177,6 +180,7 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withValue(dueDate$)
         .withFormat('DD-MM-YYYY')
         .withError(dueDateError$)
+        .asGlass()
         .build();
 
     const amountField = new MoneyFieldBuilder()
@@ -185,6 +189,7 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
         .withCurrencies(['EUR', 'USD', 'GBP'])
         .withPrecision(of(2))
         .withError(amountError$)
+        .asGlass()
         .build();
 
     // Form layout inside the dialog (grid, same field order as before)
@@ -203,7 +208,8 @@ function showNewInvoiceDialog(invoices$: BehaviorSubject<Invoice[]>): void {
     const dialog = new DialogBuilder()
         .withCaption(of('Add New Invoice'))
         .withSize(DialogSize.MEDIUM)
-        .withContent({ build: () => form });
+        .withContent({ build: () => form })
+        .asGlass();
 
     // Toolbar: Cancel (secondary) closes dialog, Add Invoice (primary) validates & saves
     dialog.withToolbar().addSecondaryButton()
