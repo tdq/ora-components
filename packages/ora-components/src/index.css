@@ -131,31 +131,49 @@
 /* ===================================================== */
 
 [data-theme="green"] {
-  --md-sys-color-primary: #166534; /* green-800 */
+  --md-sys-color-primary: #166534;
+  /* green-800 */
   --md-sys-color-on-primary: #FFFFFF;
-  --md-sys-color-primary-container: #DCFCE7; /* green-100 */
-  --md-sys-color-on-primary-container: #14532D; /* green-900 */
+  --md-sys-color-primary-container: #DCFCE7;
+  /* green-100 */
+  --md-sys-color-on-primary-container: #14532D;
+  /* green-900 */
 
-  --md-sys-color-secondary: #0F766E; /* teal-700 */
+  --md-sys-color-secondary: #0F766E;
+  /* teal-700 */
   --md-sys-color-on-secondary: #FFFFFF;
-  --md-sys-color-secondary-container: #CCFBF1; /* teal-100 */
-  --md-sys-color-on-secondary-container: #134E4A; /* teal-900 */
+  --md-sys-color-secondary-container: #CCFBF1;
+  /* teal-100 */
+  --md-sys-color-on-secondary-container: #134E4A;
+  /* teal-900 */
 
-  --md-sys-color-tertiary: #65A30D; /* lime-600 */
+  --md-sys-color-tertiary: #65A30D;
+  /* lime-600 */
   --md-sys-color-on-tertiary: #FFFFFF;
-  --md-sys-color-tertiary-container: #ECFCCB; /* lime-100 */
-  --md-sys-color-on-tertiary-container: #365314; /* lime-900 */
+  --md-sys-color-tertiary-container: #ECFCCB;
+  /* lime-100 */
+  --md-sys-color-on-tertiary-container: #365314;
+  /* lime-900 */
 
-  --md-sys-color-background: #F0FDF4; /* green-50 */
-  --md-sys-color-on-background: #052E16; /* green-950 */
-  --md-sys-color-surface: #F0FDF4; /* green-50 */
-  --md-sys-color-on-surface: #052E16; /* green-950 */
-  --md-sys-color-surface-variant: #BBF7D0; /* green-200 */
-  --md-sys-color-on-surface-variant: #14532D; /* green-900 */
-  --md-sys-color-surface-container-low: #DCFCE7; /* green-100 */
+  --md-sys-color-background: #F0FDF4;
+  /* green-50 */
+  --md-sys-color-on-background: #052E16;
+  /* green-950 */
+  --md-sys-color-surface: #F0FDF4;
+  /* green-50 */
+  --md-sys-color-on-surface: #052E16;
+  /* green-950 */
+  --md-sys-color-surface-variant: #BBF7D0;
+  /* green-200 */
+  --md-sys-color-on-surface-variant: #14532D;
+  /* green-900 */
+  --md-sys-color-surface-container-low: #DCFCE7;
+  /* green-100 */
 
-  --md-sys-color-outline: #4ADE80; /* green-400 */
-  --md-sys-color-error: #B91C1C; /* red-700 */
+  --md-sys-color-outline: #4ADE80;
+  /* green-400 */
+  --md-sys-color-error: #B91C1C;
+  /* red-700 */
   --md-sys-color-on-error: #FFFFFF;
 }
 
@@ -194,6 +212,7 @@
 
   .glass-effect {
     @apply backdrop-blur-xl;
+    -webkit-backdrop-filter: blur(24px);
     @apply bg-white/60 ring-1 ring-black/10 text-gray-900;
     @apply dark:bg-white/10 dark:ring-white/20 dark:text-white;
   }

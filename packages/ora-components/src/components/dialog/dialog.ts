@@ -111,7 +111,7 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
         }
 
         const dialog = document.createElement('dialog');
-        
+
         const getBaseClasses = () => cn(
             'm-auto',
             this.isGlass
@@ -154,8 +154,8 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
         // Content
         const contentContainer = document.createElement('div');
         contentContainer.className = cn(
-            'flex-1 min-h-0 px-6 pb-6',
-            this.isScrollable ? 'overflow-y-auto' : 'overflow-hidden'
+            'flex-1 px-6 pb-6',
+            this.isScrollable ? 'overflow-y-auto min-h-[200px]' : ''
         );
 
         if (this.content) {
@@ -208,11 +208,11 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
             isDragging = true;
             startX = e.clientX;
             startY = e.clientY;
-            
+
             const rect = dialog.getBoundingClientRect();
             startLeft = rect.left;
             startTop = rect.top;
-            
+
             // Remove transform and margin to use absolute positioning during drag
             dialog.style.transform = 'none';
             dialog.style.margin = '0';
@@ -225,10 +225,10 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
 
         const onMouseMove = (e: MouseEvent) => {
             if (!isDragging) return;
-            
+
             const dx = e.clientX - startX;
             const dy = e.clientY - startY;
-            
+
             dialog.style.left = `${startLeft + dx}px`;
             dialog.style.top = `${startTop + dy}px`;
         };
@@ -257,9 +257,9 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
                 dialog.parentElement.removeChild(dialog);
             }
         };
-        
+
         dialog.addEventListener('close', handleClose);
-        
+
         registerDestroy(dialog, () => {
             dialog.removeEventListener('close', handleClose);
         });
