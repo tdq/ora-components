@@ -1,7 +1,5 @@
 import { RouterBuilder } from '@tdq/ora-components';
 import { createLandingPage } from './sections/landing-page';
-import { createDashboardDemo } from './demo/dashboard';
-import { createFinanceDemo } from './demo/finance';
 
 export const router = new RouterBuilder()
     .withBase('/')
@@ -13,12 +11,16 @@ router.addRoute()
 
 router.addRoute()
     .withPattern('/dashboard')
-    .withContent(() => ({ build: () => createDashboardDemo() }));
+    .withContent(async () => {
+        const { createDashboardDemo } = await import('./demo/dashboard');
+
+        return { build: () => createDashboardDemo() }
+    });
 
 router.addRoute()
     .withPattern('/dashboard/{page}')
-    .withContent(() => ({ build: () => createDashboardDemo() }));
+    .withContent(async () => {
+        const { createDashboardDemo } = await import('./demo/dashboard');
 
-router.addRoute()
-    .withPattern('/finance')
-    .withContent(() => ({ build: () => createFinanceDemo() }));
+        return { build: () => createDashboardDemo() }
+    });
