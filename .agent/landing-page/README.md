@@ -14,6 +14,30 @@ The `landing-page` package is a dedicated marketing and demonstration website fo
 - **Theme Support:** Global switching between Light, Dark, and Pink themes via `ThemeManager`.
 - **Zero-Refresh Navigation:** Instant switching between the Landing Page and Dashboard Demo.
 
+## External Links
+
+The landing page includes links to external resources in three locations:
+
+| Location | Links |
+|----------|-------|
+| **Header** (desktop) | GitHub, Storybook — rendered as icon-only buttons (`hidden md:flex`) |
+| **Header** (mobile drawer) | GitHub, Storybook — rendered as text links |
+| **Footer** "Connect" column | GitHub, npm, Storybook — rendered as icon+text links |
+
+### URL pattern
+
+The Storybook link uses a dynamic hostname-based URL so it resolves correctly across environments (local dev, staging, production):
+
+```
+https://storybook.${window.location.hostname}
+```
+
+This is constructed once in `header.ts` (`storybookUrl` variable, line 60) and reused for both desktop and mobile header links. The footer in `landing-page.ts` inlines the same template literal directly (line 88).
+
+### Security
+
+All external links use `target="_blank"` and `rel="noopener"` to prevent tab-napping attacks. This applies uniformly to GitHub, npm, and Storybook links across header, mobile drawer, and footer.
+
 ## Directory Structure
 - `src/app.ts`: Main entry point and view switcher.
 - `src/routes.ts`: Central routing configuration using `RouterBuilder` from `@tdq/ora-components`.

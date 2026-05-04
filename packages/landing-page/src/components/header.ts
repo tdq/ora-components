@@ -49,10 +49,24 @@ export function createHeader(): HTMLElement {
     const githubBtn = document.createElement('a');
     githubBtn.href = 'https://github.com';
     githubBtn.target = '_blank';
+    githubBtn.rel = 'noopener';
     githubBtn.className = 'hidden md:flex items-center justify-center w-9 h-9 rounded-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-variant-alpha-40 transition-all duration-200';
     githubBtn.innerHTML = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+        </svg>
+    `;
+
+    const storybookUrl = `https://storybook.${window.location.hostname}`;
+
+    const storybookBtn = document.createElement('a');
+    storybookBtn.href = storybookUrl;
+    storybookBtn.target = '_blank';
+    storybookBtn.rel = 'noopener';
+    storybookBtn.className = 'hidden md:flex items-center justify-center w-9 h-9 rounded-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-variant-alpha-40 transition-all duration-200';
+    storybookBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
         </svg>
     `;
 
@@ -88,6 +102,24 @@ export function createHeader(): HTMLElement {
         mobileNav.appendChild(a);
     });
 
+    // Mobile GitHub link
+    const mobileGithub = document.createElement('a');
+    mobileGithub.href = 'https://github.com';
+    mobileGithub.target = '_blank';
+    mobileGithub.rel = 'noopener';
+    mobileGithub.className = 'px-px-16 py-px-12 text-body-large text-on-surface-variant hover:text-on-surface hover:bg-surface-variant-alpha-40 rounded-large transition-colors duration-200';
+    mobileGithub.textContent = 'GitHub';
+    mobileNav.appendChild(mobileGithub);
+
+    // Mobile Storybook link
+    const mobileStorybook = document.createElement('a');
+    mobileStorybook.href = storybookUrl;
+    mobileStorybook.target = '_blank';
+    mobileStorybook.rel = 'noopener';
+    mobileStorybook.className = 'px-px-16 py-px-12 text-body-large text-on-surface-variant hover:text-on-surface hover:bg-surface-variant-alpha-40 rounded-large transition-colors duration-200';
+    mobileStorybook.textContent = 'Storybook';
+    mobileNav.appendChild(mobileStorybook);
+
     // Mobile "View Demo" CTA
     const mobileDemoBtnWrap = document.createElement('div');
     mobileDemoBtnWrap.className = 'px-px-16 py-px-12';
@@ -103,6 +135,7 @@ export function createHeader(): HTMLElement {
 
     actions.appendChild(themeToggle);
     actions.appendChild(githubBtn);
+    actions.appendChild(storybookBtn);
     actions.appendChild(ctaBtn);
 
     header.appendChild(logo);
