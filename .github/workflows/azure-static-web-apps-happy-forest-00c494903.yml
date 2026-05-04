@@ -29,6 +29,8 @@ jobs:
         run: npx turbo run build --filter=@tdq/ora-components
       - name: Build Storybook
         run: npm run build-storybook -w aura-stories
+      - name: Verify Storybook output
+        run: ls packages/stories/storybook-static/index.html
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -37,9 +39,9 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
           skip_app_build: true
-          app_location: "/packages/stories" # App source code path
+          app_location: "/" # App source code path
           api_location: "" # Api source code path - optional
-          output_location: "storybook-static" # Built app content directory - optional
+          output_location: "packages/stories/storybook-static" # Built app content directory - optional
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
