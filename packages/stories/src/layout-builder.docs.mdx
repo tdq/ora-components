@@ -1,0 +1,181 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './layout-builder.stories';
+
+<Meta of={Stories} />
+
+# Layout
+
+The `LayoutBuilder` provides a flexible, reactive API for constructing horizontal and vertical layouts with slot-based content placement. Each slot can hold a single child component and supports configurable sizing, visibility, and alignment — all driven by RxJS observables.
+
+Layouts are the foundational building block for arranging panels, sidebars, headers, and content regions in financial dashboards and data-heavy interfaces.
+
+---
+
+## Usage
+
+```typescript
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+// Vertical layout with three slots
+const layout = new LayoutBuilder()
+    .asVertical()
+    .withGap(LayoutGap.LARGE);
+
+layout.addSlot().withContent(headerComponent);
+layout.addSlot().withContent(contentComponent);
+layout.addSlot().withContent(footerComponent);
+
+const element = layout.build();
+document.body.appendChild(element);
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+### LayoutBuilder
+
+- **`addSlot`** — `() => SlotBuilder`
+  Creates and returns a new `SlotBuilder` for configuring a child slot. Slots are rendered in the order they are added.
+
+- **`asVertical`** — `() => this`
+  Sets the layout direction to vertical (column). Children stack top-to-bottom.
+
+- **`asHorizontal`** — `() => this`
+  Sets the layout direction to horizontal (row). Children flow left-to-right. Default if not set.
+
+- **`withGap`** — `(gap: LayoutGap) => this`
+  Sets the gap between adjacent slots. Accepts a `LayoutGap` enum value. Default is `LayoutGap.MEDIUM`.
+
+- **`withClass`** — `(className: Observable<string>) => this`
+  Appends additional CSS class names to the root layout element. Useful for theme overrides or spacing utilities.
+
+- **`withAlignment`** — `(alignment: Observable<Alignment>) => this`
+  Sets the default alignment for all child slots that do not have their own alignment override. Only applies to horizontal layouts.
+
+- **`withGlass`** — `() => this`
+  Applies the glass-effect styling (frosted background with blur, padding, and rounded corners) to the layout container.
+
+- **`build`** — `() => HTMLElement`
+  Constructs and returns the layout `<div>` element with all configured slots. Call once per builder.
+
+### SlotBuilder
+
+Returned by `addSlot()`. Each slot wraps a single child component.
+
+- **`withContent`** — `(content: ComponentBuilder) => SlotBuilder`
+  Sets the child component displayed inside this slot. Accepts any `ComponentBuilder` instance.
+
+- **`withSize`** — `(size: SlotSize) => SlotBuilder`
+  Sets the slot width as a fraction of available space using the `SlotSize` enum. For horizontal layouts, defaults to equal distribution (`flex-1`). For vertical layouts, defaults to content-fit.
+
+- **`withVisible`** — `(visible: Observable<boolean>) => SlotBuilder`
+  Controls slot visibility. When the observable emits `false`, the slot is hidden (`display: none`).
+
+- **`withAlignment`** — `(alignment: Observable<Alignment>) => SlotBuilder`
+  Overrides the layout-level alignment for this specific slot.
+
+---
+
+## Enums
+
+### LayoutGap
+
+Defines the gap between adjacent slots.
+
+| Value | CSS Value | Description |
+|-------|-----------|-------------|
+| `LayoutGap.NONE` | `gap-0` | No gap between slots. |
+| `LayoutGap.SMALL` | `gap-1` | 4px gap. |
+| `LayoutGap.MEDIUM` | `gap-2` | 8px gap (default). |
+| `LayoutGap.LARGE` | `gap-4` | 16px gap. |
+| `LayoutGap.EXTRA_LARGE` | `gap-8` | 32px gap. |
+
+### SlotSize
+
+Defines the proportional width of a slot relative to available space.
+
+| Value | CSS Class | Fraction |
+|-------|-----------|----------|
+| `SlotSize.QUARTER` | `basis-1/4` | 1/4 of available space |
+| `SlotSize.THIRD` | `basis-1/3` | 1/3 of available space |
+| `SlotSize.HALF` | `basis-1/2` | 1/2 of available space |
+| `SlotSize.TWO_THIRDS` | `basis-2/3` | 2/3 of available space |
+| `SlotSize.THREE_QUARTERS` | `basis-3/4` | 3/4 of available space |
+| `SlotSize.FULL` | `basis-full` | Full available width |
+| `SlotSize.FIT` | `flex-none` | Sized to content |
+
+For horizontal layouts, slots without an explicit size use `flex-1` (equal distribution). For vertical layouts, slots default to content height.
+
+### Alignment
+
+Defines the horizontal alignment of content within a slot.
+
+| Value | Description |
+|-------|-------------|
+| `Alignment.LEFT` | Content aligned to the left (default). |
+| `Alignment.RIGHT` | Content aligned to the right. |
+| `Alignment.CENTER` | Content centered within the slot. |
+
+---
+
+## Horizontal Layout
+
+The `Horizontal` story renders three equally sized slots side by side with a medium gap, each containing a coloured placeholder.
+
+<Canvas of={Stories.Horizontal} />
+
+---
+
+## Vertical Layout
+
+The `Vertical` story stacks three slots (Header, Content, Footer) top-to-bottom with a large gap, demonstrating a typical page shell structure.
+
+<Canvas of={Stories.Vertical} />
+
+---
+
+## Mixed Sizes
+
+The `MixedSizes` story shows a horizontal layout where each slot has an explicit `SlotSize` — a sidebar (1/4), main content (1/2), and a right panel (1/4) — separated by an extra-large gap.
+
+<Canvas of={Stories.MixedSizes} />
+
+---
+
+## Conditional Visibility
+
+The `ConditionalVisibility` story demonstrates reactive slot visibility controlled by a `BehaviorSubject<boolean>`. A toggle button shows and hides the middle slot, while the other two slots reflow to fill the available space.
+
+<Canvas of={Stories.ConditionalVisibility} />
+
+---
+
+## Slot Alignment
+
+The `AlignmentStory` shows three vertical slots with individually configured alignment — left, center, and right — each demonstrated with a coloured placeholder.
+
+<Canvas of={Stories.AlignmentStory} />
+
+---
+
+## Layout Alignment
+
+The `LayoutAlignmentStory` demonstrates setting alignment at the layout level using `withAlignment(of(Alignment.CENTER))`. All child slots inherit the centered alignment without needing individual configuration.
+
+<Canvas of={Stories.LayoutAlignmentStory} />
+
+---
+
+## Styling Notes
+
+- **Full width**: The layout container always applies `w-full` for full-width behaviour.
+- **Direction**: `asVertical()` applies `flex-col`; `asHorizontal()` (default) applies `flex-row`.
+- **Gaps** are implemented with Tailwind `gap-*` utility classes based on the `LayoutGap` enum.
+- **Slot sizing**: Horizontal slots without an explicit `SlotSize` receive `flex-1` to distribute space equally. Vertical slots default to content height.
+- **Visibility**: Toggling slot visibility uses `display: none` via inline styles, driven by the `withVisible` observable. The component handles cleanup on destroy.
+- **Glass effect**: `withGlass()` adds `glass-effect`, `p-4`, and `rounded-large` classes to the layout container for a frosted-glass appearance.
+- **Alignment**: Layout-level alignment applies only to horizontal layouts. Slot-level alignment always applies. When both are set, the slot-level alignment takes precedence.

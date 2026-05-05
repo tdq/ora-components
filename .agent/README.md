@@ -1,6 +1,7 @@
 This is a component library for 1A platform. It should be used as a dependency and provide only components.
 Components are custom elements based on native JavaScript and HTML.
 This project provides StoryBook for testing components.
+Storybook MDX documentation (`*.docs.mdx`) lives in `packages/stories/src/`, co-located with `.stories.ts` files. These are consumer-facing docs (usage examples, Builder API tables, styling notes) — distinct from `.agent/components/` which are internal architecture references.
 Logic and state are managed by RxJS.
 
 ## Documentation

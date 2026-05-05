@@ -1,0 +1,98 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './panel.stories';
+
+<Meta of={Stories} />
+
+# Panel
+
+Panels are container components used to group and display content in a bordered surface. The `PanelBuilder` provides a simple API for constructing panels with configurable gap (padding), content, glass-effect styling, and custom CSS class names.
+
+Panels follow [Material Design 3](https://m3.material.io/components/cards) card semantics but with no shadow and full-width by default, making them suitable for layout sections and form groups.
+
+---
+
+## Usage
+
+```typescript
+import { PanelBuilder, PanelGap } from '@tdq/ora-components';
+import { LabelBuilder } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+const panel = new PanelBuilder()
+  .withGap(PanelGap.LARGE)
+  .withContent(
+    new LabelBuilder()
+      .withCaption(of('Invoice Summary'))
+      .build()
+  )
+  .build();
+
+document.body.appendChild(panel);
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining.
+
+- **`withGap`** — `(gap: PanelGap) => this`
+  Sets the padding gap between the panel border and its content. Accepts a `PanelGap` enum value.
+
+- **`withContent`** — `(content: ComponentBuilder) => this`
+  Sets the content of the panel. Accepts any object implementing `ComponentBuilder` (must have a `build(): HTMLElement` method).
+
+- **`asGlass`** — `(isGlass?: boolean) => this`
+  Enables the glass-effect variant with frosted background and blur. Pass `false` to explicitly disable. Defaults to `true`.
+
+- **`withClass`** — `(className: Observable<string>) => this`
+  Appends additional CSS class names to the root panel element. Useful for width constraints, theme overrides, or spacing utilities.
+
+- **`build`** — `() => HTMLElement`
+  Constructs and returns the root `<div>` element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+---
+
+## PanelGap Enum
+
+| Value | Description |
+|-------|-------------|
+| `PanelGap.SMALL` | 4px padding gap. |
+| `PanelGap.MEDIUM` | 8px padding gap. Default. |
+| `PanelGap.LARGE` | 16px padding gap. |
+| `PanelGap.EXTRA_LARGE` | 32px padding gap. |
+
+---
+
+## Default
+
+The `Default` story shows a basic panel with placeholder content — the simplest starting point.
+
+<Canvas of={Stories.Default} />
+
+---
+
+## Gap Variants
+
+The `Gaps` story renders all four `PanelGap` sizes side by side so you can compare their padding at a glance.
+
+<Canvas of={Stories.Gaps} />
+
+---
+
+## Glass Effect
+
+The `Glass` story renders a panel with the glass-effect modifier applied on top of a gradient background.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Styling Notes
+
+- **Full width**: Panels have `w-full` by default, expanding to fill their parent container's width.
+- **No shadow**: Panels have no drop shadow — they rely on border and background for visual separation.
+- **Rounded corners**: Panels use `rounded-large` for a refined appearance consistent with Material Design 3.
+- **Default styling**: When `asGlass()` is not used, the panel has a `bg-surface` background, `border` outline, and `text-on-surface` text colour.
+- **Glass effect**: Applies the `glass-effect` CSS class with translucent colours and backdrop blur, and removes the visible border.
+- **Content is a `ComponentBuilder`**: Accepts any builder (LabelBuilder, GridBuilder, PanelBuilder for nesting, etc.) that implements the `ComponentBuilder` interface.

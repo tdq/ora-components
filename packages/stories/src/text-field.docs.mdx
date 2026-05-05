@@ -1,0 +1,158 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './text-field.stories';
+
+<Meta of={Stories} />
+
+# TextField
+
+Text fields let users enter and edit text in forms, filters, and search fields. The `TextFieldBuilder` provides a reactive API for constructing text inputs with labels, placeholders, validation errors, prefix/suffix adornments, and specialised modes (password, email) — all driven by RxJS observables for live-updating bindings.
+
+Text fields follow [Material Design 3](https://m3.material.io/components/text-fields) semantics across two built-in styles: tonal (filled) and outlined.
+
+---
+
+## Usage
+
+```typescript
+import { TextFieldBuilder, TextFieldStyle } from '@tdq/ora-components';
+import { Subject, of } from 'rxjs';
+
+const value$ = new Subject<string>();
+
+const field = new TextFieldBuilder()
+  .withLabel(of('Account Name'))
+  .withPlaceholder(of('Enter account name'))
+  .withValue(value$)
+  .withStyle(of(TextFieldStyle.TONAL))
+  .build();
+
+document.body.appendChild(field);
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into the reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+- **`withValue`** — `(value: Subject<string>): this`
+  Binds a two-way `Subject<string>`. The component writes user input into the subject and reads incoming values to update the field.
+
+- **`withPlaceholder`** — `(placeholder: Observable<string>): this`
+  Sets the placeholder text shown when the field is empty.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>): this`
+  Controls the interactive state. When `false` the field is disabled with reduced opacity and no pointer events.
+
+- **`withStyle`** — `(style: Observable<FieldStyle>): this`
+  Applies one of the two Material Design 3 field style variants. Defaults to `FieldStyle.TONAL`.
+
+- **`withError`** — `(error: Observable<string>): this`
+  Sets the validation error message. An empty string clears the error state.
+
+- **`withLabel`** — `(label: Observable<string>): this`
+  Sets the floating label displayed above the input.
+
+- **`withClass`** — `(className: Observable<string>): this`
+  Appends additional CSS class names to the input wrapper element.
+
+- **`withPrefix`** — `(text: Observable<HTMLElement \| string>): this`
+  Sets non-editable content (icon or text) rendered before the input value.
+
+- **`withSuffix`** — `(text: Observable<HTMLElement \| string>): this`
+  Sets non-editable content (icon or text) rendered after the input value.
+
+- **`asGlass`** — `(): this`
+  Enables the glass-effect variant with frosted background and blur.
+
+- **`asPassword`** — `(): this`
+  Sets `type="password"` and adds a visibility-toggle icon button.
+
+- **`asEmail`** — `(): this`
+  Sets `type="email"` for native email validation.
+
+- **`asInlineError`** — `(): this`
+  Displays validation errors as a coloured ring and error icon next to the input instead of support text below.
+
+- **`build`** — `(): HTMLElement`
+  Constructs and returns the root element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+---
+
+## TextFieldStyle Enum
+
+`TextFieldStyle` is a re-export of `FieldStyle` from the theme package.
+
+| Value | Description |
+|-------|-------------|
+| `TextFieldStyle.TONAL` | Filled background with a bottom active indicator. The default style. |
+| `TextFieldStyle.OUTLINED` | Transparent background with an outline border. |
+
+---
+
+## Style Variants
+
+The `Styles` story renders both `TextFieldStyle` variants — tonal and outlined — side by side so you can compare their appearance at a glance.
+
+<Canvas of={Stories.Styles} />
+
+---
+
+## Interactive Example
+
+The `Interactive` story demonstrates two-way reactive state: the text field is bound to a `BehaviorSubject`, and a label below shows the current value in real time. A "Reset to Default" button restores the initial value.
+
+<Canvas of={Stories.Interactive} />
+
+---
+
+## States
+
+The `States` story shows the enabled/disabled toggle in action. A checkbox controls the field's `enabled` observable, letting you switch between interactive and disabled states without rebuilding the component.
+
+<Canvas of={Stories.States} />
+
+---
+
+## Labels and Errors
+
+The `LabelsAndErrors` story demonstrates labelling and validation. Each field has a floating label and a derived error observable that validates user input — one with a maximum character limit and another with a required-field check.
+
+<Canvas of={Stories.LabelsAndErrors} />
+
+---
+
+## Inline Validation
+
+The `InlineValidation` story shows the `asInlineError` mode. When enabled, errors appear as a coloured ring on the input wrapper with an error icon tooltip, rather than support text below the field.
+
+<Canvas of={Stories.InlineValidation} />
+
+---
+
+## Glass Effect
+
+The `Glass` story renders both style variants with the glass-effect modifier applied on top of a gradient background.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Documented Features
+
+The `DocumentedFeatures` story showcases specialised field types and adornments: password mode with a visibility toggle, email mode with native validation, and prefix/suffix adornments (e.g. a currency symbol before the value and a currency code after).
+
+<Canvas of={Stories.DocumentedFeatures} />
+
+---
+
+## Styling Notes
+
+- **Floating label** uses `md-label-small` typography and sits above the input.
+- **Field height** is fixed at 48px (`h-[48px]`) for consistency across variants.
+- **Active indicator** — tonal fields show a bottom bar that scales and changes colour on focus.
+- **Error state** applies a 1px outline offset outside the wrapper (`outline-1 outline-offset-1 outline-error`).
+- **Inline error** replaces support text with a coloured ring and an error icon that shows a popover tooltip on click.
+- **Disabled state** reduces opacity and removes pointer events — observable-driven via `withEnabled`.
+- **Glass effect** overrides the background and border of each style variant with translucent colours and backdrop blur.
+- **Prefix/suffix** content is non-editable and rendered with `text-on-surface-variant` colour.

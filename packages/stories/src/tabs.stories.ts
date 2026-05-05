@@ -5,7 +5,6 @@ import { of, BehaviorSubject } from 'rxjs';
 
 const meta: Meta = {
     title: 'Components/Tabs',
-    tags: ['autodocs'],
     parameters: {
         layout: 'padded',
     },

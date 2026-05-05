@@ -1,0 +1,165 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './combobox.stories';
+
+<Meta of={Stories} />
+
+# ComboBox
+
+ComboBoxes combine a text input with a dropdown list, letting users either type to filter or select from a predefined set of options. The `ComboBoxBuilder<ITEM>` provides a generic reactive API for constructing searchable comboboxes with filtering, programmatic value control, custom item rendering, and keyboard navigation — all driven by RxJS observables for live-updating bindings.
+
+The combobox follows Material Design 3 conventions and supports two built-in styles: tonal and outlined.
+
+---
+
+## Usage
+
+```typescript
+import { ComboBoxBuilder, ComboBoxStyle } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+const combobox = new ComboBoxBuilder<string>()
+  .withItems(of(['Invoice', 'Payment', 'Credit Note', 'Adjustment']))
+  .withCaption(of('Transaction Type'))
+  .withPlaceholder('Type to search...')
+  .withStyle(of(ComboBoxStyle.TONAL))
+  .build();
+
+document.body.appendChild(combobox);
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into the reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+- **`withItems`** — `(items: Observable<ITEM[]>): this`
+  Sets the list of items displayed in the dropdown. Items are filtered by caption when the user types.
+
+- **`withValue`** — `(value: Subject<ITEM \| null>): this`
+  Binds a two-way `Subject` for the selected item. The component writes the selection into the subject and reads incoming values to update the input.
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Sets the label text displayed above the input. Updates reactively when the observable emits.
+
+- **`withPlaceholder`** — `(placeholder: string): this`
+  Sets the placeholder text shown inside the input when no value is selected.
+
+- **`withItemCaptionProvider`** — `(provider: (item: ITEM) => string): this`
+  Converts an item to its display string in the dropdown and input. Defaults to `String(item)`.
+
+- **`withItemIdProvider`** — `(provider: (item: ITEM) => string \| number): this`
+  Produces a unique ID for each item, used for accessibility and selection comparison. Defaults to `String(item)`.
+
+- **`withStyle`** — `(style: Observable<ComboBoxStyle>): this`
+  Applies one of the combobox style variants. Defaults to `ComboBoxStyle.TONAL`.
+
+- **`withListWidth`** — `(width: Observable<string>): this`
+  Sets the width of the dropdown list. Accepted values: `'match-input'` (matches input width), `'auto'` (content-sized with min-width of input), or any CSS width string.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>): this`
+  Controls the interactive state. When `false` the input is disabled with reduced opacity.
+
+- **`withError`** — `(error: Observable<string>): this`
+  Sets the validation error message shown below the input. An empty string clears the error.
+
+- **`withClass`** — `(className: Observable<string>): this`
+  Appends additional CSS class names to the root container element.
+
+- **`withVisible`** — `(visible: Observable<boolean>): this`
+  Controls visibility of the combobox container.
+
+- **`asGlass`** — `(isGlass?: boolean): this`
+  Enables the glass-effect variant with frosted background and blur. Defaults to `true`.
+
+- **`build`** — `(): HTMLElement`
+  Constructs and returns the root element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+---
+
+## ComboBoxStyle Enum
+
+| Value | Description |
+|-------|-------------|
+| `ComboBoxStyle.TONAL` | Filled background with a bottom active indicator. The default style. |
+| `ComboBoxStyle.OUTLINED` | Transparent background with an outline border. |
+
+---
+
+## Style Variants
+
+The `Styles` story renders both `ComboBoxStyle` variants — tonal and outlined — side by side so you can compare their appearance at a glance.
+
+<Canvas of={Stories.Styles} />
+
+---
+
+## Placeholder
+
+The `Placeholder` story demonstrates the `withPlaceholder` method, showing custom hint text inside the input before the user makes a selection.
+
+<Canvas of={Stories.Placeholder} />
+
+---
+
+## Initial Value
+
+The `InitialValue` story shows how to pre-select an item using `withValue` with a `BehaviorSubject` that already holds a value at build time. The combobox renders with "Cherry" selected.
+
+<Canvas of={Stories.InitialValue} />
+
+---
+
+## States
+
+The `States` story demonstrates the disabled and error states side by side. The disabled combobox has reduced opacity and no pointer events. The error combobox shows a validation message with a red outline.
+
+<Canvas of={Stories.States} />
+
+---
+
+## Programmatic Control
+
+The `ProgrammaticControl` story shows how to drive the combobox value externally. External buttons push new values into the `Subject` passed to `withValue`, and a "Clear" button resets the selection to `null` — no rebuild required.
+
+<Canvas of={Stories.ProgrammaticControl} />
+
+---
+
+## Complex Objects
+
+The `ComplexObjects` story demonstrates the combobox with a custom item type (`User`) using `withItemCaptionProvider` to render `"Alice Smith (Admin)"` and `withItemIdProvider` to compare by numeric ID instead of string identity.
+
+<Canvas of={Stories.ComplexObjects} />
+
+---
+
+## Glass Effect
+
+The `Glass` story renders the combobox with `asGlass()` applied on top of a gradient background, demonstrating the frosted-glass appearance on both the input and the dropdown popup.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Interactive Example
+
+The `Interactive` story demonstrates reactive state: selecting an item from the combobox updates a `BehaviorSubject`, which in turn refreshes a status label below showing the current selection in real time.
+
+<Canvas of={Stories.Interactive} />
+
+---
+
+## Styling Notes
+
+- **Input height** is 48px (`h-[48px]`) for consistency across variants.
+- **Dropdown popup** is powered by `PopoverBuilder` with a `ListBoxBuilder` (BORDERLESS style) as its content. The popup has a max-width of 300px.
+- **Filtering** activates only when the user starts typing; the initial dropdown shows all items.
+- **Selected item** is highlighted with bold text and `bg-on-secondary-container/20`.
+- **Focused item** (keyboard navigation) is highlighted with `bg-on-surface/12` (not applied when the item is also selected).
+- **"No results"** message appears when the filter produces no matches; the `<ul role="listbox">` remains in the DOM for accessibility.
+- **Error state** applies a red outline (`outline-error`) around the input container.
+- **Disabled state** applies `opacity-38` and `cursor-not-allowed`.
+- **Keyboard navigation**: Arrow keys open and navigate the dropdown; Enter selects; Escape closes. Space falls through to allow typing multi-word search terms.
+- **Accessibility**: The input carries `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`, `aria-controls`, and `aria-activedescendant` for full ARIA combobox pattern compliance.
+- **Glass effect** applies `glass-effect` to the input, the popover, and the listbox items with translucent colours and backdrop blur.

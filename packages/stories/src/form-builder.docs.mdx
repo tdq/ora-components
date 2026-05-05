@@ -1,0 +1,199 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as FormStories from './form-builder.stories';
+import * as Examples from './form-examples.stories';
+
+<Meta of={FormStories} />
+
+# Form
+
+The `FormBuilder` provides a structured, reactive API for constructing data-entry forms with labelled fields, validation, and action toolbars. It combines a fields grid, an optional toolbar, and header (caption + description) into a cohesive layout — all driven by RxJS observables.
+
+Forms are ideal for accounting, invoicing, and financial data entry flows where structured input with real-time validation is required.
+
+---
+
+## Usage
+
+```typescript
+import { FormBuilder, TextFieldStyle } from '@tdq/ora-components';
+import { of, BehaviorSubject, combineLatest } from 'rxjs';
+import { map } from 'rxjs/operators';
+
+const firstName$ = new BehaviorSubject('');
+const lastName$ = new BehaviorSubject('');
+
+const isFormValid$ = combineLatest([firstName$, lastName$]).pipe(
+    map(([first, last]) => first.trim() !== '' && last.trim() !== '')
+);
+
+const form = new FormBuilder()
+    .withCaption(of('Invoice Recipient'))
+    .withDescription(of('Enter the recipient details for this invoice.'));
+
+const fields = form.withFields(2);
+fields.addTextField(1, 1).withLabel(of('First Name')).withValue(firstName$);
+fields.addTextField(2, 1).withLabel(of('Last Name')).withValue(lastName$);
+
+const toolbar = form.withToolbar();
+toolbar.withPrimaryButton()
+    .withCaption(of('Save Recipient'))
+    .withEnabled(isFormValid$);
+
+const element = form.build();
+document.body.appendChild(element);
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+### FormBuilder
+
+- **`withCaption`** — `(caption: Observable<string>) => this`
+  Sets the form heading label rendered above the fields. Pass an observable that emits the caption text.
+
+- **`withDescription`** — `(description: Observable<string>) => this`
+  Sets a description line rendered below the caption. Useful for instructions or context.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>) => this`
+  Controls the enabled state of all child fields and toolbar buttons. When `false`, inputs are disabled.
+
+- **`withError`** — `(error: Observable<string>) => this`
+  Sets a global error message displayed above the toolbar. The message is visible only when the observable emits a non-empty string.
+
+- **`asGlass`** — `(isGlass?: boolean) => this`
+  Enables the glass-effect variant on fields and toolbar. The form container itself is unaffected. Defaults to `true`.
+
+- **`withFields`** — `(columnsAmount?: number) => FieldsBuilder`
+  Creates and returns a `FieldsBuilder` for adding input fields. The optional parameter sets the grid column count (default `1`).
+
+- **`withToolbar`** — `() => ToolbarBuilder`
+  Creates and returns a `ToolbarBuilder` for adding action buttons at the bottom of the form.
+
+- **`build`** — `() => HTMLElement`
+  Constructs and returns the form element with all configured fields, toolbar, and header. Call once per builder.
+
+### FieldsBuilder
+
+Returned by `withFields()`. Use it to add individual field components to a CSS grid layout.
+
+- **`addTextField`** — `(column?: number, colspan?: number) => TextFieldBuilder`
+  Adds a text input field.
+
+- **`addPasswordField`** — `(column?: number, colspan?: number) => TextFieldBuilder`
+  Adds a password input field (masked characters).
+
+- **`addEmailField`** — `(column?: number, colspan?: number) => TextFieldBuilder`
+  Adds an email input field with built-in email validation.
+
+- **`addNumberField`** — `(column?: number, colspan?: number) => NumberFieldBuilder`
+  Adds a numeric input field.
+
+- **`addMoneyField`** — `(column?: number, colspan?: number) => MoneyFieldBuilder`
+  Adds a currency/money input field.
+
+- **`addComboBoxField`** — `(column?: number, colspan?: number) => ComboBoxBuilder`
+  Adds a dropdown / combo-box selector field.
+
+- **`addDatePickerField`** — `(column?: number, colspan?: number) => DatePickerBuilder`
+  Adds a date picker field.
+
+- **`addCheckBox`** — `(column?: number, colspan?: number) => CheckboxBuilder`
+  Adds a checkbox field.
+
+- **`addHeading`** — `(column?: number, colspan?: number) => LabelBuilder`
+  Adds a section heading label within the field grid. Useful for grouping related fields.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>) => this`
+  Propagates enabled state to all child fields. Called automatically by the parent `FormBuilder.build()`.
+
+- **`asGlass`** — `(isGlass?: boolean) => this`
+  Propagates glass effect to all child fields. Called automatically when the parent form uses `asGlass()`.
+
+The `column` parameter (1-indexed) determines the grid column the field starts in. The `colspan` parameter sets how many grid columns the field spans. Both are optional — when omitted, fields flow naturally in the grid.
+
+---
+
+## Type Definitions
+
+### TextFieldStyle
+
+```typescript
+enum TextFieldStyle {
+    TONAL = 'tonal',
+    OUTLINED = 'outlined'
+}
+```
+
+---
+
+## Registration Form
+
+The `RegistrationForm` story demonstrates a two-column user registration form with text fields, email, password, and a toolbar with Cancel, Reset, and Submit buttons. Toggle controls allow enabling/disabling the form and toggling a global error message.
+
+<Canvas of={FormStories.RegistrationForm} />
+
+---
+
+## Glass Form
+
+The `GlassForm` story shows a form with the glass-effect modifier applied on top of a gradient background. It includes an email field, password field, combo-box, checkbox, and a two-button toolbar.
+
+<Canvas of={FormStories.GlassForm} />
+
+---
+
+## Form Examples
+
+The following stories demonstrate realistic financial and business form scenarios built with `FormBuilder`. Each example includes field-level validation, reactive state management, and toolbar actions.
+
+### Person Information Form
+
+A single-column form with first name, last name, email, and optional phone fields. Validation errors update in real time, and the Submit button is enabled only when all required fields are valid.
+
+<Canvas of={Examples.PersonInformationForm} />
+
+### Address Form
+
+A two-column address form with street, city, state/province, ZIP code, and country fields. Uses outlined style fields with validation and a primary "Save Address" action.
+
+<Canvas of={Examples.AddressForm} />
+
+### Combined Registration Form
+
+A comprehensive two-column form combining personal information and address sections. Uses `addHeading` to create section dividers. The submit button is driven by combined validity from all fields.
+
+<Canvas of={Examples.CombinedForm} />
+
+### Glass Login Form
+
+A glass-effect login form with email and password fields. Demonstrates asynchronous loading state: the primary button caption changes to "Signing in..." and becomes disabled during the simulated login request.
+
+<Canvas of={Examples.GlassLoginForm} />
+
+### Glass Signup Form
+
+A two-column glass-effect registration form with full name, email, password, and confirm password fields. Includes real-time password-match validation and a secondary "Sign In Instead" text button.
+
+<Canvas of={Examples.GlassSignupForm} />
+
+### Glass Registration Dialog
+
+A glass-effect registration form inside a dialog overlay. Clicking "Open Registration Dialog" launches a modal with input validation and primary/secondary toolbar actions.
+
+<Canvas of={Examples.GlassRegistrationDialog} />
+
+---
+
+## Styling Notes
+
+- **Form layout** is built on top of `LayoutBuilder` using a vertical layout with `EXTRA_LARGE` gap between the header, fields grid, error message, and toolbar.
+- **Field grid** uses CSS Grid with dynamic column count set by `withFields(columnsAmount)`.
+- **Error state** for individual fields renders a 1px outline border outside the input wrapper (`outline-1 outline-offset-1 outline-error`).
+- **Global error** is rendered as a small label between the fields and toolbar. It is hidden when the error observable emits an empty string.
+- **Caption** is rendered as a large label. **Description** is rendered with smaller typography below the caption. Both are hidden when their observable emits an empty string.
+- **Glass effect** applies only to the fields and toolbar, **not** to the form container itself. Fields receive translucent backgrounds with backdrop blur.
+- **Toolbar** is always rendered at the bottom of the form. The enabled state of the form propagates to all toolbar buttons.
+- Fields in the disabled state apply reduced opacity and prevent user interaction.

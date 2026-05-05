@@ -1,0 +1,175 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './date-picker.stories';
+
+<Meta of={Stories} />
+
+# DatePicker
+
+Date pickers let users select a single date through either direct text input (masked to a configurable format) or a visual calendar popup. The `DatePickerBuilder` provides a reactive API for constructing date inputs with minimum/maximum date constraints, custom date formats, validation errors, and glass-effect styling — all driven by RxJS observables for live-updating bindings.
+
+The date picker follows Material Design 3 conventions with a calendar grid popup, month navigation, and input masking that enforces the configured date format.
+
+---
+
+## Usage
+
+```typescript
+import { DatePickerBuilder, DayOfWeek } from '@tdq/ora-components';
+import { BehaviorSubject, of } from 'rxjs';
+
+const value$ = new BehaviorSubject<Date | null>(null);
+
+const picker = new DatePickerBuilder()
+  .withCaption(of('Invoice Date'))
+  .withValue(value$)
+  .withFormat('DD/MM/YYYY')
+  .withFirstDayOfTheWeek(DayOfWeek.MONDAY)
+  .build();
+
+document.body.appendChild(picker);
+
+// Read the selected date
+value$.subscribe(date => {
+  console.log('Selected:', date?.toDateString());
+});
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into the reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+- **`withValue`** — `(value: Subject<Date \| null>): this`
+  Binds a two-way `Subject` for the selected date. The component writes user input or calendar selections into the subject and reads incoming values to update the field.
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Sets the label text displayed above the input. Updates reactively when the observable emits.
+
+- **`withMinDate`** — `(min: Observable<Date>): this`
+  Sets the minimum selectable date. Dates before this are disabled in the calendar.
+
+- **`withMaxDate`** — `(max: Observable<Date>): this`
+  Sets the maximum selectable date. Dates after this are disabled in the calendar.
+
+- **`withFormat`** — `(format: string): this`
+  Sets the date format string. Uses `D`, `M`, `Y` placeholders separated by delimiters. Default is `'DD-MM-YYYY'`.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>): this`
+  Controls the interactive state. When `false` the input and calendar button are disabled with reduced opacity.
+
+- **`withError`** — `(error: Observable<string>): this`
+  Sets the validation error message shown below the input. An empty string clears the error state.
+
+- **`withStyle`** — `(style: Observable<DatePickerStyle>): this`
+  Applies a custom `DatePickerStyle` object to override theme colours, border radius, and font family.
+
+- **`withClass`** — `(className: Observable<string>): this`
+  Appends additional CSS class names to the root container element.
+
+- **`withFirstDayOfTheWeek`** — `(day: DayOfWeek): this`
+  Sets which day appears first in the calendar grid. Defaults to `DayOfWeek.MONDAY`.
+
+- **`asGlass`** — `(isGlass?: boolean): this`
+  Enables the glass-effect variant with frosted background and blur. Defaults to `true`.
+
+- **`build`** — `(): HTMLElement`
+  Constructs and returns the root element. Subscribe to observables and wire up the DOM. Call once per builder. The returned element also exposes `showPopover()`, `hidePopover()`, and `toggle()` methods.
+
+---
+
+## DayOfWeek Enum
+
+| Value | Description |
+|-------|-------------|
+| `DayOfWeek.SUNDAY` | `0` — Week starts on Sunday. |
+| `DayOfWeek.MONDAY` | `1` — Week starts on Monday. Default. |
+| `DayOfWeek.TUESDAY` | `2` — Week starts on Tuesday. |
+| `DayOfWeek.WEDNESDAY` | `3` — Week starts on Wednesday. |
+| `DayOfWeek.THURSDAY` | `4` — Week starts on Thursday. |
+| `DayOfWeek.FRIDAY` | `5` — Week starts on Friday. |
+| `DayOfWeek.SATURDAY` | `6` — Week starts on Saturday. |
+
+---
+
+## DatePickerStyle Interface
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `primaryColor` | `string` | CSS colour value for the primary accent colour. |
+| `surfaceColor` | `string` | CSS colour value for the surface background. |
+| `onSurfaceColor` | `string` | CSS colour value for text on surface. |
+| `borderRadius` | `string` | CSS border-radius value for the small shape corner. |
+| `fontFamily` | `string` | CSS font-family applied to the container. |
+
+---
+
+## Default
+
+The `Default` story shows the basic date picker with a caption and the default `DD-MM-YYYY` format, no initial value, and no constraints.
+
+<Canvas of={Stories.Default} />
+
+---
+
+## Initial Value
+
+The `InitialValue` story shows how to pre-populate the date picker with a specific date (e.g. 25 December 2023) using `withValue` with a `BehaviorSubject`.
+
+<Canvas of={Stories.InitialValue} />
+
+---
+
+## Range Constraints
+
+The `RangeConstraints` story demonstrates `withMinDate` and `withMaxDate` to restrict selection to the next 30 days. Dates outside this range are disabled in the calendar popup.
+
+<Canvas of={Stories.RangeConstraints} />
+
+---
+
+## Custom Format
+
+The `CustomFormat` story shows the date picker with a non-default format string `DD/MM/YYYY` (slash delimiters instead of dashes). The input mask enforces the chosen format at the character level.
+
+<Canvas of={Stories.CustomFormat} />
+
+---
+
+## States
+
+The `States` story demonstrates the disabled and error states side by side. The disabled picker has reduced opacity and no pointer events. The error picker shows a validation message with `border-error` styling on the input wrapper.
+
+<Canvas of={Stories.States} />
+
+---
+
+## Glass Effect
+
+The `Glass` story renders the date picker with `asGlass()` applied on top of a gradient background, demonstrating the frosted-glass appearance on both the input and the calendar popup.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Interactive Example
+
+The `Interactive` story demonstrates two-way reactive state: selecting a date updates a `BehaviorSubject`, which in turn refreshes a status label below showing the formatted date in real time.
+
+<Canvas of={Stories.Interactive} />
+
+---
+
+## Styling Notes
+
+- **Input height** is 48px (`h-[48px]`) for consistency with other form fields.
+- **Calendar popup** is powered by `PopoverBuilder` and rendered at a fixed width of 320px.
+- **Input masking** prevents typing characters that do not match the configured format. Separators (e.g. `/`, `-`) are auto-inserted when digits are typed at separator positions.
+- **Value parsing** on manual input uses `parseDate` and only emits via `withValue` when the result is a valid date or empty.
+- **Month navigation** uses `Icons.CHEVRON_LEFT` and `Icons.CHEVRON_RIGHT` in 20×20px wrappers.
+- **Calendar icon** uses `Icons.CALENDAR` in a 24×24px wrapper and toggles the popup on click.
+- **Disabled state** applies `opacity-38` and `pointer-events-none` to the container.
+- **Error state** applies `border-error` and `focus-within:border-error` to the input wrapper.
+- **Glass effect** overrides the input background (`bg-surface-variant`, `border-b`, `rounded-t-small`) with `glass-effect`, `rounded-small`, and translucent text colours.
+- **Keyboard navigation**: `Alt + ArrowDown` opens the popup; Arrow keys navigate the calendar grid; Enter selects; Escape closes.
+- **Built element** exposes `showPopover()`, `hidePopover()`, and `toggle()` for external popup control.

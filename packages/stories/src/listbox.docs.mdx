@@ -1,0 +1,145 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './listbox.stories';
+
+<Meta of={Stories} />
+
+# ListBox
+
+List boxes display a scrollable list of items from which the user can select a single option. The `ListBoxBuilder<ITEM>` provides a generic reactive API for constructing list boxes with custom item rendering, keyboard navigation, external focus control, and glass-effect styling — all driven by RxJS observables for live-updating bindings.
+
+List boxes follow Material Design 3 conventions and support three built-in styles: tonal, outlined, and borderless.
+
+---
+
+## Usage
+
+```typescript
+import { ListBoxBuilder, ListBoxStyle } from '@tdq/ora-components';
+import { BehaviorSubject, of } from 'rxjs';
+
+const value$ = new BehaviorSubject<string | null>(null);
+
+const listbox = new ListBoxBuilder<string>()
+  .withItems(of(['Q1 Report', 'Q2 Report', 'Annual Summary']))
+  .withCaption(of('Select Report'))
+  .withValue(value$)
+  .withStyle(of(ListBoxStyle.TONAL))
+  .withHeight(of(200))
+  .build();
+
+document.body.appendChild(listbox);
+
+value$.subscribe(selected => {
+  console.log('Selected:', selected);
+});
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into the reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+- **`withItems`** — `(items: Observable<ITEM[]>): this`
+  Sets the list of items displayed in the list box. Items are re-rendered reactively when the observable emits.
+
+- **`withValue`** — `(value: Subject<ITEM \| null>): this`
+  Binds a two-way `Subject` for the selected item. The component writes the selection into the subject on user click or Enter key, and reads incoming values to update the highlight.
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Sets the label text displayed above the list. Updates reactively when the observable emits.
+
+- **`withItemCaptionProvider`** — `(provider: (item: ITEM) => string): this`
+  Converts an item to its display string in the list. Defaults to `String(item)`.
+
+- **`withItemIdProvider`** — `(provider: (item: ITEM) => string \| number): this`
+  Produces a unique ID for each item, used for selection comparison. Defaults to `String(item)`.
+
+- **`withStyle`** — `(style: Observable<ListBoxStyle>): this`
+  Applies one of the three list box style variants. Defaults to `ListBoxStyle.TONAL`.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>): this`
+  Controls the interactive state. When `false` the list box is disabled with reduced opacity and no pointer events.
+
+- **`withHeight`** — `(height: Observable<number>): this`
+  Sets a fixed height (in pixels) on the list panel, enabling vertical scrolling when content overflows.
+
+- **`withError`** — `(error: Observable<string>): this`
+  Sets the validation error message shown below the list. An empty string clears the error state.
+
+- **`withClass`** — `(className: Observable<string>): this`
+  Appends additional CSS class names to the root container element.
+
+- **`withFocusedIndex`** — `(index$: Observable<number>): this`
+  Provides an external observable that drives the keyboard-focused item index. Used by `ComboBoxBuilder` to synchronise focus state between the input and the dropdown list.
+
+- **`asGlass`** — `(): this`
+  Enables the glass-effect variant with frosted background and blur on the list panel.
+
+- **`build`** — `(): HTMLElement`
+  Constructs and returns the root element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+---
+
+## ListBoxStyle Enum
+
+| Value | Description |
+|-------|-------------|
+| `ListBoxStyle.TONAL` | Panel with a border; selected items use `bg-secondary-container`. The default style. |
+| `ListBoxStyle.OUTLINED` | Panel with a border; selected items use `bg-primary-container`. |
+| `ListBoxStyle.BORDERLESS` | No panel border or rounding; selected items use `bg-secondary-container` (same as tonal). Error state re-introduces a border for visual feedback. |
+
+---
+
+## Style Variants
+
+The `Styles` story renders all three `ListBoxStyle` variants — tonal, outlined, and borderless — side by side so you can compare their appearance at a glance.
+
+<Canvas of={Stories.Styles} />
+
+---
+
+## States
+
+The `States` story demonstrates the disabled and error states side by side. The disabled list box has reduced opacity and no pointer events. The error list box shows a validation message with `border-error` styling on the panel.
+
+<Canvas of={Stories.States} />
+
+---
+
+## Complex Objects
+
+The `ComplexObjects` story demonstrates the list box with a custom item type (`User`) using `withItemCaptionProvider` to render `"Alice Smith (Admin)"` and `withItemIdProvider` to compare by numeric ID instead of string identity.
+
+<Canvas of={Stories.ComplexObjects} />
+
+---
+
+## Glass Effect
+
+The `Glass` story renders the list box with `asGlass()` applied on top of a gradient background, demonstrating the frosted-glass appearance on the list panel and items.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Interactive Example
+
+The `Interactive` story demonstrates reactive state: selecting an item from the list box updates a `BehaviorSubject`, which in turn refreshes a status label below showing the current selection in real time.
+
+<Canvas of={Stories.Interactive} />
+
+---
+
+## Styling Notes
+
+- **Panel styling** uses `rounded-large border` for tonal and outlined variants; borderless mode removes these.
+- **Selected item** is displayed with bold text and a coloured background: `bg-secondary-container` for tonal and borderless styles, `bg-primary-container` for outlined.
+- **Hover state** applies `bg-on-surface/8` to non-selected items.
+- **Focused item** (keyboard navigation) applies `bg-on-surface/12` — distinct from the selection highlight.
+- **Keyboard navigation**: ArrowUp/ArrowDown navigate (with wrapping), Home/End jump to first/last, Enter selects the focused item. All keys call `preventDefault()`.
+- **External focus control** via `withFocusedIndex` lets parent components (e.g. `ComboBoxBuilder`) drive the focused index from their own keyboard handlers.
+- **Disabled state** applies `opacity-50 pointer-events-none` to the container.
+- **Error state** applies `border-error` to the panel.
+- **Glass mode with BORDERLESS**: When `asGlass()` is used with `BORDERLESS`, the `glass-effect` class is NOT applied to the container (to avoid double-glass when a surrounding popover already provides it). Items still use glass colours (`bg-white/40` for selected, `hover:bg-black/5`).
+- **State layer**: Each item includes a state layer `<div>` for active/pressed feedback (15% opacity on `:active`).

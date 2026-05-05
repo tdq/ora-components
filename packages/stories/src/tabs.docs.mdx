@@ -1,0 +1,117 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './tabs.stories';
+
+<Meta of={Stories} />
+
+# Tabs
+
+Tabs organise content into separate views, allowing users to switch between them without navigating away. The `TabsBuilder` provides a reactive API for constructing tabbed interfaces with configurable caption, description, individual tabs, and glass-effect styling — all driven by RxJS observables.
+
+Tabs follow [Material Design 3](https://m3.material.io/components/tabs) tab semantics with a horizontal navigation bar, active indicator line, and a content area that updates reactively as the user switches tabs.
+
+---
+
+## Usage
+
+```typescript
+import { TabsBuilder } from '@tdq/ora-components';
+import { LabelBuilder } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+const tabs = new TabsBuilder()
+  .withCaption(of('Invoices'))
+  .withDescription(of('Manage your invoice tabs'));
+
+tabs.addTab()
+  .withCaption(of('Drafts'))
+  .withContent(new LabelBuilder().withCaption(of('Draft invoices will appear here')).build());
+
+tabs.addTab()
+  .withCaption(of('Pending'))
+  .withContent(new LabelBuilder().withCaption(of('Pending invoices will appear here')).build());
+
+tabs.addTab()
+  .withCaption(of('Paid'))
+  .withContent(new LabelBuilder().withCaption(of('Paid invoices will appear here')).build());
+
+const element = tabs.build();
+document.body.appendChild(element);
+```
+
+---
+
+## Builder API
+
+All builder methods on `TabsBuilder` return `this` for chaining. Pass RxJS observables into the reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+- **`withCaption`** — `(caption: Observable<string>) => this`
+  Sets the heading label displayed above the tab navigation.
+
+- **`withDescription`** — `(description: Observable<string>) => this`
+  Sets the description text displayed below the caption.
+
+- **`asGlass`** — `() => this`
+  Enables the glass-effect variant with translucent colours on the tab labels and active indicator.
+
+- **`addTab`** — `() => TabBuilder`
+  Creates and returns a new `TabBuilder` for configuring an individual tab. Chain `withCaption`, `withContent`, and `withVisible` on the returned builder.
+
+- **`withClass`** — `(className: Observable<string>) => this`
+  Appends additional CSS class names to the root container element.
+
+- **`build`** — `() => HTMLElement`
+  Constructs and returns the root element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+### TabBuilder
+
+- **`withCaption`** — `(caption: Observable<string>) => this`
+  Sets the label text displayed on the tab button.
+
+- **`withContent`** — `(content: ComponentBuilder) => this`
+  Sets the content displayed when the tab is active. Accepts any object implementing `ComponentBuilder`.
+
+- **`withVisible`** — `(visible: Observable<boolean>) => this`
+  Controls the visibility of the tab. When `false`, the tab button is hidden. If the active tab becomes hidden, focus switches to the first visible tab.
+
+---
+
+## Default
+
+The `Default` story shows a standard tabbed interface with a caption, description, and three tabs containing labelled content.
+
+<Canvas of={Stories.Default} />
+
+---
+
+## Glass Effect
+
+The `GlassEffect` story renders the tabs with the glass-effect modifier applied — translucent colours adapted for dark backgrounds.
+
+<Canvas of={Stories.GlassEffect} />
+
+---
+
+## Scrollable
+
+The `Scrollable` story demonstrates horizontally scrollable tab navigation when there are many tabs that exceed the available width.
+
+<Canvas of={Stories.Scrollable} />
+
+---
+
+## With Visibility Toggle
+
+The `WithVisibilityToggle` story shows dynamic tab visibility controlled by a `BehaviorSubject<boolean>`. A button toggles a tab's visibility on and off — demonstrating `withVisible` on a `TabBuilder`.
+
+<Canvas of={Stories.WithVisibilityToggle} />
+
+---
+
+## Styling Notes
+
+- **Caption and description**: Displayed above the tab navigation on the left side. Caption uses `text-headline-small` with bold weight; description uses `text-body-medium` in `text-on-surface-variant`.
+- **Active tab indicator**: Uses a `border-b-2` bottom border in `text-primary` colour for the active tab.
+- **Horizontal scrolling**: The tab navigation bar (`overflow-x-auto`) allows users to scroll horizontally when tabs overflow the container width. Scrollbar is hidden with `no-scrollbar`.
+- **Glass effect**: Overrides tab colours for translucent appearance — active tab uses `text-gray-900` / `text-white/80`, inactive uses `text-gray-600` / `text-white/60`. Caption and description colours also adapt.
+- **Tab visibility**: The `withVisible` observable controls `display: none/block` on the tab button. If the currently active tab is hidden, the component automatically switches to the first visible tab (index `0`).
+- **Content area**: Renders inside a `p-4` padded container beneath the tab navigation. Content is replaced reactively when the active tab changes.

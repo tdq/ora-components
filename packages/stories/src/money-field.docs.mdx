@@ -1,0 +1,160 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './money-field.stories';
+
+<Meta of={Stories} />
+
+# MoneyField
+
+Money fields are specialised input components for handling monetary values. The `MoneyFieldBuilder` provides a reactive API for constructing money inputs with configurable labels, currencies, precision, formatting, constraints, and validation — all driven by RxJS observables for live-updating bindings.
+
+Money fields use the `Money` interface (`{ amount: number, currencyId: string }`) for their value and follow [Material Design 3](https://m3.material.io/components/text-fields) input semantics across two field styles: tonal and outlined.
+
+---
+
+## Usage
+
+```typescript
+import { MoneyFieldBuilder, MoneyFieldStyle } from '@tdq/ora-components';
+import { BehaviorSubject, of } from 'rxjs';
+
+const value$ = new BehaviorSubject({ amount: 1250.50, currencyId: 'USD' });
+
+const field = new MoneyFieldBuilder()
+  .withLabel(of('Transaction Amount'))
+  .withValue(value$)
+  .withPrecision(of(2))
+  .withCurrencies(['USD', 'EUR', 'GBP'])
+  .withStyle(of(MoneyFieldStyle.OUTLINED))
+  .build();
+
+document.body.appendChild(field);
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into the reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+- **`withValue`** — `(value: Subject<Money \| null>) => this`
+  Sets the reactive value stream. Accepts a `Subject<Money \| null>` for two-way binding. `null` represents an empty field.
+
+- **`withPlaceholder`** — `(placeholder: Observable<string>) => this`
+  Sets the placeholder text displayed inside the input when no value is entered.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>) => this`
+  Controls the interactive state. When `false` the input is disabled with reduced opacity and no pointer events.
+
+- **`withStyle`** — `(style: Observable<FieldStyle>) => this`
+  Applies one of the two Material Design 3 field style variants (`TONAL` or `OUTLINED`). Defaults to `FieldStyle.TONAL` if not set.
+
+- **`withError`** — `(error: Observable<string>) => this`
+  Sets the validation error message. When the observable emits a non-empty string, the field displays an error state. An empty string clears the error.
+
+- **`withLabel`** — `(label: Observable<string>) => this`
+  Sets the label displayed above the input field.
+
+- **`withClass`** — `(className: Observable<string>) => this`
+  Appends additional CSS class names to the root container element. Useful for theme overrides or spacing utilities.
+
+- **`withFormat`** — `(format: Observable<string>) => this`
+  Sets the number format. Use `"integer"` to disallow decimal points.
+
+- **`withPrecision`** — `(precision: Observable<number>) => this`
+  Sets the decimal precision for display formatting. For example, `2` formats `123.4` as `123.40`.
+
+- **`withLocale`** — `(locale: Observable<string>) => this`
+  Sets the locale for number formatting via `Intl.NumberFormat`.
+
+- **`withMinValue`** — `(min: Observable<number>) => this`
+  Sets the minimum allowed amount. Values below this are clamped on blur.
+
+- **`withMaxValue`** — `(max: Observable<number>) => this`
+  Sets the maximum allowed amount. Values above this are clamped on blur.
+
+- **`withStep`** — `(step: Observable<number>) => this`
+  Sets the step increment for keyboard arrow navigation. Defaults to `1`.
+
+- **`withCurrencies`** — `(currencies: string[]) => this`
+  Sets the list of available currency IDs (e.g. `['USD', 'EUR']`). If a single currency is provided, it displays as a static suffix. If multiple, a dropdown selector is rendered.
+
+- **`asGlass`** — `() => this`
+  Enables the glass-effect variant with frosted background and blur. Overrides the default style colours with translucent surfaces.
+
+- **`asInlineError`** — `() => this`
+  Displays validation errors as a field style change with an error icon in the suffix area, rather than support text below the field.
+
+- **`build`** — `() => HTMLElement`
+  Constructs and returns the root element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+---
+
+## FieldStyle Enum
+
+Re-exported as `MoneyFieldStyle` for convenience.
+
+| Value | Description |
+|-------|-------------|
+| `MoneyFieldStyle.TONAL` | Filled background style with a bottom active indicator. Default variant. |
+| `MoneyFieldStyle.OUTLINED` | Transparent background with an outline border. |
+
+---
+
+## Default
+
+The `Default` story shows a basic money field with a label, multi-currency selector, and external controls to set or clear the value programmatically.
+
+<Canvas of={Stories.Default} />
+
+---
+
+## Style Variants
+
+The `Styles` story renders both `MoneyFieldStyle` variants side by side so you can compare their appearance at a glance.
+
+<Canvas of={Stories.Styles} />
+
+---
+
+## Currencies
+
+The `Currencies` story demonstrates the two currency display modes — a static symbol suffix for single currency, and a dropdown selector for multiple currencies.
+
+<Canvas of={Stories.Currencies} />
+
+---
+
+## Glass Effect
+
+The `Glass` story renders both style variants with the glass-effect modifier applied on top of a gradient background.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Validation Errors
+
+The `Errors` story shows both standard error display (support text below the field) and inline error mode (icon with popover tooltip) for monetary validation scenarios.
+
+<Canvas of={Stories.Errors} />
+
+---
+
+## Constraints
+
+The `Constraints` story demonstrates min/max amount clamping, step-based navigation, and integer-only format configuration for money fields.
+
+<Canvas of={Stories.Constraints} />
+
+---
+
+## Styling Notes
+
+- **Amount alignment**: Values are right-aligned while placeholder text is left-aligned for readability.
+- **Currency selector**: Rendered as a static suffix for single currency, or a borderless dropdown with symbol display and a full-width list for multiple currencies. The dropdown list is rendered using `ListBoxBuilder` (BORDERLESS style) inside a `PopoverBuilder`.
+- **Disabled state**: Applies `opacity-38` and `cursor-not-allowed` — observable-driven via `withEnabled`.
+- **Error state**: When `withError` emits a non-empty string, the field border and active indicator switch to error colour. In `asInlineError` mode, an icon with popover replaces the support text.
+- **Glass effect**: Overrides the background and border of each style variant with translucent colours and backdrop blur.
+- **Height**: Fixed at `48px` (`h-[48px]`) for consistent alignment in forms.
+- **Keyboard navigation**: ArrowUp/Down increment/decrement by step, PageUp/Down by step × 10, Home/End jump to min/max.
+- **Formatting**: Uses `Intl.NumberFormat` via the `formatNumber` utility with `CurrencyRegistry` for currency symbols.

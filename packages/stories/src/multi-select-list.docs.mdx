@@ -1,0 +1,166 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './multi-select-list.stories';
+
+<Meta of={Stories} />
+
+# MultiSelectList
+
+Multi-select lists display a scrollable list of checkboxes, letting users select multiple items simultaneously. The `MultiSelectListBuilder<ITEM>` provides a generic reactive API for constructing multi-select lists with a "Select all" toggle, custom item rendering, selection state managed via `BehaviorSubject`, and glass-effect styling — all driven by RxJS observables for live-updating bindings.
+
+Multi-select lists follow Material Design 3 conventions and support three built-in styles: tonal, outlined, and borderless.
+
+---
+
+## Usage
+
+```typescript
+import { MultiSelectListBuilder, MultiSelectListStyle } from '@tdq/ora-components';
+import { BehaviorSubject, of } from 'rxjs';
+
+interface AccountType { id: number; name: string; }
+
+const accountTypes: AccountType[] = [
+  { id: 1, name: 'Assets' },
+  { id: 2, name: 'Liabilities' },
+  { id: 3, name: 'Equity' },
+  { id: 4, name: 'Revenue' },
+];
+
+const selected$ = new BehaviorSubject<AccountType[]>([accountTypes[0], accountTypes[3]]);
+
+const list = new MultiSelectListBuilder<AccountType>()
+  .withCaption(of('Account Types'))
+  .withItems(of(accountTypes))
+  .withValue(selected$)
+  .withItemIdProvider(t => t.id)
+  .withItemCaptionProvider(t => t.name)
+  .withStyle(of(MultiSelectListStyle.TONAL))
+  .withHeight(of(300))
+  .build();
+
+document.body.appendChild(list);
+
+selected$.subscribe(selected => {
+  console.log('Selected types:', selected.map(t => t.name));
+});
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into the reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+- **`withItems`** — `(items: Observable<ITEM[]>): this`
+  Sets the source list of items to display. Items are re-rendered reactively when the observable emits.
+
+- **`withValue`** — `(value: BehaviorSubject<ITEM[]>): this`
+  Binds a two-way `BehaviorSubject<ITEM[]>` for the selected items. The component reads the initial selection on build, writes updated arrays on every checkbox toggle, and updates checked states from external emissions.
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Sets the label text displayed above the list. Updates reactively when the observable emits.
+
+- **`withItemCaptionProvider`** — `(provider: (item: ITEM) => string): this`
+  Converts an item to its display label in the list. Defaults to `String(item)`.
+
+- **`withItemIdProvider`** — `(provider: (item: ITEM) => string \| number): this`
+  Produces a unique ID for each item, used for selection comparison. Defaults to `String(item)`.
+
+- **`withStyle`** — `(style: Observable<MultiSelectListStyle>): this`
+  Applies one of the three multi-select list style variants. Defaults to `MultiSelectListStyle.TONAL`.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>): this`
+  Controls the interactive state. When `false` the list is disabled with reduced opacity and no pointer events.
+
+- **`withHeight`** — `(height: Observable<number>): this`
+  Sets a fixed height (in pixels) on the list panel, enabling vertical scrolling when content overflows.
+
+- **`withError`** — `(error: Observable<string>): this`
+  Sets the validation error message shown below the list. An empty string clears the error state.
+
+- **`withClass`** — `(className: Observable<string>): this`
+  Appends additional CSS class names to the root container element.
+
+- **`withSelectAll`** — `(show: boolean): this`
+  Controls whether the "Select all" header row is rendered. Defaults to `true`. Pass `false` to hide the header.
+
+- **`asGlass`** — `(): this`
+  Enables the glass-effect variant with frosted background and blur on the list panel.
+
+- **`build`** — `(): HTMLElement`
+  Constructs and returns the root element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+---
+
+## MultiSelectListStyle Enum
+
+| Value | Description |
+|-------|-------------|
+| `MultiSelectListStyle.TONAL` | Panel with a border; selected items use `bg-secondary-container`. The default style. |
+| `MultiSelectListStyle.OUTLINED` | Panel with a border; selected items use `bg-primary-container`. |
+| `MultiSelectListStyle.BORDERLESS` | No panel border or rounding; selected items use `bg-secondary-container`. Error state re-introduces a border for visual feedback. |
+
+---
+
+## Style Variants
+
+The `Styles` story renders all three `MultiSelectListStyle` variants — tonal, outlined, and borderless — side by side so you can compare their appearance at a glance.
+
+<Canvas of={Stories.Styles} />
+
+---
+
+## States
+
+The `States` story demonstrates the disabled and error states side by side. The disabled list has reduced opacity and no pointer events. The error list shows a validation message with `border-error` styling on the panel.
+
+<Canvas of={Stories.States} />
+
+---
+
+## Interactive Example
+
+The `Interactive` story demonstrates two-way reactive state: toggling checkboxes updates a `BehaviorSubject`, which in turn refreshes a status label below showing the count and names of selected items in real time.
+
+<Canvas of={Stories.Interactive} />
+
+---
+
+## Complex Objects
+
+The `ComplexObjects` story demonstrates the multi-select list with a custom item type (`User`) using `withItemCaptionProvider` to render `"Alice Smith (Admin)"` and `withItemIdProvider` to compare by numeric ID. A "Select all" header is present for bulk toggling.
+
+<Canvas of={Stories.ComplexObjects} />
+
+---
+
+## Glass Effect
+
+The `Glass` story renders the multi-select list with `asGlass()` applied on top of a gradient background, demonstrating the frosted-glass appearance on the panel and item checkboxes.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Select All Toggle
+
+The `SelectAllToggle` story compares the default behaviour (header visible, with a tri-state checkbox that can be checked, unchecked, or indeterminate) against `withSelectAll(false)` which removes the header row entirely. Item checkboxes still function independently in both modes.
+
+<Canvas of={Stories.SelectAllToggle} />
+
+---
+
+## Styling Notes
+
+- **Panel styling** uses `rounded-large border` for tonal and outlined variants; borderless mode removes these.
+- **Select-all header** is rendered by default with a tri-state checkbox. The header is removed entirely with `withSelectAll(false)`.
+- **Select-all states**: Unchecked (none selected), checked (all selected), indeterminate (some selected). Indeterminate is set via the DOM property `input.indeterminate = true`.
+- **Selected item** rows use `bg-secondary-container` for tonal and borderless styles, `bg-primary-container` for outlined — matching ListBox behaviour.
+- **Checkbox** is an 18×18px square with `rounded-small` corners using the native `<input type="checkbox">` hidden via `sr-only` with a styled peer element for the visible box.
+- **Checkmark icon** (`Icons.CHECKMARK`) scales in on check using `scale-0` / `peer-checked:scale-100` transitions.
+- **Focus ring** uses `peer-focus-visible:ring-2` with `ring-primary` and `ring-offset-2` for accessible keyboard navigation.
+- **State layer** provides hover (8% opacity) and active/pressed (12% opacity) feedback using CSS custom properties.
+- **Disabled state** applies `opacity-50 pointer-events-none` to the container; individual checkbox inputs also receive `disabled` styling.
+- **Error state** applies `border-error` to the panel and shows an error message below.
+- **Glass effect** applies `glass-effect` to the panel container and uses translucent colours on item checkboxes.
+- **Reactive selection patch**: When only selection changes (not items or style), the component patches checked states and backgrounds without rebuilding the entire DOM — optimised via a `skip(1)` subscription on the value subject.

@@ -1,0 +1,125 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './button.stories';
+
+<Meta of={Stories} />
+
+# Button
+
+Buttons are interactive elements that trigger actions throughout the user interface. The `ButtonBuilder` provides a reactive API for constructing buttons with configurable captions, icons, styles, enabled states, and click handlers — all driven by RxJS observables for live-updating bindings.
+
+Buttons follow [Material Design 3](https://m3.material.io/components/buttons) semantics across five built-in styles: filled, elevated, tonal, outlined, and text.
+
+---
+
+## Usage
+
+```typescript
+import { ButtonBuilder, ButtonStyle, Icons } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+const button = new ButtonBuilder()
+  .withCaption(of('Save Invoice'))
+  .withStyle(of(ButtonStyle.FILLED))
+  .withIcon(Icons.CHECKMARK)
+  .withClick(() => handleSubmit())
+  .build();
+
+document.body.appendChild(button);
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into the reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Sets the button label text. When the observable emits an empty string, the button collapses to an icon-only square.
+
+- **`withIcon`** — `(icon: Observable<string> \| string): this`
+  Sets an icon rendered before the caption. Accepts an SVG string (e.g. from `Icons`) or a CSS class name. Pass a plain string (wrapped in `of()` internally) or an observable.
+
+- **`withStyle`** — `(style: Observable<ButtonStyle>): this`
+  Applies one of the five Material Design 3 button style variants. Defaults to `ButtonStyle.FILLED` if not set.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>): this`
+  Controls the interactive state. When `false` the button is disabled with reduced opacity and no pointer events.
+
+- **`withClick`** — `(click: ClickListener<void>): this`
+  Registers a click handler. The callback receives `undefined`; use a closure or external subject to carry context.
+
+- **`withClass`** — `(className: Observable<string>): this`
+  Appends additional CSS class names to the root button element. Useful for theme overrides or spacing utilities.
+
+- **`asGlass`** — `(isGlass?: boolean): this`
+  Enables the glass-effect variant with frosted background and blur. Overrides the default style colours with translucent surfaces. Defaults to `true`.
+
+- **`build`** — `(): HTMLButtonElement`
+  Constructs and returns the native `<button>` element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+### ClickListener
+
+```typescript
+type ClickListener<TYPE> = (value: TYPE) => void
+```
+
+---
+
+## ButtonStyle Enum
+
+| Value | Description |
+|-------|-------------|
+| `ButtonStyle.FILLED` | High-emphasis solid button. Use for primary actions. |
+| `ButtonStyle.ELEVATED` | Mid-emphasis button with a drop shadow. Use when you need visual separation from the background. |
+| `ButtonStyle.TONAL` | Mid-emphasis button with a secondary-container background. Good for alternative actions. |
+| `ButtonStyle.OUTLINED` | Medium-emphasis button with a border but no fill. Use for secondary or dismissive actions. |
+| `ButtonStyle.TEXT` | Low-emphasis button with no container or border. Use for tertiary actions like "Cancel" or "Learn more". |
+
+---
+
+## Style Variants
+
+The `Styles` story renders each `ButtonStyle` variant side by side so you can compare their appearance at a glance.
+
+<Canvas of={Stories.Styles} />
+
+---
+
+## Interactive Example
+
+The `Interactive` story demonstrates reactive state management: clicking the main button increments a counter that updates the caption in real time. Toggle buttons control whether it is enabled and reset the count — all driven by `BehaviorSubject` streams.
+
+<Canvas of={Stories.Interactive} />
+
+---
+
+## Dynamic Style Switching
+
+The `DynamicStyle` story shows how to switch `ButtonStyle` at runtime by feeding a new value into the style observable — no rebuild required.
+
+<Canvas of={Stories.DynamicStyle} />
+
+---
+
+## Glass Effect
+
+The `Glass` story renders all five style variants with the glass-effect modifier applied on top of a gradient background.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Icons
+
+Buttons can display an SVG icon before the caption. When only an icon is provided (no caption), the button collapses to a compact square shape. The `WithIcons` story shows both labelled and icon-only buttons across multiple styles.
+
+<Canvas of={Stories.WithIcons} />
+
+---
+
+## Styling Notes
+
+- **Caption text** has `select-none` applied to prevent accidental text selection on rapid clicks.
+- **Disabled state** applies `opacity-50` and `cursor-not-allowed` — observable-driven via `withEnabled`.
+- **Icon-only mode** is automatic: when the caption observable emits an empty string or is not set, the button switches to a square aspect ratio with padding adjustments.
+- **Glass effect** overrides the background and border of each style variant with translucent colours and backdrop blur while preserving the focus ring for accessibility.

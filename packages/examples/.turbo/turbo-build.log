@@ -1,15 +1,15 @@
 
-[1G[0K\[1G[0K
+
 > aura-examples@0.1.0 build
 > vite build
 
-[1G[0K|[1G[0K[36mvite v8.0.10 [32mbuilding client environment for production...[36m[39m
+[1G[0K[36mvite v8.0.10 [32mbuilding client environment for production...[36m[39m
 
 node_modules/ora-components/dist/ora-components.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
-[2Ktransforming (63) [2m../ora-components/src/components/chart/axis-renderer.ts[0m[2K[32m✓[39m 355 modules transformed.
+[2Ktransforming (291) [2m../ora-components/src/components/chart/chart-legend.ts[0m[2K[32m✓[39m 355 modules transformed.
 [2Krendering chunks (1)...[2Kcomputing gzip size...
 [2K[2mdist/[0m[32mindex.html                [39m[2m[1m 0.40 kB[0m[0m[2m │ gzip:  0.28 kB[0m
 [2mdist/[0m[2massets/[0m[36mindex-DYcAJQ7-.js  [39m[2m[1m62.66 kB[0m[0m[2m │ gzip: 20.01 kB[0m
 
-[32m✓ built in 374ms[39m
+[32m✓ built in 173ms[39m
 [1G[0K\[1G[0K

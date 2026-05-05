@@ -1,0 +1,99 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Components/Toolbar" />
+
+# Toolbar
+
+The `ToolbarBuilder` provides a reactive API for constructing action bars with left-aligned text buttons and right-aligned secondary/primary buttons. It is used within dialogs, forms, and panels to present a consistent set of actions following [Material Design 3](https://m3.material.io/) button hierarchy.
+
+The toolbar internally uses `LayoutBuilder` to arrange buttons in a horizontal bar. Text buttons are placed on the left, while secondary and primary buttons are right-aligned. The toolbar itself delegates glass-effect styling to its child buttons.
+
+---
+
+## Usage
+
+```typescript
+import { ToolbarBuilder } from '@tdq/ora-components';
+import { ButtonBuilder, Icons } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+// Create a standalone toolbar with a primary action and a text action
+const toolbar = new ToolbarBuilder();
+
+toolbar
+  .addTextButton()
+  .withCaption(of('Cancel'))
+  .withClick(() => handleCancel());
+
+toolbar
+  .addSecondaryButton()
+  .withCaption(of('Save Draft'))
+  .withIcon(Icons.EDIT);
+
+toolbar
+  .withPrimaryButton()
+  .withCaption(of('Submit Invoice'))
+  .withIcon(Icons.CHECKMARK)
+  .withClick(() => handleSubmit());
+
+const element = toolbar.build();
+document.body.appendChild(element);
+```
+
+For use inside a dialog or form, call the parent builder's toolbar method:
+
+```typescript
+import { DialogBuilder, DialogSize } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+const dialog = new DialogBuilder()
+  .withCaption(of('Approve Invoice'))
+  .withDescription(of('Review the invoice details before approving.'))
+  .withSize(DialogSize.SMALL);
+
+dialog.withToolbar()
+  .withPrimaryButton()
+  .withCaption(of('Approve'))
+  .withClick(() => handleApprove());
+
+dialog.withToolbar()
+  .addSecondaryButton()
+  .withCaption(of('Reject'))
+  .withClick(() => handleReject());
+
+dialog.show();
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining, except for `withPrimaryButton`, `addSecondaryButton`, and `addTextButton` which return a `ButtonBuilder` for further configuration.
+
+- **`withPrimaryButton`** — `(): ButtonBuilder`
+  Creates and returns a `ButtonBuilder` pre-configured with `ButtonStyle.FILLED`. The primary action button appears on the right side of the toolbar.
+
+- **`addSecondaryButton`** — `(): ButtonBuilder`
+  Creates and returns a `ButtonBuilder` pre-configured with `ButtonStyle.OUTLINED`. Secondary buttons appear to the left of the primary button on the right side.
+
+- **`addTextButton`** — `(): ButtonBuilder`
+  Creates and returns a `ButtonBuilder` pre-configured with `ButtonStyle.TEXT`. Text buttons appear on the left side of the toolbar.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>): this`
+  Propagates an enabled state observable to every button in the toolbar. When the observable emits `false`, all buttons become disabled simultaneously.
+
+- **`asGlass`** — `(): this`
+  Applies the glass-effect style to all toolbar buttons. The toolbar container itself is not glass-styled — only the child buttons receive the frosted-background treatment.
+
+- **`build`** — `(): HTMLElement`
+  Constructs and returns the toolbar element (a `LayoutBuilder` output). Depending on which buttons were added, produces either a single-sided or split horizontal layout. Call once per builder.
+
+---
+
+## Styling Notes
+
+- **Button layout** uses Material Design 3 semantics: the primary button is `FILLED` (high emphasis), secondary buttons are `OUTLINED` (medium emphasis), and text buttons are `TEXT` (low emphasis).
+- **Text buttons** are left-aligned; **secondary and primary buttons** are right-aligned. When only one side has buttons, the toolbar collapses to a single-sided layout.
+- **Enabled state** is shared: calling `withEnabled` applies the same `Observable<boolean>` to every button in the toolbar. Individual button enabled states cannot be set independently when `withEnabled` is used on the toolbar.
+- **Glass effect** is applied only to the child buttons — the toolbar container itself is unaffected by `asGlass()`. Each button receives the glass styling individually.
+- **Built on LayoutBuilder**: the toolbar delegates its internal structure to `LayoutBuilder` with `LayoutGap.MEDIUM` between buttons and `SlotSize.FIT` for each button slot.

@@ -1,0 +1,280 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './chart.stories';
+
+<Meta of={Stories} />
+
+# Chart
+
+The Chart component is a high-performance data visualisation component for Material Design 3. It supports multiple simultaneous chart types (line, bar, area) on shared axes, reactive data updates via RxJS, animated series entry, and glass-effect styling.
+
+The chart is configured via `ChartBuilder<ITEM>`, which uses a generic type to ensure type safety across data fields, colour bindings, and tooltip renderers.
+
+---
+
+## Usage
+
+```typescript
+import { ChartBuilder } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+interface MonthlyRevenue {
+  month: string;
+  revenue: number;
+  expenses: number;
+}
+
+const data$ = of([
+  { month: 'Jan', revenue: 4000, expenses: 2400 },
+  { month: 'Feb', revenue: 3000, expenses: 1398 },
+  { month: 'Mar', revenue: 2000, expenses: 9800 },
+]);
+
+const chart = new ChartBuilder<MonthlyRevenue>()
+  .withData(data$)
+  .withCategoryField('month')
+  .withTitle(of('Monthly Revenue vs Expenses'))
+  .withHeight(400);
+
+chart.addBarChart('revenue')
+  .withLabel('Revenue')
+  .withColor('var(--md-sys-color-primary)');
+
+chart.addLineChart('expenses')
+  .withLabel('Expenses')
+  .withColor('var(--md-sys-color-secondary)')
+  .withMarkers(true);
+
+document.body.appendChild(chart.build());
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining unless they return a sub-builder. Pass RxJS observables into the data and title setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+### Data & Dimensions
+
+- **`withData`** — `(data: Observable<ITEM[]>) => this`
+  Sets the chart data source. The chart re-renders when new data is emitted.
+
+- **`withCategoryField`** — `(field: keyof ITEM \| string) => this`
+  Sets the field used for X-axis categories.
+
+- **`withHeight`** — `(height: number) => this`
+  Sets the chart height in pixels. Use `0` (or omit) to fill available vertical space.
+
+- **`withWidth`** — `(width: string) => this`
+  Sets the chart width (e.g. `'100%'`, `'400px'`). Defaults to `'100%'`.
+
+### Adding Chart Series
+
+Each method returns a specialised builder (`LineChartBuilder`, `BarChartBuilder`, or `AreaChartBuilder`) for that series type.
+
+- **`addLineChart`** — `(field: keyof ITEM \| string) => LineChartBuilder<ITEM>`
+  Adds a line series to the chart.
+
+- **`addBarChart`** — `(field: keyof ITEM \| string) => BarChartBuilder<ITEM>`
+  Adds a bar series to the chart.
+
+- **`addAreaChart`** — `(field: keyof ITEM \| string) => AreaChartBuilder<ITEM>`
+  Adds an area series to the chart.
+
+### Axes & Configuration
+
+- **`withXAxis`** — `() => AxisBuilder`
+  Returns the X-axis builder for configuring the bottom axis.
+
+- **`withYAxis`** — `() => AxisBuilder`
+  Returns the primary Y-axis builder for the left axis.
+
+- **`withSecondaryYAxis`** — `() => AxisBuilder`
+  Returns the secondary Y-axis builder for the right axis.
+
+- **`withTitle`** — `(title: Observable<string>) => this`
+  Sets the chart title. Pass an observable for live updates.
+
+- **`withLegend`** — `(visible: boolean) => this`
+  Toggles the legend visibility (default: visible).
+
+- **`withTooltip`** — `(enabled: boolean) => this`
+  Toggles interactive hover tooltips (default: enabled).
+
+- **`withAnimation`** — `(enabled: boolean) => this`
+  Toggles entry animations for data series (default: true).
+
+- **`asGlass`** — `() => this`
+  Enables translucent glass styling for the chart container.
+
+- **`build`** — `() => HTMLElement`
+  Constructs and returns the chart container element. Call once per builder.
+
+---
+
+## ChartSeriesBuilder
+
+Each `addLineChart`, `addBarChart`, and `addAreaChart` call returns a series builder that configures a single data series. All series builders share these common methods:
+
+### Base Methods (all series types)
+
+- **`withLabel`** — `(label: string) => this`
+  Sets the display label for the legend and tooltips.
+
+- **`withColor`** — `(color: string \| Observable<string>) => this`
+  Sets the series colour as a CSS colour string or an observable for reactive color updates.
+
+- **`withTooltip`** — `(renderer: (item: ITEM) => string) => this`
+  Custom tooltip content renderer for this series.
+
+- **`asSecondaryAxis`** — `() => this`
+  Binds this series to the secondary Y-axis. Requires `withSecondaryYAxis()` on the chart.
+
+### LineChartBuilder
+
+- **`withWidth`** — `(width: number) => this`
+  Sets the stroke width in pixels (default: 2).
+
+- **`withCurve`** — `(curve: CurveType) => this`
+  Sets the curve style: `'smooth'`, `'step'`, or `'linear'` (default).
+
+- **`withMarkers`** — `(visible: boolean) => this`
+  Toggles data point markers (default: false).
+
+- **`asDashed`** — `() => this`
+  Renders the line as a dashed stroke.
+
+### BarChartBuilder
+
+- **`asStacked`** — `() => this`
+  Stacks this bar series on top of previous bar series.
+
+- **`withBarWidth`** — `(width: number) => this`
+  Sets the bar width as a fraction of available slot (0–1, default: 0.8).
+
+### AreaChartBuilder
+
+- **`withCurve`** — `(curve: CurveType) => this`
+  Sets the curve style: `'smooth'`, `'step'`, or `'linear'` (default).
+
+- **`withOpacity`** — `(opacity: number) => this`
+  Sets the fill opacity (0–1, default: 0.3).
+
+- **`asStacked`** — `() => this`
+  Stacks this area series on top of previous area series.
+
+---
+
+## AxisBuilder
+
+The axis builders returned by `withXAxis()`, `withYAxis()`, and `withSecondaryYAxis()` configure axis appearance and scale.
+
+- **`withLabel`** — `(label: string) => this`
+  Sets the axis label text.
+
+- **`withVisible`** — `(visible: boolean) => this`
+  Toggles axis visibility (default: visible).
+
+- **`withFormat`** — `(format: string \| ((value: any) => string)) => this`
+  Sets a format string or custom formatter for tick labels.
+
+- **`withTicks`** — `(amount: number) => this`
+  Sets the approximate number of ticks (default: 5).
+
+- **`withGridLines`** — `(visible: boolean) => this`
+  Toggles major grid lines (default: visible).
+
+- **`withMinorGridLines`** — `(visible: boolean) => this`
+  Toggles minor grid lines (default: false).
+
+- **`withPosition`** — `(position: AxisPosition) => this`
+  Sets the axis position: `'left'`, `'right'`, `'top'`, `'bottom'`.
+
+- **`withMin`** — `(min: number \| 'auto') => this`
+  Sets the minimum value of the axis scale.
+
+- **`withMax`** — `(max: number \| 'auto') => this`
+  Sets the maximum value of the axis scale.
+
+- **`withScaleType`** — `(scaleType: ScaleType) => this`
+  Sets the scale type: `'linear'`, `'log'`, `'time'`, or `'category'`.
+
+---
+
+## Line Charts
+
+The simplest chart type — a single line series visualising monthly sales performance.
+
+<Canvas of={Stories.BasicLine} />
+
+Multiple lines can be overlaid on the same axes to compare metrics. This example shows sales vs profit, with the profit series using dashed strokes and markers.
+
+<Canvas of={Stories.MultipleLines} />
+
+---
+
+## Bar Charts
+
+Bar charts are ideal for comparing discrete values across categories. This example shows monthly order counts.
+
+<Canvas of={Stories.BarChart} />
+
+---
+
+## Area Charts
+
+Area charts emphasise volume over time with a filled region beneath the line. Use `withOpacity()` to control the fill transparency.
+
+<Canvas of={Stories.AreaChart} />
+
+---
+
+## Combined Charts
+
+Multiple chart types can be mixed on the same axes. This example overlays a bar chart for sales volume with a line chart for order count.
+
+<Canvas of={Stories.CombinedChart} />
+
+---
+
+## Secondary Axis
+
+When series have different value ranges, use `asSecondaryAxis()` to bind a series to the right Y-axis. Configure each axis label independently with `withYAxis().withLabel()` and `withSecondaryYAxis().withLabel()`.
+
+<Canvas of={Stories.SecondaryAxis} />
+
+---
+
+## Glass Effect
+
+Apply `asGlass()` for a translucent frosted-glass appearance. Place the chart on a gradient background to see the effect. The chart container renders with backdrop blur and semi-transparent surfaces.
+
+<Canvas of={Stories.GlassEffect} />
+
+---
+
+## Reactive Color
+
+The `withColor()` method accepts an `Observable<string>`, enabling live colour changes without rebuilding the chart. This example uses `ButtonBuilder` controls to switch the line colour between Material Design 3 palette tokens and custom hex values.
+
+<Canvas of={Stories.ReactiveColor} />
+
+---
+
+## High Density
+
+When datasets contain thousands of points, the chart automatically downsamples to maintain performance — displaying a maximum of `width / 24` visible points. This example shows 1,000 data points of sine-wave data with a linear trend area.
+
+<Canvas of={Stories.HighDensityPoints} />
+
+---
+
+## Styling Notes
+
+- **Chart container**: Transparent by default and fills 100% of its parent width. Use `asGlass()` for a card-like appearance with backdrop blur.
+- **Series colours**: Default colours cycle through the Material Design 3 palette: primary, secondary, tertiary, error, and five additional accent colours.
+- **Tooltips**: Show on hover with series label, value, and category. Each series can supply a custom tooltip renderer via `withTooltip()`.
+- **Animation**: Entry animations (`<animate>` elements on SVG paths/rects/circles) are enabled by default. Toggle via `withAnimation(false)`.
+- **Downsampling**: For high-density data, `ChartLogic` limits visible points to `Math.max(2, Math.floor(viewWidth / 24))` to maintain rendering performance.
+- **SVG**: All chart elements are rendered in an SVG with `viewBox` for responsive scaling. SVG elements use `document.createElementNS('http://www.w3.org/2000/svg', ...)`.
+- **Hover effects**: Hovered points are highlighted with a 6px radius ring on line and area charts. A dashed crosshair line extends from the hovered point to the axes.
+- **Glass effect**: `asGlass()` applies to the chart container only — the SVG and series rendering are unaffected.

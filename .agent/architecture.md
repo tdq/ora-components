@@ -34,7 +34,14 @@ packages/
 │           ├── get-component-api.ts
 │           └── get-usage-example.ts
 │
-├── stories/               # Storybook stories (dev / demo only)
+├── stories/               # Storybook stories + MDX docs
+│   └── src/
+│       ├── *.stories.ts        # Storybook story files (one per component)
+│       └── *.docs.mdx          # Consumer-facing Storybook Docs pages co-located with stories.
+│                                # Import { Meta, Canvas } from '@storybook/addon-docs/blocks',
+│                                # import * as Stories from the co-located .stories.ts, and use
+│                                # <Meta of={Stories} /> + <Canvas of={Stories.StoryName} />.
+│                                # Includes usage examples, Builder API tables, and styling notes.
 └── examples/              # Usage examples
 ```
 

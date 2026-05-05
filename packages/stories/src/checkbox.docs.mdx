@@ -1,0 +1,92 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './checkbox.stories';
+
+<Meta of={Stories} />
+
+# Checkbox
+
+Checkboxes let users select one or more options from a set. The `CheckboxBuilder` provides a reactive API for constructing labelled checkboxes with two-way value binding, enabled-state control, and glass-effect styling — all driven by RxJS observables for live-updating bindings.
+
+Checkboxes follow [Material Design 3](https://m3.material.io/components/checkbox) semantics with a focus ring, state layer hover/press effects, and the standard checkmark icon.
+
+---
+
+## Usage
+
+```typescript
+import { CheckboxBuilder } from '@tdq/ora-components';
+import { BehaviorSubject, of } from 'rxjs';
+
+const agreed$ = new BehaviorSubject(false);
+
+const checkbox = new CheckboxBuilder()
+  .withCaption(of('I agree to the terms'))
+  .withValue(agreed$)
+  .build();
+
+document.body.appendChild(checkbox);
+
+// Read the current state:
+console.log(agreed$.value); // false
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Pass RxJS observables into the reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Sets the label text displayed next to the checkbox. Updates reactively when the observable emits.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>): this`
+  Controls the interactive state. When `false` the checkbox is disabled with reduced opacity and no pointer events.
+
+- **`withClass`** — `(className: Observable<string>): this`
+  Appends additional CSS class names to the root `<label>` element.
+
+- **`withValue`** — `(value: Subject<boolean>): this`
+  Binds a two-way `Subject<boolean>`. The component writes the checked state into the subject and reads incoming values to update the checkbox.
+
+- **`asGlass`** — `(isGlass?: boolean): this`
+  Enables the glass-effect variant with frosted background on the check box area. Defaults to `true`.
+
+- **`build`** — `(): HTMLElement`
+  Constructs and returns the root `<label>` element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+---
+
+## Basic
+
+The `Basic` story renders four checkbox states: default (unchecked), checked, disabled, and disabled checked — demonstrating the visual spectrum of the component.
+
+<Canvas of={Stories.Basic} />
+
+---
+
+## Interactive
+
+The `Interactive` story demonstrates two-way reactive state: the checkbox is bound to a `BehaviorSubject` that toggles its caption between "Checked" and "Unchecked" in real time as the user clicks.
+
+<Canvas of={Stories.Interactive} />
+
+---
+
+## Glass Effect
+
+The `Glass` story renders the checkbox with `asGlass()` applied on a coloured background, demonstrating the frosted-glass appearance on the check box area.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Styling Notes
+
+- **Check box** is an 18×18px square with `rounded-small` corners.
+- **State layer** provides hover (8% opacity) and active/pressed (12% opacity) feedback using CSS custom properties `--md-sys-state-hover-opacity` and `--md-sys-state-pressed-opacity`.
+- **Focus ring** uses `peer-focus-visible:ring-2` targeting the hidden `<input>` via the peer selector — accessible keyboard navigation is supported.
+- **Checked state** applies `bg-primary` and `border-primary` to the box and scales the checkmark icon in using `scale-100`.
+- **Disabled state** applies `opacity-38` and `cursor-not-allowed` across both the box and caption.
+- **Caption** uses `md-label-large` typography and `text-on-surface` colour (or default when glass is enabled).
+- **Checkmark icon** is rendered from `Icons.CHECKMARK` and uses `text-on-primary` for proper contrast against the primary background.
+- **Glass effect** applies the `glass-effect` class only to the check box area, leaving the caption fully opaque for readability.

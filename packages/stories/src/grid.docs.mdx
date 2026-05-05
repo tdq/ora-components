@@ -1,0 +1,378 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as GridStories from './grid.stories';
+import * as GroupingStories from './grid-grouping.stories';
+import * as PivotStories from './grid-pivot.stories';
+
+<Meta of={GridStories} />
+
+# Grid
+
+The Grid component is a high-performance tabular data display component for Material Design 3. It supports **virtual scrolling** for large datasets, multi-level grouping, pivot tables, inline editing, row actions, multi-select, column resizing, sorting, and glass-effect styling — all driven by RxJS observables for live-updating bindings.
+
+The grid is orchestrated by the `GridBuilder<ITEM>` class, which uses a generic type `ITEM` to ensure type safety across columns, actions, and selection state.
+
+---
+
+## Usage
+
+```typescript
+import { GridBuilder, ColumnType } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+interface Invoice {
+  id: number;
+  client: string;
+  amount: number;
+  status: string;
+}
+
+const data$ = of([
+  { id: 1, client: 'Acme Corp', amount: 4500, status: 'Paid' },
+  { id: 2, client: 'Beta LLC', amount: 2300, status: 'Pending' },
+]);
+
+const grid = new GridBuilder<Invoice>()
+  .withItems(data$)
+  .withHeight(of(400));
+
+const columns = grid.withColumns();
+columns.addNumberColumn('id').withHeader('ID').withWidth('60px');
+columns.addTextColumn('client').withHeader('Client').withWidth('1fr');
+columns.addMoneyColumn('amount').withHeader('Amount').withWidth('100px');
+columns.addTextColumn('status').withHeader('Status').withWidth('100px');
+
+document.body.appendChild(grid.build());
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining unless they return a sub-builder. Pass RxJS observables into reactive setters — the component handles subscription lifecycle and automatically cleans up when detached from the DOM.
+
+### Data & Dimensions
+
+- **`withItems`** — `(items: Observable<ITEM[]>) => this`
+  Sets the data source for the grid. The grid re-renders when new data is emitted.
+
+- **`withHeight`** — `(height: Observable<number>) => this`
+  Sets the fixed height of the grid container in pixels. If not called, the grid defaults to `height: 100%` of its parent.
+
+- **`withGrouping`** — `(fields$: Observable<(keyof ITEM \| string)[]>) => this`
+  Enables multi-level grouping by the provided field names. Toggle groups via the expand/collapse UI.
+
+- **`withSort`** — `(field: keyof ITEM \| string, direction: SortDirection) => this`
+  Sets the initial sort configuration. Accepts `SortDirection.ASC` or `SortDirection.DESC`.
+
+- **`withPivot`** — `(config: PivotConfig) => this`
+  Enables pivot table mode for data aggregation and cross-tabulation.
+
+### Configuration
+
+- **`withColumns`** — `() => ColumnsBuilder<ITEM>`
+  Starts the column definition flow. Returns a `ColumnsBuilder` for adding typed columns.
+
+- **`withToolbar`** — `() => ToolbarBuilder`
+  Adds an optional top toolbar with primary, secondary, and text buttons. Returns a `ToolbarBuilder`.
+
+- **`withActions`** — `() => ActionsBuilder<ITEM>`
+  Adds per-row action buttons in a dedicated sticky trailing column. Returns an `ActionsBuilder`.
+
+- **`asMultiSelect`** — `() => this`
+  Enables row selection via checkboxes with "Select All" in the header.
+
+- **`asEditable`** — `(onCommit: (item: ITEM) => void) => this`
+  Enables inline cell editing. Press **Enter** to commit an edit, **Escape** to revert.
+
+- **`asGlass`** — `() => this`
+  Enables translucent glass styling with backdrop blur on the header. Overrides default surface colours.
+
+- **`build`** — `() => HTMLElement`
+  Constructs and returns the grid container element. Subscribe to observables and wire up the DOM. Call once per builder.
+
+---
+
+## Column Configuration
+
+### ColumnsBuilder
+
+All column builder methods accept a `dtoField` (the key in the data item) and return a dedicated column builder for that column type:
+
+- **`addTextColumn(field)`** — `TextColumnBuilder<ITEM>`
+  Standard text display.
+
+- **`addNumberColumn(field)`** — `NumberColumnBuilder<ITEM>`
+  Numeric data with decimal precision control.
+
+- **`addDateColumn(field)`** — `DateColumnBuilder<ITEM>`
+  Date display via `toLocaleDateString()`.
+
+- **`addDateTimeColumn(field)`** — `DateTimeColumnBuilder<ITEM>`
+  Date and time display via `toLocaleString()`.
+
+- **`addEnumColumn(field)`** — `EnumColumnBuilder<ITEM>`
+  Mapped display values from a caption provider.
+
+- **`addBooleanColumn(field)`** — `BooleanColumnBuilder<ITEM>`
+  Boolean values rendered as text or checkbox.
+
+- **`addPercentageColumn(field)`** — `PercentageColumnBuilder<ITEM>`
+  Percentage display (multiplies by 100, appends `%`).
+
+- **`addMoneyColumn(field)`** — `MoneyColumnBuilder<ITEM>`
+  Currency-formatted numeric data from `Money` objects.
+
+- **`addButtonColumn(field)`** — `ButtonColumnBuilder<ITEM>`
+  Inline action buttons per row.
+
+- **`addIconColumn(field)`** — `IconColumnBuilder<ITEM>`
+  Dynamic icon display based on field values.
+
+- **`addCustomColumn()`** — `CustomColumnBuilder<ITEM>`
+  Fully custom rendering for complex cell content.
+
+### BaseColumnBuilder (Shared Methods)
+
+All column builders inherit these common methods:
+
+- **`withHeader`** — `(header: string) => this`
+  Sets the display name in the column header.
+
+- **`withWidth`** — `(width: string) => this`
+  Sets CSS width (e.g. `'100px'`, `'2fr'`, `'15%'`).
+
+- **`withMinWidth`** — `(minWidth: string) => this`
+  Sets a minimum width for the column.
+
+- **`asSortable`** — `(sortable?: boolean) => this`
+  Enables sorting UI for the column header. Defaults to `true`.
+
+- **`asResizable`** — `(resizable?: boolean) => this`
+  Enables column resizing via a drag handle in the header. Defaults to `true`.
+
+- **`asEditable`** — `() => this`
+  Marks the column as inline-editable. Only effective when the grid has `asEditable()` called.
+
+- **`withAlign`** — `(align: 'left' \| 'center' \| 'right') => this`
+  Sets text and flex alignment for the column header and cells.
+
+- **`withClass`** — `(classProvider: (item: ITEM) => string) => this`
+  Adds custom CSS classes to all cells in this column via a provider function.
+
+- **`withSortValue`** — `(provider: (item: ITEM) => any) => this`
+  Custom sort value provider for the column.
+
+### Specialised Column Methods
+
+- **`NumberColumnBuilder`** — `withDecimals(decimals: number): this`
+  Sets decimal places (default 2).
+
+- **`MoneyColumnBuilder`** — `withCurrencies(currencies: string[]): this`
+  Restricts available currencies in the editor. `withPrecision(precision: number): this` — sets decimal precision for display and editing.
+
+- **`EnumColumnBuilder`** — `withItemCaptionProvider(provider: (item: ITEM) => string): this`
+  Custom caption display for each row.
+
+- **`ButtonColumnBuilder`** — `withLabel(label: string): this`
+  Sets the button text. `withClick(click: ClickListener<ITEM>): this` — click handler receiving the row item. `withStyle(style: ButtonStyle): this` — button style variant.
+
+- **`IconColumnBuilder`** — `withIconProvider(provider: (item: ITEM) => string): this`
+  Returns a CSS class string for the icon. `withTooltipProvider(provider: (item: ITEM) => string): this` — hover tooltip text.
+
+- **`CustomColumnBuilder`** — `withRenderer(renderer: (item: ITEM) => HTMLElement \| string): this`
+  Custom render function returning a DOM element or HTML string.
+
+---
+
+## Row Actions (ActionsBuilder)
+
+When `withActions()` is called, the grid adds a sticky actions column on the right side of every row.
+
+`ActionsBuilder.addAction(icon: string, label: string, onClick: (item: ITEM) => void): ActionBuilder<ITEM>`
+
+The returned `ActionBuilder<ITEM>` provides further configuration:
+- `withEnable(enable: (item: ITEM) => boolean): this` — conditionally enables the action per row.
+- `withVisible(visible: (item: ITEM) => boolean): this` — conditionally shows or hides the action per row.
+
+The `icon` parameter must be an SVG string (use `Icons.*` from `@tdq/ora-components`). The `label` is used for the tooltip and aria-label.
+
+---
+
+## Toolbar (ToolbarBuilder)
+
+When `withToolbar()` is called, the grid renders a toolbar above the table.
+
+- **`withPrimaryButton`** — `() => ButtonBuilder`
+  Adds a filled primary button aligned to the right.
+
+- **`addSecondaryButton`** — `() => ButtonBuilder`
+  Adds an outlined secondary button.
+
+- **`addTextButton`** — `() => ButtonBuilder`
+  Adds a text-style button aligned to the left.
+
+- **`withEnabled`** — `(enabled: Observable<boolean>) => this`
+  Controls the enabled state of all toolbar buttons.
+
+- **`asGlass`** — `() => this`
+  Applies glass styling to all toolbar buttons.
+
+---
+
+## Basic Grid
+
+The most basic setup — a grid with simple data and a few text columns.
+
+<Canvas of={GridStories.Basic} />
+
+---
+
+## Column Types
+
+This example demonstrates all built-in column types side by side: text, number, enum, boolean, date, money, and percentage.
+
+<Canvas of={GridStories.ComplexColumns} />
+
+---
+
+## Multi-Select
+
+Enables row-level checkboxes and a "Select All" checkbox in the header. Selected rows can be read via the internal selection state.
+
+<Canvas of={GridStories.MultiSelect} />
+
+---
+
+## Toolbar & Row Actions
+
+The toolbar provides global actions above the grid, while row actions add per-row buttons in a sticky right column.
+
+<Canvas of={GridStories.WithToolbar} />
+<Canvas of={GridStories.WithActions} />
+
+---
+
+## Inline Editing
+
+Double-click a cell to edit it inline. Press **Enter** to commit or **Escape** to revert. The commit callback logs every change. Editable columns include text, number, date, boolean, percentage, and money — each with its own editor component.
+
+<Canvas of={GridStories.Editable} />
+
+---
+
+## Sorting
+
+Click any sortable column header to toggle ascending/descending sort. The initial sort is set via `withSort('name', SortDirection.ASC)`.
+
+<Canvas of={GridStories.Sorting} />
+
+---
+
+## Resizable Columns
+
+Drag the resize handle in the column header to adjust column widths interactively.
+
+<Canvas of={GridStories.ResizableColumns} />
+
+---
+
+## Conditional Styling
+
+Use `withClass()` to conditionally apply CSS classes to cells based on the row data — for example, highlighting high-value balances in green and low ones in red.
+
+<Canvas of={GridStories.ConditionalStyling} />
+
+---
+
+## Custom Rendering
+
+Use `addCustomColumn()` with `withRenderer()` to render fully custom cell content, such as status badges with dynamic colours.
+
+<Canvas of={GridStories.CustomRendering} />
+
+---
+
+## Glass Effect
+
+When `asGlass()` is applied, the grid header uses translucent background with backdrop blur. Place the grid on a gradient background to see the effect.
+
+<Canvas of={GridStories.GlassEffect} />
+
+---
+
+## Empty State
+
+When the data observable emits an empty array, the grid renders an empty table with header only — no scrollbar, no rows.
+
+<Canvas of={GridStories.EmptyState} />
+
+---
+
+## Full Height
+
+When `withHeight()` is not called, the grid fills 100% of its parent container height.
+
+<Canvas of={GridStories.FullHeight} />
+
+---
+
+## High Volume
+
+The grid is optimised for large datasets using virtual scrolling. This example shows 1,000 rows with multi-select enabled, demonstrating smooth scrolling and fast rendering.
+
+<Canvas of={GridStories.HighVolume} />
+
+---
+
+## Full Coverage
+
+This comprehensive example combines all column types (text, number, date, datetime, enum, boolean, percentage, money, icon, button, custom) with row actions, resizable columns, sorting, and 1,000 rows.
+
+<Canvas of={GridStories.FullCoverage} />
+
+---
+
+## Grouping
+
+Multi-level grouping is enabled via `withGrouping()` with an observable array of field names. Groups are rendered as collapsible headers with count badges.
+
+<Canvas of={GroupingStories.MultiLevelGrouping} />
+
+---
+
+## Pivot Tables
+
+Pivot mode transforms data into a cross-tabulated layout using row fields, column fields, and aggregated values. Configured via `withPivot(PivotConfig)`.
+
+### PivotConfig
+
+```typescript
+interface PivotConfig {
+  rows: string[];               // Fields to use as row headers
+  columns: string[];            // Fields to use as column headers (pivoted)
+  values: PivotValueConfig[];   // Aggregated value fields
+  showGrandTotal?: boolean;     // Show grand total column/row
+}
+
+interface PivotValueConfig {
+  field: string;
+  aggregation: AggregationType;  // SUM, COUNT, AVG, MIN, MAX
+  header?: string;
+}
+```
+
+<Canvas of={PivotStories.BasicPivot} />
+<Canvas of={PivotStories.MultiValuePivot} />
+<Canvas of={PivotStories.RowGroupingPivot} />
+
+---
+
+## Styling Notes
+
+- **Container**: `bg-background`, `border-outline/30`, `rounded-lg`.
+- **Header height**: 52px. Uses `bg-surface-container-low` in normal mode, `glass-effect !bg-white/20` with backdrop blur in glass mode. Typography is uppercase, `font-semibold`, `text-[11px]`, `tracking-wider`.
+- **Row height**: 52px with zebra striping (`bg-surface-container-low/20` for odd rows). Hover state adds `hover:bg-surface-variant/20` and a left accent border.
+- **Sticky actions column**: `sticky right-0 z-10` with a solid background. No backdrop blur — see performance mandates.
+- **Glass effect**: Enabled via `asGlass()`. Only the header receives backdrop blur; rows remain transparent.
+- **Virtual scrolling**: Uses `requestAnimationFrame` for scroll updates, `transform: translateY` for row positioning, and a buffer of 5 extra rows above and below the viewport.
+- **Selection**: Checkbox-based multi-select with header "Select All". Selection updates are optimised to avoid full row re-renders.

@@ -1,0 +1,150 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './dialog.stories';
+
+<Meta of={Stories} />
+
+# Dialog
+
+Dialogs are modal overlay panels that focus the user on a specific task or piece of information. The `DialogBuilder` provides a reactive API for constructing dialogs with captions, descriptions, scrollable content, toolbar actions, and size presets — all backed by the native `<dialog>` element for correct focus trapping and keyboard dismissal.
+
+Dialogs follow [Material Design 3](https://m3.material.io/components/dialogs) semantics and are draggable by their header.
+
+---
+
+## Usage
+
+```typescript
+import { DialogBuilder, DialogSize } from '@tdq/ora-components';
+import { Subject, of } from 'rxjs';
+import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
+
+const close$ = new Subject<void>();
+close$.subscribe(() => dialog.close());
+
+const dialog = new DialogBuilder()
+  .withCaption(of('Confirm Action'))
+  .withDescription(of('This action cannot be undone.'))
+  .withSize(DialogSize.SMALL)
+  .withContent({
+    build: () => {
+      const p = document.createElement('p');
+      p.textContent = 'Are you sure you want to proceed?';
+      p.className = 'text-body-medium';
+      return p;
+    }
+  });
+
+dialog.withToolbar()
+  .withPrimaryButton()
+  .withCaption(of('Confirm'))
+  .withClick(() => close$.next());
+
+dialog.show();
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining (except `withToolbar` which returns a `ToolbarBuilder` for further configuration).
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Sets the dialog title displayed in the header.
+
+- **`withDescription`** — `(description: Observable<string>): this`
+  Sets the subtitle or description below the caption.
+
+- **`withClass`** — `(className: Observable<string>): this`
+  Appends additional CSS class names to the `<dialog>` element.
+
+- **`withContent`** — `(content: ComponentBuilder): this`
+  Sets the main body content. Accepts any object implementing `ComponentBuilder` (has a `build()` method).
+
+- **`withSize`** — `(size: DialogSize): this`
+  Sets the dialog width preset. Defaults to `DialogSize.MEDIUM`.
+
+- **`asScrollable`** — `(): this`
+  Enables vertical scrolling for the content area with a minimum height of 200px.
+
+- **`withHeight`** — `(height: Observable<number>): this`
+  Limits the dialog max height in pixels. When not set, height is determined by content.
+
+- **`withToolbar`** — `(): ToolbarBuilder`
+  Returns a `ToolbarBuilder` for adding action buttons at the bottom of the dialog. Call once to create the toolbar.
+
+- **`asGlass`** — `(): this`
+  Enables the glass-effect variant with frosted background and blur on the dialog and its toolbar.
+
+- **`show`** — `(): void`
+  Opens the dialog modally. Appends it to `document.body` and calls `showModal()`. Safe to call multiple times.
+
+- **`close`** — `(): void`
+  Closes the dialog and removes it from `document.body`. Clears inline drag-position styles.
+
+- **`build`** — `(): HTMLElement`
+  Constructs and returns the native `<dialog>` element. Called automatically by `show()` if not already built.
+
+---
+
+## DialogSize Enum
+
+| Value | Description |
+|-------|-------------|
+| `DialogSize.SMALL` | 30vw width. Use for quick confirmations or alerts. |
+| `DialogSize.MEDIUM` | 50vw width. The default. Use for standard content. |
+| `DialogSize.LARGE` | 75vw width. Use for forms or tabbed content. |
+| `DialogSize.EXTRA_LARGE` | 90vw width. Use for complex layouts or data tables. |
+
+---
+
+## Basic Dialogs
+
+The `Basic` story renders one button per `DialogSize` value. Each opens a simple dialog with a caption, description, inline content, and a toolbar with Confirm / Cancel buttons.
+
+<Canvas of={Stories.Basic} />
+
+---
+
+## Scrollable Dialog
+
+The `Scrollable` story demonstrates `asScrollable()` and `withHeight()`. When content exceeds the specified height, the content area scrolls independently while the header and toolbar remain fixed.
+
+<Canvas of={Stories.Scrollable} />
+
+---
+
+## Dialog With Tabs
+
+The `DialogWithTabs` story embeds a `TabsBuilder` inside the dialog, demonstrating multi-tab forms for account settings (Profile, Security, Notifications). The dialog uses `asGlass()` and `DialogSize.LARGE`.
+
+<Canvas of={Stories.DialogWithTabs} />
+
+---
+
+## Dialog With Form
+
+The `DialogWithForm` story embeds a comprehensive `FormBuilder` inside the dialog, showcasing text fields, email fields, password fields, number fields, money fields, combo-box fields, date pickers, and checkboxes — all bound to `BehaviorSubject` values for reactive data collection.
+
+<Canvas of={Stories.DialogWithForm} />
+
+---
+
+## Glass Effect
+
+The `GlassEffect` story renders a dialog with `asGlass()` applied on top of a gradient background, demonstrating the frosted-glass appearance with translucent surfaces and backdrop blur.
+
+<Canvas of={Stories.GlassEffect} />
+
+---
+
+## Styling Notes
+
+- **Dialog container** uses the native `<dialog>` element with `showModal()` for correct focus trapping and ESC-key dismissal.
+- **Header** is draggable — click and drag anywhere on the caption area to reposition the dialog.
+- **Sizes** are defined as viewport-relative widths (vw) so they scale with the window.
+- **Toolbar** sits at the bottom of the dialog and is separated from the content by padding.
+- **Scrollable mode** sets `overflow-y-auto` on the content area with a `min-h-[200px]` constraint.
+- **Glass effect** applies `bg-surface` with backdrop blur on the dialog and transparent styling on the toolbar wrapper.
+- **Backdrop** is fully transparent (`backdrop:bg-transparent`) so the page content is visible behind the dialog.
+- **Elevation** uses `elevation-5` for a large drop shadow.
+- **Border radius** uses `rounded-large` to match Material Design 3 surface shapes.
