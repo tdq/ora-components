@@ -14,6 +14,7 @@ Logic and state are managed by RxJS.
 - [Rules](rules.md) - Follow this rules on creating components
 - [Glass effect](glass-effects.md)
 - [Router](router.md) - Client-side SPA routing
+- [Storybook](storybook.md) - Theme configuration and loading chain
 
 ## Components
 

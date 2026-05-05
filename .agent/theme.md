@@ -151,7 +151,19 @@ Used for overlays and elevated components on top of content.
 - **Border**: white/20
 - **Label Color**: #FFFFFF (White)
 
-## 10. Using Theme Colors with Builders
+## 10. Storybook Dark Theme
+
+In Storybook, the default Sapphire dark palette is overridden by
+`packages/stories/.storybook/storybook-theme.css` to use the landing page's
+purple/indigo palette (`#141218` background, `#D0BCFF` primary, `#4F378B`
+containers). This ensures visual consistency between the landing page demo and
+component previews. The override applies only to `[data-theme="dark"]` — the
+light theme remains the library default (Sapphire Blue & Slate Gray).
+
+For details on the theme loading chain and manager UI theme, see
+[Storybook](storybook.md).
+
+## 11. Using Theme Colors with Builders
 
 When applying theme colors dynamically via `withClass()`, always use exact
 Tailwind class names — never arbitrary `text-[#hex]` values interpolated in

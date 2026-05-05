@@ -1,6 +1,7 @@
 import type { Preview } from "@storybook/html";
 import '../../ora-components/src/index.css';
 import './storybook-layout.css';
+import './storybook-theme.css';
 
 type ThemeValue = 'light' | 'dark' | 'system';
 
