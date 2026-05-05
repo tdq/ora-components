@@ -57,7 +57,7 @@ export function createHeader(): HTMLElement {
         </svg>
     `;
 
-    const storybookUrl = `https://storybook.${window.location.hostname}`;
+    const storybookUrl = `https://storybook.${window.location.hostname.replace(/^www\./, '')}`;
 
     const storybookBtn = document.createElement('a');
     storybookBtn.href = storybookUrl;
