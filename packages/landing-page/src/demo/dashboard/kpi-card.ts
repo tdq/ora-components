@@ -1,4 +1,4 @@
-import { ComponentBuilder, PanelBuilder, PanelGap, LabelBuilder, LayoutBuilder, LabelSize } from '@tdq/ora-components';
+import { ComponentBuilder, PanelBuilder, PanelGap, LabelBuilder, LayoutBuilder, LabelSize, Alignment } from '@tdq/ora-components';
 import { Observable, combineLatest, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -21,6 +21,8 @@ export class KPICardBuilder implements ComponentBuilder {
     private isPositive$?: Observable<boolean>;
     private footerBuilder?: ComponentBuilder;
     private minimal = false;
+    private glass = false;
+    private panelClass$?: Observable<string>;
 
     withLabel(label: Observable<string>): this {
         this.label$ = label;
@@ -45,6 +47,16 @@ export class KPICardBuilder implements ComponentBuilder {
 
     withFooter(footer: ComponentBuilder): this {
         this.footerBuilder = footer;
+        return this;
+    }
+
+    asGlass(): this {
+        this.glass = true;
+        return this;
+    }
+
+    withPanelClass(className: Observable<string>): this {
+        this.panelClass$ = className;
         return this;
     }
 
@@ -105,10 +117,10 @@ export class KPICardBuilder implements ComponentBuilder {
             }
             layout.addSlot().withContent(this.footerBuilder);
         } else if (trendBuilder && valueBuilder) {
-            // Trend mode: value + trend in a horizontal row
+            // Trend mode: value (left) + trend chip (right)
             const valueRow = new LayoutBuilder().asHorizontal();
             valueRow.addSlot().withContent(valueBuilder);
-            valueRow.addSlot().withContent(trendBuilder);
+            valueRow.addSlot().withContent(trendBuilder).withAlignment(of(Alignment.RIGHT));
             layout.addSlot().withContent(valueRow);
         } else if (valueBuilder) {
             // Plain value (no trend, no footer) — standalone
@@ -118,10 +130,20 @@ export class KPICardBuilder implements ComponentBuilder {
         // --- Build panel as card container ---
         const panelBuilder = new PanelBuilder();
 
+        if (this.glass) {
+            panelBuilder.asGlass();
+        }
+
         if (this.minimal) {
             panelBuilder.withGap(PanelGap.LARGE);
+            if (this.panelClass$) {
+                panelBuilder.withClass(this.panelClass$);
+            }
         } else {
-            panelBuilder.withClass(of('p-px-24 rounded-extra-large'));
+            const classes = this.panelClass$
+                ? this.panelClass$.pipe(map(c => `p-px-24 rounded-extra-large ${c}`))
+                : of('p-px-24 rounded-extra-large');
+            panelBuilder.withClass(classes);
         }
 
         panelBuilder.withContent(layout);

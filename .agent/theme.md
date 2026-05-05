@@ -194,3 +194,35 @@ new LabelBuilder().withCaption(of('Value')).withClass(class$);
 
 This ensures classes are discoverable by Tailwind's scanner and validated
 against the theme configuration.
+
+## 12. Landing Page Theme Toggle
+
+The landing page header includes a custom theme toggle (`packages/landing-page/
+src/components/header.ts`, function `createThemeToggle()`) that is **not** part
+of the `ora-components` library — it is a vanilla-JS component built
+specifically for the landing page demo.
+
+### Behavior
+
+The toggle offers three themes: **light**, **dark**, and **pink**. It interacts
+with the shared `ThemeManager` singleton (`ThemeManager.getInstance().setTheme(
+name)`), so toggling updates the `data-theme` attribute on `<html>` and
+triggers theme-dependent style updates across the page (glass header background,
+CTA gradient, accent colors).
+
+### Slide Animation
+
+A white pill indicator slides behind the active theme button via
+`transform: translateX()` with a `300ms` CSS transition (`cubic-bezier(0.4, 0,
+0.2, 1)`). The indicator moves in `30px` increments — one step per theme,
+corresponding to the 28×28px icon buttons laid out side-by-side. The active
+button icon receives a theme-aware accent color (`#4f46e5` for light,
+`#D0BCFF` for dark, `#FFB3D1` for pink); inactive buttons use the default
+`on-surface-variant` color.
+
+### Architecture Note
+
+Because this toggle lives in the landing page package and uses direct DOM
+manipulation rather than the Builder API, it is **not reusable** across other
+apps. Library consumers should use `ThemeManager` directly or build their own
+toggle with the Builder pattern.

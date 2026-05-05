@@ -136,6 +136,10 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+button {
+  user-select: none;
+}
+
 @layer utilities {
   .text-gradient-1 {
     background: var(--accent-gradient-text-1);

@@ -151,7 +151,13 @@ export function createHeader(): HTMLElement {
 function createThemeToggle(onThemeChange?: () => void): HTMLElement {
     const container = document.createElement('div');
     container.className = 'flex items-center rounded-full p-0.5 gap-0.5';
-    container.style.cssText = 'background: rgba(231, 224, 235, 0.6); border: 1px solid rgba(121, 116, 126, 0.15);';
+    container.style.cssText = 'position: relative; background: rgba(231, 224, 235, 0.6); border: 1px solid rgba(121, 116, 126, 0.15);';
+
+    // Sliding indicator pill
+    const indicator = document.createElement('div');
+    indicator.className = 'theme-slider-indicator';
+    indicator.style.cssText = 'position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 9999px; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.15); transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1); z-index: 0; pointer-events: none;';
+    container.appendChild(indicator);
 
     const themes = [
         { name: 'light', label: 'Light', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .38-.39.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.38.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.38 1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06z"/></svg>` },
@@ -166,17 +172,22 @@ function createThemeToggle(onThemeChange?: () => void): HTMLElement {
     const updateActive = () => {
         const theme = document.documentElement.getAttribute('data-theme') || 'light';
         const activeColor = theme === 'dark' ? '#D0BCFF' : theme === 'pink' ? '#FFB3D1' : '#4f46e5';
+
+        // Slide indicator to active position
+        const activeIndex = themes.findIndex(t => t.name === theme);
+        const safeIndex = activeIndex >= 0 ? activeIndex : 0;
+        indicator.style.transform = `translateX(${safeIndex * 30}px)`;
+
+        // Active button gets accent icon color; inactive get muted default
         buttons.forEach((b, i) => {
-            const isActive = themes[i].name === theme;
-            b.style.cssText = isActive
-                ? `background: white; color: ${activeColor}; box-shadow: 0 1px 4px rgba(0,0,0,0.15);`
-                : '';
+            b.style.color = themes[i].name === theme ? activeColor : '';
         });
     };
 
     themes.forEach(t => {
         const btn = document.createElement('button');
         btn.className = 'w-7 h-7 flex items-center justify-center rounded-full transition-all duration-200 text-on-surface-variant';
+        btn.style.cssText = 'position: relative; z-index: 1; user-select: none;';
         btn.innerHTML = t.icon;
         btn.title = t.label;
 
