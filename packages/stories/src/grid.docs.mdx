@@ -370,9 +370,10 @@ interface PivotValueConfig {
 ## Styling Notes
 
 - **Container**: `bg-background`, `border-outline/30`, `rounded-lg`.
-- **Header height**: 52px. Uses `bg-surface-container-low` in normal mode, `glass-effect !bg-white/20` with backdrop blur in glass mode. Typography is uppercase, `font-semibold`, `text-[11px]`, `tracking-wider`.
-- **Row height**: 52px with zebra striping (`bg-surface-container-low/20` for odd rows). Hover state adds `hover:bg-surface-variant/20` and a left accent border.
-- **Sticky actions column**: `sticky right-0 z-10` with a solid background. No backdrop blur — see performance mandates.
+- **Header height**: 52px. The header **row** owns the background (`bg-surface-container-low` in normal mode, `glass-effect !bg-white/20` with backdrop blur in glass mode); header **cells** are transparent and inherit it. The bottom divider is drawn per header cell (`border-b border-outline/20`), not on the row, so it lines up with column geometry. Typography is uppercase, `font-semibold`, `text-[11px]`, `tracking-wider`.
+- **Cells**: `px-4`, `flex items-center`. Body cells carry their own bottom border (`border-b border-outline/10 dark:border-stone-50/10`) so borders track columns under sticky/scrolled states.
+- **Row height**: 52px with zebra striping on data columns (`bg-surface-container-low/20` for odd rows). Hover state adds `hover:bg-surface-variant/20` and a left accent border.
+- **Sticky actions column**: `sticky right-0 z-10`. Uses a single uniform background (`actionCellDefault` = `bg-background`) for all non-selected, non-glass rows — **no zebra striping** in this column, so it reads as one continuous panel. Selected rows use `bg-primary/10`. The action header cell keeps a solid `bg-surface-container-low` so it occludes other header cells when scrolling horizontally. No backdrop blur — see performance mandates.
 - **Glass effect**: Enabled via `asGlass()`. Only the header receives backdrop blur; rows remain transparent.
 - **Virtual scrolling**: Uses `requestAnimationFrame` for scroll updates, `transform: translateY` for row positioning, and a buffer of 5 extra rows above and below the viewport.
 - **Selection**: Checkbox-based multi-select with header "Select All". Selection updates are optimised to avoid full row re-renders.

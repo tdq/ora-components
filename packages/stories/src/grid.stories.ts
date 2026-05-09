@@ -1,7 +1,8 @@
-import { GridBuilder, Icons } from '@tdq/ora-components';
+import { GridBuilder, Icons, LayoutGap, SlotSize } from '@tdq/ora-components';
 import { SortDirection } from '@tdq/ora-components';
 import { of, Subject } from 'rxjs';
 import { Money } from '@tdq/ora-components';
+import { LayoutBuilder } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Grid',
@@ -57,12 +58,12 @@ export const ComplexColumns = () => {
 
     const columns = grid.withColumns();
     columns.addNumberColumn('id').withHeader('ID').withWidth('60px');
-    columns.addTextColumn('name').withHeader('Name').withWidth('150px');
-    columns.addEnumColumn('role').withHeader('Role').withWidth('100px');
-    columns.addBooleanColumn('active').withHeader('Active').withWidth('80px');
-    columns.addDateColumn('lastLogin').withHeader('Last Login').withWidth('120px');
-    columns.addMoneyColumn('balance').withHeader('Balance').withWidth('100px');
-    columns.addPercentageColumn('progress').withHeader('Progress').withWidth('100px');
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addEnumColumn('role').withHeader('Role');
+    columns.addBooleanColumn('active').withHeader('Active');
+    columns.addDateColumn('lastLogin').withHeader('Last Login');
+    columns.addMoneyColumn('balance').withHeader('Balance');
+    columns.addPercentageColumn('progress').withHeader('Progress');
 
     return grid.build();
 };
@@ -121,7 +122,7 @@ export const WithToolbar = () => {
 
 export const Editable = () => {
     const log = document.createElement('div');
-    log.className = 'mt-4 p-4 bg-surface-container rounded-lg border border-outline/10 text-xs font-mono max-h-40 overflow-y-auto text-on-surface-variant shadow-inner';
+    log.className = 'mt-4 p-4 bg-surface-container rounded-lg border border-outline/10 text-xs font-mono max-h-40 overflow-y-auto text-on-surface-variant shadow-inner w-full';
     log.innerHTML = '<div class="opacity-50 italic mb-2 font-sans text-sm">Action Log: Edit a cell and commit with Enter to see changes here...</div>';
 
     const grid = new GridBuilder<User>()
@@ -142,25 +143,27 @@ export const Editable = () => {
         });
 
     const columns = grid.withColumns();
-    columns.addTextColumn('name').withHeader('Name').withWidth('150px').asEditable();
-    columns.addTextColumn('email').withHeader('Email').withWidth('200px').asEditable();
     columns.addNumberColumn('id').withHeader('ID').withWidth('60px').withAlign('center');
-    columns.addDateColumn('lastLogin').withHeader('Last Login').withWidth('140px').asEditable();
-    columns.addBooleanColumn('active').withHeader('Active').withWidth('80px').asEditable().withAlign('center');
-    columns.addPercentageColumn('progress').withHeader('Progress').withWidth('100px').asEditable();
+    columns.addTextColumn('name').withHeader('Name').asEditable();
+    columns.addTextColumn('email').withHeader('Email').asEditable();
+    columns.addDateColumn('lastLogin').withHeader('Last Login').asEditable();
+    columns.addBooleanColumn('active').withHeader('Active').withAlign('center').asEditable();
+    columns.addPercentageColumn('progress').withHeader('Progress').asEditable();
     columns.addMoneyColumn('balance')
         .withHeader('Balance')
-        .withWidth('120px')
         .asEditable()
         .withPrecision(2)
         .withCurrencies(['USD', 'EUR', 'GBP', 'JPY']);
-    columns.addEnumColumn('role').withHeader('Role').withWidth('100px');
+    columns.addEnumColumn('role').withHeader('Role');
 
-    const container = document.createElement('div');
-    container.className = 'flex flex-col gap-2 p-4';
-    container.appendChild(grid.build());
-    container.appendChild(log);
-    return container;
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent(grid);
+    container.addSlot().withContent({ build: () => log }).withSize(SlotSize.FULL);
+
+    return container.build();
 };
 
 export const GlassEffect = () => {
@@ -248,10 +251,10 @@ export const Sorting = () => {
 
     const columns = grid.withColumns();
     columns.addNumberColumn('id').withHeader('ID').withWidth('60px').asSortable();
-    columns.addTextColumn('name').withHeader('Name').withWidth('150px').asSortable();
-    columns.addEnumColumn('role').withHeader('Role').withWidth('100px').asSortable();
-    columns.addMoneyColumn('balance').withHeader('Balance').withWidth('100px').asSortable();
-    columns.addDateColumn('lastLogin').withHeader('Last Login').withWidth('150px').asSortable();
+    columns.addTextColumn('name').withHeader('Name').asSortable();
+    columns.addEnumColumn('role').withHeader('Role').asSortable();
+    columns.addMoneyColumn('balance').withHeader('Balance').asSortable();
+    columns.addDateColumn('lastLogin').withHeader('Last Login').asSortable();
 
     return grid.build();
 };
@@ -262,10 +265,10 @@ export const ResizableColumns = () => {
         .withHeight(of(400));
 
     const columns = grid.withColumns();
-    columns.addTextColumn('name').withHeader('Name (Resizable)').withWidth('200px').asResizable();
-    columns.addTextColumn('email').withHeader('Email (Resizable)').withWidth('250px').asResizable();
-    columns.addEnumColumn('role').withHeader('Role').withWidth('100px');
-    columns.addMoneyColumn('balance').withHeader('Balance').withWidth('100px');
+    columns.addTextColumn('name').withHeader('Name (Resizable)').asResizable();
+    columns.addTextColumn('email').withHeader('Email (Resizable)').asResizable();
+    columns.addEnumColumn('role').withHeader('Role');
+    columns.addMoneyColumn('balance').withHeader('Balance');
 
     return grid.build();
 };

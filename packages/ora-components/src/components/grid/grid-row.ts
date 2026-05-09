@@ -93,7 +93,7 @@ export class GridRow<ITEM> {
             const actionCell = document.createElement('div');
             actionCell.className = cn(
                 GridStyles.actionCell,
-                this.isSelected ? GridStyles.actionCellSelected : (this.isGlass ? GridStyles.actionCellGlass : (this.index % 2 === 1 ? GridStyles.actionCellOdd : GridStyles.actionCellEven)),
+                this.isSelected ? GridStyles.actionCellSelected : (this.isGlass ? GridStyles.actionCellGlass : GridStyles.actionCellDefault),
                 !this.isGlass && 'group-hover:bg-surface-variant/20 dark:group-hover:bg-slate-800/60'
             );
             actionCell.style.width = `${this.actions.length * 40}px`;
@@ -398,7 +398,7 @@ export class GridRow<ITEM> {
         if (this.actionCell) {
             this.actionCell.className = cn(
                 GridStyles.actionCell,
-                this.isSelected ? GridStyles.actionCellSelected : (this.isGlass ? GridStyles.actionCellGlass : (this.index % 2 === 1 ? GridStyles.actionCellOdd : GridStyles.actionCellEven)),
+                this.isSelected ? GridStyles.actionCellSelected : (this.isGlass ? GridStyles.actionCellGlass : GridStyles.actionCellDefault),
                 !this.isGlass && 'group-hover:bg-surface-variant/20 dark:group-hover:bg-slate-800/60'
             );
         }

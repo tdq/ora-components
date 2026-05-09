@@ -189,12 +189,12 @@ export function createHero(): HTMLElement {
     // UP&L = (Last - Entry) × Qty for Long, (Entry - Last) × Qty for Short
     // Mkt Val = Last × Qty
     const positionsData$ = of([
-        { side: 'Long', stock: 'AAPL',  entry: { amount: 195.50, currencyId: 'EUR' }, last: { amount: 199.00, currencyId: 'EUR' }, qty: 1200, mktVal: { amount: 238800, currencyId: 'EUR' }, pnl: { amount:  12500, currencyId: 'EUR' }, upnl: { amount:   4200, currencyId: 'EUR' } },
-        { side: 'Short', stock: 'MSFT',  entry: { amount: 380.20, currencyId: 'EUR' }, last: { amount: 375.00, currencyId: 'EUR' }, qty:  500, mktVal: { amount: 187500, currencyId: 'EUR' }, pnl: { amount:  -2300, currencyId: 'EUR' }, upnl: { amount:   2600, currencyId: 'EUR' } },
-        { side: 'Long', stock: 'GOOGL', entry: { amount: 142.30, currencyId: 'EUR' }, last: { amount: 145.80, currencyId: 'EUR' }, qty: 2100, mktVal: { amount: 306180, currencyId: 'EUR' }, pnl: { amount:   8700, currencyId: 'EUR' }, upnl: { amount:   7350, currencyId: 'EUR' } },
-        { side: 'Long', stock: 'TSLA',  entry: { amount: 248.10, currencyId: 'EUR' }, last: { amount: 252.40, currencyId: 'EUR' }, qty: 1500, mktVal: { amount: 378600, currencyId: 'EUR' }, pnl: { amount:   3100, currencyId: 'EUR' }, upnl: { amount:   6450, currencyId: 'EUR' } },
-        { side: 'Short', stock: 'NVDA',  entry: { amount: 820.00, currencyId: 'EUR' }, last: { amount: 835.50, currencyId: 'EUR' }, qty:  800, mktVal: { amount: 668400, currencyId: 'EUR' }, pnl: { amount:  -8900, currencyId: 'EUR' }, upnl: { amount: -12400, currencyId: 'EUR' } },
-        { side: 'Long', stock: 'AMZN',  entry: { amount: 178.25, currencyId: 'EUR' }, last: { amount: 182.00, currencyId: 'EUR' }, qty: 4200, mktVal: { amount: 764400, currencyId: 'EUR' }, pnl: { amount:  15400, currencyId: 'EUR' }, upnl: { amount:  15750, currencyId: 'EUR' } },
+        { side: 'Long', stock: 'AAPL', entry: { amount: 195.50, currencyId: 'EUR' }, last: { amount: 199.00, currencyId: 'EUR' }, qty: 1200, mktVal: { amount: 238800, currencyId: 'EUR' }, pnl: { amount: 12500, currencyId: 'EUR' }, upnl: { amount: 4200, currencyId: 'EUR' } },
+        { side: 'Short', stock: 'MSFT', entry: { amount: 380.20, currencyId: 'EUR' }, last: { amount: 375.00, currencyId: 'EUR' }, qty: 500, mktVal: { amount: 187500, currencyId: 'EUR' }, pnl: { amount: -2300, currencyId: 'EUR' }, upnl: { amount: 2600, currencyId: 'EUR' } },
+        { side: 'Long', stock: 'GOOGL', entry: { amount: 142.30, currencyId: 'EUR' }, last: { amount: 145.80, currencyId: 'EUR' }, qty: 2100, mktVal: { amount: 306180, currencyId: 'EUR' }, pnl: { amount: 8700, currencyId: 'EUR' }, upnl: { amount: 7350, currencyId: 'EUR' } },
+        { side: 'Long', stock: 'TSLA', entry: { amount: 248.10, currencyId: 'EUR' }, last: { amount: 252.40, currencyId: 'EUR' }, qty: 1500, mktVal: { amount: 378600, currencyId: 'EUR' }, pnl: { amount: 3100, currencyId: 'EUR' }, upnl: { amount: 6450, currencyId: 'EUR' } },
+        { side: 'Short', stock: 'NVDA', entry: { amount: 820.00, currencyId: 'EUR' }, last: { amount: 835.50, currencyId: 'EUR' }, qty: 800, mktVal: { amount: 668400, currencyId: 'EUR' }, pnl: { amount: -8900, currencyId: 'EUR' }, upnl: { amount: -12400, currencyId: 'EUR' } },
+        { side: 'Long', stock: 'AMZN', entry: { amount: 178.25, currencyId: 'EUR' }, last: { amount: 182.00, currencyId: 'EUR' }, qty: 4200, mktVal: { amount: 764400, currencyId: 'EUR' }, pnl: { amount: 15400, currencyId: 'EUR' }, upnl: { amount: 15750, currencyId: 'EUR' } },
     ]);
 
     const positionsPanel = new PanelBuilder()
@@ -223,14 +223,13 @@ export function createHero(): HTMLElement {
             chip.textContent = item.side;
             return chip;
         });
-    posCols.addTextColumn('stock').withHeader('Stock').withWidth('1fr').asResizable();
-    posCols.addMoneyColumn('entry').withHeader('Entry').withWidth('1fr').asResizable();
-    posCols.addMoneyColumn('last').withHeader('Last').withWidth('1fr').asResizable();
-    posCols.addTextColumn('qty').withHeader('Qty').withWidth('70px').asResizable();
-    posCols.addMoneyColumn('mktVal').withHeader('Mkt Val').withWidth('1fr').asResizable();
+    posCols.addTextColumn('stock').withHeader('Stock').asResizable();
+    posCols.addMoneyColumn('entry').withHeader('Entry').asResizable();
+    posCols.addMoneyColumn('last').withHeader('Last').asResizable();
+    posCols.addTextColumn('qty').withHeader('Qty').asResizable();
+    posCols.addMoneyColumn('mktVal').withHeader('Mkt Val').asResizable();
     posCols.addCustomColumn()
         .withHeader('P&L')
-        .withWidth('1fr')
         .asResizable()
         .withRenderer((item: any) => {
             const amt = item.pnl.amount;
@@ -242,7 +241,6 @@ export function createHero(): HTMLElement {
         });
     posCols.addCustomColumn()
         .withHeader('UP&L')
-        .withWidth('1fr')
         .asResizable()
         .withRenderer((item: any) => {
             const amt = item.upnl.amount;

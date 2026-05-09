@@ -131,16 +131,19 @@ Grid rows do not have background in case of glass effect. Grid header has backgr
 - **Container**: `bg-background`, `border-outline/30`, `dark:border-stone-50/20`, `rounded-lg`.
 - **Header**:
     - **Height**: 52px.
-    - **Background**: `bg-surface-container-low` (solid, no blur). Glass mode uses `headerGlass` with `glass-effect !bg-white/20` and backdrop blur.
-    - **Borders**: Interactive resizable borders (grey on hover, primary blue on active/handle hover). Borders are 2px wide and 80% of header height.
+    - **Background**: Painted on the **row** (`bg-surface-container-low`, solid, no blur). Header **cells** are transparent and inherit this fill, which avoids double-painting under cell hover/active tints. Glass mode uses `headerGlass` with `glass-effect !bg-white/20` and backdrop blur.
+    - **Bottom Divider**: `border-b border-outline/20 dark:border-stone-50/20` is drawn **per header cell** (`headerCell`, `actionHeaderCell`, `checkboxCell`), not on the header row. The line follows the column structure, mirroring the body where each cell carries its own bottom border.
+    - **Resize Borders**: Interactive resizable borders (grey on hover, primary blue on active/handle hover). Borders are 2px wide and 80% of header height.
     - **Typography**: `font-semibold`, `text-[11px]`, `text-on-surface-variant`, `uppercase`, `tracking-wider`.
 - **Rows**:
     - **Height**: 52px.
-    - **Background**: Zebra striping (`bg-surface-container-low/20` for odd rows).
+    - **Background**: Zebra striping on **data columns only** (`bg-surface-container-low/20` for odd rows). The action column does not zebra (see below).
     - **Interaction**: `hover:bg-surface-variant/20 transition-all duration-200`. Includes a left accent `hover:border-l-primary`.
 - **Cells**:
     - **Padding**: `px-4`.
     - **Alignment**: `flex items-center`.
+    - **Bottom Border**: Each data cell carries `border-b border-outline/10 dark:border-stone-50/10` (`cellBorderB`). Borders are at the cell level, not the row level, so they align with column geometry under sticky/scrolled states.
 - **Sticky Actions Column**:
     - **Position**: `sticky right-0 z-10`.
-    - **Styling**: `border-l border-outline/10 bg-surface-container-low` (solid). No `backdrop-blur` — see Performance Mandates.
+    - **Styling**: `border-l border-outline/10` plus `bg-surface-container-low/80` (translucent base) layered with a per-row solid (`actionCellDefault` = `bg-background`). **No zebra striping** — every non-selected, non-glass action cell uses the same `actionCellDefault` so the column reads as one continuous panel. Selected rows swap to `actionCellSelected` (`bg-primary/10`); glass mode uses `actionCellGlass`. No `backdrop-blur` — see Performance Mandates.
+    - **Action Header Cell**: `actionHeaderCell` keeps an explicit `bg-surface-container-low` (solid) so it occludes other header cells when scrolling horizontally, plus the same `border-b` as the rest of the header row.

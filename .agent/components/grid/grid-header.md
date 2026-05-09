@@ -59,6 +59,8 @@ Resizing is handled via a `mousedown`, `mousemove`, and `mouseup` pattern on the
 - **Coordination**: Changes are propagated via `onColumnsResized` to sync the viewport's column widths.
 
 ## Styling
-- **Background**: In non-glass mode, the header uses a solid background (`bg-surface-container-low`) with no `backdrop-blur`. The glass-mode header (`headerGlass`) uses `glass-effect !bg-white/20` with blur.
-- **Borders**: Interactive resizable borders (grey on cell hover, primary blue on active/handle hover). Borders are 2px wide and 80% of header height.
+- **Background**: In non-glass mode, the header **row** carries the solid background (`bg-surface-container-low`) with no `backdrop-blur`. Header **cells** are transparent and inherit this fill, so cell-level hover tints (`hover:bg-surface-variant/30`) and the active-sort tint (`headerCellActive`) are not double-painted. The glass-mode header (`headerGlass`) uses `glass-effect !bg-white/20` with blur.
+- **Bottom Divider**: The horizontal line under the header is drawn **per header cell** (`border-b border-outline/20 dark:border-stone-50/20` on `headerCell` / `actionHeaderCell` / `checkboxCell`), not on the header row. This mirrors how body rows draw cell-level bottom borders and keeps the divider aligned with column structure.
+- **Action Header Cell**: Even though header cells are transparent by default, `actionHeaderCell` keeps an explicit `bg-surface-container-low` so the sticky-right column occludes other header cells when the grid scrolls horizontally.
+- **Resize Borders**: Interactive resizable borders (grey on cell hover, primary blue on active/handle hover). Borders are 2px wide and 80% of header height.
 - **Text Selection**: Header cells have `select-none` — column header text is not user-selectable.

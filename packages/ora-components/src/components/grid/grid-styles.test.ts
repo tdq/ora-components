@@ -48,12 +48,10 @@ describe('GridStyles', () => {
         });
     });
 
-    // ─── actionCellOdd ─────────────────────────────────────────────────────
-    describe('actionCellOdd', () => {
-        it('should be fully opaque (bg-surface-container-low, not /20)', () => {
-            expect(GridStyles.actionCellOdd).toBe('bg-surface-container-low');
-            expect(GridStyles.actionCellOdd).not.toMatch(/\/20/);
-            expect(GridStyles.actionCellOdd).not.toMatch(/\/\d+/);
+    // ─── actionCellDefault ─────────────────────────────────────────────────
+    describe('actionCellDefault', () => {
+        it('should be a single fully opaque background class', () => {
+            expect(GridStyles.actionCellDefault).toBe('bg-background');
         });
     });
 
