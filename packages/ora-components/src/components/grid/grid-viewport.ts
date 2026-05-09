@@ -260,10 +260,6 @@ export class GridViewport<ITEM> {
         this.refreshGroupRowWidths();
     }
 
-    addHeader(headerElement: HTMLElement) {
-        this.element.insertBefore(headerElement, this.contentElement);
-    }
-
     getElement(): HTMLElement {
         return this.element;
     }

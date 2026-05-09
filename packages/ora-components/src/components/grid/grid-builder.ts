@@ -153,8 +153,19 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             (resizedColumns) => viewport.updateColumns(resizedColumns)
         );
 
-        viewport.addHeader(header.getElement());
-        container.appendChild(viewport.getElement());
+        const headerWrapper = document.createElement('div');
+        headerWrapper.className = GridStyles.headerWrapper;
+        headerWrapper.appendChild(header.getElement());
+        container.appendChild(headerWrapper);
+
+        const viewportEl = viewport.getElement();
+        container.appendChild(viewportEl);
+
+        viewportEl.addEventListener('scroll', () => {
+            if (headerWrapper.scrollLeft !== viewportEl.scrollLeft) {
+                headerWrapper.scrollLeft = viewportEl.scrollLeft;
+            }
+        }, { passive: true });
 
         let lastRawItems: ITEM[] | null = null;
         let lastPivotConfig: PivotConfig | undefined = undefined;

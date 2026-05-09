@@ -18,12 +18,10 @@ describe('GridStyles', () => {
             expect(GridStyles.header).not.toMatch(/\/80/);
         });
 
-        it('should use fully opaque bg-surface-container-low', () => {
-            expect(GridStyles.header).toContain('bg-surface-container-low');
-            // Ensure there is no opacity modifier on the surface class
-            const match = GridStyles.header.match(/bg-surface-container-low(\/\d+)?/);
+        it('should use fully opaque bg-surface-container-low on the wrapper (header itself is transparent)', () => {
+            expect(GridStyles.headerWrapper).toContain('bg-surface-container-low');
+            const match = GridStyles.headerWrapper.match(/bg-surface-container-low(\/\d+)?/);
             if (match && match[1]) {
-                // If there is a modifier, it should not be /80
                 expect(match[1]).not.toBe('/80');
             }
         });
@@ -68,8 +66,8 @@ describe('GridStyles', () => {
 
     // ─── Glass variants — untouched ────────────────────────────────────────
     describe('glass variants', () => {
-        it('headerGlass should remain unchanged', () => {
-            expect(GridStyles.headerGlass).toBe('glass-effect !bg-white/20');
+        it('headerGlass should be transparent so the panel glass shows through', () => {
+            expect(GridStyles.headerGlass).toBe('!bg-transparent');
         });
 
         it('actionHeaderCellGlass should remain unchanged', () => {
