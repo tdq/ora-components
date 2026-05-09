@@ -55,6 +55,7 @@ export class GridViewport<ITEM> {
         if (typeof ResizeObserver !== 'undefined') {
             this.resizeObserver = new ResizeObserver(() => {
                 this.renderVisibleRows();
+                this.refreshGroupRowWidths();
             });
             this.resizeObserver.observe(this.element);
         }
@@ -122,17 +123,39 @@ export class GridViewport<ITEM> {
     }
 
     private renderGroupRow(header: GridGroupHeader, index: number, existing?: GridRow<ITEM> | GridGroupRow) {
+        const contentWidth = this.computeContentWidth();
         if (existing instanceof GridGroupRow) {
             existing.update(header, index);
+            existing.setContentWidth(contentWidth);
         } else {
             if (existing) {
                 if (existing instanceof GridRow) existing.destroy();
                 existing.getElement().remove();
             }
-            const groupRow = new GridGroupRow(header, index, (key) => this.onToggleGroup(key), this.isGlass);
+            const groupRow = new GridGroupRow(header, index, (key) => this.onToggleGroup(key), this.isGlass, contentWidth);
             this.rowsContainer.appendChild(groupRow.getElement());
             this.renderedRows.set(index, groupRow);
         }
+    }
+
+    private computeContentWidth(): number {
+        for (const row of this.renderedRows.values()) {
+            if (row instanceof GridRow) {
+                const w = row.getElement().scrollWidth;
+                if (w > 0) return w;
+            }
+        }
+        return Math.max(this.element.scrollWidth, this.element.clientWidth);
+    }
+
+    private refreshGroupRowWidths() {
+        const contentWidth = this.computeContentWidth();
+        if (contentWidth <= 0) return;
+        this.renderedRows.forEach(row => {
+            if (row instanceof GridGroupRow) {
+                row.setContentWidth(contentWidth);
+            }
+        });
     }
 
     private handleTabToNextRow(rowIndex: number) {
@@ -234,6 +257,7 @@ export class GridViewport<ITEM> {
                 row.updateColumns(columns);
             }
         });
+        this.refreshGroupRowWidths();
     }
 
     addHeader(headerElement: HTMLElement) {

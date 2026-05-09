@@ -16,7 +16,8 @@ export class GridGroupRow {
         private header: GridGroupHeader,
         private index: number,
         private onToggle: (groupKey: string) => void,
-        private isGlass: boolean = false
+        private isGlass: boolean = false,
+        private contentWidth: number = 0
     ) {
         this.element = this.createGroupRow();
     }
@@ -30,6 +31,9 @@ export class GridGroupRow {
         row.style.transform = `translateY(${this.index * this.rowHeight}px)`;
         row.style.height = `${this.rowHeight}px`;
         row.style.paddingLeft = `${this.header.level * 24}px`;
+        if (this.contentWidth > 0) {
+            row.style.minWidth = `${this.contentWidth}px`;
+        }
 
         row.onclick = () => this.onToggle(this.header.groupKey);
 
@@ -72,11 +76,23 @@ export class GridGroupRow {
         return this.header;
     }
 
+    setContentWidth(width: number) {
+        this.contentWidth = width;
+        if (width > 0) {
+            this.element.style.minWidth = `${width}px`;
+        } else {
+            this.element.style.minWidth = '';
+        }
+    }
+
     update(header: GridGroupHeader, index: number) {
         this.header = header;
         this.index = index;
         this.element.style.transform = `translateY(${this.index * this.rowHeight}px)`;
         this.element.style.paddingLeft = `${this.header.level * 24}px`;
+        if (this.contentWidth > 0) {
+            this.element.style.minWidth = `${this.contentWidth}px`;
+        }
         
         const toggle = this.element.querySelector('.aura-grid-group-toggle');
         if (toggle) {

@@ -1,15 +1,17 @@
+const cellBorderB = 'border-b border-outline/10 dark:border-stone-50/10';
+
 export const GridStyles = {
     container: 'flex flex-col w-full text-sm text-foreground bg-background rounded-lg border border-outline/30 dark:border-stone-50/20 overflow-hidden min-h-0',
     glass: 'bg-transparent',
-    
+
     header: 'flex flex-row items-stretch bg-surface-container-low font-semibold h-[52px] sticky top-0 z-20 text-on-surface-variant text-[11px] uppercase tracking-wider border-b border-outline/20 dark:border-stone-50/20',
     headerGlass: 'glass-effect !bg-white/20',
-    
+
     viewport: 'flex-1 overflow-auto relative outline-none',
     content: 'relative w-full',
     rowsContainer: 'absolute inset-0 pointer-events-none',
-    
-    checkboxCell: 'w-12 flex-none flex items-center justify-center',
+
+    checkboxCell: `w-12 flex-none flex items-center justify-center ${cellBorderB}`,
     checkboxInput: 'rounded border-outline w-4 h-4 cursor-pointer accent-primary',
     
     headerCell: 'px-4 h-full flex items-center text-left truncate font-semibold text-on-surface-variant bg-surface-container-low group relative transition-colors hover:bg-surface-variant/30 select-none after:absolute after:right-0 after:top-[10%] after:h-[80%] after:w-0.5 after:bg-outline/30 after:opacity-0 [&.resizable-column]:hover:after:opacity-100 before:absolute before:left-0 before:top-[10%] before:h-[80%] before:w-0.5 before:bg-outline/30 before:opacity-0 [&.prev-resizable]:hover:before:opacity-100',
@@ -25,14 +27,14 @@ export const GridStyles = {
     actionHeaderCell: 'flex-none sticky right-0 bg-surface-container-low border-l border-outline/10 dark:border-stone-50/10 z-20 ml-auto',
     actionHeaderCellGlass: 'glass-effect !bg-white/20',
     
-    row: 'absolute w-full flex items-stretch border-b border-outline/10 dark:border-stone-50/10 transition-colors duration-200 group border-l-2 border-l-transparent hover:bg-surface-variant/20 hover:border-l-primary dark:hover:bg-slate-800/60 [will-change:transform] pointer-events-auto',
+    row: 'absolute w-full flex items-stretch transition-colors duration-200 group border-l-2 border-l-transparent hover:bg-surface-variant/20 hover:border-l-primary dark:hover:bg-slate-800/60 [will-change:transform] pointer-events-auto',
     rowOdd: 'bg-surface-container-low/20',
     rowSelected: 'bg-primary/10 border-l-primary',
     rowEditable: 'cursor-text',
     rowGlass: 'hover:bg-white/10 dark:hover:bg-white/5',
     actionCellGlass: 'glass-effect !bg-white/10',
     
-    cell: 'px-4 flex items-center truncate h-full',
+    cell: `px-4 flex items-center truncate h-full ${cellBorderB}`,
     totalCell: 'font-bold bg-surface-container-highest/30',
     
     groupRow: 'absolute w-full flex items-center bg-surface-container-high border-b border-outline/10 cursor-pointer hover:bg-surface-container-highest transition-colors z-10 [will-change:transform] pointer-events-auto',
@@ -44,7 +46,7 @@ export const GridStyles = {
     groupValue: 'text-primary',
     groupCount: 'text-xs text-on-surface-variant/60 font-normal',
     
-    actionCell: 'flex-none flex items-center justify-end px-2 gap-1 sticky right-0 z-10 border-l border-outline/10 dark:border-stone-50/10 transition-colors duration-200 bg-surface-container-low/80 ml-auto',
+    actionCell: `flex-none flex items-center justify-end px-2 gap-1 sticky right-0 z-10 border-l ${cellBorderB} transition-colors duration-200 bg-surface-container-low/80 ml-auto`,
     actionCellSelected: 'bg-primary/10',
     actionCellOdd: 'bg-surface-container-low',
     actionCellEven: 'bg-background',
