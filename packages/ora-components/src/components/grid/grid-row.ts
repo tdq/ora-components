@@ -30,7 +30,10 @@ export class GridRow<ITEM> {
         private onCommit: (item: ITEM) => void = () => { },
         private onRequestNextRow: (rowIndex: number) => void = () => { },
         private onRequestPreviousRow: (rowIndex: number) => void = () => { },
-        private onActivateEditor: (row: GridRow<ITEM>, cell: HTMLElement) => void = () => { }
+        private onActivateEditor: (row: GridRow<ITEM>, cell: HTMLElement) => void = () => { },
+        private onEditorClose: () => void = () => {},
+        private onRequestRowAbove: (rowIndex: number, columnIndex: number) => void = () => {},
+        private onRequestRowBelow: (rowIndex: number, columnIndex: number) => void = () => {}
     ) {
         this.element = this.createRow();
     }
@@ -186,6 +189,7 @@ export class GridRow<ITEM> {
 
     private enterEditMode(cell: HTMLElement, col: GridColumn<ITEM>, signal: AbortSignal) {
         if (!col.renderEditor) return;
+        if (signal.aborted) return;
         this.onActivateEditor(this, cell);
         const editor = col.renderEditor(this.item, this.isGlass);
         if (!editor) return;
@@ -208,6 +212,7 @@ export class GridRow<ITEM> {
             this.onCommit(this.item);
             this.showCellDisplay(cell, col);
             cell.focus();
+            this.onEditorClose();
         };
         (cell as any).__commitEdit = commitEdit;
 
@@ -215,18 +220,33 @@ export class GridRow<ITEM> {
             (this.item as any)[col.field as string] = originalValue;
             this.showCellDisplay(cell, col);
             cell.focus();
+            this.onEditorClose();
         };
 
         const editorAbort = new AbortController();
         (cell as any).__editorAbort = editorAbort;
         // Tie editor listeners to the row signal too (handles row destroy while editor is open)
-        signal.addEventListener('abort', () => editorAbort.abort());
+        signal.addEventListener('abort', () => editorAbort.abort(), { signal: editorAbort.signal });
 
         editor.element.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
+                // advance to next editable cell, same as Tab
+                const editableCells = this.getEditableCells();
+                const currentIdx = editableCells.indexOf(cell);
+                const rowIdx = this.index;
                 commitEdit();
+                if (currentIdx >= 0 && currentIdx < editableCells.length - 1) {
+                    const nextCell = editableCells[currentIdx + 1];
+                    if (nextCell.isConnected) {
+                        nextCell.click();
+                    } else {
+                        this.onRequestNextRow(rowIdx);
+                    }
+                } else {
+                    this.onRequestNextRow(rowIdx);
+                }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 e.stopPropagation();
@@ -234,28 +254,48 @@ export class GridRow<ITEM> {
             } else if (e.key === 'Tab') {
                 e.preventDefault();
                 e.stopPropagation();
-                (this.item as any)[col.field as string] = editor.getValue();
-                this.onCommit(this.item);
-                this.showCellDisplay(cell, col);
-
                 const editableCells = this.getEditableCells();
                 const currentIdx = editableCells.indexOf(cell);
+                const rowIdx = this.index;
+                commitEdit();
 
                 if (e.shiftKey) {
                     // Shift+Tab: move to previous editable cell
                     if (currentIdx > 0) {
-                        editableCells[currentIdx - 1].click();
+                        const prevCell = editableCells[currentIdx - 1];
+                        if (prevCell.isConnected) {
+                            prevCell.click();
+                        } else {
+                            this.onRequestPreviousRow(rowIdx);
+                        }
                     } else {
                         // First editable column — request previous row's last editable cell
-                        this.onRequestPreviousRow(this.index);
+                        this.onRequestPreviousRow(rowIdx);
                     }
                 } else {
                     // Tab: move to next editable cell
                     if (currentIdx >= 0 && currentIdx < editableCells.length - 1) {
-                        editableCells[currentIdx + 1].click();
+                        const nextCell = editableCells[currentIdx + 1];
+                        if (nextCell.isConnected) {
+                            nextCell.click();
+                        } else {
+                            this.onRequestNextRow(rowIdx);
+                        }
                     } else {
-                        this.onRequestNextRow(this.index);
+                        this.onRequestNextRow(rowIdx);
                     }
+                }
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                const editableCells = this.getEditableCells();
+                const colIdx = editableCells.indexOf(cell);
+                const rowIdx = this.index;
+                commitEdit();
+                if (e.key === 'ArrowUp') {
+                    this.onRequestRowAbove(rowIdx, colIdx);
+                } else {
+                    this.onRequestRowBelow(rowIdx, colIdx);
                 }
             }
         }, { signal: editorAbort.signal });
@@ -305,9 +345,40 @@ export class GridRow<ITEM> {
             }, { signal });
 
             cell.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !cell.dataset.editing) {
+                if (cell.dataset.editing) return;
+                if (e.key === 'Enter') {
                     e.preventDefault();
+                    e.stopPropagation();
                     this.enterEditMode(cell, col, signal);
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const editableCells = this.getEditableCells();
+                    const idx = editableCells.indexOf(cell);
+                    if (e.key === 'ArrowLeft') {
+                        if (idx > 0) {
+                            editableCells[idx - 1].focus();
+                        } else {
+                            this.onRequestPreviousRow(this.index);
+                        }
+                    } else {
+                        if (idx >= 0 && idx < editableCells.length - 1) {
+                            editableCells[idx + 1].focus();
+                        } else {
+                            this.onRequestNextRow(this.index);
+                        }
+                    }
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const editableCells = this.getEditableCells();
+                    const colIdx = editableCells.indexOf(cell);
+                    if (colIdx < 0) return;
+                    if (e.key === 'ArrowUp') {
+                        this.onRequestRowAbove(this.index, colIdx);
+                    } else {
+                        this.onRequestRowBelow(this.index, colIdx);
+                    }
                 }
             }, { signal });
         } else {
@@ -343,6 +414,17 @@ export class GridRow<ITEM> {
         const cells = this.getEditableCells();
         if (cells.length > 0) {
             cells[cells.length - 1].click();
+        }
+    }
+
+    public activateCellAtColumn(columnIndex: number, openEditor: boolean): void {
+        const cells = this.getEditableCells();
+        const cell = cells[Math.min(Math.max(columnIndex, 0), cells.length - 1)];
+        if (!cell) return;
+        if (openEditor) {
+            cell.click();
+        } else {
+            cell.focus();
         }
     }
 

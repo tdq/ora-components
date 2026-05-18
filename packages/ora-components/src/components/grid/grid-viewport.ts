@@ -98,7 +98,9 @@ export class GridViewport<ITEM> {
         for (const [index, row] of this.renderedRows.entries()) {
             if (index < startIndex || index > endIndex) {
                 if (row instanceof GridRow) {
-                    // Commit any open editor before evicting
+                    // Commit any open editor before evicting.
+                    // commitActiveEditor calls commitEdit → onEditorClose → clearActiveEditor,
+                    // so clearActiveEditor() below is a safety-net no-op in normal flow.
                     if (this.activeEditorRow === row && this.activeEditorCell) {
                         row.commitActiveEditor(this.activeEditorCell);
                         this.clearActiveEditor();
@@ -158,48 +160,62 @@ export class GridViewport<ITEM> {
         });
     }
 
-    private handleTabToNextRow(rowIndex: number) {
-        for (let i = rowIndex + 1; i < this.lastRows.length; i++) {
+    private moveToRow(
+        direction: 'next' | 'prev',
+        fromRowIndex: number,
+        columnIndex: number | 'first' | 'last',
+        openEditor: boolean
+    ): void {
+        const step = direction === 'next' ? 1 : -1;
+        for (let i = fromRowIndex + step; i >= 0 && i < this.lastRows.length; i += step) {
             const rowData = this.lastRows[i];
+            if (!rowData) continue;
             if (rowData.type === 'ITEM') {
+                const targetItem = rowData.data;
                 const viewportHeight = this.element.clientHeight;
                 const targetScrollTop = i * this.rowHeight;
                 const currentScrollTop = this.element.scrollTop;
-                if (targetScrollTop < currentScrollTop || targetScrollTop + this.rowHeight > currentScrollTop + viewportHeight) {
-                    this.element.scrollTop = targetScrollTop - viewportHeight / 2;
-                    this.renderVisibleRows(); // force synchronous render so the row exists before rAF
-                }
-                requestAnimationFrame(() => {
+                const needsScroll = targetScrollTop < currentScrollTop || targetScrollTop + this.rowHeight > currentScrollTop + viewportHeight;
+                const activate = () => {
                     const row = this.renderedRows.get(i);
-                    if (row instanceof GridRow) {
+                    if (!(row instanceof GridRow)) return;
+                    // Verify the row still corresponds to the intended item
+                    if (row.getItem() !== targetItem) return;
+                    if (columnIndex === 'first') {
                         row.activateFirstEditableCell();
+                    } else if (columnIndex === 'last') {
+                        row.activateLastEditableCell();
+                    } else {
+                        row.activateCellAtColumn(columnIndex, openEditor);
                     }
-                });
+                };
+                // Force re-render if slot is unoccupied or holds a stale non-item row.
+                if (needsScroll || !(this.renderedRows.get(i) instanceof GridRow)) {
+                    this.element.scrollTop = Math.max(0, targetScrollTop - viewportHeight / 2);
+                    this.renderVisibleRows();
+                    requestAnimationFrame(activate);
+                } else {
+                    activate();
+                }
                 return;
             }
         }
     }
 
-    private handleTabToPreviousRow(rowIndex: number) {
-        for (let i = rowIndex - 1; i >= 0; i--) {
-            const rowData = this.lastRows[i];
-            if (rowData.type === 'ITEM') {
-                const viewportHeight = this.element.clientHeight;
-                const targetScrollTop = i * this.rowHeight;
-                const currentScrollTop = this.element.scrollTop;
-                if (targetScrollTop < currentScrollTop || targetScrollTop + this.rowHeight > currentScrollTop + viewportHeight) {
-                    this.element.scrollTop = targetScrollTop - viewportHeight / 2;
-                    this.renderVisibleRows(); // force synchronous render so the row exists before rAF
-                }
-                requestAnimationFrame(() => {
-                    const row = this.renderedRows.get(i);
-                    if (row instanceof GridRow) {
-                        row.activateLastEditableCell();
-                    }
-                });
-                return;
-            }
-        }
+    private handleTabToNextRow(rowIndex: number): void {
+        this.moveToRow('next', rowIndex, 'first', true);
+    }
+
+    private handleTabToPreviousRow(rowIndex: number): void {
+        this.moveToRow('prev', rowIndex, 'last', true);
+    }
+
+    private handleArrowToRowAbove(rowIndex: number, columnIndex: number): void {
+        this.moveToRow('prev', rowIndex, columnIndex, false);
+    }
+
+    private handleArrowToRowBelow(rowIndex: number, columnIndex: number): void {
+        this.moveToRow('next', rowIndex, columnIndex, false);
     }
 
     private handleEditorActivate(row: GridRow<ITEM>, cell: HTMLElement) {
@@ -243,7 +259,10 @@ export class GridViewport<ITEM> {
                 this.onCommit,
                 (rowIndex) => this.handleTabToNextRow(rowIndex),
                 (rowIndex) => this.handleTabToPreviousRow(rowIndex),
-                (r, cell) => this.handleEditorActivate(r, cell)
+                (r, cell) => this.handleEditorActivate(r, cell),
+                () => this.clearActiveEditor(),
+                (rowIndex, colIdx) => this.handleArrowToRowAbove(rowIndex, colIdx),
+                (rowIndex, colIdx) => this.handleArrowToRowBelow(rowIndex, colIdx)
             );
             this.rowsContainer.appendChild(row.getElement());
             this.renderedRows.set(index, row);
@@ -264,8 +283,10 @@ export class GridViewport<ITEM> {
         return this.element;
     }
 
-    private clearRenderedRows() {
+    clearRenderedRows() {
         if (this.activeEditorRow && this.activeEditorCell) {
+            // commitActiveEditor calls commitEdit → onEditorClose → clearActiveEditor;
+            // explicit clearActiveEditor() below is a safety-net no-op in normal flow.
             this.activeEditorRow.commitActiveEditor(this.activeEditorCell);
             this.clearActiveEditor();
         }

@@ -10,6 +10,11 @@
  *  - Boolean column: immediate commit on checkbox change
  *  - Glass mode: editors receive isGlass=true
  *  - Per-column editor factories: text, number, percentage, money, date, boolean
+ *  - Arrow keys (display mode): ArrowLeft/Right navigate within row, wrap to prev/next row;
+ *    ArrowUp/Down call onRequestRowAbove/onRequestRowBelow with column index
+ *  - Arrow keys (edit mode): ArrowUp/Down commit and call row callbacks; ArrowLeft/Right fall through
+ *  - Enter (edit mode): commits and advances to next cell (same as Tab)
+ *  - activateCellAtColumn: focuses cell at given editable index without opening editor
  */
 
 import { BehaviorSubject, of } from 'rxjs';
@@ -94,6 +99,9 @@ function buildRow<ITEM>(
         onRequestPreviousRow?: (rowIndex: number) => void;
         onActivateEditor?: (row: GridRow<ITEM>, cell: HTMLElement) => void;
         rowIndex?: number;
+        onRequestRowAbove?: (rowIndex: number, columnIndex: number) => void;
+        onRequestRowBelow?: (rowIndex: number, columnIndex: number) => void;
+        onEditorClose?: () => void;
     } = {}
 ): GridRow<ITEM> {
     return new GridRow(
@@ -110,7 +118,10 @@ function buildRow<ITEM>(
         opts.onCommit ?? (() => {}),
         opts.onRequestNextRow ?? (() => {}),
         opts.onRequestPreviousRow ?? (() => {}),
-        opts.onActivateEditor ?? (() => {})
+        opts.onActivateEditor ?? (() => {}),
+        opts.onEditorClose ?? (() => {}),
+        opts.onRequestRowAbove ?? (() => {}),
+        opts.onRequestRowBelow ?? (() => {})
     );
 }
 
@@ -1337,6 +1348,700 @@ describe('GridRow — showCellDisplay cleans up __commitEdit', () => {
         editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
 
         expect((cell as any).__commitEdit).toBeUndefined();
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+});
+
+// ─── Arrow keys: display mode, horizontal navigation ────────────────────────
+
+describe('GridRow — ArrowLeft / ArrowRight navigate editable cells (display mode)', () => {
+    interface Item { a: string; b: string; c: string }
+
+    function makeRow(onRequestNextRow = jest.fn(), onRequestPreviousRow = jest.fn()) {
+        const item: Item = { a: 'x', b: 'y', c: 'z' };
+        const editors = {
+            a: makeTextEditor('x'),
+            b: makeTextEditor('y'),
+            c: makeTextEditor('z'),
+        };
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => editors.a.editor),
+            makeEditableColumn<Item>('b', ColumnType.TEXT, () => editors.b.editor),
+            makeEditableColumn<Item>('c', ColumnType.TEXT, () => editors.c.editor),
+        ];
+        const row = buildRow(item, cols, { onRequestNextRow, onRequestPreviousRow });
+        document.body.appendChild(row.getElement());
+        return { row, item, editors };
+    }
+
+    it('ArrowRight moves focus from first to second editable cell', () => {
+        const { row } = makeRow();
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        cells[0].focus();
+
+        cells[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+        expect(document.activeElement).toBe(cells[1]);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowLeft moves focus from second to first editable cell', () => {
+        const { row } = makeRow();
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        cells[1].focus();
+
+        cells[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+
+        expect(document.activeElement).toBe(cells[0]);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowRight at last cell calls onRequestNextRow', () => {
+        const onRequestNextRow = jest.fn();
+        const { row } = makeRow(onRequestNextRow);
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        cells[2].focus();
+
+        cells[2].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+        expect(onRequestNextRow).toHaveBeenCalledWith(0);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowLeft at first cell calls onRequestPreviousRow', () => {
+        const onRequestPreviousRow = jest.fn();
+        const { row } = makeRow(jest.fn(), onRequestPreviousRow);
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        cells[0].focus();
+
+        cells[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+
+        expect(onRequestPreviousRow).toHaveBeenCalledWith(0);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowRight does not invoke renderEditor on destination cell', () => {
+        const item: Item = { a: 'x', b: 'y', c: 'z' };
+        const editorB = makeTextEditor('y');
+        const renderEditorB = jest.fn(() => editorB.editor);
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => makeTextEditor('x').editor),
+            { ...makeEditableColumn<Item>('b', ColumnType.TEXT, () => editorB.editor), renderEditor: renderEditorB },
+            makeEditableColumn<Item>('c', ColumnType.TEXT, () => makeTextEditor('z').editor),
+        ];
+        const row = buildRow(item, cols);
+        document.body.appendChild(row.getElement());
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        cells[0].focus();
+
+        cells[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+        expect(renderEditorB).not.toHaveBeenCalled();
+        expect(cells[1].dataset.editing).toBeUndefined();
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowLeft/Right on the active editor element do not trigger navigation callbacks', () => {
+        const onRequestNextRow = jest.fn();
+        const onRequestPreviousRow = jest.fn();
+        const { row, editors } = makeRow(onRequestNextRow, onRequestPreviousRow);
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        cells[0].click(); // enter edit mode
+        expect(cells[0].dataset.editing).toBe('1');
+
+        // Dispatch on the editor element — this is the realistic path for native cursor keys
+        editors.a.editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        editors.a.editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+
+        // Editor is still mounted; no navigation occurred
+        expect(cells[0].dataset.editing).toBe('1');
+        expect(onRequestNextRow).not.toHaveBeenCalled();
+        expect(onRequestPreviousRow).not.toHaveBeenCalled();
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+});
+
+// ─── Arrow keys: display mode, vertical navigation ───────────────────────────
+
+describe('GridRow — ArrowUp / ArrowDown call row callbacks (display mode)', () => {
+    interface Item { a: string }
+
+    it('ArrowDown calls onRequestRowBelow with rowIndex and columnIndex', () => {
+        const onRequestRowBelow = jest.fn();
+        const item: Item = { a: 'val' };
+        const { editor } = makeTextEditor('val');
+        const col = makeEditableColumn<Item>('a', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col], { rowIndex: 3, onRequestRowBelow });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.focus();
+        cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+
+        expect(onRequestRowBelow).toHaveBeenCalledWith(3, 0);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowUp calls onRequestRowAbove with rowIndex and columnIndex', () => {
+        const onRequestRowAbove = jest.fn();
+        const item: Item = { a: 'val' };
+        const { editor } = makeTextEditor('val');
+        const col = makeEditableColumn<Item>('a', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col], { rowIndex: 5, onRequestRowAbove });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.focus();
+        cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+
+        expect(onRequestRowAbove).toHaveBeenCalledWith(5, 0);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowDown passes correct column index when second editable column is focused', () => {
+        const onRequestRowBelow = jest.fn();
+        const item = { a: 'x', b: 'y' } as { a: string; b: string };
+        const cols = [
+            makeEditableColumn<typeof item>('a', ColumnType.TEXT, () => makeTextEditor('x').editor),
+            makeEditableColumn<typeof item>('b', ColumnType.TEXT, () => makeTextEditor('y').editor),
+        ];
+        const row = buildRow(item, cols, { rowIndex: 2, onRequestRowBelow });
+        document.body.appendChild(row.getElement());
+
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        cells[1].focus();
+        cells[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+
+        expect(onRequestRowBelow).toHaveBeenCalledWith(2, 1);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowDown does not invoke renderEditor on the source cell', () => {
+        const item: Item = { a: 'val' };
+        const { editor } = makeTextEditor('val');
+        const renderEditor = jest.fn(() => editor);
+        const col: import('./types').GridColumn<Item> = {
+            id: 'a', field: 'a', type: ColumnType.TEXT, header: 'a',
+            editable: true, render: (i) => i.a, renderEditor,
+        };
+        const row = buildRow(item, [col], { onRequestRowBelow: jest.fn() });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.focus();
+        cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+
+        expect(renderEditor).not.toHaveBeenCalled();
+        expect(cell.dataset.editing).toBeUndefined();
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+});
+
+// ─── Arrow keys: edit mode (ArrowUp/Down commit + move; ArrowLeft/Right pass through) ────
+
+describe('GridRow — ArrowUp / ArrowDown in edit mode: commit and call row callbacks', () => {
+    interface Item { value: string }
+
+    it('ArrowDown in editor commits value and calls onRequestRowBelow', () => {
+        const onCommit = jest.fn();
+        const onRequestRowBelow = jest.fn();
+        const item: Item = { value: 'original' };
+        const { editor, value$ } = makeTextEditor('original');
+        const col = makeEditableColumn<Item>('value', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col], { rowIndex: 1, onCommit, onRequestRowBelow });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+        value$.next('updated');
+
+        editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+
+        expect(item.value).toBe('updated');
+        expect(onCommit).toHaveBeenCalledWith(item);
+        expect(onRequestRowBelow).toHaveBeenCalledWith(1, 0);
+        expect(cell.dataset.editing).toBeUndefined();
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowUp in editor commits value and calls onRequestRowAbove', () => {
+        const onCommit = jest.fn();
+        const onRequestRowAbove = jest.fn();
+        const item: Item = { value: 'original' };
+        const { editor, value$ } = makeTextEditor('original');
+        const col = makeEditableColumn<Item>('value', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col], { rowIndex: 4, onCommit, onRequestRowAbove });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+        value$.next('upward');
+
+        editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+
+        expect(item.value).toBe('upward');
+        expect(onCommit).toHaveBeenCalledWith(item);
+        expect(onRequestRowAbove).toHaveBeenCalledWith(4, 0);
+        expect(cell.dataset.editing).toBeUndefined();
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowLeft in editor does NOT call any navigation callback', () => {
+        const onRequestRowAbove = jest.fn();
+        const onRequestRowBelow = jest.fn();
+        const onRequestNextRow = jest.fn();
+        const onRequestPreviousRow = jest.fn();
+        const item: Item = { value: 'hello' };
+        const { editor } = makeTextEditor('hello');
+        const col = makeEditableColumn<Item>('value', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col], { onRequestRowAbove, onRequestRowBelow, onRequestNextRow, onRequestPreviousRow });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+
+        editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+
+        expect(onRequestRowAbove).not.toHaveBeenCalled();
+        expect(onRequestRowBelow).not.toHaveBeenCalled();
+        expect(onRequestNextRow).not.toHaveBeenCalled();
+        expect(onRequestPreviousRow).not.toHaveBeenCalled();
+        expect(cell.dataset.editing).toBe('1');
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowRight in editor does NOT call any navigation callback', () => {
+        const onRequestRowAbove = jest.fn();
+        const onRequestRowBelow = jest.fn();
+        const item: Item = { value: 'hello' };
+        const { editor } = makeTextEditor('hello');
+        const col = makeEditableColumn<Item>('value', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col], { onRequestRowAbove, onRequestRowBelow });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+
+        editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+        expect(onRequestRowAbove).not.toHaveBeenCalled();
+        expect(onRequestRowBelow).not.toHaveBeenCalled();
+        expect(cell.dataset.editing).toBe('1');
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+});
+
+// ─── Enter in edit mode: commit + advance (same as Tab) ───────────────────────
+
+describe('GridRow — Enter in edit mode commits and advances to next cell', () => {
+    interface Item { a: string; b: string }
+
+    it('Enter commits and moves focus to next editable cell in same row', () => {
+        const onCommit = jest.fn();
+        const item: Item = { a: 'first', b: 'second' };
+        const editors = {
+            a: makeTextEditor('first'),
+            b: makeTextEditor('second'),
+        };
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => editors.a.editor),
+            makeEditableColumn<Item>('b', ColumnType.TEXT, () => editors.b.editor),
+        ];
+        const row = buildRow(item, cols, { onCommit });
+        document.body.appendChild(row.getElement());
+
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        cells[0].click();
+        editors.a.value$.next('changed-a');
+
+        editors.a.editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+        expect(item.a).toBe('changed-a');
+        expect(onCommit).toHaveBeenCalledWith(item);
+        // Cell A should no longer be editing; cell B should now be
+        expect(cells[0].dataset.editing).toBeUndefined();
+        expect(cells[1].dataset.editing).toBe('1');
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('Enter at last editable cell calls onRequestNextRow', () => {
+        const onRequestNextRow = jest.fn();
+        const item: Item = { a: 'x', b: 'y' };
+        const { editor } = makeTextEditor('y');
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => makeTextEditor('x').editor),
+            makeEditableColumn<Item>('b', ColumnType.TEXT, () => editor),
+        ];
+        const row = buildRow(item, cols, { onRequestNextRow, rowIndex: 2 });
+        document.body.appendChild(row.getElement());
+
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        cells[1].click();
+
+        editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+        expect(onRequestNextRow).toHaveBeenCalledWith(2);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+});
+
+// ─── activateCellAtColumn ─────────────────────────────────────────────────────
+
+describe('GridRow — activateCellAtColumn', () => {
+    interface Item { a: string; b: string }
+
+    it('focuses cell at given editable index without opening editor (openEditor=false)', () => {
+        const item: Item = { a: 'x', b: 'y' };
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => makeTextEditor('x').editor),
+            makeEditableColumn<Item>('b', ColumnType.TEXT, () => makeTextEditor('y').editor),
+        ];
+        const row = buildRow(item, cols);
+        document.body.appendChild(row.getElement());
+
+        row.activateCellAtColumn(1, false);
+
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        expect(document.activeElement).toBe(cells[1]);
+        expect(cells[1].dataset.editing).toBeUndefined();
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('opens editor at given editable index (openEditor=true)', () => {
+        const item: Item = { a: 'x', b: 'y' };
+        const { editor } = makeTextEditor('y');
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => makeTextEditor('x').editor),
+            makeEditableColumn<Item>('b', ColumnType.TEXT, () => editor),
+        ];
+        const row = buildRow(item, cols);
+        document.body.appendChild(row.getElement());
+
+        row.activateCellAtColumn(1, true);
+
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        expect(cells[1].dataset.editing).toBe('1');
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('clamps out-of-bounds columnIndex to last cell', () => {
+        const item: Item = { a: 'x', b: 'y' };
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => makeTextEditor('x').editor),
+            makeEditableColumn<Item>('b', ColumnType.TEXT, () => makeTextEditor('y').editor),
+        ];
+        const row = buildRow(item, cols);
+        document.body.appendChild(row.getElement());
+
+        row.activateCellAtColumn(99, false);
+
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        expect(document.activeElement).toBe(cells[1]);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('clamps negative columnIndex to first cell', () => {
+        const item: Item = { a: 'x', b: 'y' };
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => makeTextEditor('x').editor),
+            makeEditableColumn<Item>('b', ColumnType.TEXT, () => makeTextEditor('y').editor),
+        ];
+        const row = buildRow(item, cols);
+        document.body.appendChild(row.getElement());
+
+        row.activateCellAtColumn(-1, false);
+
+        const cells = Array.from(row.getElement().children) as HTMLElement[];
+        expect(document.activeElement).toBe(cells[0]);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+});
+
+// ─── onEditorClose callback ───────────────────────────────────────────────────
+
+describe('GridRow — onEditorClose is called after cell returns to display mode', () => {
+    interface Item { value: string }
+
+    it('onEditorClose fires after commitEdit, when cell is back in display mode', () => {
+        const closeOrder: string[] = [];
+        const item: Item = { value: 'original' };
+        const { editor } = makeTextEditor('original');
+        const col = makeEditableColumn<Item>('value', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col], {
+            onEditorClose: () => {
+                const cell = row.getElement().children[0] as HTMLElement;
+                // Must be called AFTER showCellDisplay, so editing flag is gone
+                closeOrder.push(cell.dataset.editing ? 'editing' : 'display');
+            },
+        });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+        editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+        expect(closeOrder).toEqual(['display']);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('onEditorClose fires on Tab commit', () => {
+        const onEditorClose = jest.fn();
+        const item: Item = { value: 'val' };
+        const { editor } = makeTextEditor('val');
+        const col = makeEditableColumn<Item>('value', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col], { onEditorClose });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+        editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+
+        expect(onEditorClose).toHaveBeenCalledTimes(1);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('onEditorClose fires on ArrowDown commit', () => {
+        const onEditorClose = jest.fn();
+        const item: Item = { value: 'val' };
+        const { editor } = makeTextEditor('val');
+        const col = makeEditableColumn<Item>('value', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col], { onEditorClose, onRequestRowBelow: jest.fn() });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+        editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+
+        expect(onEditorClose).toHaveBeenCalledTimes(1);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+});
+
+// ─── ArrowLeft/Right in edit mode: events are not prevented ──────────────────
+
+describe('GridRow — ArrowLeft/Right in edit mode: native cursor events are not consumed', () => {
+    interface Item { value: string }
+
+    it('ArrowLeft event is not prevented by the editor keydown handler', () => {
+        const item: Item = { value: 'hello' };
+        const { editor } = makeTextEditor('hello');
+        const col = makeEditableColumn<Item>('value', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col]);
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+
+        const event = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true });
+        editor.element.dispatchEvent(event);
+
+        // The event must not be prevented — native cursor movement depends on this
+        expect(event.defaultPrevented).toBe(false);
+        // Editor stays mounted
+        expect(cell.dataset.editing).toBe('1');
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('ArrowRight event is not prevented by the editor keydown handler', () => {
+        const item: Item = { value: 'hello' };
+        const { editor } = makeTextEditor('hello');
+        const col = makeEditableColumn<Item>('value', ColumnType.TEXT, () => editor);
+        const row = buildRow(item, [col]);
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+
+        const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true });
+        editor.element.dispatchEvent(event);
+
+        expect(event.defaultPrevented).toBe(false);
+        expect(cell.dataset.editing).toBe('1');
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+});
+
+// ─── isConnected fallback: cell detached after onCommit rebuild ───────────────
+
+describe('GridRow — isConnected fallback when onCommit rebuilds the row', () => {
+    interface Item { value: string }
+
+    it('Enter falls back to onRequestNextRow when target cell is detached after commit', () => {
+        const onRequestNextRow = jest.fn();
+        const item: Item = { value: 'original' };
+        const editors = {
+            a: makeTextEditor('original'),
+            b: makeTextEditor('other'),
+        };
+        const cols = [
+            makeEditableColumn<Item>('value', ColumnType.TEXT, () => editors.a.editor),
+            makeEditableColumn<Item>('value', ColumnType.TEXT, () => editors.b.editor),
+        ];
+        // onCommit rebuilds the row by calling update(), which detaches old cell elements
+        const row = buildRow(item, cols, {
+            rowIndex: 0,
+            onRequestNextRow,
+            onCommit: () => {
+                // Simulate row rebuild: update() wipes children and re-populates
+                row.update(item, 0, false);
+            },
+        });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+        editors.a.editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+        // The old cells[1] is now detached; fallback to onRequestNextRow
+        expect(onRequestNextRow).toHaveBeenCalledWith(0);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('Tab falls back to onRequestNextRow when target cell is detached after commit', () => {
+        const onRequestNextRow = jest.fn();
+        const item: Item = { value: 'original' };
+        const editors = {
+            a: makeTextEditor('original'),
+            b: makeTextEditor('other'),
+        };
+        const cols = [
+            makeEditableColumn<Item>('value', ColumnType.TEXT, () => editors.a.editor),
+            makeEditableColumn<Item>('value', ColumnType.TEXT, () => editors.b.editor),
+        ];
+        const row = buildRow(item, cols, {
+            rowIndex: 1,
+            onRequestNextRow,
+            onCommit: () => {
+                row.update(item, 1, false);
+            },
+        });
+        document.body.appendChild(row.getElement());
+
+        const cell = row.getElement().children[0] as HTMLElement;
+        cell.click();
+        editors.a.editor.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+
+        expect(onRequestNextRow).toHaveBeenCalledWith(1);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+});
+
+// ─── multi-select: activateCellAtColumn skips checkbox column ─────────────────
+
+describe('GridRow — activateCellAtColumn with isMultiSelect', () => {
+    interface Item { a: string; b: string }
+
+    function buildMultiSelectRow(item: Item, cols: import('./types').GridColumn<Item>[]) {
+        return new GridRow<Item>(
+            item,
+            0,
+            cols,
+            [],
+            false,
+            true,  // isMultiSelect
+            true,
+            () => {},
+            0,
+            false,
+            () => {},
+            () => {},
+            () => {},
+            () => {},
+            () => {},
+            () => {},
+            () => {}
+        );
+    }
+
+    it('activateCellAtColumn(0, false) focuses the first editable column, not the checkbox', () => {
+        const item: Item = { a: 'x', b: 'y' };
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => makeTextEditor('x').editor),
+            makeEditableColumn<Item>('b', ColumnType.TEXT, () => makeTextEditor('y').editor),
+        ];
+        const row = buildMultiSelectRow(item, cols);
+        document.body.appendChild(row.getElement());
+
+        row.activateCellAtColumn(0, false);
+
+        // children[0] is the checkbox cell, children[1] is the first editable column
+        const children = Array.from(row.getElement().children) as HTMLElement[];
+        expect(document.activeElement).toBe(children[1]);
+        expect(document.activeElement).not.toBe(children[0]);
+
+        row.destroy();
+        document.body.removeChild(row.getElement());
+    });
+
+    it('activateCellAtColumn(1, false) focuses the second editable column', () => {
+        const item: Item = { a: 'x', b: 'y' };
+        const cols = [
+            makeEditableColumn<Item>('a', ColumnType.TEXT, () => makeTextEditor('x').editor),
+            makeEditableColumn<Item>('b', ColumnType.TEXT, () => makeTextEditor('y').editor),
+        ];
+        const row = buildMultiSelectRow(item, cols);
+        document.body.appendChild(row.getElement());
+
+        row.activateCellAtColumn(1, false);
+
+        const children = Array.from(row.getElement().children) as HTMLElement[];
+        expect(document.activeElement).toBe(children[2]);
 
         row.destroy();
         document.body.removeChild(row.getElement());

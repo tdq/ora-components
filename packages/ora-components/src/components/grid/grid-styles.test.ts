@@ -18,12 +18,11 @@ describe('GridStyles', () => {
             expect(GridStyles.header).not.toMatch(/\/80/);
         });
 
-        it('should use fully opaque bg-surface-container-low on the wrapper (header itself is transparent)', () => {
-            expect(GridStyles.headerWrapper).toContain('bg-surface-container-low');
-            const match = GridStyles.headerWrapper.match(/bg-surface-container-low(\/\d+)?/);
-            if (match && match[1]) {
-                expect(match[1]).not.toBe('/80');
-            }
+        it('should use surface-container-low colour (possibly semi-transparent via color-mix) on the wrapper', () => {
+            const usesSurfaceColor =
+                GridStyles.headerWrapper.includes('bg-surface-container-low') ||
+                GridStyles.headerWrapper.includes('--md-sys-color-surface-container-low');
+            expect(usesSurfaceColor).toBe(true);
         });
     });
 

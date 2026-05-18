@@ -208,7 +208,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
         const visColSub = visibleColumns$.subscribe(filtered => {
             header.updateColumns(filtered);
-            viewport.clearRows();
+            viewport.clearRenderedRows();
             viewport.updateColumns(filtered);
             viewport.update(lastRows, lastSelectedItems);
         });
