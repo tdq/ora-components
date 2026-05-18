@@ -11,6 +11,17 @@ Panels follow [Material Design 3](https://m3.material.io/components/cards) card 
 
 ---
 
+## When to use
+
+Use panels to group related content into visually distinct sections:
+
+- **Form sections** — wrap groups of related fields in a panel for visual separation
+- **Dashboard cards** — contain charts, grids, or summary widgets in bordered surfaces
+- **Detail views** — display read-only information blocks such as account summaries or transaction details
+- **Nested layouts** — combine multiple panels inside a layout builder for structured page shells
+
+Panels are not interactive — use a `Dialog` for modal interactions or a `Button` for actions.
+
 ## Usage
 
 ```typescript
@@ -88,7 +99,29 @@ The `Glass` story renders a panel with the glass-effect modifier applied on top 
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Move focus through interactive content inside the panel |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface` | Panel background |
+| `--md-sys-color-outline` | Panel border |
+| `--md-sys-color-on-surface` | Panel text colour |
+| `--md-sys-shape-large` | Panel border radius |
+| `--md-sys-spacing-*` | Panel gap (padding) — `PanelGap` enum maps to spacing tokens |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Full width**: Panels have `w-full` by default, expanding to fill their parent container's width.
 - **No shadow**: Panels have no drop shadow — they rely on border and background for visual separation.
@@ -96,3 +129,11 @@ The `Glass` story renders a panel with the glass-effect modifier applied on top 
 - **Default styling**: When `asGlass()` is not used, the panel has a `bg-surface` background, `border` outline, and `text-on-surface` text colour.
 - **Glass effect**: Applies the `glass-effect` CSS class with translucent colours and backdrop blur, and removes the visible border.
 - **Content is a `ComponentBuilder`**: Accepts any builder (LabelBuilder, GridBuilder, PanelBuilder for nesting, etc.) that implements the `ComponentBuilder` interface.
+
+---
+
+## Related components
+
+- [Layout](../?path=/docs/components-layout--docs) — arrange multiple panels in a page layout
+- [Grid](../?path=/docs/components-grid--docs) — embed data tables inside a panel
+- [Form](../?path=/docs/components-form--docs) — use panels to group form sections

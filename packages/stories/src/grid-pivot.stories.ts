@@ -1,16 +1,14 @@
-import { Meta, StoryObj } from '@storybook/html';
 import { GridBuilder } from '@tdq/ora-components';
 import { of } from 'rxjs';
 import { AggregationType } from '@tdq/ora-components';
 
-const meta: Meta = {
-  title: 'Components/Grid/Pivot',
-  parameters: {
-    layout: 'fullscreen',
-  },
+export default {
+    title: 'Components/Grid/Pivot',
+    tags: ['autodocs', 'stable', 'enterprise'],
+    parameters: {
+        layout: 'fullscreen',
+    },
 };
-
-export default meta;
 
 const data = [
   { region: 'North', category: 'Electronics', product: 'Smartphone', sales: 1200, count: 1 },
@@ -25,8 +23,8 @@ const data = [
   { region: 'North', category: 'Electronics', product: 'Tablet', sales: 1900, count: 1 },
 ];
 
-export const BasicPivot: StoryObj = {
-  render: () => {
+// Basic pivot with single row field ('category') and single value aggregation (SUM of sales), pivoted by 'region'
+export const BasicPivot = () => {
     const builder = new GridBuilder<any>()
       .withHeight(of(500))
       .withItems(of(data))
@@ -41,11 +39,10 @@ export const BasicPivot: StoryObj = {
     columns.addTextColumn('category').withHeader('Category').withWidth('150px');
 
     return builder.build();
-  },
 };
 
-export const MultiValuePivot: StoryObj = {
-  render: () => {
+// Multi-value pivot showing two aggregations (SUM of sales, COUNT of orders) across regions
+export const MultiValuePivot = () => {
     const builder = new GridBuilder<any>()
       .withHeight(of(500))
       .withItems(of(data))
@@ -63,11 +60,10 @@ export const MultiValuePivot: StoryObj = {
     columns.addTextColumn('category').withHeader('Category').withWidth('150px');
 
     return builder.build();
-  },
 };
 
-export const RowGroupingPivot: StoryObj = {
-  render: () => {
+// Pivot with multi-level row grouping ('category' + 'product') and grid-level grouping enabled on 'category'
+export const RowGroupingPivot = () => {
     const builder = new GridBuilder<any>()
       .withHeight(of(600))
       .withItems(of(data))
@@ -86,5 +82,4 @@ export const RowGroupingPivot: StoryObj = {
     builder.withGrouping(of(['category']));
 
     return builder.build();
-  },
 };

@@ -1,0 +1,324 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as ButtonStories from './button.stories';
+
+<Meta title="System/Theming" />
+
+# Theming
+
+The Aura design system is built on **Material Design 3 (MD3)** design tokens exposed as CSS custom properties. Every component references these tokens — colours, shapes, spacing, elevation, and typography — so you can customise the entire visual language by overriding a single set of variables. No component-specific CSS overrides are needed.
+
+---
+
+## Overview
+
+All styles in Aura use cascading custom properties scoped under the `--md-sys-*` namespace. Components are implemented without hardcoded colour, radius, or spacing values — they reference tokens such as `var(--md-sys-color-primary)` or `var(--md-sys-shape-medium)`. This architecture guarantees:
+
+- **Global consistency** — changing `--md-sys-color-primary` updates every button, field, label, and panel in one place.
+- **Theme-agnostic components** — no component re-rendering is needed when switching between light and dark themes.
+- **Minimal CSS footprint** — you only write overrides for the tokens you want to change, not selectors per component.
+
+The complete token set is defined in `packages/ora-components/src/index.css` and loaded automatically when you import `@tdq/ora-components`.
+
+---
+
+## Theme switching
+
+The `ThemeManager` singleton manages theme state, persists the user's choice to `localStorage`, and applies the active theme by setting `data-theme` on the document root.
+
+### Import
+
+```typescript
+import { themeManager, Theme } from '@tdq/ora-components';
+```
+
+### API
+
+| Method / Property | Signature | Description |
+|-------------------|-----------|-------------|
+| `setTheme()` | `(theme: Theme): void` | Sets the active theme, persists it to `localStorage`, and applies `data-theme` to `<html>`. |
+| `getTheme()` | `(): Theme` | Returns the current theme value (`'light'`, `'dark'`, `'green'`, or `'system'`). |
+| `theme$` | `Observable<Theme>` | RxJS observable that emits the current theme value on every change. Subscribe to react to theme switches. |
+
+### Theme type
+
+```typescript
+type Theme = 'light' | 'dark' | 'green' | 'system' | (string & {});
+```
+
+### Behaviour
+
+- **`'system'`** — the default. Listens to `prefers-color-scheme` media query. When the OS preference changes, the theme updates automatically.
+- **`'light'`** — forces light mode regardless of OS preference.
+- **`'dark'`** — forces dark mode regardless of OS preference.
+- **`'green'`** — an alternate light palette with green/teal accents.
+- **Custom strings** — any string value can be used as a theme name (see [Custom theme](#custom-theme)).
+
+`setTheme()` writes the value to `localStorage` under the key `'theme'`, so the user's choice persists across page loads.
+
+### Usage example
+
+```typescript
+import { themeManager } from '@tdq/ora-components';
+
+// Switch to dark mode
+themeManager.setTheme('dark');
+
+// React to theme changes
+themeManager.theme$.subscribe(theme => {
+  console.log(`Theme changed to: ${theme}`);
+});
+
+// Read current theme
+const current = themeManager.getTheme(); // 'dark'
+```
+
+### `data-theme` attribute
+
+When the theme changes, `ThemeManager` sets `document.documentElement.setAttribute('data-theme', ...)`. All token overrides are scoped to `[data-theme="dark"]`, `[data-theme="green"]`, etc. The light theme uses the bare `:root` selector.
+
+```css
+/* Light (default) */
+:root {
+  --md-sys-color-primary: #0F52BA;
+}
+
+/* Dark */
+[data-theme="dark"] {
+  --md-sys-color-primary: #60A5FA;
+}
+
+/* Green alternate */
+[data-theme="green"] {
+  --md-sys-color-primary: #166534;
+}
+```
+
+---
+
+## Token reference
+
+The design tokens are grouped into three categories: **Color**, **Shape**, and **Spacing**. The values below reflect the default light and dark palettes defined in `packages/ora-components/src/index.css`.
+
+### Color tokens
+
+| Token | Light default | Dark default | Role |
+|-------|--------------|--------------|------|
+| `--md-sys-color-primary` | `#0F52BA` | `#60A5FA` | Brand colour for primary actions, active states |
+| `--md-sys-color-on-primary` | `#FFFFFF` | `#002D5F` | Text / icons on primary surfaces |
+| `--md-sys-color-primary-container` | `#D1E1F8` | `#1E3A8A` | Container for secondary emphasis on primary |
+| `--md-sys-color-on-primary-container` | `#001B3D` | `#DBEAFE` | Text / icons on primary container |
+| `--md-sys-color-secondary` | `#475569` | `#94A3B8` | Accent colour for secondary actions |
+| `--md-sys-color-on-secondary` | `#FFFFFF` | `#0F172A` | Text / icons on secondary surfaces |
+| `--md-sys-color-secondary-container` | `#F1F5F9` | `#1E293B` | Container for secondary emphasis |
+| `--md-sys-color-on-secondary-container` | `#0F172A` | `#F1F5F9` | Text / icons on secondary container |
+| `--md-sys-color-tertiary` | `#0891B2` | `#22D3EE` | Contrast colour for tertiary elements |
+| `--md-sys-color-on-tertiary` | `#FFFFFF` | `#083344` | Text / icons on tertiary surfaces |
+| `--md-sys-color-tertiary-container` | `#CFFAFE` | `#155E75` | Container for tertiary emphasis |
+| `--md-sys-color-on-tertiary-container` | `#083344` | `#CFFAFE` | Text / icons on tertiary container |
+| `--md-sys-color-background` | `#FFFFFF` | `#0F172A` | Page background |
+| `--md-sys-color-on-background` | `#0F172A` | `#F8FAFC` | Text / icons on background |
+| `--md-sys-color-surface` | `#FFFFFF` | `#1E293B` | Surface colour for cards, sheets, menus |
+| `--md-sys-color-on-surface` | `#0F172A` | `#F8FAFC` | Text / icons on surface |
+| `--md-sys-color-surface-variant` | `#E2E8F0` | `#334155` | Surface variant for subtle backgrounds |
+| `--md-sys-color-on-surface-variant` | `#334155` | `#CBD5E1` | Text / icons on surface variant |
+| `--md-sys-color-surface-container-low` | `#F8FAFC` | `#1E293B` | Low-elevation container surface |
+| `--md-sys-color-outline` | `#94A3B8` | `#475569` | Borders, dividers, disabled states |
+| `--md-sys-color-error` | `#DC2626` | `#EF4444` | Error state colour |
+| `--md-sys-color-on-error` | `#FFFFFF` | `#450A0A` | Text / icons on error surfaces |
+
+### State layer tokens
+
+| Token | Value | Role |
+|-------|-------|------|
+| `--md-sys-state-hover-opacity` | `0.08` | Overlay opacity for hover state |
+| `--md-sys-state-focus-opacity` | `0.12` | Overlay opacity for focus state |
+| `--md-sys-state-pressed-opacity` | `0.12` | Overlay opacity for pressed state |
+| `--md-sys-state-dragged-opacity` | `0.16` | Overlay opacity for dragged state |
+
+### Shape tokens
+
+| Token | Value | Role |
+|-------|-------|------|
+| `--md-sys-shape-small` | `4px` | Small corners — badges, chips |
+| `--md-sys-shape-medium` | `6px` | Default corners — buttons, text fields, cards |
+| `--md-sys-shape-large` | `12px` | Large corners — dialogs, side panels |
+| `--md-sys-shape-extra-large` | `24px` | Extra-large corners — bottom sheets, full-screen dialogs |
+
+### Spacing tokens (4px grid)
+
+| Token | Value | Role |
+|-------|-------|------|
+| `--md-sys-spacing-1` | `4px` | Minimal inset padding |
+| `--md-sys-spacing-2` | `8px` | Compact spacing |
+| `--md-sys-spacing-3` | `12px` | Standard label-to-field gap |
+| `--md-sys-spacing-4` | `16px` | Content padding, field-to-field gap |
+| `--md-sys-spacing-5` | `24px` | Section spacing |
+| `--md-sys-spacing-6` | `32px` | Large section spacing |
+| `--md-sys-spacing-7` | `40px` | Extra-large spacing |
+| `--md-sys-spacing-8` | `48px` | Page-level padding |
+
+### Elevation tokens
+
+| Token | Value | Role |
+|-------|-------|------|
+| `--md-sys-elevation-level0` | `none` | Flat — no shadow |
+| `--md-sys-elevation-level1` | `0 1px 2px 0 rgb(0 0 0 / 0.05)` | Subtle — collapsed cards, hover states |
+| `--md-sys-elevation-level2` | `0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)` | Low — raised cards, buttons |
+| `--md-sys-elevation-level3` | `0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)` | Medium — dropdowns, date pickers |
+| `--md-sys-elevation-level4` | `0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)` | High — dialogs, modals |
+| `--md-sys-elevation-level5` | `0 25px 50px -12px rgb(0 0 0 / 0.25)` | Highest — toast notifications, floating panels |
+
+### Typography
+
+Typography is provided through utility classes rather than custom properties:
+
+| Class | Font size | Line height | Weight | Letter spacing |
+|-------|-----------|-------------|--------|----------------|
+| `md-label-large` | `16px` | `24px` | `500` | `0.1px` |
+| `md-label-medium` | `14px` | `20px` | `500` | `0.5px` |
+| `md-label-small` | `12px` | `16px` | `500` | `0.5px` |
+
+---
+
+## Custom theme
+
+Creating a custom theme is as simple as defining a new `data-theme` selector with your token overrides. You can switch to it by calling `themeManager.setTheme('your-theme-name')`.
+
+### Global custom theme (amber brand)
+
+```css
+[data-theme="amber"] {
+  --md-sys-color-primary: #D97706;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #FEF3C7;
+  --md-sys-color-on-primary-container: #451A03;
+
+  --md-sys-color-secondary: #92400E;
+  --md-sys-color-on-secondary: #FFFFFF;
+  --md-sys-color-secondary-container: #FFFBEB;
+  --md-sys-color-on-secondary-container: #292524;
+
+  --md-sys-color-background: #FFFBEB;
+  --md-sys-color-on-background: #292524;
+  --md-sys-color-surface: #FFFCF0;
+  --md-sys-color-on-surface: #292524;
+  --md-sys-color-surface-variant: #FDE68A;
+  --md-sys-color-on-surface-variant: #451A03;
+
+  --md-sys-color-outline: #D4A373;
+  --md-sys-color-error: #DC2626;
+  --md-sys-color-on-error: #FFFFFF;
+}
+```
+
+```typescript
+import { themeManager } from '@tdq/ora-components';
+
+themeManager.setTheme('amber');
+```
+
+The `data-theme` attribute on `<html>` will be set to `amber`, and all components will immediately reflect the new palette.
+
+### Scoped theming with class selector
+
+You can also scope a custom theme to a specific element by using a class selector instead of `data-theme`:
+
+```css
+.my-custom-section {
+  --md-sys-color-primary: #7C3AED;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #EDE9FE;
+  --md-sys-color-on-primary-container: #3B0764;
+}
+```
+
+```typescript
+const section = document.querySelector('.my-custom-section');
+section.classList.add('my-custom-section');
+```
+
+All Aura components inside `.my-custom-section` will inherit the overridden colours, while components outside remain unaffected.
+
+---
+
+## Elevation & shape
+
+Override elevation shadows and border radii the same way — by setting the corresponding custom properties at any CSS scope.
+
+### Custom elevation
+
+```css
+/* Soften all elevations across the app */
+:root {
+  --md-sys-elevation-level1: 0 2px 4px 0 rgb(0 0 0 / 0.06);
+  --md-sys-elevation-level2: 0 6px 12px -2px rgb(0 0 0 / 0.08);
+  --md-sys-elevation-level3: 0 12px 24px -4px rgb(0 0 0 / 0.1);
+  --md-sys-elevation-level4: 0 20px 40px -6px rgb(0 0 0 / 0.12);
+  --md-sys-elevation-level5: 0 28px 56px -12px rgb(0 0 0 / 0.18);
+}
+
+/* Scoped: make a specific panel use no shadows */
+.panel-flat {
+  --md-sys-elevation-level0: none;
+  --md-sys-elevation-level1: none;
+  --md-sys-elevation-level2: none;
+}
+```
+
+### Custom shape
+
+```css
+/* Rounded corners across the application */
+:root {
+  --md-sys-shape-small: 8px;
+  --md-sys-shape-medium: 12px;
+  --md-sys-shape-large: 16px;
+  --md-sys-shape-extra-large: 28px;
+}
+
+/* Scoped: sharp corners for a data-dense grid */
+.data-grid {
+  --md-sys-shape-small: 0px;
+  --md-sys-shape-medium: 0px;
+  --md-sys-shape-large: 0px;
+  --md-sys-shape-extra-large: 0px;
+}
+```
+
+### Elevation utility classes
+
+The following utility classes are available for applying elevation directly to custom elements:
+
+| Class | Token reference |
+|-------|----------------|
+| `.elevation-0` | `box-shadow: var(--md-sys-elevation-level0)` |
+| `.elevation-1` | `box-shadow: var(--md-sys-elevation-level1)` |
+| `.elevation-2` | `box-shadow: var(--md-sys-elevation-level2)` |
+| `.elevation-3` | `box-shadow: var(--md-sys-elevation-level3)` |
+| `.elevation-4` | `box-shadow: var(--md-sys-elevation-level4)` |
+| `.elevation-5` | `box-shadow: var(--md-sys-elevation-level5)` |
+
+---
+
+## Live demo
+
+The button component below demonstrates how theme tokens flow into component styles. Use the **Theme** toolbar toggle (☀️ / 🌙 / 🔄) at the top of the page to switch between light and dark themes — all buttons update automatically without a page reload.
+
+<Canvas of={ButtonStories.Styles} />
+
+> **Tip:** The toolbar toggle applies `data-theme` on the Storybook preview `<iframe>`, which is the same mechanism `ThemeManager` uses at runtime. Configure your own toggle by calling `themeManager.setTheme()` directly.
+
+---
+
+## Reference
+
+- **Token source**: `packages/ora-components/src/index.css`
+- **ThemeManager source**: `packages/ora-components/src/theme/theme-manager.ts`
+- **Theme type**: `packages/ora-components/src/theme/types.ts`
+
+### Cross-links
+
+- [Button](/docs/components-button--docs) — uses `--md-sys-color-primary`, `--md-sys-shape-medium`, `--md-sys-elevation-level1`
+- [Dialog](/docs/components-dialog--docs) — uses `--md-sys-shape-large`, `--md-sys-elevation-level4`
+- [Form](/docs/components-form--docs) — uses spacing tokens for field grids
+- [Chart](/docs/components-chart--docs) — uses colour tokens for series palettes

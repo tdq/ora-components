@@ -11,6 +11,19 @@ Layouts are the foundational building block for arranging panels, sidebars, head
 
 ---
 
+## When to use
+
+Use `LayoutBuilder` when you need to arrange multiple components in a horizontal or vertical stack:
+
+- **Page shells** — sidebar, main content, and footer regions arranged in a vertical column
+- **Split panels** — side-by-side panels with proportional widths using `SlotSize` (e.g. 1/4 sidebar + 3/4 content)
+- **Dashboard grids** — row-based or column-based arrangements of cards, charts, and data tables
+- **Conditional layouts** — slots that appear or disappear based on application state via `withVisible`
+
+Use CSS Grid or Flexbox directly for simple one-off arrangements. Use `LayoutBuilder` when slots need reactive visibility, proportional sizing, or integration with other component builders.
+
+---
+
 ## Usage
 
 ```typescript
@@ -170,7 +183,18 @@ The `LayoutAlignmentStory` demonstrates setting alignment at the layout level us
 
 ---
 
-## Styling Notes
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-spacing-*` | Gap between slots — `LayoutGap` enum maps to spacing tokens |
+| `--md-sys-color-surface` | Layout container background (when glass effect is applied) |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Full width**: The layout container always applies `w-full` for full-width behaviour.
 - **Direction**: `asVertical()` applies `flex-col`; `asHorizontal()` (default) applies `flex-row`.
@@ -179,3 +203,10 @@ The `LayoutAlignmentStory` demonstrates setting alignment at the layout level us
 - **Visibility**: Toggling slot visibility uses `display: none` via inline styles, driven by the `withVisible` observable. The component handles cleanup on destroy.
 - **Glass effect**: `withGlass()` adds `glass-effect`, `p-4`, and `rounded-large` classes to the layout container for a frosted-glass appearance.
 - **Alignment**: Layout-level alignment applies only to horizontal layouts. Slot-level alignment always applies. When both are set, the slot-level alignment takes precedence.
+
+---
+
+## Related components
+
+- [Panel](../?path=/docs/components-panel--docs) — use panels inside layout slots for grouped content regions
+- [Grid](../?path=/docs/components-grid--docs) — use grids inside layout slots for tabular data displays

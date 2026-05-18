@@ -30,9 +30,16 @@ const applyTheme = (theme: ThemeValue) => {
     document.documentElement.classList.toggle('dark', isDark);
 };
 
+const getBgClass = (theme: ThemeValue): string => {
+    if (theme === 'light') return 'bg-white';
+    if (theme === 'dark') return 'bg-black';
+    return prefersDark() ? 'bg-black' : 'bg-white';
+};
+
 const preview: Preview = {
     parameters: {
         layout: 'fullscreen',
+        backgrounds: { disable: true },
         actions: { argTypesRegex: "^on[A-Z].*" },
         controls: {
             matchers: {
@@ -46,11 +53,36 @@ const preview: Preview = {
                 language: 'ts',
             },
         },
+        viewport: {
+            viewports: {
+                desktop1280: { name: 'Desktop 1280', styles: { width: '1280px', height: '800px' }, type: 'desktop' },
+                desktop1440: { name: 'Desktop 1440', styles: { width: '1440px', height: '900px' }, type: 'desktop' },
+                desktop1920: { name: 'Full HD', styles: { width: '1920px', height: '1080px' }, type: 'desktop' },
+                desktopWide: { name: 'Ultrawide 2560', styles: { width: '2560px', height: '1080px' }, type: 'desktop' },
+            },
+            defaultViewport: 'desktop1440',
+        },
     },
     decorators: [
         (story, context) => {
-            applyTheme(context.globals.theme as ThemeValue);
-            return story();
+            const theme = context.globals.theme as ThemeValue;
+            applyTheme(theme);
+            const wrapper = document.createElement('div');
+            const isDocs = context.viewMode === 'docs';
+            const isFullscreen = context.parameters.layout === 'fullscreen';
+            const bg = getBgClass(theme);
+            if (isDocs) {
+                wrapper.className = 'bg-surface text-on-surface p-6';
+            } else if (isFullscreen) {
+                wrapper.className = `min-h-full w-full flex flex-col ${bg}`;
+            } else {
+                wrapper.className = `min-h-full w-full ${bg} text-on-surface p-6`;
+            }
+            const storyElement = story();
+            if (storyElement instanceof HTMLElement) {
+                wrapper.appendChild(storyElement);
+            }
+            return wrapper;
         },
     ],
 };

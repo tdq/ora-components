@@ -1,8 +1,10 @@
 import { FormBuilder } from '@tdq/ora-components';
 import { of, BehaviorSubject, Subject } from 'rxjs';
+import { createButton, createControlStrip } from './story-helpers';
 
 export default {
     title: 'Components/Form',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 export const RegistrationForm = () => {
@@ -30,29 +32,18 @@ export const RegistrationForm = () => {
     toolbar.withPrimaryButton().withCaption(of('Submit')).withClick(() => {});
 
     const container = document.createElement('div');
-    container.className = 'p-px-48 min-h-screen -m-px-16 flex flex-col gap-px-24 transition-all duration-1000';
+    container.className = 'p-px-48 -m-px-16 flex flex-col gap-px-24 transition-all duration-1000';
 
     // Controls for the story
-    const controls = document.createElement('div');
-    controls.className = 'flex gap-px-16 mb-px-24 p-px-16 bg-surface-variant/50 backdrop-blur-sm rounded-small border border-outline/20 self-start';
-
-    const errorBtn = document.createElement('button');
-    errorBtn.className = 'px-px-16 py-px-8 rounded-small bg-secondary text-on-secondary hover:elevation-1 transition-all';
-    errorBtn.textContent = 'Toggle Error';
-    errorBtn.onclick = () => {
+    const errorBtn = createButton('Toggle Error', () => {
         error$.next(error$.value ? '' : 'There are some errors in the form.');
-    };
-    controls.appendChild(errorBtn);
+    }).build();
 
-    const disableBtn = document.createElement('button');
-    disableBtn.className = 'px-px-16 py-px-8 rounded-small bg-surface-variant text-on-surface-variant hover:elevation-1 transition-all';
-    disableBtn.textContent = 'Toggle Enabled';
-    disableBtn.onclick = () => {
+    const disableBtn = createButton('Toggle Enabled', () => {
         enabled$.next(!enabled$.value);
-    };
-    controls.appendChild(disableBtn);
+    }).build();
 
-    container.appendChild(controls);
+    container.appendChild(createControlStrip([errorBtn, disableBtn]));
     container.appendChild(form.build());
 
     return container;
@@ -76,8 +67,32 @@ export const GlassForm = () => {
     toolbar.withPrimaryButton().withCaption(of('Proceed'));
 
     const container = document.createElement('div');
-    container.className = 'p-px-48 bg-gradient-to-br from-primary to-secondary min-h-screen';
+    container.className = 'flex-1 p-px-48 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500';
     container.appendChild(form.build());
 
+    return container;
+};
+
+export const GlobalError = () => {
+    const form = new FormBuilder()
+        .withCaption(of('User Registration'))
+        .withDescription(of('This email address is already registered. Please use a different one.'))
+        .withError(of('Submission failed: duplicate email'));
+
+    const fields = form.withFields(1);
+    fields.addTextField(1, 1)
+        .withLabel(of('Email'))
+        .withValue(new BehaviorSubject('john@example.com'));
+
+    const toolbar = form.withToolbar();
+    toolbar.withPrimaryButton()
+        .withCaption(of('Submit'))
+        .withClick(() => {});
+    toolbar.addSecondaryButton()
+        .withCaption(of('Cancel'));
+
+    const container = document.createElement('div');
+    container.className = 'p-px-48 -m-px-16';
+    container.appendChild(form.build());
     return container;
 };

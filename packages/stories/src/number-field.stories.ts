@@ -6,6 +6,7 @@ import { LabelBuilder, LabelSize } from '@tdq/ora-components';
 
 export default {
     title: 'Components/NumberField',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 export const Default = () => {
@@ -55,30 +56,6 @@ export const Styles = () => {
 
     const container = layout.build();
     container.classList.add('p-4', 'max-w-md');
-    return container;
-};
-
-export const Glass = () => {
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.EXTRA_LARGE);
-
-    layout.addSlot().withContent(
-        new NumberFieldBuilder()
-            .withLabel(of('Glass Tonal'))
-            .asGlass()
-            .withStyle(of(NumberFieldStyle.TONAL))
-    );
-
-    layout.addSlot().withContent(
-        new NumberFieldBuilder()
-            .withLabel(of('Glass Outlined'))
-            .asGlass()
-            .withStyle(of(NumberFieldStyle.OUTLINED))
-    );
-
-    const container = layout.build();
-    container.classList.add('p-8', 'bg-gradient-to-br', 'from-indigo-500', 'to-purple-600', 'min-h-[300px]');
     return container;
 };
 
@@ -147,6 +124,27 @@ export const PrefixSuffixAndPrecision = () => {
             .withPrecision(of(3))
             .withStep(of(0.005))
             .withValue(new BehaviorSubject<number | null>(75.125))
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+    return container;
+};
+
+export const LabelAndPlaceholder = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new NumberFieldBuilder()
+            .withLabel(of('Custom Label'))
+            .withPlaceholder(of('Custom Placeholder...'))
+    );
+
+    layout.addSlot().withContent(
+        new NumberFieldBuilder()
+            .withPlaceholder(of('No label, only placeholder'))
     );
 
     const container = layout.build();
@@ -242,27 +240,6 @@ export const Errors = () => {
     return container;
 };
 
-export const LabelAndPlaceholder = () => {
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
-
-    layout.addSlot().withContent(
-        new NumberFieldBuilder()
-            .withLabel(of('Custom Label'))
-            .withPlaceholder(of('Custom Placeholder...'))
-    );
-
-    layout.addSlot().withContent(
-        new NumberFieldBuilder()
-            .withPlaceholder(of('No label, only placeholder'))
-    );
-
-    const container = layout.build();
-    container.classList.add('p-4', 'max-w-md');
-    return container;
-};
-
 export const InlineErrors = () => {
     const value$ = new BehaviorSubject<number | null>(0);
     const error$ = value$.pipe(
@@ -290,5 +267,57 @@ export const InlineErrors = () => {
 
     const container = layout.build();
     container.classList.add('p-4', 'max-w-md');
+    return container;
+};
+
+export const StepAndBounds = () => {
+    const value$ = new BehaviorSubject<number | null>(25);
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new NumberFieldBuilder()
+            .withLabel(of('Bounded Number'))
+            .withPlaceholder(of('Enter a number (0–100, step 5)'))
+            .withMinValue(of(0))
+            .withMaxValue(of(100))
+            .withStep(of(5))
+            .withValue(value$)
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Step: 5, Range: 0–100'))
+            .withSize(LabelSize.SMALL)
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+    return container;
+};
+
+export const Glass = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.EXTRA_LARGE);
+
+    layout.addSlot().withContent(
+        new NumberFieldBuilder()
+            .withLabel(of('Glass Tonal'))
+            .asGlass()
+            .withStyle(of(NumberFieldStyle.TONAL))
+    );
+
+    layout.addSlot().withContent(
+        new NumberFieldBuilder()
+            .withLabel(of('Glass Outlined'))
+            .asGlass()
+            .withStyle(of(NumberFieldStyle.OUTLINED))
+    );
+
+    const container = layout.build();
+    container.classList.add('flex-1', 'p-8', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
     return container;
 };

@@ -3,9 +3,11 @@ import { of, Subject, BehaviorSubject } from 'rxjs';
 import { ButtonBuilder } from '@tdq/ora-components';
 import { TabsBuilder } from '@tdq/ora-components';
 import { FormBuilder } from '@tdq/ora-components';
+import { createGlassBackdrop, GLASS_GRADIENTS } from './story-helpers';
 
 export default {
     title: 'Components/Dialog',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 export const Basic = () => {
@@ -108,26 +110,11 @@ export const Scrollable = () => {
 
 export const DialogWithTabs = () => {
     const container = document.createElement('div');
-    container.className = 'p-10 min-h-[600px] w-full relative overflow-hidden flex items-center justify-center rounded-xl';
+    container.className = 'flex-1 p-10 w-full relative overflow-hidden flex items-center justify-center';
     
-    // Add a colorful background to showcase the glass effect
-    const bg = document.createElement('div');
-    bg.className = 'absolute inset-0 -z-10 bg-gradient-to-br from-blue-600 via-teal-500 to-emerald-500 opacity-60';
-    container.appendChild(bg);
-
-    // Add some decorative elements
-    for (let i = 0; i < 5; i++) {
-        const circle = document.createElement('div');
-        const size = Math.random() * 200 + 100;
-        circle.className = 'absolute rounded-full opacity-30 blur-3xl animate-pulse';
-        circle.style.width = `${size}px`;
-        circle.style.height = `${size}px`;
-        circle.style.left = `${Math.random() * 80 + 10}%`;
-        circle.style.top = `${Math.random() * 80 + 10}%`;
-        circle.style.backgroundColor = ['#FFFFFF', '#A7F3D0', '#BAE6FD'][i % 3];
-        circle.style.animationDuration = `${Math.random() * 5 + 5}s`;
-        container.appendChild(circle);
-    }
+    // Add a colorful glass backdrop
+    const backdrop = createGlassBackdrop(GLASS_GRADIENTS.INDIGO_PINK, 5, 'opacity-60');
+    container.appendChild(backdrop);
 
     const showDialog = () => {
         // 1. Create Tabs
@@ -348,27 +335,11 @@ export const DialogWithForm = () => {
 
 export const GlassEffect = () => {
     const container = document.createElement('div');
-    container.className = 'p-10 min-h-[600px] w-full relative overflow-hidden flex items-center justify-center rounded-xl';
+    container.className = 'flex-1 p-10 w-full relative overflow-hidden flex items-center justify-center';
     
-    // Add a colorful background to showcase the glass effect
-    const bg = document.createElement('div');
-    bg.className = 'absolute inset-0 -z-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-50';
-    container.appendChild(bg);
-
-    // Add some decorative elements for blur visibility
-    for (let i = 0; i < 8; i++) {
-        const circle = document.createElement('div');
-        const size = Math.random() * 150 + 100;
-        circle.className = 'absolute rounded-full opacity-40 blur-2xl animate-pulse';
-        circle.style.width = `${size}px`;
-        circle.style.height = `${size}px`;
-        circle.style.left = `${Math.random() * 100}%`;
-        circle.style.top = `${Math.random() * 100}%`;
-        circle.style.backgroundColor = ['#4F46E5', '#7C3AED', '#DB2777', '#F59E0B', '#10B981'][i % 5];
-        circle.style.animationDelay = `${Math.random() * 5}s`;
-        circle.style.animationDuration = `${Math.random() * 5 + 5}s`;
-        container.appendChild(circle);
-    }
+    // Add a colorful glass backdrop
+    const backdrop = createGlassBackdrop(GLASS_GRADIENTS.INDIGO_PINK, 8, 'opacity-60');
+    container.appendChild(backdrop);
 
     const showDialog = () => {
         const dialog = new DialogBuilder()

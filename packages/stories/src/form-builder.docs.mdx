@@ -12,6 +12,18 @@ Forms are ideal for accounting, invoicing, and financial data entry flows where 
 
 ---
 
+## When to use
+
+Use `FormBuilder` when you need a structured data-entry layout with labelled fields and action buttons:
+
+- **Data entry flows** — structured forms for invoices, payments, account creation, and other financial records
+- **Built-in validation** — field-level and global error observables for real-time validation feedback
+- **Reactive layout** — fields, headings, and toolbars arranged in a CSS grid with column control
+
+Use a manual layout with `LayoutBuilder` and individual field builders when you need full control over spacing, alignment, or non-standard field arrangements that do not fit a grid pattern.
+
+---
+
 ## Usage
 
 ```typescript
@@ -187,7 +199,29 @@ A glass-effect registration form inside a dialog overlay. Clicking "Open Registr
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Move focus between fields and toolbar buttons within the form |
+| `Enter` | Submits the form — triggers the primary toolbar button's click handler |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface` | Form container background |
+| `--md-sys-color-error` | Validation error colour |
+| `--md-sys-color-primary` | Focus ring colour for child fields |
+| `--md-sys-spacing-*` | Field gaps and layout spacing |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Form layout** is built on top of `LayoutBuilder` using a vertical layout with `EXTRA_LARGE` gap between the header, fields grid, error message, and toolbar.
 - **Field grid** uses CSS Grid with dynamic column count set by `withFields(columnsAmount)`.
@@ -197,3 +231,12 @@ A glass-effect registration form inside a dialog overlay. Clicking "Open Registr
 - **Glass effect** applies only to the fields and toolbar, **not** to the form container itself. Fields receive translucent backgrounds with backdrop blur.
 - **Toolbar** is always rendered at the bottom of the form. The enabled state of the form propagates to all toolbar buttons.
 - Fields in the disabled state apply reduced opacity and prevent user interaction.
+
+---
+
+## Related components
+
+- [TextField](../?path=/docs/components-text-field--docs) — text input fields used inside forms
+- [Checkbox](../?path=/docs/components-checkbox--docs) — binary selection fields used inside forms
+- [Button](../?path=/docs/components-button--docs) — action buttons used in form toolbars
+- [Dialog](../?path=/docs/components-dialog--docs) — embed forms inside modal dialogs

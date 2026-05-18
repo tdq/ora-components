@@ -1,7 +1,7 @@
 # Tabs
 
 ## Description
-Tabs component is a custom element that is used to display a button.
+Tabs component is a custom element that organises content into separate views with a horizontal navigation bar.
 It has the following methods:
 - `withCaption(caption: Observable<string>): this` - sets label of the tabs.
 - `withDescription(description: Observable<string>): this` - sets description of the tabs.

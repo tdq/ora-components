@@ -77,6 +77,20 @@ type ClickListener<TYPE> = (value: TYPE) => void
 
 ---
 
+## When to use
+
+Use buttons to trigger actions — not navigation. Choose the style based on emphasis:
+
+- **FILLED** — primary actions: "Save Invoice", "Submit Payment", "Confirm"
+- **TONAL** — alternative positive actions: "Save as Draft", "Apply Filter"
+- **OUTLINED** — secondary or dismissive actions: "Cancel", "Skip", "Back"
+- **ELEVATED** — actions that need visual separation from dense backgrounds
+- **TEXT** — low-emphasis actions: "Learn More", "Reset", inline links
+
+Use icon-only buttons for compact toolbars when the icon is universally understood (e.g. a trash icon for delete).
+
+---
+
 ## Style Variants
 
 The `Styles` story renders each `ButtonStyle` variant side by side so you can compare their appearance at a glance.
@@ -117,9 +131,43 @@ Buttons can display an SVG icon before the caption. When only an icon is provide
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Move focus to and from the button |
+| `Enter` / `Space` | Activate the button — triggers the click handler |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-primary` | FILLED background and icon/text colour |
+| `--md-sys-color-on-primary` | FILLED label text colour |
+| `--md-sys-color-secondary-container` | TONAL background colour |
+| `--md-sys-color-on-secondary-container` | TONAL label text colour |
+| `--md-sys-color-outline` | OUTLINED border colour |
+| `--md-sys-color-surface` | ELEVATED background colour |
+| `--md-sys-shape-small` | Border radius |
+| `--md-sys-spacing-3` | Vertical padding (`py`) |
+| `--md-sys-spacing-5` | Horizontal padding (`px`) |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Caption text** has `select-none` applied to prevent accidental text selection on rapid clicks.
 - **Disabled state** applies `opacity-50` and `cursor-not-allowed` — observable-driven via `withEnabled`.
 - **Icon-only mode** is automatic: when the caption observable emits an empty string or is not set, the button switches to a square aspect ratio with padding adjustments.
 - **Glass effect** overrides the background and border of each style variant with translucent colours and backdrop blur while preserving the focus ring for accessibility.
+
+---
+
+## Related components
+
+- [Toolbar](../?path=/docs/components-toolbar--docs) — group multiple buttons into an action bar
+- [Dialog](../?path=/docs/components-dialog--docs) — buttons trigger dialog open and close actions

@@ -1,9 +1,9 @@
-import { Observable, combineLatest, of } from 'rxjs';
+import { BehaviorSubject, map, Observable, combineLatest, of, Subscription } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { ColumnsBuilder } from './columns/columns-builder';
 import { ToolbarBuilder } from '../toolbar/toolbar-builder';
 import { ActionsBuilder } from './actions-builder';
-import { SortDirection, PivotConfig, ColumnType, GridColumn } from './types';
+import { SortDirection, PivotConfig, ColumnType, GridColumn, GridRowData } from './types';
 import { registerDestroy } from '@/core/destroyable-element';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -25,7 +25,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     private isGlass: boolean = false;
     private isEditable: boolean = false;
     private isMultiSelect: boolean = false;
-    private _onCommit: (item: ITEM) => void = () => {};
+    private _onCommit: (item: ITEM) => void = () => { };
 
     private logic = new GridLogic<ITEM>();
 
@@ -116,10 +116,13 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         }
 
         const actions = this.actionsBuilder ? this.actionsBuilder.build() : [];
-        
+
         // We'll create initial viewport and header with current columns.
         // If pivoting is enabled, they will be updated when data arrives.
         let columns = this.columnsBuilder ? this.columnsBuilder.build() : [];
+
+        const columns$ = new BehaviorSubject<GridColumn<ITEM>[]>(columns);
+        const visibilityMap$ = new BehaviorSubject<Map<string, boolean>>(new Map());
 
         const viewport = new GridViewport(
             columns,
@@ -155,6 +158,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
         const headerWrapper = document.createElement('div');
         headerWrapper.className = GridStyles.headerWrapper;
+        headerWrapper.tabIndex = -1;
         headerWrapper.appendChild(header.getElement());
         container.appendChild(headerWrapper);
 
@@ -170,8 +174,50 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         let lastRawItems: ITEM[] | null = null;
         let lastPivotConfig: PivotConfig | undefined = undefined;
 
+        // State snapshots for visibility callback
+        let lastSelectedItems: Set<ITEM> = new Set();
+        let lastRows: GridRowData<ITEM>[] = [];
+        // --- Unified column visibility via derived stream ---
+        let visSubs: Subscription[] = [];
+
+        function wireVisibility(cols: GridColumn<ITEM>[]): void {
+            visSubs.forEach(s => s.unsubscribe());
+            visSubs = [];
+
+            const map = new Map<string, boolean>();
+            cols.forEach(col => {
+                map.set(col.id, true);
+                if (col.visible$) {
+                    visSubs.push(
+                        col.visible$.subscribe(visible => {
+                            const next = new Map(visibilityMap$.value);
+                            next.set(col.id, visible);
+                            visibilityMap$.next(next);
+                        })
+                    );
+                }
+            });
+            visibilityMap$.next(map);
+        }
+
+        wireVisibility(columns);
+
+        const visibleColumns$ = combineLatest([columns$, visibilityMap$]).pipe(
+            map(([cols, vis]) => cols.filter(c => vis.get(c.id) !== false))
+        );
+
+        const visColSub = visibleColumns$.subscribe(filtered => {
+            header.updateColumns(filtered);
+            viewport.clearRows();
+            viewport.updateColumns(filtered);
+            viewport.update(lastRows, lastSelectedItems);
+        });
+        // --- End column visibility support ---
+
         const sub = combineLatest([this.logic.state$, this.height$]).subscribe(([state, height]) => {
             currentItems = state.items;
+            lastSelectedItems = state.selectedItems;
+            lastRows = state.rows;
             if (height === null) {
                 container.style.height = '100%';
                 container.style.minHeight = '0';
@@ -183,19 +229,24 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             if (state.pivotConfig && (state.rawItems !== lastRawItems || state.pivotConfig !== lastPivotConfig)) {
                 lastRawItems = state.rawItems;
                 lastPivotConfig = state.pivotConfig;
-                
+
                 // In pivot mode, we might need to regenerate columns if items change
                 // or if it's the first time.
                 // We must use rawItems because state.items are already pivoted!
                 const pivotColumns = this.generatePivotColumns(state.rawItems, state.pivotConfig);
-                
+
                 // Merge with base columns (row grouping fields)
                 const baseColumns = this.columnsBuilder ? this.columnsBuilder.build() : [];
                 columns = [...baseColumns, ...pivotColumns];
-                
-                // Update viewport and header with new columns
-                viewport.updateColumns(columns);
-                header.updateColumns(columns);
+
+                columns$.next(columns);
+                wireVisibility(columns);
+                this.logic.setColumns(columns);
+            } else if (!state.pivotConfig && lastPivotConfig) {
+                lastPivotConfig = undefined;
+                columns = this.columnsBuilder ? this.columnsBuilder.build() : [];
+                columns$.next(columns);
+                wireVisibility(columns);
                 this.logic.setColumns(columns);
             }
 
@@ -205,6 +256,8 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
         registerDestroy(container, () => {
             sub.unsubscribe();
+            visColSub.unsubscribe();
+            visSubs.forEach(s => s.unsubscribe());
             this.logic.destroy();
             viewport.destroy();
         });

@@ -10,9 +10,11 @@ import { NumberFieldStyle } from '@tdq/ora-components';
 import { ComboBoxBuilder, ComboBoxStyle } from '@tdq/ora-components';
 import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
 import { Icons } from '@tdq/ora-components';
+import { generateProducts } from './story-helpers';
 
 export default {
-    title: 'Examples/Product Management',
+    title: 'Examples/ProductManagement',
+    tags: ['autodocs', 'stable', 'enterprise', 'reactive'],
 };
 
 interface Product {
@@ -25,20 +27,6 @@ interface Product {
 }
 
 const CATEGORIES = ['Electronics', 'Clothing', 'Food', 'Furniture'];
-
-const generateProducts = (count: number): Product[] => {
-    return Array.from({ length: count }).map((_, i) => ({
-        id: i + 1,
-        name: `Product ${i + 1}`,
-        category: CATEGORIES[i % CATEGORIES.length] as any,
-        price: {
-            amount: Math.floor(Math.random() * 1000) + 10,
-            currencyId: 'USD'
-        },
-        stock: Math.floor(Math.random() * 100),
-        active: i % 5 !== 0,
-    }));
-};
 
 export const ProductManagement = () => {
     // State
@@ -75,10 +63,30 @@ export const ProductManagement = () => {
     };
 
     const deleteProduct = (product: Product) => {
-        if (confirm(`Are you sure you want to delete ${product.name}?`)) {
+        const dialog = new DialogBuilder()
+            .withCaption(of('Confirm Delete'))
+            .withDescription(of(`Are you sure you want to delete ${product.name}?`))
+            .withSize(DialogSize.SMALL);
+
+        const confirm$ = new Subject<void>();
+        confirm$.subscribe(() => {
             const current = products$.value;
             products$.next(current.filter(p => p.id !== product.id));
-        }
+            dialog.close();
+        });
+
+        const cancel$ = new Subject<void>();
+        cancel$.subscribe(() => dialog.close());
+
+        const toolbar = dialog.withToolbar();
+        toolbar.addSecondaryButton()
+            .withCaption(of('Cancel'))
+            .withClick(() => cancel$.next());
+        toolbar.withPrimaryButton()
+            .withCaption(of('Delete'))
+            .withClick(() => confirm$.next());
+
+        dialog.show();
     };
 
     const openProductDialog = (product?: Product) => {
@@ -237,7 +245,7 @@ export const ProductManagement = () => {
     const mainLayout = new LayoutBuilder()
         .asVertical()
         .withGap(LayoutGap.LARGE)
-        .withClass(of('p-8 bg-gray-50 min-h-screen'));
+        .withClass(of('p-8'));
 
     mainLayout.addSlot().withContent(filterPanel);
     mainLayout.addSlot().withContent(grid);

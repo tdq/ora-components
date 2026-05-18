@@ -10,6 +10,18 @@ The toolbar internally uses `LayoutBuilder` to arrange buttons in a horizontal b
 
 ---
 
+## When to use
+
+Use a `ToolbarBuilder` to group action buttons in a consistent layout:
+
+- **Dialog actions** — primary (confirm) and secondary (dismiss) buttons in modal dialogs
+- **Form actions** — Submit, Cancel, and Reset buttons at the bottom of data-entry forms
+- **Panel actions** — action buttons in sidebars, detail panels, or overlay components
+
+Arrange buttons by emphasis: text buttons for low-emphasis actions (left-aligned), outlined for secondary actions, and filled for the primary action (right-aligned). The primary action should represent the most likely or most important next step.
+
+---
+
 ## Usage
 
 ```typescript
@@ -90,10 +102,32 @@ All builder methods return `this` for chaining, except for `withPrimaryButton`, 
 
 ---
 
-## Styling Notes
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-primary` | Primary button colour |
+| `--md-sys-color-on-primary` | Primary button label colour |
+| `--md-sys-color-outline` | Secondary button border colour |
+| `--md-sys-color-surface` | Toolbar background |
+| `--md-sys-shape-small` | Button border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Button layout** uses Material Design 3 semantics: the primary button is `FILLED` (high emphasis), secondary buttons are `OUTLINED` (medium emphasis), and text buttons are `TEXT` (low emphasis).
 - **Text buttons** are left-aligned; **secondary and primary buttons** are right-aligned. When only one side has buttons, the toolbar collapses to a single-sided layout.
 - **Enabled state** is shared: calling `withEnabled` applies the same `Observable<boolean>` to every button in the toolbar. Individual button enabled states cannot be set independently when `withEnabled` is used on the toolbar.
 - **Glass effect** is applied only to the child buttons — the toolbar container itself is unaffected by `asGlass()`. Each button receives the glass styling individually.
 - **Built on LayoutBuilder**: the toolbar delegates its internal structure to `LayoutBuilder` with `LayoutGap.MEDIUM` between buttons and `SlotSize.FIT` for each button slot.
+
+---
+
+## Related components
+
+- [Button](../?path=/docs/components-button--docs) — individual buttons used inside toolbars
+- [Grid](../?path=/docs/components-grid--docs) — use toolbars in data table action bars
+- [Panel](../?path=/docs/components-panel--docs) — use toolbars in panel header or footer actions

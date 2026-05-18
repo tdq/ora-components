@@ -6,9 +6,12 @@ import { PanelBuilder, PanelGap } from '@tdq/ora-components';
 import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
 import { Alignment, LayoutBuilder } from '@tdq/ora-components';
 import { DialogBuilder } from '@tdq/ora-components';
+import { LabelBuilder, LabelSize } from '@tdq/ora-components';
+import { createActionLog, createButton, createControlStrip, createGlassBackdrop } from './story-helpers';
 
 export default {
-    title: 'Examples/Forms',
+    title: 'Examples/FormExamples',
+    tags: ['autodocs', 'stable', 'glass', 'reactive', 'enterprise'],
 };
 
 const withExampleControls = (form: FormBuilder, maxWidthClass: string = 'max-w-md', isGlass: boolean = false) => {
@@ -21,8 +24,8 @@ const withExampleControls = (form: FormBuilder, maxWidthClass: string = 'max-w-m
     const layout = new LayoutBuilder()
         .asVertical()
         .withClass(of(isGlass
-            ? 'p-px-48 min-h-screen -m-px-16 items-center justify-center gap-px-24 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500'
-            : 'p-px-48 min-h-screen -m-px-16 gap-px-24 bg-surface'
+            ? 'p-px-48 -m-px-16 items-center justify-center gap-px-24 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500'
+            : 'p-px-48 -m-px-16 gap-px-24'
         ));
 
     layout.addSlot()
@@ -75,13 +78,14 @@ export const PersonInformationForm = () => {
     );
 
     // Form actions
+    const { element: actionLog, log } = createActionLog();
     const submitClick$ = new Subject<void>();
     const resetClick$ = new Subject<void>();
 
     submitClick$.subscribe(() => {
         if (firstName$.value.trim() && lastName$.value.trim() &&
             email$.value.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email$.value)) {
-            alert(`Form submitted!\n\nName: ${firstName$.value} ${lastName$.value}\nEmail: ${email$.value}\nPhone: ${phone$.value || 'N/A'}`);
+            log(`Form submitted!\nName: ${firstName$.value} ${lastName$.value}\nEmail: ${email$.value}\nPhone: ${phone$.value || 'N/A'}`);
         }
     });
 
@@ -134,7 +138,11 @@ export const PersonInformationForm = () => {
         .withEnabled(isFormValid$)
         .withClick(() => submitClick$.next());
 
-    return withExampleControls(form, 'max-w-md');
+    const formEl = withExampleControls(form, 'max-w-md');
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(formEl);
+    wrapper.appendChild(actionLog);
+    return wrapper;
 };
 
 export const AddressForm = () => {
@@ -182,13 +190,14 @@ export const AddressForm = () => {
     );
 
     // Form actions
+    const { element: actionLog, log } = createActionLog();
     const submitClick$ = new Subject<void>();
     const clearClick$ = new Subject<void>();
 
     submitClick$.subscribe(() => {
         if (street$.value.trim() && city$.value.trim() &&
             state$.value.trim() && zipCode$.value.trim() && country$.value.trim()) {
-            alert(`Address submitted!\n\n${street$.value}\n${city$.value}, ${state$.value} ${zipCode$.value}\n${country$.value}`);
+            log(`Address submitted!\n${street$.value}\n${city$.value}, ${state$.value} ${zipCode$.value}\n${country$.value}`);
         }
     });
 
@@ -250,7 +259,11 @@ export const AddressForm = () => {
         .withEnabled(isFormValid$)
         .withClick(() => submitClick$.next());
 
-    return withExampleControls(form, 'max-w-2xl');
+    const formEl = withExampleControls(form, 'max-w-2xl');
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(formEl);
+    wrapper.appendChild(actionLog);
+    return wrapper;
 };
 
 export const CombinedForm = () => {
@@ -306,10 +319,11 @@ export const CombinedForm = () => {
     );
 
     // Actions
+    const { element: actionLog, log } = createActionLog();
     const submitClick$ = new Subject<void>();
 
     submitClick$.subscribe(() => {
-        alert(`Complete Form Submitted!\n\nPerson:\n${firstName$.value} ${lastName$.value}\n${email$.value}\n\nAddress:\n${street$.value}\n${city$.value}, ${zipCode$.value}`);
+        log(`Complete Form Submitted!\nPerson:\n${firstName$.value} ${lastName$.value}\n${email$.value}\n\nAddress:\n${street$.value}\n${city$.value}, ${zipCode$.value}`);
     });
 
     const form = new FormBuilder()
@@ -369,7 +383,11 @@ export const CombinedForm = () => {
         .withEnabled(isFormValid$)
         .withClick(() => submitClick$.next());
 
-    return withExampleControls(form, 'max-w-2xl');
+    const formEl = withExampleControls(form, 'max-w-2xl');
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(formEl);
+    wrapper.appendChild(actionLog);
+    return wrapper;
 };
 
 export const GlassLoginForm = () => {
@@ -389,12 +407,13 @@ export const GlassLoginForm = () => {
         map(([email, password, error]) => email.length > 0 && password.length > 0 && error === '')
     );
 
+    const { element: actionLog, log } = createActionLog();
     const submitClick$ = new Subject<void>();
     submitClick$.subscribe(() => {
         isLoading$.next(true);
         setTimeout(() => {
             isLoading$.next(false);
-            alert(`Logged in as ${email$.value}`);
+            log(`Logged in as ${email$.value}`);
         }, 2000);
     });
 
@@ -423,7 +442,11 @@ export const GlassLoginForm = () => {
         .withEnabled(combineLatest([isFormValid$, isLoading$]).pipe(map(([valid, loading]) => valid && !loading)))
         .withClick(() => submitClick$.next());
 
-    return withExampleControls(form, 'max-w-md', true);
+    const formEl = withExampleControls(form, 'max-w-md', true);
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(formEl);
+    wrapper.appendChild(actionLog);
+    return wrapper;
 };
 
 export const GlassSignupForm = () => {
@@ -486,6 +509,8 @@ export const GlassSignupForm = () => {
 };
 
 export const GlassRegistrationDialog = () => {
+    const { element: actionLog, log } = createActionLog();
+
     // Form state
     const name$ = new BehaviorSubject('');
     const email$ = new BehaviorSubject('');
@@ -529,7 +554,7 @@ export const GlassRegistrationDialog = () => {
 
         const register$ = new Subject<void>();
         register$.subscribe(() => {
-            alert(`Successfully registered ${name$.value}!`);
+            log(`Successfully registered ${name$.value}!`);
             dialog.close();
         });
 
@@ -547,25 +572,11 @@ export const GlassRegistrationDialog = () => {
     };
 
     const container = document.createElement('div');
-    container.className = 'p-10 min-h-[600px] w-full relative overflow-hidden flex items-center justify-center rounded-xl';
+    container.className = 'flex-1 p-10 w-full relative overflow-hidden flex items-center justify-center';
 
-    // Add a colorful background to showcase the glass effect
-    const bg = document.createElement('div');
-    bg.className = 'absolute inset-0 -z-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500';
-    container.appendChild(bg);
-
-    // Add some decorative elements
-    for (let i = 0; i < 5; i++) {
-        const circle = document.createElement('div');
-        const size = Math.random() * 150 + 100;
-        circle.className = 'absolute rounded-full opacity-40 blur-2xl';
-        circle.style.width = `${size}px`;
-        circle.style.height = `${size}px`;
-        circle.style.left = `${Math.random() * 100}%`;
-        circle.style.top = `${Math.random() * 100}%`;
-        circle.style.backgroundColor = ['#4F46E5', '#7C3AED', '#DB2777', '#F59E0B', '#10B981'][i % 5];
-        container.appendChild(circle);
-    }
+    // Add a colorful glass backdrop
+    const backdrop = createGlassBackdrop('from-indigo-500 via-purple-500 to-pink-500', 5, 'opacity-40');
+    container.appendChild(backdrop);
 
     const btnClick$ = new Subject<void>();
     btnClick$.subscribe(() => showDialog());
@@ -577,8 +588,278 @@ export const GlassRegistrationDialog = () => {
 
     container.appendChild(btn);
 
+    // Wrap with action log
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(container);
+    wrapper.appendChild(actionLog);
+
     // Auto-open for convenience
     setTimeout(() => showDialog(), 500);
 
+    return wrapper;
+};
+
+export const MultiStepWizard = () => {
+    const currentStep$ = new BehaviorSubject(0);
+    const { element: actionLog, log } = createActionLog();
+
+    // ── Step 0: Personal Information ──
+    const firstName$ = new BehaviorSubject('');
+    const lastName$ = new BehaviorSubject('');
+    const email$ = new BehaviorSubject('');
+
+    const firstNameError$ = firstName$.pipe(
+        map(v => v.trim() ? '' : 'First name is required')
+    );
+    const lastNameError$ = lastName$.pipe(
+        map(v => v.trim() ? '' : 'Last name is required')
+    );
+    const emailError$ = email$.pipe(
+        map(v => {
+            if (!v.trim()) return 'Email is required';
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Invalid email format';
+            return '';
+        })
+    );
+
+    const step0Valid$ = combineLatest([firstNameError$, lastNameError$, emailError$]).pipe(
+        map(errors => errors.every(e => !e))
+    );
+
+    // ── Step 1: Address ──
+    const street$ = new BehaviorSubject('');
+    const city$ = new BehaviorSubject('');
+    const zipCode$ = new BehaviorSubject('');
+
+    const streetError$ = street$.pipe(
+        map(v => v.trim() ? '' : 'Street is required')
+    );
+    const cityError$ = city$.pipe(
+        map(v => v.trim() ? '' : 'City is required')
+    );
+    const zipCodeError$ = zipCode$.pipe(
+        map(v => v.trim() ? '' : 'ZIP code is required')
+    );
+
+    const step1Valid$ = combineLatest([streetError$, cityError$, zipCodeError$]).pipe(
+        map(errors => errors.every(e => !e))
+    );
+
+    // ── Current step validity ──
+    const currentStepValid$ = combineLatest([currentStep$, step0Valid$, step1Valid$]).pipe(
+        map(([step, s0v, s1v]) => {
+            if (step === 0) return s0v;
+            if (step === 1) return s1v;
+            return true; // Confirm step — always valid
+        })
+    );
+
+    // ── Step 0: Personal Form ──
+    const personalForm = new FormBuilder()
+        .withCaption(of('Personal Information'));
+
+    const personalFields = personalForm.withFields();
+    personalFields.addTextField()
+        .withLabel(of('First Name'))
+        .withPlaceholder(of('John'))
+        .withValue(firstName$)
+        .withError(firstNameError$)
+        .withStyle(of(TextFieldStyle.TONAL));
+
+    personalFields.addTextField()
+        .withLabel(of('Last Name'))
+        .withPlaceholder(of('Doe'))
+        .withValue(lastName$)
+        .withError(lastNameError$)
+        .withStyle(of(TextFieldStyle.TONAL));
+
+    personalFields.addEmailField()
+        .withLabel(of('Email'))
+        .withPlaceholder(of('john@example.com'))
+        .withValue(email$)
+        .withError(emailError$)
+        .withStyle(of(TextFieldStyle.TONAL));
+
+    const personalPanel = new PanelBuilder()
+        .withGap(PanelGap.MEDIUM)
+        .withClass(of('w-full max-w-md'))
+        .withContent(personalForm);
+
+    // ── Step 1: Address Form ──
+    const addressForm = new FormBuilder()
+        .withCaption(of('Address'));
+
+    const addressFields = addressForm.withFields();
+    addressFields.addTextField()
+        .withLabel(of('Street'))
+        .withPlaceholder(of('123 Main Street'))
+        .withValue(street$)
+        .withError(streetError$)
+        .withStyle(of(TextFieldStyle.TONAL));
+
+    addressFields.addTextField()
+        .withLabel(of('City'))
+        .withPlaceholder(of('New York'))
+        .withValue(city$)
+        .withError(cityError$)
+        .withStyle(of(TextFieldStyle.TONAL));
+
+    addressFields.addTextField()
+        .withLabel(of('ZIP Code'))
+        .withPlaceholder(of('10001'))
+        .withValue(zipCode$)
+        .withError(zipCodeError$)
+        .withStyle(of(TextFieldStyle.TONAL));
+
+    const addressPanel = new PanelBuilder()
+        .withGap(PanelGap.MEDIUM)
+        .withClass(of('w-full max-w-md'))
+        .withContent(addressForm);
+
+    // ── Step 2: Confirm (read-only summary) ──
+    const confirmLayout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.MEDIUM);
+
+    const summaryCaption = new LabelBuilder()
+        .withCaption(of('Review your information before submitting.'))
+        .withSize(LabelSize.SMALL)
+        .build();
+    confirmLayout.addSlot().withContent({ build: () => summaryCaption });
+
+    const fullNameLabel = new LabelBuilder()
+        .withCaption(firstName$.pipe(map(v => `First Name: ${v}`)))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+    confirmLayout.addSlot().withContent({ build: () => fullNameLabel });
+
+    const lastNameLabel = new LabelBuilder()
+        .withCaption(lastName$.pipe(map(v => `Last Name: ${v}`)))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+    confirmLayout.addSlot().withContent({ build: () => lastNameLabel });
+
+    const emailLabel = new LabelBuilder()
+        .withCaption(email$.pipe(map(v => `Email: ${v}`)))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+    confirmLayout.addSlot().withContent({ build: () => emailLabel });
+
+    const streetLabel = new LabelBuilder()
+        .withCaption(street$.pipe(map(v => `Street: ${v}`)))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+    confirmLayout.addSlot().withContent({ build: () => streetLabel });
+
+    const cityLabel = new LabelBuilder()
+        .withCaption(city$.pipe(map(v => `City: ${v}`)))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+    confirmLayout.addSlot().withContent({ build: () => cityLabel });
+
+    const zipLabel = new LabelBuilder()
+        .withCaption(zipCode$.pipe(map(v => `ZIP Code: ${v}`)))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+    confirmLayout.addSlot().withContent({ build: () => zipLabel });
+
+    const confirmPanel = new PanelBuilder()
+        .withGap(PanelGap.MEDIUM)
+        .withClass(of('w-full max-w-md'))
+        .withContent({ build: () => confirmLayout.build() });
+
+    // ── Build panel elements ──
+    const personalEl = personalPanel.build();
+    const addressEl = addressPanel.build();
+    const confirmEl = confirmPanel.build();
+
+    // ── Step indicator ──
+    const stepNames = ['Personal', 'Address', 'Confirm'];
+    const stepEls = stepNames.map((name, i) => {
+        const el = document.createElement('div');
+        el.textContent = name;
+        el.className = 'px-4 py-2 rounded-full text-sm font-medium transition-colors';
+        return el;
+    });
+
+    const stepIndicatorStrip = document.createElement('div');
+    stepIndicatorStrip.className = 'flex gap-2 items-center justify-center mb-4';
+    stepEls.forEach(el => stepIndicatorStrip.appendChild(el));
+
+    // Subscribe to update indicator styling
+    currentStep$.subscribe(step => {
+        stepEls.forEach((el, i) => {
+            if (i === step) {
+                el.className = 'px-4 py-2 rounded-full text-sm font-medium bg-primary text-on-primary transition-colors';
+            } else if (i < step) {
+                el.className = 'px-4 py-2 rounded-full text-sm font-medium bg-secondary text-on-secondary transition-colors';
+            } else {
+                el.className = 'px-4 py-2 rounded-full text-sm font-medium bg-surface text-on-surface border border-outline/20 transition-colors';
+            }
+        });
+    });
+
+    // ── Content area ──
+    const contentArea = document.createElement('div');
+    contentArea.className = 'flex justify-center';
+    contentArea.appendChild(personalEl);
+    contentArea.appendChild(addressEl);
+    contentArea.appendChild(confirmEl);
+
+    currentStep$.subscribe(step => {
+        personalEl.style.display = step === 0 ? '' : 'none';
+        addressEl.style.display = step === 1 ? '' : 'none';
+        confirmEl.style.display = step === 2 ? '' : 'none';
+    });
+
+    // ── Navigation buttons ──
+    const backBtn = createButton('Back', () => {
+        if (currentStep$.value > 0) {
+            currentStep$.next(currentStep$.value - 1);
+        }
+    });
+
+    const nextBtn = createButton('Next', () => {
+        if (currentStep$.value < 2) {
+            currentStep$.next(currentStep$.value + 1);
+        }
+    }, ButtonStyle.FILLED)
+        .withEnabled(currentStepValid$);
+
+    const submitBtn = new ButtonBuilder()
+        .withCaption(of('Submit'))
+        .withStyle(of(ButtonStyle.FILLED))
+        .withClick(() => {
+            log('Form submitted!');
+            log(`Name: ${firstName$.value} ${lastName$.value}`);
+            log(`Email: ${email$.value}`);
+            log(`Address: ${street$.value}, ${city$.value} ${zipCode$.value}`);
+        })
+        .withEnabled(currentStep$.pipe(map(step => step === 2)));
+
+    const backEl = backBtn.build();
+    const nextEl = nextBtn.build();
+    const submitEl = submitBtn.build();
+
+    const navStrip = createControlStrip([backEl, nextEl, submitEl]);
+
+    currentStep$.subscribe(step => {
+        backEl.style.display = step === 0 ? 'none' : '';
+        nextEl.style.display = step === 2 ? 'none' : '';
+        submitEl.style.display = step === 2 ? '' : 'none';
+    });
+
+    // ── Assemble ──
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent({ build: () => stepIndicatorStrip });
+    layout.addSlot().withContent({ build: () => contentArea });
+    layout.addSlot().withContent({ build: () => navStrip });
+    layout.addSlot().withContent({ build: () => actionLog });
+
+    const container = layout.build();
+    container.classList.add('p-4');
     return container;
 };

@@ -3,6 +3,7 @@ import { BehaviorSubject, of } from 'rxjs';
 
 export default {
     title: 'Components/MultiSelectList',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 const FRUITS = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape', 'Honeydew', 'Kiwi', 'Lemon', 'Mango', 'Nectarine', 'Orange', 'Papaya', 'Quince', 'Raspberry', 'Strawberry', 'Tangerine', 'Ugli Fruit', 'Watermelon'];
@@ -161,25 +162,6 @@ export const ComplexObjects = () => {
     return container;
 };
 
-export const Glass = () => {
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
-
-    layout.addSlot().withContent(
-        new MultiSelectListBuilder<string>()
-            .withItems(of(FRUITS.slice(0, 8)))
-            .withCaption(of('Glass effect'))
-            .withHeight(of(250))
-            .asGlass()
-    );
-
-    const container = layout.build();
-    container.classList.add('p-12', 'max-w-md', 'bg-gradient-to-br', 'from-primary', 'to-secondary', 'min-h-[400px]');
-
-    return container;
-};
-
 export const SelectAllToggle = () => {
     const layout = new LayoutBuilder()
         .asHorizontal()
@@ -212,6 +194,25 @@ export const SelectAllToggle = () => {
 
     const container = layout.build();
     container.classList.add('p-4');
+
+    return container;
+};
+
+export const Glass = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new MultiSelectListBuilder<string>()
+            .withItems(of(FRUITS.slice(0, 8)))
+            .withCaption(of('Glass effect'))
+            .withHeight(of(250))
+            .asGlass()
+    );
+
+    const container = layout.build();
+    container.classList.add('flex-1', 'p-12', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
 
     return container;
 };

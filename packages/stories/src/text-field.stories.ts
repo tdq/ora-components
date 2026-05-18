@@ -7,6 +7,7 @@ import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
 
 export default {
     title: 'Components/TextField',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 export const Styles = () => {
@@ -36,41 +37,6 @@ export const Styles = () => {
         new TextFieldBuilder()
             .withPlaceholder(of('Type something...'))
             .withStyle(of(TextFieldStyle.OUTLINED))
-    );
-
-    const container = layout.build();
-    container.classList.add('p-4', 'max-w-md');
-
-    return container;
-};
-
-export const Interactive = () => {
-    const value$ = new BehaviorSubject('Hello RxJS');
-    const resetClick$ = new Subject<void>();
-
-    resetClick$.subscribe(() => value$.next('Hello RxJS'));
-
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
-
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withPlaceholder(of('Placeholder...'))
-            .withValue(value$)
-    );
-
-    layout.addSlot().withContent(
-        new LabelBuilder()
-            .withCaption(value$.pipe(map(val => `Current Value: ${val}`)))
-            .withSize(LabelSize.MEDIUM)
-    );
-
-    layout.addSlot().withContent(
-        new ButtonBuilder()
-            .withCaption(of('Reset to Default'))
-            .withStyle(of(ButtonStyle.TONAL))
-            .withClick(() => resetClick$.next())
     );
 
     const container = layout.build();
@@ -198,33 +164,6 @@ export const InlineValidation = () => {
     return container;
 };
 
-export const Glass = () => {
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.EXTRA_LARGE);
-
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Glass Filled'))
-            .withPlaceholder(of('Glass filled text field...'))
-            .asGlass()
-            .withStyle(of(TextFieldStyle.TONAL))
-    );
-
-    layout.addSlot().withContent(
-        new TextFieldBuilder()
-            .withLabel(of('Glass Outlined'))
-            .withPlaceholder(of('Glass outlined text field...'))
-            .asGlass()
-            .withStyle(of(TextFieldStyle.OUTLINED))
-    );
-
-    const container = layout.build();
-    container.classList.add('p-8', 'bg-gradient-to-br', 'from-blue-500', 'to-purple-600', 'min-h-[400px]');
-
-    return container;
-};
-
 export const DocumentedFeatures = () => {
     const layout = new LayoutBuilder()
         .asVertical()
@@ -257,6 +196,68 @@ export const DocumentedFeatures = () => {
 
     const container = layout.build();
     container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+export const Interactive = () => {
+    const value$ = new BehaviorSubject('Hello RxJS');
+    const resetClick$ = new Subject<void>();
+
+    resetClick$.subscribe(() => value$.next('Hello RxJS'));
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withPlaceholder(of('Placeholder...'))
+            .withValue(value$)
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(value$.pipe(map(val => `Current Value: ${val}`)))
+            .withSize(LabelSize.MEDIUM)
+    );
+
+    layout.addSlot().withContent(
+        new ButtonBuilder()
+            .withCaption(of('Reset to Default'))
+            .withStyle(of(ButtonStyle.TONAL))
+            .withClick(() => resetClick$.next())
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+export const Glass = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.EXTRA_LARGE);
+
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Glass Filled'))
+            .withPlaceholder(of('Glass filled text field...'))
+            .asGlass()
+            .withStyle(of(TextFieldStyle.TONAL))
+    );
+
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Glass Outlined'))
+            .withPlaceholder(of('Glass outlined text field...'))
+            .asGlass()
+            .withStyle(of(TextFieldStyle.OUTLINED))
+    );
+
+    const container = layout.build();
+    container.classList.add('flex-1', 'p-8', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
 
     return container;
 };

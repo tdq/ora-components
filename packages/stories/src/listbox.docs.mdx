@@ -91,6 +91,18 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 
 ---
 
+## When to use
+
+Use a `ListBox` when users need to select a single option from a predefined list of items:
+
+- **Option selection** — choose a report type, account category, or filter from a fixed set
+- **Dropdown replacement** — as a standalone select list for choosing from moderate-sized option sets
+- **Keyboard-driven selection** — when users need fast keyboard navigation through options
+
+Use a `ComboBox` when users need to filter the list by typing, or when the list of options is too large to browse linearly.
+
+---
+
 ## Style Variants
 
 The `Styles` story renders all three `ListBoxStyle` variants — tonal, outlined, and borderless — side by side so you can compare their appearance at a glance.
@@ -131,15 +143,49 @@ The `Interactive` story demonstrates reactive state: selecting an item from the 
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Move focus into and out of the list box |
+| `Arrow Up` / `Arrow Down` | Navigate to the previous/next item (wraps around) |
+| `Home` | Jump to the first item |
+| `End` | Jump to the last item |
+| `Enter` | Select the focused item |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface` | List panel background |
+| `--md-sys-color-surface-variant` | Input background (when used as dropdown) |
+| `--md-sys-color-primary` | Focus ring and selection colour |
+| `--md-sys-color-outline` | Panel border colour |
+| `--md-sys-shape-small` | Item border radius |
+| `--md-sys-shape-medium` | Panel border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Panel styling** uses `rounded-large border` for tonal and outlined variants; borderless mode removes these.
 - **Selected item** is displayed with bold text and a coloured background: `bg-secondary-container` for tonal and borderless styles, `bg-primary-container` for outlined.
 - **Hover state** applies `bg-on-surface/8` to non-selected items.
 - **Focused item** (keyboard navigation) applies `bg-on-surface/12` — distinct from the selection highlight.
-- **Keyboard navigation**: ArrowUp/ArrowDown navigate (with wrapping), Home/End jump to first/last, Enter selects the focused item. All keys call `preventDefault()`.
 - **External focus control** via `withFocusedIndex` lets parent components (e.g. `ComboBoxBuilder`) drive the focused index from their own keyboard handlers.
 - **Disabled state** applies `opacity-50 pointer-events-none` to the container.
 - **Error state** applies `border-error` to the panel.
-- **Glass mode with BORDERLESS**: When `asGlass()` is used with `BORDERLESS`, the `glass-effect` class is NOT applied to the container (to avoid double-glass when a surrounding popover already provides it). Items still use glass colours (`bg-white/40` for selected, `hover:bg-black/5`).
+- **Glass mode with BORDERLESS**: When `asGlass()` is used with `BORDERLESS`, the `glass-effect` class is NOT applied to the container (to avoid double-glass when a surrounding popover already provides it). Items still use glass colours.
 - **State layer**: Each item includes a state layer `<div>` for active/pressed feedback (15% opacity on `:active`).
+
+---
+
+## Related components
+
+- [Checkbox](../?path=/docs/components-checkbox--docs) — multi-selection alternative using individual checkboxes
+- [ComboBox](../?path=/docs/components-combobox--docs) — list box with type-to-filter and input field integration
+- [Grid](../?path=/docs/components-grid--docs) — tabular data display with single-row selection support

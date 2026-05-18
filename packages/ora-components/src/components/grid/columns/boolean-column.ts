@@ -31,11 +31,14 @@ export class BooleanColumnBuilder<ITEM> extends BaseColumnBuilder<ITEM> {
     protected override createEditor(item: ITEM, isGlass: boolean): CellEditor {
         const value$ = new BehaviorSubject<boolean>(!!(item as any)[this._field]);
         const builder = new CheckboxBuilder().withValue(value$).asGlass(isGlass);
-        const element = builder.build();
+        const checkbox = builder.build();
+        const element = document.createElement('div');
+        element.className = 'flex items-center justify-center w-full h-full';
+        element.appendChild(checkbox);
         return {
             element,
             getValue: () => value$.getValue(),
-            focus: () => (element.querySelector('input') as HTMLInputElement | null)?.focus(),
+            focus: () => (checkbox.querySelector('input') as HTMLInputElement | null)?.focus(),
         };
     }
 

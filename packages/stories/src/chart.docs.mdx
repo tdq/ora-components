@@ -11,6 +11,19 @@ The chart is configured via `ChartBuilder<ITEM>`, which uses a generic type to e
 
 ---
 
+## When to use
+
+Use line charts to visualise trends over time, such as monthly revenue or expense tracking. Bar charts are ideal for comparing discrete values across categories, like order counts per department. Area charts emphasise volume or cumulative totals, while combining multiple chart types on shared axes enables rich comparison dashboards.
+
+Use the Chart component when you need:
+
+- **Time-series data** — with configurable axes and grid lines for financial period analysis
+- **Multi-series overlays** — comparing different metrics on a single visualisation (revenue vs expenses, budget vs actuals)
+- **Reactive updates** — data streams update the chart in real time without rebuilding
+- **High-density datasets** — automatic downsampling maintains performance with thousands of points
+
+---
+
 ## Usage
 
 ```typescript
@@ -268,13 +281,45 @@ When datasets contain thousands of points, the chart automatically downsamples t
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Move focus into and out of the chart |
+| `Arrow keys` | Navigate between data points |
+| `Enter` / `Space` | Activate tooltip on focused data point |
+| `Escape` | Close tooltip |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-primary` | Series 1 colour |
+| `--md-sys-color-secondary` | Series 2 colour |
+| `--md-sys-color-tertiary` | Series 3 colour |
+| `--md-sys-color-surface` | Chart background |
+| `--md-sys-color-on-surface-variant` | Axis labels and tick text |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Chart container**: Transparent by default and fills 100% of its parent width. Use `asGlass()` for a card-like appearance with backdrop blur.
 - **Series colours**: Default colours cycle through the Material Design 3 palette: primary, secondary, tertiary, error, and five additional accent colours.
 - **Tooltips**: Show on hover with series label, value, and category. Each series can supply a custom tooltip renderer via `withTooltip()`.
 - **Animation**: Entry animations (`<animate>` elements on SVG paths/rects/circles) are enabled by default. Toggle via `withAnimation(false)`.
 - **Downsampling**: For high-density data, `ChartLogic` limits visible points to `Math.max(2, Math.floor(viewWidth / 24))` to maintain rendering performance.
-- **SVG**: All chart elements are rendered in an SVG with `viewBox` for responsive scaling. SVG elements use `document.createElementNS('http://www.w3.org/2000/svg', ...)`.
+- **SVG**: All chart elements are rendered in an SVG with `viewBox` for responsive scaling.
 - **Hover effects**: Hovered points are highlighted with a 6px radius ring on line and area charts. A dashed crosshair line extends from the hovered point to the axes.
 - **Glass effect**: `asGlass()` applies to the chart container only — the SVG and series rendering are unaffected.
+
+---
+
+## Related components
+
+- [Panel](../?path=/docs/components-panel--docs) — use as chart container or dashboard card
+- [Form](../?path=/docs/components-form--docs) — build filter controls for chart data

@@ -4,6 +4,7 @@ import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Panel',
+    tags: ['stable', 'glass'],
 };
 
 export const Default = () => {
@@ -46,7 +47,7 @@ export const Gaps = () => {
 
 export const Glass = () => {
     const background = document.createElement('div');
-    background.className = 'p-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 min-h-[400px] flex items-center justify-center';
+    background.className = 'flex-1 p-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center';
     
     const panel = new PanelBuilder()
         .asGlass()

@@ -11,6 +11,18 @@ The date picker follows Material Design 3 conventions with a calendar grid popup
 
 ---
 
+## When to use
+
+Use a date picker when users need to select a specific calendar date:
+
+- **Structured date entry** — the input mask guides the user to enter dates in the correct format (e.g. "DD/MM/YYYY")
+- **Calendar visual selection** — the popup calendar helps users find dates relative to today or navigate between months
+- **Date-range constraints** — with `withMinDate` and `withMaxDate` to restrict selectable dates
+
+Use a plain text field for free-form date input when the format is not strict or when the date is entered programmatically (e.g. a system-generated timestamp).
+
+---
+
 ## Usage
 
 ```typescript
@@ -160,7 +172,34 @@ The `Interactive` story demonstrates two-way reactive state: selecting a date up
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Move focus into and out of the date picker |
+| `Alt` + `Arrow Down` | Open the calendar popup |
+| `Arrow keys` | Navigate between dates in the calendar grid |
+| `Enter` | Select the focused date |
+| `Escape` | Close the calendar popup |
+| `Page Up` / `Page Down` | Navigate to previous / next month |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface` | Calendar popup background |
+| `--md-sys-color-primary` | Selected date background |
+| `--md-sys-color-on-primary` | Selected date text colour |
+| `--md-sys-color-outline` | Input and popup border |
+| `--md-sys-shape-medium` | Calendar popup border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Input height** is 48px (`h-[48px]`) for consistency with other form fields.
 - **Calendar popup** is powered by `PopoverBuilder` and rendered at a fixed width of 320px.
@@ -170,6 +209,12 @@ The `Interactive` story demonstrates two-way reactive state: selecting a date up
 - **Calendar icon** uses `Icons.CALENDAR` in a 24×24px wrapper and toggles the popup on click.
 - **Disabled state** applies `opacity-38` and `pointer-events-none` to the container.
 - **Error state** applies `border-error` and `focus-within:border-error` to the input wrapper.
-- **Glass effect** overrides the input background (`bg-surface-variant`, `border-b`, `rounded-t-small`) with `glass-effect`, `rounded-small`, and translucent text colours.
-- **Keyboard navigation**: `Alt + ArrowDown` opens the popup; Arrow keys navigate the calendar grid; Enter selects; Escape closes.
+- **Glass effect** overrides the input background with `glass-effect`, `rounded-small`, and translucent text colours.
 - **Built element** exposes `showPopover()`, `hidePopover()`, and `toggle()` for external popup control.
+
+---
+
+## Related components
+
+- [Form](../?path=/docs/components-form--docs) — embed date pickers in structured data-entry forms
+- [TextField](../?path=/docs/components-text-field--docs) — free-form text input for non-date text entry

@@ -5,6 +5,7 @@ import { TextFieldBuilder } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Label',
+    tags: ['stable', 'reactive'],
 };
 
 export const Sizes = () => {

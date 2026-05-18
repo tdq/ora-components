@@ -5,6 +5,7 @@ import { LabelBuilder, LabelSize } from '@tdq/ora-components';
 
 export default {
     title: 'Components/DatePicker',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 export const Default = () => {
@@ -56,6 +57,18 @@ export const RangeConstraints = () => {
             .withCaption(of('Next 30 days only'))
             .withMinDate(of(minDate))
             .withMaxDate(of(maxDate))
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of(`Range: ${minDate.toLocaleDateString()} – ${maxDate.toLocaleDateString()}`))
+            .withSize(LabelSize.SMALL)
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Dates outside this range are disabled in the calendar picker.'))
+            .withSize(LabelSize.SMALL)
     );
 
     const container = layout.build();
@@ -116,23 +129,6 @@ export const States = () => {
     return container;
 };
 
-export const Glass = () => {
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
-
-    layout.addSlot().withContent(
-        new DatePickerBuilder()
-            .withCaption(of('Glass effect'))
-            .asGlass()
-    );
-
-    const container = layout.build();
-    container.classList.add('p-12', 'max-w-md', 'bg-gradient-to-br', 'from-primary', 'to-secondary', 'min-h-[400px]');
-
-    return container;
-};
-
 export const Interactive = () => {
     const value$ = new BehaviorSubject<Date | null>(null);
 
@@ -161,6 +157,23 @@ export const Interactive = () => {
 
     const container = layout.build();
     container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+export const Glass = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new DatePickerBuilder()
+            .withCaption(of('Glass effect'))
+            .asGlass()
+    );
+
+    const container = layout.build();
+    container.classList.add('flex-1', 'p-12', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
 
     return container;
 };

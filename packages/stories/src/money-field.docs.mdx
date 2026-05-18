@@ -11,6 +11,18 @@ Money fields use the `Money` interface (`{ amount: number, currencyId: string }`
 
 ---
 
+## When to use
+
+Use `MoneyField` when users need to enter or edit monetary amounts with currency selection:
+
+- **Multi-currency input** — users select the currency from a dropdown (e.g. USD, EUR, GBP) alongside the amount
+- **Currency formatting** — locale-aware formatting with the correct decimal precision, grouping, and currency symbol
+- **Financial forms** — invoices, payments, budgets, and any amount-entry field where currency context matters
+
+Use `NumberField` with a prefix/suffix when you need numeric input with a static unit label but no currency selection or formatting.
+
+---
+
 ## Usage
 
 ```typescript
@@ -148,13 +160,48 @@ The `Constraints` story demonstrates min/max amount clamping, step-based navigat
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|-----|--------|
+| `Arrow Up` | Increment the amount by the step value |
+| `Arrow Down` | Decrement the amount by the step value |
+| `Page Up` | Increment by step × 10 |
+| `Page Down` | Decrement by step × 10 |
+| `Home` | Jump to the minimum allowed amount |
+| `End` | Jump to the maximum allowed amount |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface-variant` | Input background colour |
+| `--md-sys-color-on-surface-variant` | Label text colour |
+| `--md-sys-color-outline` | Border colour |
+| `--md-sys-color-primary` | Focus ring colour |
+| `--md-sys-color-error` | Validation error colour |
+| `--md-sys-shape-small` | Border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Amount alignment**: Values are right-aligned while placeholder text is left-aligned for readability.
-- **Currency selector**: Rendered as a static suffix for single currency, or a borderless dropdown with symbol display and a full-width list for multiple currencies. The dropdown list is rendered using `ListBoxBuilder` (BORDERLESS style) inside a `PopoverBuilder`.
+- **Currency selector**: Rendered as a static suffix for single currency, or a borderless dropdown with symbol display and a full-width list for multiple currencies.
 - **Disabled state**: Applies `opacity-38` and `cursor-not-allowed` — observable-driven via `withEnabled`.
-- **Error state**: When `withError` emits a non-empty string, the field border and active indicator switch to error colour. In `asInlineError` mode, an icon with popover replaces the support text.
+- **Error state**: When `withError` emits a non-empty string, the field border and active indicator switch to error colour.
 - **Glass effect**: Overrides the background and border of each style variant with translucent colours and backdrop blur.
 - **Height**: Fixed at `48px` (`h-[48px]`) for consistent alignment in forms.
-- **Keyboard navigation**: ArrowUp/Down increment/decrement by step, PageUp/Down by step × 10, Home/End jump to min/max.
 - **Formatting**: Uses `Intl.NumberFormat` via the `formatNumber` utility with `CurrencyRegistry` for currency symbols.
+
+---
+
+## Related components
+
+- [NumberField](../?path=/docs/components-number-field--docs) — numeric input without currency selection
+- [TextField](../?path=/docs/components-text-field--docs) — free-form text input without currency formatting
+- [Form](../?path=/docs/components-form--docs) — embed money fields in structured data-entry forms

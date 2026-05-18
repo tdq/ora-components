@@ -11,6 +11,18 @@ Checkboxes follow [Material Design 3](https://m3.material.io/components/checkbox
 
 ---
 
+## When to use
+
+Use checkboxes when users can select any number of options from a set:
+
+- **Multi-select** — choose zero, one, or many items (e.g. "Select the account types to export")
+- **Indeterminate state** — a parent checkbox reflects partial selection when only some child items are checked
+- **Binary agreement** — accept terms, confirm settings, or toggle a value in a form
+
+Use a toggle switch instead of a checkbox when the setting takes effect immediately without requiring a submit action. Checkboxes typically defer their value change until the user submits the enclosing form.
+
+---
+
 ## Usage
 
 ```typescript
@@ -80,13 +92,42 @@ The `Glass` story renders the checkbox with `asGlass()` applied on a coloured ba
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Move focus to and from the checkbox |
+| `Space` | Toggle the checked state |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-primary` | Checked state background colour |
+| `--md-sys-color-on-primary` | Checkmark icon colour |
+| `--md-sys-color-outline` | Unchecked border colour |
+| `--md-sys-shape-small` | Check box border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Check box** is an 18×18px square with `rounded-small` corners.
-- **State layer** provides hover (8% opacity) and active/pressed (12% opacity) feedback using CSS custom properties `--md-sys-state-hover-opacity` and `--md-sys-state-pressed-opacity`.
+- **State layer** provides hover (8% opacity) and active/pressed (12% opacity) feedback.
 - **Focus ring** uses `peer-focus-visible:ring-2` targeting the hidden `<input>` via the peer selector — accessible keyboard navigation is supported.
 - **Checked state** applies `bg-primary` and `border-primary` to the box and scales the checkmark icon in using `scale-100`.
 - **Disabled state** applies `opacity-38` and `cursor-not-allowed` across both the box and caption.
-- **Caption** uses `md-label-large` typography and `text-on-surface` colour (or default when glass is enabled).
+- **Caption** uses `md-label-large` typography and `text-on-surface` colour.
 - **Checkmark icon** is rendered from `Icons.CHECKMARK` and uses `text-on-primary` for proper contrast against the primary background.
 - **Glass effect** applies the `glass-effect` class only to the check box area, leaving the caption fully opaque for readability.
+
+---
+
+## Related components
+
+- [Form](../?path=/docs/components-form--docs) — build structured forms with checkboxes for selection
+- [Grid](../?path=/docs/components-grid--docs) — implement select-all patterns with checkboxes in data tables

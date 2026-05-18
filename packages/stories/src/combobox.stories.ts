@@ -1,10 +1,13 @@
 import { ComboBoxBuilder, ComboBoxStyle } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
 import { LabelBuilder, LabelSize } from '@tdq/ora-components';
+import { createActionLog, createButton, createControlStrip } from './story-helpers';
 
 export default {
     title: 'Components/ComboBox',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 const FRUITS = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape'];
@@ -121,6 +124,146 @@ export const States = () => {
     return container;
 };
 
+export const Loading = () => {
+    const items$ = new BehaviorSubject<string[]>([]);
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Loading State'))
+            .withSize(LabelSize.MEDIUM)
+    );
+
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(items$)
+            .withCaption(of('Loading ComboBox'))
+    );
+
+    const loadingLabel = new LabelBuilder()
+        .withCaption(of('Loading options...'))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+
+    layout.addSlot().withContent({ build: () => loadingLabel });
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    setTimeout(() => {
+        loadingLabel.remove();
+        items$.next(FRUITS);
+    }, 800);
+
+    return container;
+};
+
+const COUNTRIES = ['United States', 'Canada', 'Mexico', 'Brazil', 'United Kingdom', 'Germany', 'France', 'Italy', 'Spain', 'Japan', 'Australia', 'India', 'China', 'South Korea', 'South Africa'];
+
+export const AsyncOptions = () => {
+    const items$ = new BehaviorSubject<string[]>([]);
+    const loading$ = new BehaviorSubject(true);
+
+    // Simulate fetching options from a server
+    const loadOptions = () => {
+        loading$.next(true);
+        items$.next([]);
+
+        setTimeout(() => {
+            items$.next(COUNTRIES);
+            loading$.next(false);
+        }, 800);
+    };
+
+    loadOptions(); // initial fetch
+
+    // Status caption tied to loading state
+    const caption$ = loading$.pipe(
+        map(loading => loading ? 'Loading countries...' : 'Select a country')
+    );
+
+    const value$ = new BehaviorSubject<string | null>(null);
+    const { element: actionLog, log } = createActionLog();
+
+    value$.subscribe(val => {
+        if (val) {
+            log(`Selected: ${val}`);
+        }
+    });
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Async Options (simulated 800ms server delay)'))
+            .withSize(LabelSize.MEDIUM)
+    );
+
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(items$)
+            .withCaption(caption$)
+            .withPlaceholder('Search countries...')
+            .withValue(value$)
+    );
+
+    // Reload button
+    const reloadBtn = createButton('Reload Options', () => {
+        log('Reloading options...');
+        loadOptions();
+    });
+
+    layout.addSlot().withContent({
+        build: () => createControlStrip([reloadBtn.build()])
+    });
+
+    layout.addSlot().withContent({ build: () => actionLog });
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+export const Interactive = () => {
+    const value$ = new BehaviorSubject<string | null>(null);
+    const label$ = new BehaviorSubject<string>('Select a fruit');
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withValue(value$)
+            .withCaption(label$)
+    );
+
+    const statusLabel = new LabelBuilder()
+        .withCaption(of('Current Selection: None'))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+
+    value$.subscribe(val => {
+        statusLabel.textContent = `Current Selection: ${val || 'None'}`;
+    });
+
+    layout.addSlot().withContent({
+        build: () => statusLabel
+    });
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
 export const ProgrammaticControl = () => {
     const layout = new LayoutBuilder()
         .asVertical()
@@ -137,30 +280,11 @@ export const ProgrammaticControl = () => {
         build: () => combobox
     });
 
-    const buttonsLayout = new LayoutBuilder()
-        .asHorizontal()
-        .withGap(LayoutGap.MEDIUM);
+    const appleButton = createButton('Select Apple', () => value$.next('Apple')).build();
+    const bananaButton = createButton('Select Banana', () => value$.next('Banana')).build();
+    const clearButton = createButton('Clear', () => value$.next(null)).build();
 
-    const appleButton = document.createElement('button');
-    appleButton.textContent = 'Select Apple';
-    appleButton.className = 'px-4 py-2 bg-primary text-on-primary rounded-full hover:shadow-lg transition-shadow';
-    appleButton.onclick = () => value$.next('Apple');
-
-    const bananaButton = document.createElement('button');
-    bananaButton.textContent = 'Select Banana';
-    bananaButton.className = 'px-4 py-2 bg-secondary text-on-secondary rounded-full hover:shadow-lg transition-shadow';
-    bananaButton.onclick = () => value$.next('Banana');
-
-    const clearButton = document.createElement('button');
-    clearButton.textContent = 'Clear';
-    clearButton.className = 'px-4 py-2 bg-tertiary text-on-tertiary rounded-full hover:shadow-lg transition-shadow';
-    clearButton.onclick = () => value$.next(null);
-
-    buttonsLayout.addSlot().withContent({ build: () => appleButton });
-    buttonsLayout.addSlot().withContent({ build: () => bananaButton });
-    buttonsLayout.addSlot().withContent({ build: () => clearButton });
-
-    layout.addSlot().withContent(buttonsLayout);
+    layout.addSlot().withContent({ build: () => createControlStrip([appleButton, bananaButton, clearButton]) });
 
     const container = layout.build();
     container.classList.add('p-4', 'max-w-md');
@@ -213,41 +337,7 @@ export const Glass = () => {
     );
 
     const container = layout.build();
-    container.classList.add('p-12', 'max-w-md', 'bg-gradient-to-br', 'from-primary', 'to-secondary', 'min-h-[300px]');
-
-    return container;
-};
-
-export const Interactive = () => {
-    const value$ = new BehaviorSubject<string | null>(null);
-    const label$ = new BehaviorSubject<string>('Select a fruit');
-
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
-
-    layout.addSlot().withContent(
-        new ComboBoxBuilder<string>()
-            .withItems(of(FRUITS))
-            .withValue(value$)
-            .withCaption(label$)
-    );
-
-    const statusLabel = new LabelBuilder()
-        .withCaption(of('Current Selection: None'))
-        .withSize(LabelSize.MEDIUM)
-        .build();
-
-    value$.subscribe(val => {
-        statusLabel.textContent = `Current Selection: ${val || 'None'}`;
-    });
-
-    layout.addSlot().withContent({
-        build: () => statusLabel
-    });
-
-    const container = layout.build();
-    container.classList.add('p-4', 'max-w-md');
+    container.classList.add('flex-1', 'p-12', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
 
     return container;
 };

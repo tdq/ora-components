@@ -5,6 +5,7 @@ import { LabelBuilder, LabelSize } from '@tdq/ora-components';
 
 export default {
     title: 'Components/ListBox',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 const FRUITS = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape', 'Honeydew', 'Kiwi', 'Lemon', 'Mango', 'Nectarine', 'Orange', 'Papaya', 'Quince', 'Raspberry', 'Strawberry', 'Tangerine', 'Ugli Fruit', 'Watermelon'];
@@ -116,41 +117,40 @@ const USERS: User[] = [
     { id: 6, name: 'Fiona Green', role: 'Editor' },
 ];
 
-export const ComplexObjects = () => {
+export const Loading = () => {
+    const items$ = new BehaviorSubject<string[]>([]);
+
     const layout = new LayoutBuilder()
         .asVertical()
         .withGap(LayoutGap.LARGE);
 
     layout.addSlot().withContent(
-        new ListBoxBuilder<User>()
-            .withItems(of(USERS))
-            .withItemCaptionProvider((user) => `${user.name} (${user.role})`)
-            .withItemIdProvider((user) => user.id)
-            .withCaption(of('Select user (custom ID provider)'))
-            .withHeight(of(250))
+        new LabelBuilder()
+            .withCaption(of('Loading State'))
+            .withSize(LabelSize.MEDIUM)
     );
+
+    layout.addSlot().withContent(
+        new ListBoxBuilder<string>()
+            .withItems(items$)
+            .withCaption(of('Loading ListBox'))
+            .withHeight(of(200))
+    );
+
+    const loadingLabel = new LabelBuilder()
+        .withCaption(of('Loading options...'))
+        .withSize(LabelSize.MEDIUM)
+        .build();
+
+    layout.addSlot().withContent({ build: () => loadingLabel });
 
     const container = layout.build();
     container.classList.add('p-4', 'max-w-md');
 
-    return container;
-};
-
-export const Glass = () => {
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
-
-    layout.addSlot().withContent(
-        new ListBoxBuilder<string>()
-            .withItems(of(FRUITS))
-            .withCaption(of('Glass effect'))
-            .withHeight(of(200))
-            .asGlass()
-    );
-
-    const container = layout.build();
-    container.classList.add('p-12', 'max-w-md', 'bg-gradient-to-br', 'from-primary', 'to-secondary', 'min-h-[400px]');
+    setTimeout(() => {
+        loadingLabel.remove();
+        items$.next(FRUITS);
+    }, 800);
 
     return container;
 };
@@ -185,6 +185,45 @@ export const Interactive = () => {
 
     const container = layout.build();
     container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+export const ComplexObjects = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new ListBoxBuilder<User>()
+            .withItems(of(USERS))
+            .withItemCaptionProvider((user) => `${user.name} (${user.role})`)
+            .withItemIdProvider((user) => user.id)
+            .withCaption(of('Select user (custom ID provider)'))
+            .withHeight(of(250))
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+export const Glass = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new ListBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withCaption(of('Glass effect'))
+            .withHeight(of(200))
+            .asGlass()
+    );
+
+    const container = layout.build();
+    container.classList.add('flex-1', 'p-12', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
 
     return container;
 };

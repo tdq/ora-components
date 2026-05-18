@@ -5,6 +5,7 @@ import { BehaviorSubject, of, Subject } from 'rxjs';
 
 export default {
     title: 'Components/Layout',
+    tags: ['stable', 'reactive'],
 };
 
 export const Horizontal = () => {

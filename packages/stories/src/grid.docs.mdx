@@ -13,6 +13,19 @@ The grid is orchestrated by the `GridBuilder<ITEM>` class, which uses a generic 
 
 ---
 
+## When to use
+
+Use the Grid component when you need to display, analyse, or edit tabular data:
+
+- **Data listing** — display invoices, transactions, or account registers with sorting and resizable columns
+- **Inline editing** — allow users to edit cell values directly with commit/revert semantics
+- **Multi-level grouping** — organise rows by categories (e.g. department > project > line item)
+- **Pivot tables** — cross-tabulate data for financial summaries and budget analysis
+- **Row selection** — multi-select rows with checkboxes for batch operations
+- **High-volume data** — virtual scrolling handles thousands of rows without performance degradation
+
+For simple lists or non-tabular data, consider a `ListBox` or `MultiSelectList` instead.
+
 ## Usage
 
 ```typescript
@@ -367,13 +380,50 @@ interface PivotValueConfig {
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Move focus between cells and interactive elements |
+| `Enter` | Commit inline edit, expand/collapse group row |
+| `Escape` | Revert inline edit, close dropdown editor |
+| `Arrow keys` | Navigate between cells (Up, Down, Left, Right) |
+| `Space` | Toggle multi-select checkbox on focused row |
+| `Page Up` / `Page Down` | Scroll one page up / down |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface` | Grid background |
+| `--md-sys-color-surface-container-low` | Header background |
+| `--md-sys-color-surface-variant` | Row hover state |
+| `--md-sys-color-on-surface-variant` | Header text colour |
+| `--md-sys-color-outline` | Column borders and dividers |
+| `--md-sys-color-primary` | Selection highlight |
+| `--md-sys-shape-large` | Grid border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Container**: `bg-background`, `border-outline/30`, `rounded-lg`.
 - **Header height**: 52px. The header **row** owns the background (`bg-surface-container-low` in normal mode, `glass-effect !bg-white/20` with backdrop blur in glass mode); header **cells** are transparent and inherit it. The bottom divider is drawn per header cell (`border-b border-outline/20`), not on the row, so it lines up with column geometry. Typography is uppercase, `font-semibold`, `text-[11px]`, `tracking-wider`.
 - **Cells**: `px-4`, `flex items-center`. Body cells carry their own bottom border (`border-b border-outline/10 dark:border-stone-50/10`) so borders track columns under sticky/scrolled states.
 - **Row height**: 52px with zebra striping on data columns (`bg-surface-container-low/20` for odd rows). Hover state adds `hover:bg-surface-variant/20` and a left accent border.
-- **Sticky actions column**: `sticky right-0 z-10`. Uses a single uniform background (`actionCellDefault` = `bg-background`) for all non-selected, non-glass rows — **no zebra striping** in this column, so it reads as one continuous panel. Selected rows use `bg-primary/10`. The action header cell keeps a solid `bg-surface-container-low` so it occludes other header cells when scrolling horizontally. No backdrop blur — see performance mandates.
+- **Sticky actions column**: `sticky right-0 z-10`. Uses a single uniform background for all non-selected, non-glass rows — no zebra striping in this column. Selected rows use `bg-primary/10`.
 - **Glass effect**: Enabled via `asGlass()`. Only the header receives backdrop blur; rows remain transparent.
 - **Virtual scrolling**: Uses `requestAnimationFrame` for scroll updates, `transform: translateY` for row positioning, and a buffer of 5 extra rows above and below the viewport.
 - **Selection**: Checkbox-based multi-select with header "Select All". Selection updates are optimised to avoid full row re-renders.
+
+---
+
+## Related components
+
+- [Toolbar](../?path=/docs/components-toolbar--docs) — add global actions above the grid
+- [Dialog](../?path=/docs/components-dialog--docs) — embed a grid inside a dialog for data review
+- [Panel](../?path=/docs/components-panel--docs) — wrap a grid in a panel for dashboard layouts

@@ -1,9 +1,11 @@
 import { MoneyFieldBuilder, MoneyFieldStyle, Money, LayoutBuilder, LayoutGap, LabelBuilder, LabelSize } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { createButton, createControlStrip } from './story-helpers';
 
 export default {
     title: 'Components/MoneyField',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 export const Default = () => {
@@ -26,22 +28,9 @@ export const Default = () => {
     container.classList.add('p-8', 'max-w-md');
 
     // Add some controls
-    const controls = document.createElement('div');
-    controls.className = 'mt-4 flex gap-2';
-
-    const setValueBtn = document.createElement('button');
-    setValueBtn.textContent = 'Set to $5000';
-    setValueBtn.className = 'px-4 py-2 bg-primary text-on-primary rounded-small';
-    setValueBtn.onclick = () => value$.next({ amount: 5000, currencyId: 'USD' });
-
-    const clearBtn = document.createElement('button');
-    clearBtn.textContent = 'Clear';
-    clearBtn.className = 'px-4 py-2 bg-surface-variant text-on-surface-variant rounded-small';
-    clearBtn.onclick = () => value$.next(null);
-
-    controls.appendChild(setValueBtn);
-    controls.appendChild(clearBtn);
-    container.appendChild(controls);
+    const setValueBtn = createButton('Set to $5000', () => value$.next({ amount: 5000, currencyId: 'USD' })).build();
+    const clearBtn = createButton('Clear', () => value$.next(null)).build();
+    container.appendChild(createControlStrip([setValueBtn, clearBtn]));
 
     return container;
 };
@@ -108,31 +97,31 @@ export const Currencies = () => {
     return container;
 };
 
-export const Glass = () => {
+export const Constraints = () => {
     const layout = new LayoutBuilder()
         .asVertical()
-        .withGap(LayoutGap.EXTRA_LARGE);
+        .withGap(LayoutGap.LARGE);
 
     layout.addSlot().withContent(
         new MoneyFieldBuilder()
-            .withLabel(of('Glass Tonal'))
-            .asGlass()
-            .withStyle(of(MoneyFieldStyle.TONAL))
-            .withValue(new BehaviorSubject<Money | null>({ amount: 75000, currencyId: 'USD' }))
+            .withLabel(of('Donation (Min $10, Max $1000, Step $10)'))
+            .withValue(new BehaviorSubject<Money | null>({ amount: 100, currencyId: 'USD' }))
+            .withMinValue(of(10))
+            .withMaxValue(of(1000))
+            .withStep(of(10))
             .withCurrencies(['USD'])
     );
 
     layout.addSlot().withContent(
         new MoneyFieldBuilder()
-            .withLabel(of('Glass Outlined'))
-            .asGlass()
-            .withStyle(of(MoneyFieldStyle.OUTLINED))
-            .withValue(new BehaviorSubject<Money | null>({ amount: 120000, currencyId: 'EUR' }))
-            .withCurrencies(['EUR'])
+            .withLabel(of('Integer Only (No Decimals)'))
+            .withValue(new BehaviorSubject<Money | null>({ amount: 50, currencyId: 'GBP' }))
+            .withFormat(of('integer'))
+            .withCurrencies(['GBP'])
     );
 
     const container = layout.build();
-    container.classList.add('p-8', 'bg-gradient-to-br', 'from-indigo-500', 'to-purple-600', 'min-h-[400px]');
+    container.classList.add('p-8', 'max-w-md');
     return container;
 };
 
@@ -170,30 +159,56 @@ export const Errors = () => {
     return container;
 };
 
-export const Constraints = () => {
+export const StepAndBounds = () => {
     const layout = new LayoutBuilder()
         .asVertical()
         .withGap(LayoutGap.LARGE);
 
     layout.addSlot().withContent(
         new MoneyFieldBuilder()
-            .withLabel(of('Donation (Min $10, Max $1000, Step $10)'))
-            .withValue(new BehaviorSubject<Money | null>({ amount: 100, currencyId: 'USD' }))
-            .withMinValue(of(10))
-            .withMaxValue(of(1000))
-            .withStep(of(10))
+            .withLabel(of('Budget Amount'))
+            .withMinValue(of(0))
+            .withMaxValue(of(10000))
+            .withValue(new BehaviorSubject<Money | null>({ amount: 2500, currencyId: 'USD' }))
+            .withCurrencies(['USD'])
+            .withPrecision(of(2))
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Range: 0 – 10,000 USD'))
+            .withSize(LabelSize.SMALL)
+    );
+
+    const container = layout.build();
+    container.classList.add('p-8', 'max-w-md');
+    return container;
+};
+
+export const Glass = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.EXTRA_LARGE);
+
+    layout.addSlot().withContent(
+        new MoneyFieldBuilder()
+            .withLabel(of('Glass Tonal'))
+            .asGlass()
+            .withStyle(of(MoneyFieldStyle.TONAL))
+            .withValue(new BehaviorSubject<Money | null>({ amount: 75000, currencyId: 'USD' }))
             .withCurrencies(['USD'])
     );
 
     layout.addSlot().withContent(
         new MoneyFieldBuilder()
-            .withLabel(of('Integer Only (No Decimals)'))
-            .withValue(new BehaviorSubject<Money | null>({ amount: 50, currencyId: 'GBP' }))
-            .withFormat(of('integer'))
-            .withCurrencies(['GBP'])
+            .withLabel(of('Glass Outlined'))
+            .asGlass()
+            .withStyle(of(MoneyFieldStyle.OUTLINED))
+            .withValue(new BehaviorSubject<Money | null>({ amount: 120000, currencyId: 'EUR' }))
+            .withCurrencies(['EUR'])
     );
 
     const container = layout.build();
-    container.classList.add('p-8', 'max-w-md');
+    container.classList.add('flex-1', 'p-8', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
     return container;
 };

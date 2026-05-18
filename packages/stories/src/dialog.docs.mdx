@@ -11,6 +11,19 @@ Dialogs follow [Material Design 3](https://m3.material.io/components/dialogs) se
 
 ---
 
+## When to use
+
+Use dialogs for critical tasks that require the user's attention before they can continue:
+
+- **Confirmations** — small dialogs (`DialogSize.SMALL`) for delete confirmations or irreversible actions
+- **Forms** — medium dialogs (`DialogSize.MEDIUM`) for single-task forms like adding an invoice line item
+- **Multi-step workflows** — large dialogs (`DialogSize.LARGE`) with embedded tabs for complex data entry
+- **Data review** — extra-large dialogs (`DialogSize.EXTRA_LARGE`) for reviewing or editing tabular data
+
+Avoid using dialogs for simple notifications or information that does not require user action — use inline messages or a toast instead.
+
+---
+
 ## Usage
 
 ```typescript
@@ -137,7 +150,32 @@ The `GlassEffect` story renders a dialog with `asGlass()` applied on top of a gr
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Move focus between focusable elements inside the dialog |
+| `Enter` / `Space` | Activate focused button or control |
+| `Escape` | Close the dialog |
+| `Arrow keys` | Navigate tab content or scrollable areas when dialog contains tabs |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface` | Dialog background |
+| `--md-sys-color-on-surface` | Dialog text colour |
+| `--md-sys-color-outline` | Dialog border |
+| `--md-sys-shape-large` | Dialog border radius |
+| `--md-sys-elevation-level5` | Dialog drop shadow |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Dialog container** uses the native `<dialog>` element with `showModal()` for correct focus trapping and ESC-key dismissal.
 - **Header** is draggable — click and drag anywhere on the caption area to reposition the dialog.
@@ -146,5 +184,11 @@ The `GlassEffect` story renders a dialog with `asGlass()` applied on top of a gr
 - **Scrollable mode** sets `overflow-y-auto` on the content area with a `min-h-[200px]` constraint.
 - **Glass effect** applies `bg-surface` with backdrop blur on the dialog and transparent styling on the toolbar wrapper.
 - **Backdrop** is fully transparent (`backdrop:bg-transparent`) so the page content is visible behind the dialog.
-- **Elevation** uses `elevation-5` for a large drop shadow.
-- **Border radius** uses `rounded-large` to match Material Design 3 surface shapes.
+
+---
+
+## Related components
+
+- [Tabs](../?path=/docs/components-tabs--docs) — embed tabbed content inside a dialog
+- [Form](../?path=/docs/components-form--docs) — embed data entry forms inside a dialog
+- [Toolbar](../?path=/docs/components-toolbar--docs) — dialog action buttons

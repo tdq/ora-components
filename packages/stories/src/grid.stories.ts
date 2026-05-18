@@ -1,39 +1,13 @@
-import { GridBuilder, Icons, LayoutGap, SlotSize } from '@tdq/ora-components';
+import { GridBuilder, Icons, LabelBuilder, LayoutGap, SlotSize, CheckboxBuilder } from '@tdq/ora-components';
 import { SortDirection } from '@tdq/ora-components';
-import { of, Subject } from 'rxjs';
-import { Money } from '@tdq/ora-components';
+import { BehaviorSubject, of, Subject, combineLatest, map } from 'rxjs';
 import { LayoutBuilder } from '@tdq/ora-components';
+import { createActionLog, createButton, createControlStrip, generateUsers, generateFullCoverageData } from './story-helpers';
+import type { User, FullCoverageItem } from './story-helpers';
 
 export default {
     title: 'Components/Grid',
-};
-
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    role: 'ADMIN' | 'USER' | 'GUEST';
-    active: boolean;
-    lastLogin: Date;
-    balance: Money;
-    progress: number;
-}
-
-const generateUsers = (count: number): User[] => {
-    const roles: ('ADMIN' | 'USER' | 'GUEST')[] = ['ADMIN', 'USER', 'GUEST'];
-    return Array.from({ length: count }).map((_, i) => ({
-        id: i + 1,
-        name: `User ${i + 1}`,
-        email: `user${i + 1}@example.com`,
-        role: roles[i % 3],
-        active: i % 2 === 0,
-        lastLogin: new Date(Date.now() - Math.random() * 10000000000),
-        balance: {
-            amount: Math.floor(Math.random() * 10000) / 100,
-            currencyId: ['USD', 'EUR', 'GBP'][i % 3]
-        },
-        progress: Math.random()
-    }));
+    tags: ['stable', 'glass'],
 };
 
 const users = generateUsers(50);
@@ -68,6 +42,36 @@ export const ComplexColumns = () => {
     return grid.build();
 };
 
+export const Sorting = () => {
+    const grid = new GridBuilder<User>()
+        .withItems(of(users))
+        .withHeight(of(500))
+        .withSort('name', SortDirection.ASC);
+
+    const columns = grid.withColumns();
+    columns.addNumberColumn('id').withHeader('ID').withWidth('60px').asSortable();
+    columns.addTextColumn('name').withHeader('Name').asSortable();
+    columns.addEnumColumn('role').withHeader('Role').asSortable();
+    columns.addMoneyColumn('balance').withHeader('Balance').asSortable();
+    columns.addDateColumn('lastLogin').withHeader('Last Login').asSortable();
+
+    return grid.build();
+};
+
+export const ResizableColumns = () => {
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 15)))
+        .withHeight(of(400));
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name (Resizable)').asResizable();
+    columns.addTextColumn('email').withHeader('Email (Resizable)').asResizable();
+    columns.addEnumColumn('role').withHeader('Role');
+    columns.addMoneyColumn('balance').withHeader('Balance');
+
+    return grid.build();
+};
+
 export const MultiSelect = () => {
     const grid = new GridBuilder<User>()
         .withItems(of(users.slice(0, 20)))
@@ -82,111 +86,6 @@ export const MultiSelect = () => {
     return grid.build();
 };
 
-export const WithActions = () => {
-    const grid = new GridBuilder<User>()
-        .withItems(of(users.slice(0, 15)))
-        .withHeight(of(400));
-
-    const columns = grid.withColumns();
-    columns.addTextColumn('name').withHeader('Name');
-    columns.addTextColumn('email').withHeader('Email');
-
-    const editClick = (user: User) => alert(`Editing ${user.name}`);
-    const deleteClick = (user: User) => alert(`Deleting ${user.name}`);
-
-    const actions = grid.withActions();
-    actions.addAction(Icons.EDIT, 'Edit', editClick);
-    actions.addAction(Icons.DELETE, 'Delete', deleteClick);
-
-    return grid.build();
-};
-
-export const WithToolbar = () => {
-    const grid = new GridBuilder<User>()
-        .withItems(of(users.slice(0, 15)))
-        .withHeight(of(400));
-
-    const toolbar = grid.withToolbar();
-    const addClick = new Subject<void>();
-    addClick.subscribe(() => alert('Add User Clicked'));
-
-    toolbar.withPrimaryButton().withCaption(of('Add User')).withClick(() => addClick.next());
-    toolbar.addSecondaryButton().withCaption(of('Export'));
-
-    const columns = grid.withColumns();
-    columns.addTextColumn('name').withHeader('Name');
-    columns.addTextColumn('email').withHeader('Email');
-
-    return grid.build();
-};
-
-export const Editable = () => {
-    const log = document.createElement('div');
-    log.className = 'mt-4 p-4 bg-surface-container rounded-lg border border-outline/10 text-xs font-mono max-h-40 overflow-y-auto text-on-surface-variant shadow-inner w-full';
-    log.innerHTML = '<div class="opacity-50 italic mb-2 font-sans text-sm">Action Log: Edit a cell and commit with Enter to see changes here...</div>';
-
-    const grid = new GridBuilder<User>()
-        .withItems(of(users.slice(0, 15)))
-        .withHeight(of(500))
-        .asEditable((item: User) => {
-            const entry = document.createElement('div');
-            entry.className = 'py-1 border-b border-outline/5 last:border-0';
-            entry.innerHTML = `<span class="text-primary font-bold">✓</span> <span class="text-on-surface font-semibold">${item.name}</span> <span class="opacity-70">(id:${item.id})</span>: 
-                <span class="text-secondary">${item.balance.amount} ${item.balance.currencyId}</span>, 
-                <span class="text-tertiary">${Math.round(item.progress * 100)}%</span>, 
-                ${item.active ? '<span class="text-green-600">Active</span>' : '<span class="text-red-600">Inactive</span>'}`;
-
-            const actionMsg = log.querySelector('.italic');
-            if (actionMsg) actionMsg.remove();
-
-            log.prepend(entry);
-        });
-
-    const columns = grid.withColumns();
-    columns.addNumberColumn('id').withHeader('ID').withWidth('60px').withAlign('center');
-    columns.addTextColumn('name').withHeader('Name').asEditable();
-    columns.addTextColumn('email').withHeader('Email').asEditable();
-    columns.addDateColumn('lastLogin').withHeader('Last Login').asEditable();
-    columns.addBooleanColumn('active').withHeader('Active').withAlign('center').asEditable();
-    columns.addPercentageColumn('progress').withHeader('Progress').asEditable();
-    columns.addMoneyColumn('balance')
-        .withHeader('Balance')
-        .asEditable()
-        .withPrecision(2)
-        .withCurrencies(['USD', 'EUR', 'GBP', 'JPY']);
-    columns.addEnumColumn('role').withHeader('Role');
-
-    const container = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE)
-        .withClass(of('p-4'));
-    container.addSlot().withContent(grid);
-    container.addSlot().withContent({ build: () => log }).withSize(SlotSize.FULL);
-
-    return container.build();
-};
-
-export const GlassEffect = () => {
-    const grid = new GridBuilder<User>()
-        .withItems(of(users.slice(0, 15)))
-        .withHeight(of(400))
-        .asGlass();
-
-    const columns = grid.withColumns();
-    columns.addTextColumn('name').withHeader('Name');
-    columns.addEnumColumn('role').withHeader('Role');
-    columns.addMoneyColumn('balance').withHeader('Balance');
-
-    const container = document.createElement('div');
-    container.className = 'p-8 bg-gradient-to-br from-blue-500 to-purple-600 h-[500px] flex items-center justify-center';
-
-    const gridElement = grid.build();
-    gridElement.style.width = '100%';
-    container.appendChild(gridElement);
-
-    return container;
-};
-
 export const EmptyState = () => {
     const grid = new GridBuilder<User>()
         .withItems(of([]))
@@ -197,6 +96,75 @@ export const EmptyState = () => {
     columns.addTextColumn('email').withHeader('Email');
 
     return grid.build();
+};
+
+export const Loading = () => {
+    const data$ = new BehaviorSubject<User[]>([]);
+
+    const loadingLabel = new LabelBuilder()
+        .withCaption(of('Loading data...'))
+        .build();
+
+    const grid = new GridBuilder<User>()
+        .withItems(data$)
+        .withHeight(of(400));
+
+    const columns = grid.withColumns();
+    columns.addNumberColumn('id').withHeader('ID').withWidth('60px');
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addTextColumn('email').withHeader('Email');
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.SMALL)
+        .withClass(of('p-4'));
+
+    container.addSlot().withContent({ build: () => loadingLabel });
+    container.addSlot().withContent(grid);
+
+    const result = container.build();
+
+    setTimeout(() => {
+        loadingLabel.remove();
+        data$.next(users.slice(0, 15));
+    }, 1500);
+
+    return result;
+};
+
+export const Forbidden = () => {
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 10)))
+        .withHeight(of(400));
+
+    const columns = grid.withColumns();
+    columns.addNumberColumn('id').withHeader('ID').withWidth('60px');
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addTextColumn('email').withHeader('Email');
+    columns.addEnumColumn('role').withHeader('Role');
+
+    const toolbar = grid.withToolbar();
+    toolbar.withPrimaryButton()
+        .withCaption(of('Add User'))
+        .withEnabled(of(false));
+    toolbar.addSecondaryButton()
+        .withCaption(of('Export'))
+        .withEnabled(of(false));
+
+    const banner = new LabelBuilder()
+        .withCaption(of('You have view-only access to this data'))
+        .withClass(of('p-3 bg-surface-variant rounded text-on-surface-variant text-sm'))
+        .build();
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.SMALL)
+        .withClass(of('p-4'));
+
+    container.addSlot().withContent({ build: () => banner });
+    container.addSlot().withContent(grid);
+
+    return container.build();
 };
 
 export const CustomRendering = () => {
@@ -243,36 +211,6 @@ export const HighVolume = () => {
     return grid.build();
 };
 
-export const Sorting = () => {
-    const grid = new GridBuilder<User>()
-        .withItems(of(users))
-        .withHeight(of(500))
-        .withSort('name', SortDirection.ASC);
-
-    const columns = grid.withColumns();
-    columns.addNumberColumn('id').withHeader('ID').withWidth('60px').asSortable();
-    columns.addTextColumn('name').withHeader('Name').asSortable();
-    columns.addEnumColumn('role').withHeader('Role').asSortable();
-    columns.addMoneyColumn('balance').withHeader('Balance').asSortable();
-    columns.addDateColumn('lastLogin').withHeader('Last Login').asSortable();
-
-    return grid.build();
-};
-
-export const ResizableColumns = () => {
-    const grid = new GridBuilder<User>()
-        .withItems(of(users.slice(0, 15)))
-        .withHeight(of(400));
-
-    const columns = grid.withColumns();
-    columns.addTextColumn('name').withHeader('Name (Resizable)').asResizable();
-    columns.addTextColumn('email').withHeader('Email (Resizable)').asResizable();
-    columns.addEnumColumn('role').withHeader('Role');
-    columns.addMoneyColumn('balance').withHeader('Balance');
-
-    return grid.build();
-};
-
 export const FullHeight = () => {
     const grid = new GridBuilder<User>()
         .withItems(of(users));
@@ -297,6 +235,7 @@ export const FullHeight = () => {
 
     return container;
 };
+
 export const ConditionalStyling = () => {
     const grid = new GridBuilder<User>()
         .withItems(of(users.slice(0, 20)))
@@ -316,66 +255,301 @@ export const ConditionalStyling = () => {
     return grid.build();
 };
 
-interface FullCoverageItem {
-    id: number;
-    name: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    department: string;
-    score: number;
-    rating: number;
-    clicks: number;
-    lastLogin: Date;
-    createdAt: Date;
-    lastModified: Date;
-    role: 'ADMIN' | 'USER' | 'MANAGER' | 'VIEWER';
-    status: 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED';
-    active: boolean;
-    verified: boolean;
-    progress: number;
-    balance: Money;
-    priority: 'low' | 'medium' | 'high';
-    buttonLabel: string;
-}
+export const ColumnVisibility = () => {
+    const columns: { field: string; label: string }[] = [
+        { field: 'id', label: 'ID' },
+        { field: 'name', label: 'Name' },
+        { field: 'email', label: 'Email' },
+        { field: 'role', label: 'Role' },
+        { field: 'status', label: 'Status' },
+        { field: 'department', label: 'Department' },
+        { field: 'location', label: 'Location' },
+        { field: 'startDate', label: 'Start Date' },
+    ];
 
-const generateFullCoverageData = (count: number): FullCoverageItem[] => {
-    const roles: ('ADMIN' | 'USER' | 'MANAGER' | 'VIEWER')[] = ['ADMIN', 'USER', 'MANAGER', 'VIEWER'];
-    const statuses: ('ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED')[] = ['ACTIVE', 'INACTIVE', 'PENDING', 'SUSPENDED'];
-    const priorities: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
-    const departments = ['Engineering', 'Marketing', 'Sales', 'Support', 'HR', 'Finance', 'Legal', 'Operations'];
-    const firstNames = ['James', 'Mary', 'Robert', 'Patricia', 'John', 'Jennifer', 'Michael', 'Linda'];
-    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
-    return Array.from({ length: count }).map((_, i) => ({
-        id: i + 1,
-        name: `Record ${i + 1}`,
-        email: `record${i + 1}@company.com`,
-        firstName: firstNames[i % firstNames.length],
-        lastName: lastNames[i % lastNames.length],
-        phone: `+1-555-${String(1000 + (i % 9000)).slice(0, 4)}`,
-        department: departments[i % departments.length],
-        score: Math.floor(Math.random() * 1000),
-        rating: Math.floor(Math.random() * 5) + 1,
-        clicks: Math.floor(Math.random() * 10000),
-        lastLogin: new Date(Date.now() - Math.random() * 10000000000),
-        createdAt: new Date(Date.now() - Math.random() * 100000000000),
-        lastModified: new Date(Date.now() - Math.random() * 5000000000),
-        role: roles[i % roles.length],
-        status: statuses[i % statuses.length],
-        active: i % 2 === 0,
-        verified: i % 3 === 0,
-        progress: Math.random(),
-        balance: {
-            amount: Math.floor(Math.random() * 10000) / 100,
-            currencyId: ['USD', 'EUR', 'GBP'][i % 3]
-        },
-        priority: priorities[i % priorities.length],
-        buttonLabel: `Btn${i + 1}`
+    const visibilitySubjects: Record<string, BehaviorSubject<boolean>> = {};
+    columns.forEach(c => {
+        visibilitySubjects[c.field] = new BehaviorSubject<boolean>(true);
+    });
+
+    const visibleCount$ = combineLatest(
+        columns.map(c => visibilitySubjects[c.field])
+    ).pipe(
+        map(states => states.filter(Boolean).length)
+    );
+
+    const baseUsers = generateUsers(15);
+    const STATUSES = ['ACTIVE', 'INACTIVE', 'PENDING'] as const;
+    const DEPARTMENTS = ['Engineering', 'Marketing', 'Sales', 'Support'] as const;
+    const LOCATIONS = ['New York', 'London', 'Tokyo', 'Berlin'] as const;
+    const users = baseUsers.map((u, i) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        status: STATUSES[i % STATUSES.length],
+        department: DEPARTMENTS[i % DEPARTMENTS.length],
+        location: LOCATIONS[i % LOCATIONS.length],
+        startDate: new Date(2020 + Math.floor(i / 12), i % 12, (i % 28) + 1),
     }));
+
+    const grid = new GridBuilder<any>()
+        .withItems(of(users))
+        .withHeight(of(400));
+
+    const gridColumns = grid.withColumns();
+    gridColumns.addNumberColumn('id').withHeader('ID').withWidth('60px')
+        .withVisible(visibilitySubjects.id);
+    gridColumns.addTextColumn('name').withHeader('Name')
+        .withVisible(visibilitySubjects.name);
+    gridColumns.addTextColumn('email').withHeader('Email')
+        .withVisible(visibilitySubjects.email);
+    gridColumns.addEnumColumn('role').withHeader('Role')
+        .withVisible(visibilitySubjects.role);
+    gridColumns.addTextColumn('status').withHeader('Status')
+        .withVisible(visibilitySubjects.status);
+    gridColumns.addTextColumn('department').withHeader('Department')
+        .withVisible(visibilitySubjects.department);
+    gridColumns.addTextColumn('location').withHeader('Location')
+        .withVisible(visibilitySubjects.location);
+    gridColumns.addDateColumn('startDate').withHeader('Start Date')
+        .withVisible(visibilitySubjects.startDate);
+
+    const checkboxes = columns.map(c => {
+        const checkbox = new CheckboxBuilder()
+            .withCaption(of(c.label))
+            .withValue(visibilitySubjects[c.field]);
+        return checkbox.build();
+    });
+
+    const label = new LabelBuilder()
+        .withCaption(visibleCount$.pipe(
+            map(n => `Visible columns: ${n}/${columns.length}`)
+        ))
+        .withClass(of('text-sm font-medium text-on-surface-variant mb-4'))
+        .build();
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent({ build: () => createControlStrip(checkboxes) });
+    container.addSlot().withContent({ build: () => label });
+    container.addSlot().withContent(grid);
+
+    return container.build();
+};
+
+export const ServerPagination = () => {
+    const allUsers = generateUsers(200);
+    const pageSize = 25;
+    const totalPages = Math.ceil(allUsers.length / pageSize);
+
+    const currentPage$ = new BehaviorSubject(1);
+
+    const pageData$ = currentPage$.pipe(
+        map(page => {
+            const start = (page - 1) * pageSize;
+            return allUsers.slice(start, start + pageSize);
+        })
+    );
+
+    const rangeLabel$ = currentPage$.pipe(
+        map(page => {
+            const start = (page - 1) * pageSize + 1;
+            const end = Math.min(page * pageSize, allUsers.length);
+            return `Showing ${start}–${end} of ${allUsers.length}`;
+        })
+    );
+
+    const canPrev$ = currentPage$.pipe(map(p => p > 1));
+    const canNext$ = currentPage$.pipe(map(p => p < totalPages));
+
+    const prevBtn = createButton('← Previous', () => currentPage$.next(currentPage$.value - 1))
+        .withEnabled(canPrev$)
+        .build();
+    const nextBtn = createButton('Next →', () => currentPage$.next(currentPage$.value + 1))
+        .withEnabled(canNext$)
+        .build();
+
+    const grid = new GridBuilder<User>()
+        .withItems(pageData$)
+        .withHeight(of(400));
+
+    const columns = grid.withColumns();
+    columns.addNumberColumn('id').withHeader('ID').withWidth('60px');
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addTextColumn('email').withHeader('Email');
+    columns.addEnumColumn('role').withHeader('Role');
+    columns.addBooleanColumn('active').withHeader('Active');
+    columns.addMoneyColumn('balance').withHeader('Balance');
+
+    const label = new LabelBuilder()
+        .withCaption(rangeLabel$)
+        .withClass(of('text-sm font-medium text-on-surface-variant mb-4'))
+        .build();
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent({ build: () => createControlStrip([prevBtn, nextBtn]) });
+    container.addSlot().withContent({ build: () => label });
+    container.addSlot().withContent(grid);
+
+    return container.build();
+};
+
+export const Editable = () => {
+    const { element: actionLog, log } = createActionLog();
+
+    // Deep-clone snapshots for old → new change detection
+    const snapshots = new Map<number, User>();
+    users.slice(0, 15).forEach(u => snapshots.set(u.id, structuredClone(u)));
+
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 15)))
+        .withHeight(of(500))
+        .asEditable((item: User) => {
+            const snapshot = snapshots.get(item.id);
+            if (!snapshot) return;
+
+            const changes: string[] = [];
+
+            if (snapshot.name !== item.name) {
+                changes.push(`Name changed: <s>${snapshot.name}</s> → <b>${item.name}</b>`);
+            }
+            if (snapshot.email !== item.email) {
+                changes.push(`Email changed: <s>${snapshot.email}</s> → <b>${item.email}</b>`);
+            }
+            if (snapshot.lastLogin.valueOf() !== item.lastLogin.valueOf()) {
+                const oldDate = snapshot.lastLogin.toLocaleDateString();
+                const newDate = item.lastLogin.toLocaleDateString();
+                changes.push(`Last Login changed: <s>${oldDate}</s> → <b>${newDate}</b>`);
+            }
+            if (snapshot.active !== item.active) {
+                changes.push(`Active changed: <s>${snapshot.active}</s> → <b>${item.active}</b>`);
+            }
+            if (snapshot.progress !== item.progress) {
+                const oldPct = `${Math.round(snapshot.progress * 100)}%`;
+                const newPct = `${Math.round(item.progress * 100)}%`;
+                changes.push(`Progress changed: <s>${oldPct}</s> → <b>${newPct}</b>`);
+            }
+            if (JSON.stringify(snapshot.balance) !== JSON.stringify(item.balance)) {
+                const oldBal = `${snapshot.balance.amount} ${snapshot.balance.currencyId}`;
+                const newBal = `${item.balance.amount} ${item.balance.currencyId}`;
+                changes.push(`Balance changed: <s>${oldBal}</s> → <b>${newBal}</b>`);
+            }
+
+            // Update snapshot after detecting changes
+            snapshots.set(item.id, structuredClone(item));
+
+            changes.forEach(change => log(change));
+        });
+
+    const columns = grid.withColumns();
+    columns.addNumberColumn('id').withHeader('ID').withWidth('60px').withAlign('center');
+    columns.addTextColumn('name').withHeader('Name').asEditable();
+    columns.addTextColumn('email').withHeader('Email').asEditable();
+    columns.addDateColumn('lastLogin').withHeader('Last Login').asEditable();
+    columns.addBooleanColumn('active').withHeader('Active').withAlign('center').asEditable();
+    columns.addPercentageColumn('progress').withHeader('Progress').asEditable();
+    columns.addMoneyColumn('balance')
+        .withHeader('Balance')
+        .asEditable()
+        .withPrecision(2)
+        .withCurrencies(['USD', 'EUR', 'GBP', 'JPY']);
+    columns.addEnumColumn('role').withHeader('Role');
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent(grid);
+    container.addSlot().withContent({ build: () => actionLog }).withSize(SlotSize.FULL);
+
+    return container.build();
+};
+
+export const GlassEffect = () => {
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 15)))
+        .withHeight(of(400))
+        .asGlass();
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addEnumColumn('role').withHeader('Role');
+    columns.addMoneyColumn('balance').withHeader('Balance');
+
+    const container = document.createElement('div');
+    container.className = 'flex-1 p-8 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center';
+
+    const gridElement = grid.build();
+    gridElement.style.width = '100%';
+    container.appendChild(gridElement);
+
+    return container;
+};
+
+export const WithActions = () => {
+    const { element: actionLog, log } = createActionLog();
+
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 15)))
+        .withHeight(of(400));
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addTextColumn('email').withHeader('Email');
+
+    const editClick = (user: User) => log(`Editing ${user.name}`);
+    const deleteClick = (user: User) => log(`Deleting ${user.name}`);
+
+    const actions = grid.withActions();
+    actions.addAction(Icons.EDIT, 'Edit', editClick);
+    actions.addAction(Icons.DELETE, 'Delete', deleteClick);
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent(grid);
+    container.addSlot().withContent({ build: () => actionLog }).withSize(SlotSize.FULL);
+
+    return container.build();
+};
+
+export const WithToolbar = () => {
+    const { element: actionLog, log } = createActionLog();
+
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 15)))
+        .withHeight(of(400));
+
+    const toolbar = grid.withToolbar();
+    const addClick = new Subject<void>();
+    addClick.subscribe(() => log('Add User Clicked'));
+
+    toolbar.withPrimaryButton().withCaption(of('Add User')).withClick(() => addClick.next());
+    toolbar.addSecondaryButton().withCaption(of('Export'));
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addTextColumn('email').withHeader('Email');
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent(grid);
+    container.addSlot().withContent({ build: () => actionLog }).withSize(SlotSize.FULL);
+
+    return container.build();
 };
 
 export const FullCoverage = () => {
+    const { element: actionLog, log } = createActionLog();
     const data = generateFullCoverageData(1000);
     const grid = new GridBuilder<FullCoverageItem>()
         .withItems(of(data))
@@ -413,7 +587,7 @@ export const FullCoverage = () => {
     columns.addButtonColumn('buttonLabel')
         .withHeader('Action')
         .withLabel('Click')
-        .withClick((item) => alert(`Clicked row ${item.id}`))
+        .withClick((item) => log(`Clicked row ${item.id}`))
         .withWidth('90px');
     columns.addCustomColumn()
         .withHeader('Status Badge')
@@ -431,14 +605,21 @@ export const FullCoverage = () => {
             return badge;
         });
 
-    const editClick = (item: FullCoverageItem) => alert(`Editing ${item.name}`);
-    const deleteClick = (item: FullCoverageItem) => alert(`Deleting ${item.name}`);
-    const viewClick = (item: FullCoverageItem) => alert(`Viewing ${item.name}`);
+    const editClick = (item: FullCoverageItem) => log(`Editing ${item.name}`);
+    const deleteClick = (item: FullCoverageItem) => log(`Deleting ${item.name}`);
+    const viewClick = (item: FullCoverageItem) => log(`Viewing ${item.name}`);
 
     const actions = grid.withActions();
     actions.addAction(Icons.EDIT, 'Edit', editClick);
     actions.addAction(Icons.DELETE, 'Delete', deleteClick);
     actions.addAction(Icons.EYE_OPEN, 'View', viewClick);
 
-    return grid.build();
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent(grid);
+    container.addSlot().withContent({ build: () => actionLog }).withSize(SlotSize.FULL);
+
+    return container.build();
 };

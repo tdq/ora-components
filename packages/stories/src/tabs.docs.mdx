@@ -11,6 +11,17 @@ Tabs follow [Material Design 3](https://m3.material.io/components/tabs) tab sema
 
 ---
 
+## When to use
+
+Use tabs to organise related content into separate views without navigating to a new page:
+
+- **Detail panels** — switch between Overview, Transactions, and Documents views for an account
+- **Settings interfaces** — group configuration sections (Profile, Security, Notifications) into distinct tabs
+- **Multi-step workflows** — embed tabs inside a dialog or panel for structured data entry
+- **Dashboard sections** — toggle between chart views, summary tables, and reports
+
+Avoid using tabs for fewer than two views, when content is unrelated, or when users need to compare content across tabs simultaneously — consider a split panel layout instead.
+
 ## Usage
 
 ```typescript
@@ -107,11 +118,43 @@ The `WithVisibilityToggle` story shows dynamic tab visibility controlled by a `B
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Move focus between tab navigation and tab content |
+| `Enter` / `Space` | Activate the focused tab |
+| `Arrow Left` / `Arrow Right` | Switch to the previous / next tab |
+| `Home` | Switch to the first tab |
+| `End` | Switch to the last tab |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-primary` | Active tab indicator and text colour |
+| `--md-sys-color-surface` | Tab navigation background |
+| `--md-sys-color-on-surface-variant` | Inactive tab text colour |
+| `--md-sys-color-outline` | Tab divider |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Caption and description**: Displayed above the tab navigation on the left side. Caption uses `text-headline-small` with bold weight; description uses `text-body-medium` in `text-on-surface-variant`.
 - **Active tab indicator**: Uses a `border-b-2` bottom border in `text-primary` colour for the active tab.
 - **Horizontal scrolling**: The tab navigation bar (`overflow-x-auto`) allows users to scroll horizontally when tabs overflow the container width. Scrollbar is hidden with `no-scrollbar`.
 - **Glass effect**: Overrides tab colours for translucent appearance — active tab uses `text-gray-900` / `text-white/80`, inactive uses `text-gray-600` / `text-white/60`. Caption and description colours also adapt.
-- **Tab visibility**: The `withVisible` observable controls `display: none/block` on the tab button. If the currently active tab is hidden, the component automatically switches to the first visible tab (index `0`).
+- **Tab visibility**: The `withVisible` observable controls `display: none/block` on the tab button. If the currently active tab is hidden, the component automatically switches to the first visible tab.
 - **Content area**: Renders inside a `p-4` padded container beneath the tab navigation. Content is replaced reactively when the active tab changes.
+
+---
+
+## Related components
+
+- [Dialog](../?path=/docs/components-dialog--docs) — embed tabs inside a dialog for structured workflows
+- [Panel](../?path=/docs/components-panel--docs) — wrap tabs in a panel for dashboard layouts

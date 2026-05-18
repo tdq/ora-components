@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 
 export enum ColumnType {
     TEXT = 'TEXT',
@@ -41,6 +42,7 @@ export interface GridColumn<ITEM> {
     filterable?: boolean;
     resizable?: boolean;
     editable?: boolean;
+    visible$?: Observable<boolean>;
     align?: 'left' | 'center' | 'right';
     cellClass?: (item: ITEM) => string;
     render: (item: ITEM) => HTMLElement | string;
@@ -91,6 +93,7 @@ export interface ColumnBuilder<ITEM> {
     withAlign(align: 'left' | 'center' | 'right'): this;
     withClass(classProvider: (item: ITEM) => string): this;
     withSortValue(provider: (item: ITEM) => any): this;
+    withVisible(visible$: Observable<boolean>): this;
     build(): GridColumn<ITEM>;
 }
 

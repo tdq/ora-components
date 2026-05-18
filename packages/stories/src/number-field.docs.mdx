@@ -11,6 +11,18 @@ Number fields follow [Material Design 3](https://m3.material.io/components/text-
 
 ---
 
+## When to use
+
+Use `NumberField` when users need to enter or edit numeric values:
+
+- **Numeric constraints** — min/max clamping, step increments, and precision formatting
+- **Formatted display** — locale-aware grouping, decimal separators, and fixed precision
+- **Prefix/suffix adornments** — unit labels like "kg", "%", or currency symbols displayed alongside the value
+
+Use a standard `TextField` with `type="number"` for simple numeric input without formatting, constraints, or adornments.
+
+---
+
 ## Usage
 
 ```typescript
@@ -184,12 +196,47 @@ The `InlineErrors` story shows the `asInlineError()` mode, where validation erro
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|-----|--------|
+| `Arrow Up` | Increment the value by the step amount |
+| `Arrow Down` | Decrement the value by the step amount |
+| `Page Up` | Increment by step × 10 |
+| `Page Down` | Decrement by step × 10 |
+| `Home` | Jump to the minimum allowed value |
+| `End` | Jump to the maximum allowed value |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface-variant` | Input background colour |
+| `--md-sys-color-on-surface-variant` | Label text colour |
+| `--md-sys-color-outline` | Border colour |
+| `--md-sys-color-primary` | Focus ring colour |
+| `--md-sys-color-error` | Validation error colour |
+| `--md-sys-shape-small` | Border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Number alignment**: Values are right-aligned while placeholder text is left-aligned for readability.
 - **Prefix/suffix**: Non-editable elements rendered inside the field wrapper. Prefix appears before the value, suffix after.
 - **Disabled state**: Applies `opacity-38` and `cursor-not-allowed` — observable-driven via `withEnabled`.
-- **Error state**: When `withError` emits a non-empty string, the field border and active indicator switch to error colour. In `asInlineError` mode, an icon with popover replaces the support text.
+- **Error state**: When `withError` emits a non-empty string, the field border and active indicator switch to error colour.
 - **Glass effect**: Overrides the background and border of each style variant with translucent colours and backdrop blur.
 - **Height**: Fixed at `48px` (`h-[48px]`) for consistent alignment in forms.
-- **Keyboard navigation**: ArrowUp/Down increment/decrement by step, PageUp/Down by step × 10, Home/End jump to min/max.
+
+---
+
+## Related components
+
+- [TextField](../?path=/docs/components-text-field--docs) — free-form text input without numeric constraints
+- [MoneyField](../?path=/docs/components-money-field--docs) — monetary input with currency selection
+- [Form](../?path=/docs/components-form--docs) — embed number fields in structured data-entry forms

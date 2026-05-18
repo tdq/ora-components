@@ -5,6 +5,7 @@ import { Icons } from '@tdq/ora-components';
 
 export default {
     title: 'Components/Button',
+    tags: ['stable', 'glass', 'reactive'],
 };
 
 export const Styles = () => {
@@ -24,6 +25,42 @@ export const Styles = () => {
 
     const container = layout.build();
     container.classList.add('flex-wrap', 'p-4');
+
+    return container;
+};
+
+export const DynamicStyle = () => {
+    const style$ = new BehaviorSubject(ButtonStyle.FILLED);
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new ButtonBuilder()
+            .withCaption(of('Style Changer'))
+            .withStyle(style$)
+    );
+
+    const select = document.createElement('select');
+    select.className = 'p-2 border rounded w-max bg-surface text-on-surface';
+    Object.values(ButtonStyle).forEach(style => {
+        const option = document.createElement('option');
+        option.value = style;
+        option.textContent = style;
+        select.appendChild(option);
+    });
+
+    select.onchange = (e) => {
+        style$.next((e.target as HTMLSelectElement).value as ButtonStyle);
+    };
+
+    layout.addSlot().withContent({
+        build: () => select
+    });
+
+    const container = layout.build();
+    container.classList.add('p-4');
 
     return container;
 };
@@ -85,42 +122,6 @@ export const Interactive = () => {
     return container;
 };
 
-export const DynamicStyle = () => {
-    const style$ = new BehaviorSubject(ButtonStyle.FILLED);
-
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.LARGE);
-
-    layout.addSlot().withContent(
-        new ButtonBuilder()
-            .withCaption(of('Style Changer'))
-            .withStyle(style$)
-    );
-
-    const select = document.createElement('select');
-    select.className = 'p-2 border rounded w-max bg-surface text-on-surface';
-    Object.values(ButtonStyle).forEach(style => {
-        const option = document.createElement('option');
-        option.value = style;
-        option.textContent = style;
-        select.appendChild(option);
-    });
-
-    select.onchange = (e) => {
-        style$.next((e.target as HTMLSelectElement).value as ButtonStyle);
-    };
-
-    layout.addSlot().withContent({
-        build: () => select
-    });
-
-    const container = layout.build();
-    container.classList.add('p-4');
-
-    return container;
-};
-
 export const Glass = () => {
     const layout = new LayoutBuilder()
         .asHorizontal()
@@ -138,7 +139,7 @@ export const Glass = () => {
     });
 
     const container = layout.build();
-    container.classList.add('flex-wrap', 'p-8', 'bg-gradient-to-br', 'from-blue-500', 'to-purple-600');
+    container.classList.add('flex-1', 'flex-wrap', 'p-8', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
 
     return container;
 };

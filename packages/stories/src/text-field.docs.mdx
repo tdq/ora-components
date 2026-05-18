@@ -11,6 +11,18 @@ Text fields follow [Material Design 3](https://m3.material.io/components/text-fi
 
 ---
 
+## When to use
+
+Use text fields for collecting free-form text input from users:
+
+- **Form fields** — names, descriptions, notes, and other unstructured text
+- **Search inputs** — filterable text inputs with live query feedback
+- **Password fields** — with `asPassword()` for secure masked entry
+- **Email fields** — with `asEmail()` for native email validation
+- **Adorned inputs** — with prefix/suffix adornments for units, icons, or quick-clear buttons
+
+Choose **tonal** (filled) style for most form contexts. Use **outlined** style when the field needs to stand out on a coloured background.
+
 ## Usage
 
 ```typescript
@@ -146,7 +158,31 @@ The `DocumentedFeatures` story showcases specialised field types and adornments:
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Move focus to and from the text field |
+| `Enter` | Submit the form or trigger the associated action |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface-variant` | Input background colour |
+| `--md-sys-color-on-surface-variant` | Label text colour |
+| `--md-sys-color-outline` | Border colour |
+| `--md-sys-color-primary` | Focus ring colour |
+| `--md-sys-color-error` | Validation error colour |
+| `--md-sys-shape-small` | Border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Floating label** uses `md-label-small` typography and sits above the input.
 - **Field height** is fixed at 48px (`h-[48px]`) for consistency across variants.
@@ -156,3 +192,11 @@ The `DocumentedFeatures` story showcases specialised field types and adornments:
 - **Disabled state** reduces opacity and removes pointer events — observable-driven via `withEnabled`.
 - **Glass effect** overrides the background and border of each style variant with translucent colours and backdrop blur.
 - **Prefix/suffix** content is non-editable and rendered with `text-on-surface-variant` colour.
+
+---
+
+## Related components
+
+- [Form](../?path=/docs/components-form--docs) — build structured forms with multiple text fields
+- [NumberField](../?path=/docs/components-number-field--docs) — numeric input with min/max constraints
+- [MoneyField](../?path=/docs/components-money-field--docs) — monetary input with currency selection

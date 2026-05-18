@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { ColumnBuilder, GridColumn, ColumnType, CellEditor } from '../types';
 
 export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
@@ -11,6 +12,7 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
     protected _cellClass?: (item: ITEM) => string;
     protected _sortValue?: (item: ITEM) => any;
     protected _minWidth?: string;
+    protected _visible$?: Observable<boolean>;
 
     constructor(field: string) {
         this._field = field;
@@ -62,6 +64,11 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
         return this;
     }
 
+    withVisible(visible$: Observable<boolean>): this {
+        this._visible$ = visible$;
+        return this;
+    }
+
     abstract build(): GridColumn<ITEM>;
 
     protected createEditor(_item: ITEM, _isGlass: boolean): CellEditor | null {
@@ -79,6 +86,7 @@ export abstract class BaseColumnBuilder<ITEM> implements ColumnBuilder<ITEM> {
             sortable: this._sortable,
             resizable: this._resizable,
             editable: this._editable,
+            visible$: this._visible$,
             align: this._align,
             cellClass: this._cellClass,
             render: (item: ITEM) => this.render(item),

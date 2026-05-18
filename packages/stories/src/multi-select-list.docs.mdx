@@ -102,6 +102,19 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 
 ---
 
+## When to use
+
+Use a `MultiSelectList` when users need to select multiple options from a predefined list:
+
+- **Bulk selection** — choose several filters, categories, or tags at once
+- **Permission management** — assign multiple roles or access levels
+- **Data filtering** — select multiple criteria to include in a report or view
+- **Settings configuration** — toggle multiple feature flags or preferences in one place
+
+Use a `ListBox` when only a single selection is allowed.
+
+---
+
 ## Style Variants
 
 The `Styles` story renders all three `MultiSelectListStyle` variants — tonal, outlined, and borderless — side by side so you can compare their appearance at a glance.
@@ -150,7 +163,32 @@ The `SelectAllToggle` story compares the default behaviour (header visible, with
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Move focus into and out of the list |
+| `Arrow Down` | Move focus to the next item |
+| `Arrow Up` | Move focus to the previous item |
+| `Space` | Toggle selection on the focused item |
+| `Enter` | Toggle selection on the focused item |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface` | Panel background colour |
+| `--md-sys-color-primary` | Selection highlight colour |
+| `--md-sys-color-outline` | Panel border colour |
+| `--md-sys-shape-small` | Checkbox border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Panel styling** uses `rounded-large border` for tonal and outlined variants; borderless mode removes these.
 - **Select-all header** is rendered by default with a tri-state checkbox. The header is removed entirely with `withSelectAll(false)`.
@@ -164,3 +202,10 @@ The `SelectAllToggle` story compares the default behaviour (header visible, with
 - **Error state** applies `border-error` to the panel and shows an error message below.
 - **Glass effect** applies `glass-effect` to the panel container and uses translucent colours on item checkboxes.
 - **Reactive selection patch**: When only selection changes (not items or style), the component patches checked states and backgrounds without rebuilding the entire DOM — optimised via a `skip(1)` subscription on the value subject.
+
+---
+
+## Related components
+
+- [Checkbox](../?path=/docs/components-checkbox--docs) — individual checkbox component used in multi-select lists
+- [Grid](../?path=/docs/components-grid--docs) — implement select-all and bulk-edit patterns in data tables

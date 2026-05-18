@@ -11,6 +11,18 @@ The combobox follows Material Design 3 conventions and supports two built-in sty
 
 ---
 
+## When to use
+
+Use a combobox when users need to search or filter through a list of options to make a selection:
+
+- **Search-as-you-type** — the user types to narrow down a long list of options (e.g. "Find an account by name")
+- **Combined input + selection** — the user can either type a value or pick from a dropdown
+- **Large option sets** — when a standard select dropdown would be too long to scan
+
+Use a standard `ListBox` (non-searchable) when the option list is short (fewer than 10 items) and the user does not need to type to find a value.
+
+---
+
 ## Usage
 
 ```typescript
@@ -150,7 +162,35 @@ The `Interactive` story demonstrates reactive state: selecting an item from the 
 
 ---
 
-## Styling Notes
+## Keyboard
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Move focus into and out of the combobox |
+| `Arrow Down` | Open the dropdown and navigate to the next item |
+| `Arrow Up` | Navigate to the previous item |
+| `Enter` | Select the focused item |
+| `Escape` | Close the dropdown without selecting |
+| `Space` | Falls through to allow typing multi-word search terms |
+
+---
+
+## Styling
+
+All visual properties are driven by MD3 design tokens. Override them on `:root` or a scoped parent to restyle this component without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface` | Dropdown background colour |
+| `--md-sys-color-surface-variant` | Input background colour |
+| `--md-sys-color-primary` | Focus ring and selection colour |
+| `--md-sys-color-outline` | Border colour |
+| `--md-sys-shape-small` | Input border radius |
+| `--md-sys-shape-medium` | Dropdown panel border radius |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for token reference and custom theme examples.
+
+### Additional notes
 
 - **Input height** is 48px (`h-[48px]`) for consistency across variants.
 - **Dropdown popup** is powered by `PopoverBuilder` with a `ListBoxBuilder` (BORDERLESS style) as its content. The popup has a max-width of 300px.
@@ -160,6 +200,12 @@ The `Interactive` story demonstrates reactive state: selecting an item from the 
 - **"No results"** message appears when the filter produces no matches; the `<ul role="listbox">` remains in the DOM for accessibility.
 - **Error state** applies a red outline (`outline-error`) around the input container.
 - **Disabled state** applies `opacity-38` and `cursor-not-allowed`.
-- **Keyboard navigation**: Arrow keys open and navigate the dropdown; Enter selects; Escape closes. Space falls through to allow typing multi-word search terms.
 - **Accessibility**: The input carries `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`, `aria-controls`, and `aria-activedescendant` for full ARIA combobox pattern compliance.
 - **Glass effect** applies `glass-effect` to the input, the popover, and the listbox items with translucent colours and backdrop blur.
+
+---
+
+## Related components
+
+- [ListBox](../?path=/docs/components-listbox--docs) — non-searchable list selection for short option sets
+- [TextField](../?path=/docs/components-text-field--docs) — free-form text input without dropdown selection

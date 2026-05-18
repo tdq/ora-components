@@ -2,6 +2,7 @@
 export default {
     content: [
         "./src/**/*.{ts,html}",
+        "./.storybook/**/*.{ts,html}",
         "../ora-components/src/**/*.{ts,html,css}",
     ],
     darkMode: ['selector', '[data-theme="dark"]'],
