@@ -9,11 +9,13 @@ function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
+export type CheckboxValue = boolean | 'intermediate';
+
 export class CheckboxBuilder implements ComponentBuilder {
     private caption$?: Observable<string>;
     private enabled$?: Observable<boolean>;
     private className$?: Observable<string>;
-    private value$?: Subject<boolean>;
+    private value$?: Subject<CheckboxValue>;
     private isGlass: boolean = false;
 
     withCaption(caption: Observable<string>): this {
@@ -31,7 +33,7 @@ export class CheckboxBuilder implements ComponentBuilder {
         return this;
     }
 
-    withValue(value: Subject<boolean>): this {
+    withValue(value: Subject<CheckboxValue>): this {
         this.value$ = value;
         return this;
     }
@@ -58,7 +60,7 @@ export class CheckboxBuilder implements ComponentBuilder {
             box.className = cn(
                 'w-full h-full rounded-small transition-all relative',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
-                'peer-checked:bg-primary peer-checked:border-primary',
+                'peer-checked:bg-primary peer-checked:border-primary peer-indeterminate:bg-primary peer-indeterminate:border-primary',
                 'peer-disabled:opacity-38 peer-disabled:cursor-not-allowed',
                 isGlass
                     ? 'glass-effect'
@@ -67,7 +69,7 @@ export class CheckboxBuilder implements ComponentBuilder {
         };
 
         const iconContainer = document.createElement('div');
-        iconContainer.className = 'absolute inset-0 w-full h-full text-on-primary scale-0 transition-transform peer-checked:scale-100 flex items-center justify-center';
+        iconContainer.className = 'absolute inset-0 w-full h-full text-on-primary scale-0 transition-transform peer-checked:scale-100 peer-indeterminate:scale-0 flex items-center justify-center';
         iconContainer.innerHTML = Icons.CHECKMARK;
 
         const stateLayer = document.createElement('div');
@@ -82,19 +84,22 @@ export class CheckboxBuilder implements ComponentBuilder {
         container.appendChild(iconContainer);
         container.appendChild(stateLayer);
 
-        const captionSpan = document.createElement('span');
-        // md-label-large defaults
-        captionSpan.className = cn(
-            'md-label-large peer-disabled:opacity-38',
-            this.isGlass ? '' : 'text-on-surface'
-        );
+        const indeterminateContainer = document.createElement('div');
+        indeterminateContainer.className = 'absolute inset-0 w-full h-full text-on-primary scale-0 transition-transform peer-indeterminate:scale-100 flex items-center justify-center';
+        indeterminateContainer.innerHTML = Icons.INDETERMINATE;
+        container.appendChild(indeterminateContainer);
 
         root.appendChild(container);
-        root.appendChild(captionSpan);
 
         const subscriptions = new Subscription();
 
         if (this.caption$) {
+            const captionSpan = document.createElement('span');
+            captionSpan.className = cn(
+                'md-label-large peer-disabled:opacity-38',
+                this.isGlass ? '' : 'text-on-surface'
+            );
+            root.appendChild(captionSpan);
             subscriptions.add(this.caption$.subscribe(caption => {
                 captionSpan.textContent = caption;
             }));
@@ -125,13 +130,21 @@ export class CheckboxBuilder implements ComponentBuilder {
         }
 
         if (this.value$) {
+            let currentValue: CheckboxValue = false;
             subscriptions.add(this.value$.subscribe(value => {
-                input.checked = value;
+                currentValue = value;
+                if (value === 'intermediate') {
+                    input.checked = true;
+                    input.indeterminate = true;
+                } else {
+                    input.checked = value;
+                    input.indeterminate = false;
+                }
             }));
 
-            input.addEventListener('change', () => {
-                this.value$?.next(input.checked);
-            });
+            const onChangeFn = () => this.value$?.next(currentValue === 'intermediate' ? true : input.checked);
+            input.addEventListener('change', onChangeFn);
+            subscriptions.add({ unsubscribe: () => input.removeEventListener('change', onChangeFn) });
         }
 
         registerDestroy(root, () => {

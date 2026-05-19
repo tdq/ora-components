@@ -1,6 +1,8 @@
-import { Subscription } from 'rxjs';
+import { Subscription, BehaviorSubject, skip } from 'rxjs';
 import { GridColumn, GridAction, ColumnType } from './types';
 import { GridStyles, getAlignClass, applyColumnWidth } from './grid-styles';
+import { CheckboxBuilder } from '../checkbox/checkbox';
+import type { CheckboxValue } from '../checkbox/checkbox';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -11,7 +13,8 @@ function cn(...inputs: ClassValue[]) {
 export class GridRow<ITEM> {
     private element: HTMLElement;
     private actionCell?: HTMLElement;
-    private checkbox?: HTMLInputElement;
+    private checkboxValue$?: BehaviorSubject<CheckboxValue>;
+    private suppressCheckboxEmit = false;
     private listenerAbort?: AbortController;
     private columnSubscriptions: Subscription[] = [];
     private readonly rowHeight = 52;
@@ -63,18 +66,22 @@ export class GridRow<ITEM> {
         if (this.isMultiSelect) {
             const checkCell = document.createElement('div');
             checkCell.className = GridStyles.checkboxCell;
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = GridStyles.checkboxInput;
-            checkbox.checked = this.isSelected;
-
-            checkbox.addEventListener('change', (e) => {
-                e.stopPropagation();
-                this.onToggleSelection(this.item);
-            }, { signal });
-
-            this.checkbox = checkbox;
-            checkCell.appendChild(checkbox);
+            const value$ = new BehaviorSubject<CheckboxValue>(this.isSelected);
+            const capturedItem = this.item;
+            this.columnSubscriptions.push(
+                value$.pipe(skip(1)).subscribe(() => {
+                    if (!this.suppressCheckboxEmit) {
+                        this.onToggleSelection(capturedItem);
+                    }
+                })
+            );
+            const checkboxEl = new CheckboxBuilder()
+                .asGlass(this.isGlass)
+                .withValue(value$)
+                .build();
+            
+            this.checkboxValue$ = value$;
+            checkCell.appendChild(checkboxEl);
             row.appendChild(checkCell);
             firstCell = checkCell;
         }
@@ -447,7 +454,7 @@ export class GridRow<ITEM> {
         this.isSelected = isSelected;
         this.level = level;
         this.actionCell = undefined;
-        this.checkbox = undefined;
+        this.checkboxValue$ = undefined;
         this.element.querySelectorAll('[popover]').forEach(el => {
             const htmlEl = el as HTMLElement;
             if (htmlEl.matches(':popover-open')) htmlEl.hidePopover();
@@ -473,9 +480,9 @@ export class GridRow<ITEM> {
         if (this.isSelected === isSelected) return;
         this.isSelected = isSelected;
 
-        if (this.checkbox) {
-            this.checkbox.checked = isSelected;
-        }
+        this.suppressCheckboxEmit = true;
+        this.checkboxValue$?.next(isSelected);
+        this.suppressCheckboxEmit = false;
 
         if (this.actionCell) {
             this.actionCell.className = cn(

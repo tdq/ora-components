@@ -34,3 +34,5 @@ The landing page consists of several high-level sections, each designed for a sp
 ## 5. Global Header & Footer
 - **Header (`src/components/header.ts`):** Fixed navigation with a logo, section links, and a global 3-way theme switcher (Light, Dark, Pink).
 - **Footer (`src/sections/landing-page.ts`):** Basic attribution and copyright info.
+- **GitHub link** Opens new tab for such URL: https://github.com/tdq/ora-components
+- **Storybook link** Opens new tab for such URL: https://storybook.ora-components.com/
