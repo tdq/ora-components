@@ -1,5 +1,6 @@
 import { of } from 'rxjs';
 import { GridBuilder } from './grid-builder';
+import { GridRow } from './grid-row';
 import { SortDirection } from './types';
 import { MoneyColumnBuilder } from './columns/money-column';
 import { NumberColumnBuilder } from './columns/number-column';
@@ -97,7 +98,9 @@ describe('GridBuilder', () => {
         firstRowCheckbox.click();
 
         // Check if row has selection background
-        const firstRow = container.querySelector('.absolute.w-full') as HTMLElement;
+        // Use .items-stretch to distinguish grid rows from checkbox icon containers
+        // (both have .absolute.w-full, but only grid rows have .items-stretch)
+        const firstRow = container.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
         expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
 
         document.body.removeChild(container);
@@ -120,10 +123,41 @@ describe('GridBuilder', () => {
         const rowCheckboxes = Array.from(container.querySelectorAll('input[type="checkbox"]')).slice(1) as HTMLInputElement[];
         expect(rowCheckboxes.every(cb => cb.checked)).toBe(true);
 
-        const rows = container.querySelectorAll('.absolute.w-full');
+        // Use .items-stretch to distinguish grid rows from checkbox icon containers
+        const rows = container.querySelectorAll('.absolute.w-full.items-stretch');
         rows.forEach(row => {
             expect(row.classList.contains('bg-primary/10')).toBe(true);
         });
+
+        document.body.removeChild(container);
+    });
+
+    it('header checkbox is indeterminate when some (but not all) items are selected', () => {
+        const grid = new GridBuilder<TestItem>()
+            .withItems(of(items))
+            .withHeight(of(400))
+            .asMultiSelect();
+
+        grid.withColumns().addTextColumn('name');
+
+        container = grid.build();
+        document.body.appendChild(container);
+
+        // Select only the first row checkbox — this leaves 2 of 3 rows unselected
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        const firstRowCheckbox = checkboxes[1] as HTMLInputElement;
+        firstRowCheckbox.click();
+
+        // The header checkbox should now show the intermediate state via input.indeterminate=true
+        // and transform overrides (dash icon shown, checkmark hidden)
+        const headerCheckbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
+        const headerCheckboxContainer = headerCheckbox.parentElement as HTMLElement;
+        const headerIconContainer = headerCheckboxContainer.children[2] as HTMLElement;
+        const headerIndeterminateContainer = headerCheckboxContainer.children[4] as HTMLElement;
+        expect(headerCheckbox.checked).toBe(true);
+        expect(headerCheckbox.indeterminate).toBe(true);
+        expect(headerIconContainer.style.transform).toBe('scale(0)');
+        expect(headerIndeterminateContainer.style.transform).toBe('scale(1)');
 
         document.body.removeChild(container);
     });
@@ -307,6 +341,106 @@ describe('GridBuilder', () => {
             // Third column right-aligned (default)
             expect(rowChildren[2].classList.contains('justify-end')).toBe(true);
             expect(rowChildren[2].classList.contains('text-right')).toBe(true);
+        });
+    });
+
+    describe('suppressCheckboxEmit — programmatic updateSelection must not fire onToggleSelection', () => {
+        interface SimpleItem { id: number; name: string; }
+
+        it('programmatic updateSelection(true) does not invoke onToggleSelection', () => {
+            const toggleCalls: SimpleItem[] = [];
+            const item: SimpleItem = { id: 1, name: 'A' };
+            const row = new GridRow<SimpleItem>(
+                item,
+                0,
+                [{ field: 'name', header: 'Name', render: (i) => i.name }],
+                [],
+                false,   // isSelected
+                true,    // isMultiSelect
+                false,   // isEditable
+                (i) => toggleCalls.push(i)
+            );
+            document.body.appendChild(row.getElement());
+
+            row.updateSelection(true);
+
+            expect(toggleCalls).toHaveLength(0);
+
+            document.body.removeChild(row.getElement());
+            row.destroy();
+        });
+
+        it('programmatic updateSelection(false) does not invoke onToggleSelection', () => {
+            const toggleCalls: SimpleItem[] = [];
+            const item: SimpleItem = { id: 2, name: 'B' };
+            const row = new GridRow<SimpleItem>(
+                item,
+                0,
+                [{ field: 'name', header: 'Name', render: (i) => i.name }],
+                [],
+                true,    // isSelected
+                true,    // isMultiSelect
+                false,   // isEditable
+                (i) => toggleCalls.push(i)
+            );
+            document.body.appendChild(row.getElement());
+
+            row.updateSelection(false);
+
+            expect(toggleCalls).toHaveLength(0);
+
+            document.body.removeChild(row.getElement());
+            row.destroy();
+        });
+
+        it('user interaction (checkbox change event) still fires onToggleSelection', () => {
+            const toggleCalls: SimpleItem[] = [];
+            const item: SimpleItem = { id: 3, name: 'C' };
+            const row = new GridRow<SimpleItem>(
+                item,
+                0,
+                [{ field: 'name', header: 'Name', render: (i) => i.name }],
+                [],
+                false,   // isSelected
+                true,    // isMultiSelect
+                false,   // isEditable
+                (i) => toggleCalls.push(i)
+            );
+            document.body.appendChild(row.getElement());
+
+            const input = row.getElement().querySelector('input[type="checkbox"]') as HTMLInputElement;
+            input.checked = true;
+            input.dispatchEvent(new Event('change'));
+
+            expect(toggleCalls).toHaveLength(1);
+            expect(toggleCalls[0]).toBe(item);
+
+            document.body.removeChild(row.getElement());
+            row.destroy();
+        });
+
+        it('updateSelection is a no-op when selection state is unchanged', () => {
+            const toggleCalls: SimpleItem[] = [];
+            const item: SimpleItem = { id: 4, name: 'D' };
+            const row = new GridRow<SimpleItem>(
+                item,
+                0,
+                [{ field: 'name', header: 'Name', render: (i) => i.name }],
+                [],
+                false,   // isSelected = false
+                true,    // isMultiSelect
+                false,   // isEditable
+                (i) => toggleCalls.push(i)
+            );
+            document.body.appendChild(row.getElement());
+
+            // Calling updateSelection(false) when already false — should skip next() entirely
+            row.updateSelection(false);
+
+            expect(toggleCalls).toHaveLength(0);
+
+            document.body.removeChild(row.getElement());
+            row.destroy();
         });
     });
 

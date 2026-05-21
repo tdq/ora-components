@@ -3,7 +3,7 @@
 The landing page is built as a standalone Vite-powered package within the `@tdq/ora-components` monorepo. It leverages the same core technologies as the library itself: **Vanilla TypeScript**, **RxJS**, and **Tailwind CSS**.
 
 ## Core Technology Stack
-- **Framework:** Vanilla TypeScript (No framework like React or Angular).
+- **Framework:** Vanilla TypeScript and HTML/CSS files (No framework like React or Angular).
 - **Reactivity:** RxJS (Observables, Subjects, and Subscriptions).
 - **Styling:** Tailwind CSS (extending the Material 3 design system).
 - **Build Tool:** Vite (for fast development and optimized production builds).

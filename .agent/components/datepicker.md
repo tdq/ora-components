@@ -8,7 +8,7 @@ It has the following methods:
 - `withClass(className: Observable<string>): this` - sets class css name of the datepicker.
 - `withValue(value: Subject<Date | null>): this` - sets value for datepicker. It is also updated by datepicker itself on date setting.
 - `withError(error: Observable<string>): this` - sets error of the datepicker.
-- `withStyle(style: Observable<DatePickerStyle>): this` - sets style of the datepicker.
+- `withStyle(style: FieldStyle): this` - sets style of the datepicker (`FieldStyle.TONAL` or `FieldStyle.OUTLINED`).
 - `asGlass(): this` - sets special styling option for datepicker and its popup with items as transparent with blur background (glass effect). 
 - `withMinDate(min: Observable<Date>): this` - Sets minimum selectable date.
 - `withMaxDate(max: Observable<Date>): this` - Sets maximum selectable date.

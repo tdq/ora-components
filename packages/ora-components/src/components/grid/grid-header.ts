@@ -1,5 +1,8 @@
+import { BehaviorSubject, Subscription, skip } from 'rxjs';
 import { GridColumn, SortConfig, SortDirection } from './types';
 import { GridStyles, getAlignClass, applyColumnWidth } from './grid-styles';
+import { CheckboxBuilder } from '../checkbox/checkbox';
+import type { CheckboxValue } from '../checkbox/checkbox';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Icons } from '@/core/icons';
@@ -10,6 +13,7 @@ function cn(...inputs: ClassValue[]) {
 
 export class GridHeader<ITEM> {
     private element: HTMLElement;
+    private headerCheckboxSub?: Subscription;
 
     constructor(
         private columns: GridColumn<ITEM>[],
@@ -39,22 +43,23 @@ export class GridHeader<ITEM> {
             const checkCell = document.createElement('div');
             checkCell.className = GridStyles.checkboxCell;
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = GridStyles.checkboxInput;
-
             const allSelected = items.length > 0 && items.every(item => selected.has(item));
-            const noneSelected = selected.size === 0;
-            const isIndeterminate = !allSelected && !noneSelected && items.some(item => selected.has(item));
-
-            checkbox.checked = allSelected;
-            checkbox.indeterminate = isIndeterminate;
-
-            checkbox.addEventListener('change', () => {
-                this.onSelectAll(checkbox.checked);
+            const isIndeterminate = !allSelected && selected.size > 0 && items.some(item => selected.has(item));
+            const initialValue: CheckboxValue = allSelected ? true : isIndeterminate ? 'intermediate' : false;
+            const value$ = new BehaviorSubject<CheckboxValue>(initialValue);
+            this.headerCheckboxSub?.unsubscribe();
+            this.headerCheckboxSub = value$.pipe(skip(1)).subscribe(checked => {
+                if (checked !== 'intermediate') {
+                    this.onSelectAll(checked);
+                }
             });
 
-            checkCell.appendChild(checkbox);
+            const checkboxEl = new CheckboxBuilder()
+                .asGlass(this.isGlass)
+                .withValue(value$)
+                .build();
+
+            checkCell.appendChild(checkboxEl);
             this.element.appendChild(checkCell);
         }
 
@@ -157,5 +162,9 @@ export class GridHeader<ITEM> {
 
     updateColumns(columns: GridColumn<ITEM>[]) {
         this.columns = columns;
+    }
+
+    destroy(): void {
+        this.headerCheckboxSub?.unsubscribe();
     }
 }

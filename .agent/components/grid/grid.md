@@ -36,7 +36,7 @@ The `GridBuilder<ITEM>` class uses a generic type `ITEM` to ensure type safety a
 - `withActions(): ActionsBuilder<ITEM>`: Adds per-row action buttons in a dedicated trailing column.
 - `withPivot(config: PivotConfig): this`: Enables the [Pivoting Mode](pivot.md) for data aggregation.
 - `asGlass(): this`: Enables translucent glass styling with backdrop blur.
-- `asEditable(onCommit: (item: ITEM) => void): this`: Enables inline cell editing mode. Rows get `cursor-text` styling. Columns that have `asEditable()` configured displays its editor component. Press **Enter** to commit, **Escape** to revert.
+- `asEditable(onCommit: (item: ITEM) => void): this`: Enables inline cell editing mode. Rows get `cursor-text` styling. Columns that have `asEditable()` configured display their editor component when a cell is clicked or activated via keyboard. See [Keyboard Navigation](#keyboard-navigation) below for full key bindings.
 - `asMultiSelect(): this`: Enables row selection via checkboxes and "Select All" functionality in the header.
 
 ## Column Configuration
@@ -61,7 +61,7 @@ All column builders inherit these common methods:
 - `withWidth(width: string)`: Sets CSS width (e.g., `'100px'`, `'2fr'`, `'15%'`).
 - `asSortable()`: Enables the sorting UI for the column.
 - `asResizable()`: Enables column resizing via a handle in the header.
-- `asEditable()`: Marks the column as inline-editable. When the parent grid has `asEditable()` called, cells for this column render as corresponding input fields. Each column defines its own editor component. It updates item on blur (commit). Press **Enter** to start editing and to commit, **Escape** to revert without firing the callback. Pressing **Tab** should move to the next editable column and enter edit mode.
+- `asEditable()`: Marks the column as inline-editable. When the parent grid has `asEditable()` called, cells for this column render their editor component on activation. See [Keyboard Navigation](#keyboard-navigation) for the full key-binding table.
 - `withAlign(align: 'left' | 'center' | 'right')`: Sets the text and flex alignment for the column header and cells. Default is `'left'`.
 - `withClass(classProvider: (item: ITEM) => string)`: Adds custom CSS classes to all cells in this column via a provider function. Useful for conditional styling based on item data.
 
@@ -97,6 +97,43 @@ When `asMultiSelect()` is enabled:
 3. **Element Caching**: `GridRow` and `GridGroupRow` must cache frequently accessed elements (checkboxes, action containers, toggles) during creation.
 4. **Selective Transitions**: Use `transition-colors` instead of `transition-all` on row containers to keep the compositor efficient.
 5. **Filter Restraint**: Limit the use of `backdrop-blur` to static or low-frequency update elements like the primary header. Avoid it on repeated elements like row cells or group headers.
+
+## Keyboard Navigation
+
+Keyboard navigation is only active when `asEditable()` is enabled on the grid. Each editable cell is a focusable element (`tabIndex=0`). Navigation operates in two modes: **cell focus mode** (cell is focused but no editor is open) and **editor mode** (editor widget is active inside the cell).
+
+### Cell Focus Mode
+
+| Key | Behaviour |
+|-----|-----------|
+| `Enter` | Open the editor for the focused cell |
+| `ArrowLeft` | Move focus to the previous editable cell in the same row; if already on the first editable cell, move focus to the last editable cell of the nearest data row above |
+| `ArrowRight` | Move focus to the next editable cell in the same row; if already on the last editable cell, move focus to the first editable cell of the nearest data row below |
+| `ArrowUp` | Move focus to the same column position in the nearest data row above (does **not** open the editor) |
+| `ArrowDown` | Move focus to the same column position in the nearest data row below (does **not** open the editor) |
+
+### Editor Mode
+
+| Key | Behaviour |
+|-----|-----------|
+| `Enter` | Commit the edit (fires `onCommit`), advance to the next editable cell in the same row; if on the last editable cell, move to the first editable cell of the next data row |
+| `Escape` | Revert the edit (restores the original value, `onCommit` is **not** fired), return focus to the cell |
+| `Tab` | Commit the edit, move to the next editable cell in the same row; if on the last editable cell, move to the first editable cell of the next data row |
+| `Shift+Tab` | Commit the edit, move to the previous editable cell in the same row; if on the first editable cell, move to the last editable cell of the previous data row |
+| `ArrowUp` | Commit the edit, move focus to the same column position in the row above (does **not** open the editor) |
+| `ArrowDown` | Commit the edit, move focus to the same column position in the row below (does **not** open the editor) |
+
+### Boolean Column Special Case
+A boolean (checkbox) editor commits immediately on the checkbox `change` event — no explicit confirmation key is required.
+
+### Cross-Row Scroll Behaviour
+When navigating to a row that is outside the current viewport, `GridViewport` scrolls to center the target row, triggers `renderVisibleRows()`, then activates the target cell on the next animation frame (via `requestAnimationFrame`) to ensure the row is in the DOM before focus is applied.
+
+### Implementation Details
+- **Cell focus tracking**: `GridViewport` maintains `activeEditorRow` and `activeEditorCell` references. Opening a new editor automatically commits any previously open editor in a different cell.
+- **Editor lifecycle**: `enterEditMode` attaches a separate `AbortController` (`editorAbort`) for editor-scoped listeners. This controller is also linked to the row-level `AbortController` so that destroying a row while an editor is open cleans up all listeners.
+- **Commit callback**: `(cell as any).__commitEdit` stores the commit closure so that `GridViewport.commitActiveEditor()` can trigger it externally (e.g., when a row is evicted from the virtualized pool during scrolling).
+- **Group rows are skipped**: Cross-row navigation (`moveToRow`) walks the `lastRows` array and skips rows with `type === 'GROUP_HEADER'`, landing only on `type === 'ITEM'` rows.
 
 ## File Structure
 - `grid-builder.ts`: Orchestrator that assembles the grid using specialized modules.

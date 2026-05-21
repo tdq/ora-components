@@ -5,7 +5,7 @@ The Chart component is a high-performance data visualization component for Mater
 It uses the **Builder pattern**, implementing the `ComponentBuilder` interface. 
 It supports multiple simultaneous chart types (e.g., Line and Bar on the same axes), reactive data updates via RxJS, and glass styling effects.
 
-By default, the chart is transparent and occupies 100% of the available width and height of its parent container. To make it look like a standalone card/panel, use the `asGlass()` method.
+By default, the chart is transparent and occupies 100% of the available width and height of its parent container. When the `asGlass()` method is used, the chart container remains transparent but adds internal padding (`p-4`), and the interactive tooltips are styled with a glass effect (backdrop blur and semi-transparent background).
 
 ## Architecture
 The chart is modularized into specialized classes to separate configuration, state management, and rendering concerns:
@@ -42,7 +42,7 @@ Each method returns a specialized builder for that series.
 - `withLegend(visible: boolean): this`: Toggles the legend visibility.
 - `withTooltip(enabled: boolean): this`: Toggles interactive tooltips.
 - `withAnimation(enabled: boolean): this`: Toggles entry animations for data series (default: true).
-- `asGlass(): this`: Enables translucent glass styling.
+- `asGlass(): this`: Adds padding to the chart container and enables glass effect styling for tooltips.
 
 ## Implementation Requirements
 - **Orchestration**: `ChartBuilder.build()` MUST instantiate `ChartViewport` and pass the `ChartLogic` instance to it.
@@ -56,6 +56,7 @@ Each method returns a specialized builder for that series.
 - **X-Axis Scaling**: Category scales MUST be point-centered with exactly **8px padding** from the Y-axis to the first chart element (e.g., the left edge of the first bar). This is achieved using the formula `xScale(i) = 8 + barWidth / 2 + i * xStep`.
 - **Individual Shadows**: `SeriesRenderer` MUST handle the creation of filters in `<defs>` with ID `shadow-${index}`.
 - **Hover Interaction**: `ChartViewport.renderHoverEffects` MUST use the downsampled `displayData` from `ChartScales` instead of the raw `state.data` to correctly map the hover index to the visible points. The highlight ring radius MUST use `HIGHLIGHT_RADIUS` (6px).
+- **Tooltip Glass Effect**: When `state.isGlass` is true, `ChartTooltip` MUST apply the `glass-effect` style, matching the visual appearance of a glassy `Panel` (including `rounded-large` and `[overflow:clip]`).
 - **Cleanup**: `ChartViewport` MUST use `registerDestroy` to unsubscribe from RxJS and disconnect observers.
 
 ## Styling
@@ -64,4 +65,6 @@ Each method returns a specialized builder for that series.
 - Axis should allow to define density of ticks.
 
 ### Glass effect
-**Chart itself is not affected by glass effect**.
+When `asGlass()` is enabled:
+- **Container**: Receives `p-4` padding but has no background, border, or backdrop-blur. This allows the chart to sit cleanly inside other glass panels without "double-glass" artifacts.
+- **Tooltips**: Receive the `.glass-effect` class, providing a backdrop blur, `rounded-large` (12px) corners, and a semi-transparent themed background.

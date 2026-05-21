@@ -75,4 +75,76 @@ describe('CheckboxBuilder', () => {
         expect(checkbox.classList.contains('custom-class')).toBe(false);
         expect(checkbox.classList.contains('another-class')).toBe(true);
     });
+
+    describe('intermediate state', () => {
+        it('emitting intermediate sets input.checked=true, input.indeterminate=true, and applies transform overrides', () => {
+            const value$ = new BehaviorSubject<import('./checkbox').CheckboxValue>(false);
+            const checkbox = new CheckboxBuilder().withValue(value$).build();
+            const input = checkbox.querySelector('input') as HTMLInputElement;
+            const container = input.parentElement as HTMLElement;
+            const iconContainer = container.children[2] as HTMLElement;
+            const indeterminateContainer = container.children[4] as HTMLElement;
+
+            value$.next('intermediate');
+
+            expect(input.checked).toBe(true);
+            expect(input.indeterminate).toBe(true);
+            expect(iconContainer.style.transform).toBe('scale(0)');
+            expect(indeterminateContainer.style.transform).toBe('scale(1)');
+        });
+
+        it('emitting true after intermediate sets checked=true, clears transforms', () => {
+            const value$ = new BehaviorSubject<import('./checkbox').CheckboxValue>('intermediate');
+            const checkbox = new CheckboxBuilder().withValue(value$).build();
+            const input = checkbox.querySelector('input') as HTMLInputElement;
+            const container = input.parentElement as HTMLElement;
+            const iconContainer = container.children[2] as HTMLElement;
+            const indeterminateContainer = container.children[4] as HTMLElement;
+
+            // confirm intermediate is the starting state
+            expect(input.checked).toBe(true);
+            expect(iconContainer.style.transform).toBe('scale(0)');
+            expect(indeterminateContainer.style.transform).toBe('scale(1)');
+
+            value$.next(true);
+
+            expect(input.indeterminate).toBe(false);
+            expect(input.checked).toBe(true);
+            expect(iconContainer.style.transform).toBe('');
+            expect(indeterminateContainer.style.transform).toBe('');
+        });
+
+        it('emitting false after intermediate sets checked=false, clears transforms', () => {
+            const value$ = new BehaviorSubject<import('./checkbox').CheckboxValue>('intermediate');
+            const checkbox = new CheckboxBuilder().withValue(value$).build();
+            const input = checkbox.querySelector('input') as HTMLInputElement;
+            const container = input.parentElement as HTMLElement;
+            const iconContainer = container.children[2] as HTMLElement;
+            const indeterminateContainer = container.children[4] as HTMLElement;
+
+            // confirm intermediate is the starting state
+            expect(input.checked).toBe(true);
+            expect(iconContainer.style.transform).toBe('scale(0)');
+
+            value$.next(false);
+
+            expect(input.indeterminate).toBe(false);
+            expect(input.checked).toBe(false);
+            expect(iconContainer.style.transform).toBe('');
+            expect(indeterminateContainer.style.transform).toBe('');
+        });
+
+        it('clicking while intermediate emits true (not false)', () => {
+            const value$ = new BehaviorSubject<import('./checkbox').CheckboxValue>('intermediate');
+            const checkbox = new CheckboxBuilder().withValue(value$).build();
+            const input = checkbox.querySelector('input') as HTMLInputElement;
+
+            // Simulate a browser click on an indeterminate checkbox: browser sets checked=true
+            // but onChangeFn must emit true based on currentValue, not input.checked
+            input.dispatchEvent(new Event('change'));
+
+            expect(value$.value).toBe(true);
+        });
+    });
+
 });

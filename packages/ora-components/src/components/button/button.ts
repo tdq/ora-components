@@ -72,7 +72,7 @@ export class ButtonBuilder implements ComponentBuilder {
 
     build(): HTMLButtonElement {
         const button = document.createElement('button');
-        const BASE_CLASSES = 'px-px-24 py-px-12 rounded-small font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-label-large inline-flex items-center justify-center gap-2';
+        const BASE_CLASSES = 'h-[46px] px-px-24 rounded-small font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-label-large inline-flex items-center justify-center gap-2';
 
         button.className = cn(BASE_CLASSES);
 
@@ -86,19 +86,23 @@ export class ButtonBuilder implements ComponentBuilder {
             captionSpan.textContent = caption;
             if (!caption) {
                 captionSpan.classList.add('hidden');
-                button.classList.add('aspect-square', 'p-px-12');
+                button.classList.add('aspect-square');
                 button.classList.remove('px-px-24');
             } else {
                 captionSpan.classList.remove('hidden');
-                button.classList.remove('aspect-square', 'p-px-12');
+                button.classList.remove('aspect-square');
                 button.classList.add('px-px-24');
             }
         }) : null;
 
+        if (this.caption$) {
+            button.appendChild(captionSpan);
+        }
+
         const iconSub = this.icon$ ? this.icon$.subscribe(iconHtml => {
             if (iconHtml) {
-                iconSpan.innerHTML = iconHtml.includes('<svg') 
-                    ? iconHtml.replace('<svg', '<svg class="w-full h-full"') 
+                iconSpan.innerHTML = iconHtml.includes('<svg')
+                    ? iconHtml.replace('<svg', '<svg class="w-full h-full"')
                     : `<i class="${iconHtml}"></i>`;
                 if (!iconSpan.parentElement) {
                     button.prepend(iconSpan);
@@ -107,8 +111,6 @@ export class ButtonBuilder implements ComponentBuilder {
                 iconSpan.remove();
             }
         }) : null;
-
-        button.appendChild(captionSpan);
 
         const enabledSub = this.enabled$ ? this.enabled$.subscribe(enabled => {
             button.disabled = !enabled;
@@ -124,7 +126,7 @@ export class ButtonBuilder implements ComponentBuilder {
             if (this.caption$) {
                 // Subscription will handle it
             } else {
-                button.classList.add('aspect-square', 'p-px-12');
+                button.classList.add('aspect-square');
                 button.classList.remove('px-px-24');
             }
 

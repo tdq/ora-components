@@ -25,6 +25,12 @@ Button style is an enum with the following values:
 ## Styling
 Style according to Material Design 3
 
+### Height
+Button has a fixed height of **46px** (`h-[46px]`). This is enforced in `BASE_CLASSES` and cannot be overridden by parent flex containers (prevents stretching when placed inside layouts with `align-items: stretch`). Icon-only buttons use `aspect-square` to produce a 46×46px square.
+
+### Icon-only layout
+When `withCaption` is **not called**, the caption `<span>` is never inserted into the DOM. This ensures the icon is the sole flex child and `justify-center` / `items-center` place it exactly in the centre of the button with no gap artefacts. Padding is removed (`px-px-24` dropped) and `aspect-square` makes the button a 46×46px square.
+
 ### Text Selection
 Button caption text has `select-none` — it is not user-selectable to prevent accidental text highlights on click.
 

@@ -13,7 +13,7 @@ The `GridHeader` class renders the column headers, handles sorting interactions,
 
 ## Components
 - **Element**: A flex container (`GridStyles.header`) with `sticky top-0`.
-- **Checkbox Cell**: Renders the multi-select checkbox with indeterminate state support.
+- **Checkbox Cell**: Renders the multi-select "Select All" checkbox using `CheckboxBuilder`. Supports three states: unchecked (`false`), checked (`true`), and indeterminate (`'intermediate'`) when some but not all rows are selected. Uses `BehaviorSubject<CheckboxValue>` with `skip(1)` to ignore the initial value and only react to user interaction.
 - **Header Cell**: Renders a single column header with optional sort icons and resize handles. Applies `resizable-column` and `prev-resizable` classes to manage border highlights.
 
 ## Constructor
@@ -33,11 +33,12 @@ constructor(
 - **`actionCount: number`**: The number of row-level action buttons. When `actionCount > 0`, a blank action header cell is appended and its width is set inline as `actionCount * 36 + 8` px. When `0`, no action header cell is rendered.
 
 ## Methods
-- `render(items: ITEM[], selected: Set<ITEM>, sort: SortConfig)`: Re-renders the header state, including sorting icons and checkbox states. It dynamically applies classes to cells based on their (and their neighbor's) resizable status.
+- `render(items: ITEM[], selected: Set<ITEM>, sort: SortConfig)`: Re-renders the header state, including sorting icons and checkbox states. It dynamically applies classes to cells based on their (and their neighbor's) resizable status. Unsubscribes and recreates the header checkbox subscription on each call.
 - `onSort(field: string, direction: SortDirection)`: Callback for sorting interactions.
 - `onSelectAll(checked: boolean)`: Callback for the header checkbox.
 - `onColumnsResized(columns: GridColumn<ITEM>[])`: Callback triggered when a column's width is changed.
 - `updateColumns(columns: GridColumn<ITEM>[])`: Replaces the current column definitions. Used when pivoting or dynamic configuration changes occur.
+- `destroy()`: Unsubscribes the header checkbox subscription. Must be called when the grid is destroyed to prevent memory leaks.
 
 ## Implementation Details
 

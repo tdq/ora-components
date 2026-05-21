@@ -215,14 +215,14 @@ describe('ChartBuilder', () => {
         expect(legend?.textContent).toContain('V1');
     });
 
-    it('should apply glass style', () => {
+    it('should apply glass style padding', () => {
         const chart = new ChartBuilder()
             .withData(of(testData))
             .withCategoryField('category')
             .asGlass()
             .build();
 
-        expect(chart).toHaveClass('backdrop-blur-md');
+        expect(chart).toHaveClass('p-4');
     });
 
     it('should include animation elements when enabled', () => {
@@ -386,6 +386,82 @@ describe('ChartBuilder', () => {
         // Wait for potential microtasks? ChartLogic updates state$ synchronously on .next()
         const updatedPath = chart.querySelector('path[stroke="blue"]');
         expect(updatedPath).not.toBeNull();
+    });
+});
+
+describe('Chart Glass Effect', () => {
+    const testData = [
+        { category: 'Jan', value1: 10 },
+        { category: 'Feb', value1: 15 }
+    ];
+
+    it('should NOT have backdrop-blur on container when asGlass is called', () => {
+        const chart = new ChartBuilder()
+            .withData(of(testData))
+            .withCategoryField('category')
+            .asGlass()
+            .build();
+
+        // New behavior: should NOT have backdrop-blur-md (or any panel background)
+        expect(chart).not.toHaveClass('backdrop-blur-md');
+        expect(chart).not.toHaveClass('bg-white/10');
+    });
+
+    it('should have glass-effect class on tooltip when asGlass is called', () => {
+        const chart = new ChartBuilder()
+            .withData(of(testData))
+            .withCategoryField('category')
+            .withTooltip(true)
+            .asGlass()
+            .build();
+
+        document.body.appendChild(chart);
+        
+        const svg = chart.querySelector('svg');
+        if (!svg) throw new Error('SVG not found');
+
+        svg.getBoundingClientRect = () => ({
+            width: 500, height: 300, left: 0, top: 0, right: 500, bottom: 300, x: 0, y: 0, toJSON: () => {}
+        } as DOMRect);
+
+        const moveEvent = new MouseEvent('mousemove', {
+            clientX: 100, clientY: 150, bubbles: true
+        });
+        svg.dispatchEvent(moveEvent);
+
+        const tooltip = chart.querySelector('.absolute.z-50');
+        expect(tooltip).not.toBeNull();
+        expect(tooltip).toHaveClass('glass-effect');
+        
+        document.body.removeChild(chart);
+    });
+
+    it('should NOT have glass-effect class on tooltip when asGlass is NOT called', () => {
+        const chart = new ChartBuilder()
+            .withData(of(testData))
+            .withCategoryField('category')
+            .withTooltip(true)
+            .build();
+
+        document.body.appendChild(chart);
+        
+        const svg = chart.querySelector('svg');
+        if (!svg) throw new Error('SVG not found');
+
+        svg.getBoundingClientRect = () => ({
+            width: 500, height: 300, left: 0, top: 0, right: 500, bottom: 300, x: 0, y: 0, toJSON: () => {}
+        } as DOMRect);
+
+        const moveEvent = new MouseEvent('mousemove', {
+            clientX: 100, clientY: 150, bubbles: true
+        });
+        svg.dispatchEvent(moveEvent);
+
+        const tooltip = chart.querySelector('.absolute.z-50');
+        expect(tooltip).not.toBeNull();
+        expect(tooltip).not.toHaveClass('glass-effect');
+        
+        document.body.removeChild(chart);
     });
 });
 

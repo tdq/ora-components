@@ -13,10 +13,11 @@ In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) met
 - **Field**: Expects a boolean value from the data item.
 - **Rendering**: Uses the provided provider or a `CheckboxBuilder` when `asCheckbox()` is enabled.
 - **Internal Component**: When rendering a checkbox, it utilizes the project's standard `CheckboxBuilder` to ensure consistent Material Design 3 styling and interactive feedback.
+- **Value type**: Uses `BehaviorSubject<CheckboxValue>` (not `BehaviorSubject<boolean>`) to satisfy `CheckboxBuilder.withValue()` which requires `Subject<CheckboxValue>`.
 
 ## Styling
 - **Alignment**: Center-aligned.
-- **Checkbox**: Uses the styles defined in `CheckboxBuilder`, including MD3 state layers and color tokens.
+- **Checkbox**: Uses the styles defined in `CheckboxBuilder`, including MD3 state layers and color tokens. Center-aligned.
 - **Borders**: Inherits cell borders (`border-r border-border/50`).
 
 ## Editing

@@ -57,6 +57,13 @@ export class ChartTooltip<ITEM> {
         const item = data[index];
         if (!item) return null;
 
+        // Apply glass style if needed, preserving current visibility
+        const isHidden = this.element.classList.contains('opacity-0');
+        this.element.className = cn(
+            state.isGlass ? ChartStyles.tooltipGlass : ChartStyles.tooltip,
+            isHidden && 'opacity-0'
+        );
+
         const category = String(item[state.categoryField as keyof ITEM]);
         
         while (this.element.firstChild) this.element.removeChild(this.element.firstChild);
