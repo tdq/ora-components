@@ -11,7 +11,7 @@ declare global {
 const app = document.getElementById('app')!;
 ThemeManager.getInstance();
 
-app.appendChild(router.build());
+app.replaceChildren(router.build());
 
 // Signal to the prerender script that the initial route is mounted
 router.currentRoute$.subscribe((match) => {
