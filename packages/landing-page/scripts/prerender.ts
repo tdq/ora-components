@@ -18,7 +18,7 @@ import { preview } from 'vite';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const DIST = join(ROOT, 'dist');
-const SITE_ORIGIN = 'https://ora-components.dev';
+const SITE_ORIGIN = 'https://ora-components.com';
 
 interface PreRenderRoute {
     path: string;

@@ -40,7 +40,7 @@ export const ROUTE_METADATA: Record<string, RouteMetadata> = {
                 name: SITE_NAME,
                 description:
                     'Provides enterprise-grade reactive UI components for financial applications built on RxJS and TypeScript.',
-                url: 'https://ora-components.dev',
+                url: 'https://ora-components.com',
                 sameAs: [
                     'https://github.com/tdq/ora-components',
                     'https://www.npmjs.com/package/@tdq/ora-components',
@@ -69,7 +69,7 @@ export const ROUTE_METADATA: Record<string, RouteMetadata> = {
                     'Financial dashboard components',
                     'Zero runtime framework dependencies',
                 ],
-                url: 'https://ora-components.dev',
+                url: 'https://ora-components.com',
                 downloadUrl: 'https://www.npmjs.com/package/@tdq/ora-components',
                 softwareVersion: '1.0.0',
             },
