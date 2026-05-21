@@ -22,6 +22,47 @@ export const globalTypes = {
     },
 };
 
+// Babel's generator (used by Storybook to extract story source) collapses
+// builder chains like `new X().a().b().c()` onto a single line. Re-break them
+// at top-level `).method` boundaries so docs are readable. Skips boundaries
+// inside strings/templates and only breaks when paren depth returns to 0
+// relative to the current line.
+const formatBuilderChains = (code: string): string =>
+    code.split('\n').map(formatChainLine).join('\n');
+
+const formatChainLine = (line: string): string => {
+    const indent = (line.match(/^(\s*)/) ?? ['', ''])[1];
+    const cont = indent + '  ';
+    let out = '';
+    let depth = 0;
+    let str: '"' | "'" | '`' | null = null;
+    for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        const prev = i > 0 ? line[i - 1] : '';
+        out += c;
+        if (str) {
+            if (c === str && prev !== '\\') str = null;
+            continue;
+        }
+        if (c === '"' || c === "'" || c === '`') {
+            str = c;
+            continue;
+        }
+        if (c === '(') depth++;
+        else if (c === ')') {
+            depth--;
+            if (
+                depth === 0 &&
+                line[i + 1] === '.' &&
+                /[a-zA-Z_$]/.test(line[i + 2] ?? '')
+            ) {
+                out += '\n' + cont;
+            }
+        }
+    }
+    return out;
+};
+
 const prefersDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 const applyTheme = (theme: ThemeValue) => {
@@ -51,6 +92,7 @@ const preview: Preview = {
             source: {
                 type: 'code',
                 language: 'ts',
+                transform: (code: string) => formatBuilderChains(code),
             },
         },
         viewport: {
