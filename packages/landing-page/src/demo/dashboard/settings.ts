@@ -1,4 +1,4 @@
-import { FormBuilder, LabelSize, TabsBuilder } from '@tdq/ora-components';
+import { CheckboxValue, FormBuilder, LabelSize, TabsBuilder } from '@tdq/ora-components';
 import { of, BehaviorSubject } from 'rxjs';
 
 export function createSettings(): HTMLElement {
@@ -30,7 +30,7 @@ export function createSettings(): HTMLElement {
     securityFields.addPasswordField().withLabel(of('New Password'));
     securityFields.addPasswordField().withLabel(of('Confirm Password'));
     securityFields.addHeading().withCaption(of('Two-Factor Authentication')).withSize(LabelSize.MEDIUM);
-    securityFields.addCheckBox().withCaption(of('Enable 2FA')).withValue(new BehaviorSubject(false));
+    securityFields.addCheckBox().withCaption(of('Enable 2FA')).withValue(new BehaviorSubject<CheckboxValue>(false));
 
     const securityToolbar = securityForm.withToolbar();
     securityToolbar.withPrimaryButton().withCaption(of('Update Security'));
@@ -41,12 +41,12 @@ export function createSettings(): HTMLElement {
 
     const notificationsFields = notificationsForm.withFields();
     notificationsFields.addHeading().withCaption(of('Notifications')).withSize(LabelSize.MEDIUM);
-    notificationsFields.addCheckBox().withCaption(of('Email Notifications')).withValue(new BehaviorSubject(true));
-    notificationsFields.addCheckBox().withCaption(of('SMS Notifications')).withValue(new BehaviorSubject(false));
-    notificationsFields.addCheckBox().withCaption(of('Push Notifications')).withValue(new BehaviorSubject(true));
-    notificationsFields.addCheckBox().withCaption(of('Weekly Digest')).withValue(new BehaviorSubject(true));
-    notificationsFields.addCheckBox().withCaption(of('Security Alerts')).withValue(new BehaviorSubject(true));
-    notificationsFields.addCheckBox().withCaption(of('Marketing Emails')).withValue(new BehaviorSubject(false));
+    notificationsFields.addCheckBox().withCaption(of('Email Notifications')).withValue(new BehaviorSubject<CheckboxValue>(true));
+    notificationsFields.addCheckBox().withCaption(of('SMS Notifications')).withValue(new BehaviorSubject<CheckboxValue>(false));
+    notificationsFields.addCheckBox().withCaption(of('Push Notifications')).withValue(new BehaviorSubject<CheckboxValue>(true));
+    notificationsFields.addCheckBox().withCaption(of('Weekly Digest')).withValue(new BehaviorSubject<CheckboxValue>(true));
+    notificationsFields.addCheckBox().withCaption(of('Security Alerts')).withValue(new BehaviorSubject<CheckboxValue>(true));
+    notificationsFields.addCheckBox().withCaption(of('Marketing Emails')).withValue(new BehaviorSubject<CheckboxValue>(false));
 
     const notificationsToolbar = notificationsForm.withToolbar();
     notificationsToolbar.withPrimaryButton().withCaption(of('Save Preferences'));

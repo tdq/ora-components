@@ -1,4 +1,4 @@
-import { ButtonBuilder, TextFieldBuilder, CheckboxBuilder, ComboBoxBuilder, ButtonStyle } from '@tdq/ora-components';
+import { ButtonBuilder, TextFieldBuilder, CheckboxBuilder, CheckboxValue, ComboBoxBuilder, ButtonStyle } from '@tdq/ora-components';
 import { BehaviorSubject, of } from 'rxjs';
 
 export function createPlayground(): HTMLElement {
@@ -79,7 +79,7 @@ export function createPlayground(): HTMLElement {
         'toggles',
         () => {
             const container = document.createElement('div');
-            const value$ = new BehaviorSubject<boolean>(true);
+            const value$ = new BehaviorSubject<CheckboxValue>(true);
             container.className = 'flex flex-col gap-px-12';
             container.appendChild(new CheckboxBuilder().withCaption(of('Feature Alpha')).withValue(value$).build());
             container.appendChild(new CheckboxBuilder().withCaption(of('Feature Beta')).build());

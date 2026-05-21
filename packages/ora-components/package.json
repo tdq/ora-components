@@ -1,6 +1,6 @@
 {
   "name": "@tdq/ora-components",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A1 Web Components library",
   "type": "module",
   "main": "./dist/index.js",
