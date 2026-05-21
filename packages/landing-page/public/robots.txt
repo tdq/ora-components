@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /dashboard/
 
-Sitemap: https://ora-components.dev/sitemap.xml
+Sitemap: https://ora-components.com/sitemap.xml
