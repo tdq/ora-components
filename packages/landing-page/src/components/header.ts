@@ -47,7 +47,7 @@ export function createHeader(): HTMLElement {
     const themeToggle = createThemeToggle(updateGlass);
 
     const githubBtn = document.createElement('a');
-    githubBtn.href = 'https://github.com';
+    githubBtn.href = 'https://github.com/tdq/ora-components';
     githubBtn.target = '_blank';
     githubBtn.rel = 'noopener';
     githubBtn.className = 'hidden md:flex items-center justify-center w-9 h-9 rounded-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-variant-alpha-40 transition-all duration-200';
@@ -104,7 +104,7 @@ export function createHeader(): HTMLElement {
 
     // Mobile GitHub link
     const mobileGithub = document.createElement('a');
-    mobileGithub.href = 'https://github.com';
+    mobileGithub.href = 'https://github.com/tdq/ora-components';
     mobileGithub.target = '_blank';
     mobileGithub.rel = 'noopener';
     mobileGithub.className = 'px-px-16 py-px-12 text-body-large text-on-surface-variant hover:text-on-surface hover:bg-surface-variant-alpha-40 rounded-large transition-colors duration-200';
