@@ -1,4 +1,4 @@
-import { PanelBuilder, ChartBuilder, GridBuilder, LabelBuilder, TabsBuilder, Money, registerDestroy } from '@tdq/ora-components';
+import { PanelBuilder, PanelGap, ChartBuilder, GridBuilder, LabelBuilder, LayoutBuilder, LayoutGap, SlotSize, TabsBuilder, Money, registerDestroy } from '@tdq/ora-components';
 import { of, timer, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { KPICardBuilder } from './kpi-card';
@@ -120,11 +120,6 @@ function createSummaryCards(period: PeriodData): HTMLElement {
 }
 
 function createRevenueExpensesChart(period: PeriodData): HTMLElement {
-    const panel = new PanelBuilder()
-        .withContent(new LabelBuilder().withCaption(of('Revenue vs Expenses')))
-        .build();
-    panel.classList.add('min-h-[300px]', 'flex', 'flex-col', 'flex-shrink-0', 'mb-px-24');
-
     type ChartRow = { x: string; revenue: number; expenses: number };
     const BASE: ChartRow[] = period.chartMonths.map((x, i) => ({
         x,
@@ -148,9 +143,17 @@ function createRevenueExpensesChart(period: PeriodData): HTMLElement {
     chart.addAreaChart('revenue').withLabel('Revenue (€)').withColor('#10B981');
     chart.addAreaChart('expenses').withLabel('Expenses (€)').withColor('#EF4444');
 
-    const chartEl = chart.build();
-    chartEl.classList.add('flex-1', 'min-h-0');
-    panel.appendChild(chartEl);
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+    layout.addSlot().withContent(new LabelBuilder().withCaption(of('Revenue vs Expenses')));
+    layout.addSlot().withContent(chart).withSize(SlotSize.FULL);
+
+    const panel = new PanelBuilder()
+        .withContent(layout)
+        .withGap(PanelGap.LARGE)
+        .build();
+    panel.classList.add('min-h-[300px]', 'flex', 'flex-col', 'flex-shrink-0', 'mb-px-24');
 
     registerDestroy(panel, () => {
         sub.unsubscribe();
@@ -161,12 +164,6 @@ function createRevenueExpensesChart(period: PeriodData): HTMLElement {
 }
 
 function createBreakdownGrid(title: string, items: PLLineItem[]): HTMLElement {
-    const panel = new PanelBuilder()
-        .withContent(new LabelBuilder().withCaption(of(title)))
-        .withClass(of('h-full'))
-        .build();
-    panel.classList.add('flex', 'flex-col', 'min-h-0');
-
     const grid = new GridBuilder<PLLineItem>()
         .withItems(of(items));
     const cols = grid.withColumns();
@@ -174,7 +171,19 @@ function createBreakdownGrid(title: string, items: PLLineItem[]): HTMLElement {
     cols.addMoneyColumn('amount').withHeader('Amount (€)').withWidth('120px');
     cols.addTextColumn('share').withHeader('Share').withWidth('80px');
 
-    panel.appendChild(grid.build());
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('h-full'));
+    layout.addSlot().withContent(new LabelBuilder().withCaption(of(title)));
+    layout.addSlot().withContent(grid).withSize(SlotSize.FULL);
+
+    const panel = new PanelBuilder()
+        .withContent(layout)
+        .withClass(of('h-full'))
+        .withGap(PanelGap.LARGE)
+        .build();
+    panel.classList.add('flex', 'flex-col', 'min-h-0');
     return panel;
 }
 

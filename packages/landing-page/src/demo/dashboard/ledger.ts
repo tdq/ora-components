@@ -1,4 +1,4 @@
-import { PanelBuilder, GridBuilder, LabelBuilder, Money } from '@tdq/ora-components';
+import { PanelBuilder, PanelGap, GridBuilder, LabelBuilder, LayoutBuilder, LayoutGap, SlotSize, Money } from '@tdq/ora-components';
 import { of } from 'rxjs';
 import { KPICardBuilder } from './kpi-card';
 
@@ -74,11 +74,6 @@ export function createLedger(): HTMLElement {
 
     container.appendChild(createSummaryStats());
 
-    const panel = new PanelBuilder()
-        .withContent(new LabelBuilder().withCaption(of('General Ledger — April 2026')))
-        .build();
-    panel.classList.add('flex', 'flex-col', 'flex-1', 'min-h-0');
-
     const grid = new GridBuilder<LedgerEntry>()
         .withItems(of(LEDGER_DATA));
     const cols = grid.withColumns();
@@ -90,7 +85,18 @@ export function createLedger(): HTMLElement {
     cols.addMoneyColumn('credit').withHeader('Credit (€)').withWidth('110px');
     cols.addMoneyColumn('balance').withHeader('Balance (€)').withWidth('120px');
 
-    panel.appendChild(grid.build());
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('h-full'));
+    layout.addSlot().withContent(new LabelBuilder().withCaption(of('General Ledger — April 2026')));
+    layout.addSlot().withContent(grid).withSize(SlotSize.FULL);
+
+    const panel = new PanelBuilder()
+        .withContent(layout)
+        .withGap(PanelGap.LARGE)
+        .build();
+    panel.classList.add('flex', 'flex-col', 'flex-1', 'min-h-0');
     container.appendChild(panel);
 
     return container;

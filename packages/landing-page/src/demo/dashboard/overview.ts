@@ -70,10 +70,11 @@ function createSalesChart(): ComponentBuilder {
     chart.addBarChart('orders').withLabel('Orders').withColor('#0EA5E9').asSecondaryAxis();
 
     const chartWrapper = new LayoutBuilder()
-        .withClass(of('flex-1 min-h-0'));
+        .withClass(of('flex-1 min-h-0'))
+        .withGap(LayoutGap.LARGE);
     chartWrapper.addSlot().withContent(chart);
 
-    const chartContent = new LayoutBuilder().asVertical();
+    const chartContent = new LayoutBuilder().asVertical().withGap(LayoutGap.LARGE);
     chartContent.addSlot().withContent(new LabelBuilder().withCaption(of('Sales Performance')));
     chartContent.addSlot().withContent(chartWrapper);
 
@@ -110,7 +111,8 @@ function createTransactionsGrid(): ComponentBuilder {
 
     const gridContent = new LayoutBuilder()
         .withClass(of('h-full'))
-        .asVertical();
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
     gridContent.addSlot().withContent(new LabelBuilder().withCaption(of('Recent Transactions')));
     gridContent.addSlot().withContent(grid).withSize(SlotSize.FULL);
 

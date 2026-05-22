@@ -1,4 +1,4 @@
-import { GridBuilder, TabsBuilder, LabelBuilder, PanelBuilder, ButtonBuilder, ButtonStyle, TextFieldBuilder, DatePickerBuilder, MoneyFieldBuilder, Money, DialogBuilder, DialogSize } from '@tdq/ora-components';
+import { GridBuilder, TabsBuilder, LabelBuilder, PanelBuilder, PanelGap, ButtonBuilder, ButtonStyle, TextFieldBuilder, DatePickerBuilder, MoneyFieldBuilder, Money, DialogBuilder, DialogSize } from '@tdq/ora-components';
 import { of, BehaviorSubject } from 'rxjs';
 import { KPICardBuilder } from './kpi-card';
 
@@ -100,6 +100,7 @@ function createAgingSummary(): HTMLElement {
 function buildInvoiceGrid(invoices$: BehaviorSubject<Invoice[]>): HTMLElement {
     const panel = new PanelBuilder()
         .withContent(new LabelBuilder().withCaption(of('Invoices')))
+        .withGap(PanelGap.LARGE)
         .build();
     panel.classList.add('flex', 'flex-col', 'flex-1', 'min-h-0');
 

@@ -1,4 +1,4 @@
-import { GridBuilder, TabsBuilder, PanelBuilder, ChartBuilder, LabelBuilder, Money } from '@tdq/ora-components';
+import { GridBuilder, TabsBuilder, PanelBuilder, PanelGap, ChartBuilder, LabelBuilder, Money } from '@tdq/ora-components';
 import { of } from 'rxjs';
 import { renderStatusChip } from './chip-utils';
 import { KPICardBuilder } from './kpi-card';
@@ -104,6 +104,7 @@ function createOrdersCharts(): HTMLElement {
 
     const revenuePanel = new PanelBuilder()
         .withContent(new LabelBuilder().withCaption(of('Revenue by Day')))
+        .withGap(PanelGap.LARGE)
         .build();
     revenuePanel.classList.add('min-h-[280px]', 'flex', 'flex-col');
 
@@ -124,6 +125,7 @@ function createOrdersCharts(): HTMLElement {
 
     const statusPanel = new PanelBuilder()
         .withContent(new LabelBuilder().withCaption(of('Orders by Status')))
+        .withGap(PanelGap.LARGE)
         .build();
     statusPanel.classList.add('min-h-[280px]', 'flex', 'flex-col');
 

@@ -12,11 +12,16 @@ export function createDashboardHeader(): HTMLElement {
     const leftSide = document.createElement('div');
     leftSide.className = 'flex items-center gap-px-16';
 
+    const PAGE_TITLES: Record<string, string> = {
+        'pl': 'P&L',
+        'balance-sheet': 'Balance Sheet',
+    };
+
     const title$ = router.currentRoute$.pipe(
         map(route => {
             const page = route?.params?.page;
             if (!page) return 'Overview';
-            return page.charAt(0).toUpperCase() + page.slice(1);
+            return PAGE_TITLES[page] ?? page.charAt(0).toUpperCase() + page.slice(1);
         })
     );
 

@@ -2,6 +2,7 @@ import { registerDestroy } from '@tdq/ora-components';
 import { router } from '../../routes';
 import { map } from 'rxjs/operators';
 import { createLogo } from '../../components/logo';
+import oraComponentsPkg from '@tdq/ora-components/package.json';
 
 export function createSidebar(): HTMLElement {
     const container = document.createElement('div');
@@ -10,9 +11,9 @@ export function createSidebar(): HTMLElement {
 
     // Logo area
     const logoArea = document.createElement('div');
-    logoArea.className = 'px-px-16 py-px-16 border-b';
-    logoArea.style.cssText = 'border-color: rgba(121,116,126,0.08);';
-    logoArea.appendChild(createLogo({ text: 'Ora Dashboard', subtitle: 'v1.0 Demo', onClick: () => router.navigate('/') }));
+    logoArea.className = 'px-px-16 border-b flex items-center flex-shrink-0';
+    logoArea.style.cssText = 'height: 64px; border-color: rgba(121,116,126,0.08);';
+    logoArea.appendChild(createLogo({ text: 'Ora Dashboard', subtitle: `v${oraComponentsPkg.version} Demo`, onClick: () => router.navigate('/') }));
 
     // Nav section
     const navSection = document.createElement('div');
@@ -84,16 +85,9 @@ export function createSidebar(): HTMLElement {
             const isActive = item.exact ? currentPath === item.path : currentPath.startsWith(item.path);
             if (isActive) {
                 btn.style.cssText = 'background: rgba(103,80,164,0.1); color: #6750A4;';
-                if (!btn.querySelector('.accent-bar')) {
-                    const accent = document.createElement('span');
-                    accent.className = 'accent-bar absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full';
-                    accent.style.cssText = 'background: linear-gradient(180deg, #6750A4, #7D5260);';
-                    btn.appendChild(accent);
-                }
             } else {
                 btn.style.cssText = '';
                 btn.className = 'w-full flex items-center gap-px-12 px-px-12 py-px-8 rounded-large text-label-large mb-1 text-on-surface-variant transition-colors duration-150 hover:bg-surface-variant-alpha-40';
-                btn.querySelector('.accent-bar')?.remove();
             }
         };
 

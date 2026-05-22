@@ -1,4 +1,4 @@
-import { PanelBuilder, ChartBuilder, LabelBuilder, registerDestroy } from '@tdq/ora-components';
+import { PanelBuilder, PanelGap, ChartBuilder, LabelBuilder, registerDestroy } from '@tdq/ora-components';
 import { of, timer, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -24,6 +24,7 @@ export function createAnalytics(): HTMLElement {
 function buildChartPanel(title: string): HTMLElement {
     const panel = new PanelBuilder()
         .withContent(new LabelBuilder().withCaption(of(title)))
+        .withGap(PanelGap.LARGE)
         .build();
     panel.classList.add('min-h-[350px]', 'flex', 'flex-col');
     return panel;
