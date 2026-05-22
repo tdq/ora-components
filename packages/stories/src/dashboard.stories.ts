@@ -10,6 +10,7 @@ import {
     SlotSize,
     LabelBuilder,
     ButtonStyle,
+    Alignment,
 } from '@tdq/ora-components';
 import { createActionLog } from './story-helpers/action-log';
 import { createButton } from './story-helpers/demo-controls';
@@ -169,33 +170,39 @@ function createKpiCard(
 export const Dashboard = () => {
     const { element: actionLog, log } = createActionLog();
 
-    // --- Toolbar ---
-    const toolbar = document.createElement('div');
-    toolbar.className = 'flex items-center justify-between';
-
+    // --- Header ---
     const titleLabel = new LabelBuilder()
         .withCaption(of('Analytics Dashboard'))
-        .withClass(of('text-headline-medium font-bold'))
-        .build();
+        .withClass(of('text-headline-medium font-bold'));
 
     const dateLabel = new LabelBuilder()
         .withCaption(of('Q2 2026'))
-        .withClass(of('text-sm text-on-surface-variant'))
-        .build();
+        .withClass(of('text-sm text-on-surface-variant'));
 
     const exportBtn = createButton(
         'Export',
         () => log('Export report clicked'),
         ButtonStyle.OUTLINED,
-    ).build();
+    );
 
-    const rightControls = document.createElement('div');
-    rightControls.className = 'flex items-center gap-4';
-    rightControls.appendChild(dateLabel);
-    rightControls.appendChild(exportBtn);
+    const header = new LayoutBuilder()
+        .asHorizontal()
+        .withGap(LayoutGap.MEDIUM);
 
-    toolbar.appendChild(titleLabel);
-    toolbar.appendChild(rightControls);
+    const titleGroup = new LayoutBuilder()
+        .asHorizontal()
+        .withGap(LayoutGap.MEDIUM)
+        .withAlignment(of(Alignment.LEFT));
+
+    titleGroup.addSlot().withSize(SlotSize.FIT).withContent(titleLabel);
+    titleGroup.addSlot().withSize(SlotSize.FIT).withContent(dateLabel);
+
+    header.addSlot().withContent(titleGroup);
+
+    header.addSlot()
+        .withSize(SlotSize.FIT)
+        .withAlignment(of(Alignment.RIGHT))
+        .withContent(exportBtn);
 
     // --- KPI Cards Row ---
     const kpiRow = new LayoutBuilder()
@@ -271,10 +278,10 @@ export const Dashboard = () => {
     // --- Page-level Layout (full-screen vertical stack) ---
     const pageLayout = new LayoutBuilder()
         .asVertical()
-        .withGap(LayoutGap.LARGE)
+        .withGap(LayoutGap.EXTRA_LARGE)
         .withClass(of('w-full bg-surface p-6 overflow-auto'));
 
-    pageLayout.addSlot().withContent({ build: () => toolbar });
+    pageLayout.addSlot().withContent(header);
     pageLayout.addSlot().withContent(kpiRow);
     pageLayout.addSlot().withContent(areaChart);
     pageLayout.addSlot().withContent(bottomSplit);

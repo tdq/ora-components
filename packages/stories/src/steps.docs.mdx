@@ -1,0 +1,212 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './steps.stories';
+
+<Meta of={Stories} />
+
+# Steps
+
+Steps displays a progress indicator for multi-stage flows — registration wizards, onboarding sequences, checkout flows. Each step has a numbered circle and a short caption; the active step also shows a description. Adjacent steps are connected by a line that fills with the completed colour as the user advances.
+
+Steps follow [Material Design 3](https://m3.material.io/components/stepper) stepper semantics and support horizontal (default) and vertical orientations, glass-effect styling for gradient backgrounds, and optional click-to-navigate behaviour.
+
+---
+
+## When to use
+
+Use a step indicator to orient users in any multi-stage flow where knowing "where you are" reduces anxiety and supports non-linear navigation:
+
+- **Registration / onboarding wizards** — Personal → Address → Confirm
+- **Checkout flows** — Cart → Shipping → Payment → Review
+- **Settings setup** — Profile → Plan → Billing
+- **Side-panel workflows** — vertical orientation in a narrow sidebar
+
+Avoid when the flow has only two steps (a simple toggle or back/next pair is cleaner) or when all stages are always visible simultaneously.
+
+---
+
+## Usage
+
+```typescript
+import { StepsBuilder } from '@tdq/ora-components';
+import { BehaviorSubject, of } from 'rxjs';
+
+const currentStep$ = new BehaviorSubject(0);
+
+const steps = new StepsBuilder()
+    .withActiveStep(currentStep$)
+    .withStepClick(i => {
+        // Only allow jumping back to completed steps
+        if (i < currentStep$.value) currentStep$.next(i);
+    });
+
+steps.addStep()
+    .withCaption(of('Personal'))
+    .withDescription(of('Your name and email'));
+
+steps.addStep()
+    .withCaption(of('Address'))
+    .withDescription(of('Where do you live?'));
+
+steps.addStep()
+    .withCaption(of('Confirm'))
+    .withDescription(of('Review and submit'));
+
+document.body.appendChild(steps.build());
+
+// Advance programmatically
+currentStep$.next(1);
+```
+
+---
+
+## Builder API
+
+All `StepsBuilder` methods return `this` for chaining. Pass RxJS observables into reactive setters — the component handles subscription lifecycle and cleans up automatically when the element is removed from the DOM.
+
+### StepsBuilder
+
+- **`addStep`** — `() => StepBuilder`
+  Creates and returns a new `StepBuilder` for the next step in the sequence. Chain `withCaption`, `withDescription`, and `withVisible` on the returned builder.
+
+- **`withActiveStep`** — `(activeStep$: Observable<number>) => this`
+  Provides an external read-only source for the active-step index. The indicator reflects this stream but never emits onto it — the parent owns state. If omitted, the builder creates an internal `BehaviorSubject<number>(0)` that advances on click.
+
+- **`withStepClick`** — `(handler: (index: number) => void) => this`
+  Enables click-to-navigate. Each step renders as a `<button>` and clicks invoke the handler with the step's zero-based index. In internal-state mode the indicator also self-advances; in external-state mode the parent decides whether to update its source observable. Without this call, steps are non-interactive.
+
+- **`asGlass`** — `() => this`
+  Activates glass-effect colours for use on gradient or blurred backgrounds. The container itself has no background — only the circles, captions, connectors, and descriptions adjust to remain legible.
+
+- **`asVertical`** — `() => this`
+  Stacks steps top-to-bottom with vertical connectors. Default is horizontal.
+
+- **`withClass`** — `(className: Observable<string>) => this`
+  Appends additional CSS class names to the root container element.
+
+- **`build`** — `() => HTMLElement`
+  Constructs and returns the DOM element. Subscribes to all observables and wires up click handlers. Call once per builder instance.
+
+### StepBuilder
+
+- **`withCaption`** — `(caption: Observable<string>) => this`
+  Sets the short label shown beside or below the step's circle.
+
+- **`withDescription`** — `(description: Observable<string>) => this`
+  Sets secondary text shown only when this step is the active one. Hidden on completed and upcoming steps.
+
+- **`withVisible`** — `(visible: Observable<boolean>) => this`
+  Controls the visibility of the step. When `false`, the step and its adjacent connector are hidden. If the hidden step holds the current active index, the indicator falls back to index 0.
+
+---
+
+## Default
+
+A minimal three-step indicator in its initial state. No external observable — steps are non-interactive and all remain upcoming.
+
+<Canvas of={Stories.Default} />
+
+---
+
+## With Descriptions
+
+Each step has a description. Use the buttons to switch the active step and observe that only the active description is visible.
+
+<Canvas of={Stories.WithDescriptions} />
+
+---
+
+## Clickable
+
+Steps render as `<button>` elements. Clicking any step navigates directly to it — the indicator uses internal state in this example.
+
+<Canvas of={Stories.Clickable} />
+
+---
+
+## External Control
+
+The parent `BehaviorSubject` drives the active index. Back/Next buttons advance the indicator; clicking a completed step also jumps back. The builder never emits onto the external observable.
+
+<Canvas of={Stories.ExternalControl} />
+
+---
+
+## Vertical
+
+Steps stack top-to-bottom with connectors running vertically and captions beside each circle.
+
+<Canvas of={Stories.Vertical} />
+
+---
+
+## Glass Effect
+
+Glass-mode colours on a gradient background. The container itself is transparent; circles, captions, and connectors adjust for light and dark themes.
+
+<Canvas of={Stories.GlassEffect} />
+
+---
+
+## With Visibility Toggle
+
+The middle step can be hidden at runtime. When the hidden step becomes active, the indicator falls back to step 0.
+
+<Canvas of={Stories.WithVisibilityToggle} />
+
+---
+
+## Many Steps
+
+Five steps to verify connector layout and spacing at wider step counts.
+
+<Canvas of={Stories.ManySteps} />
+
+---
+
+## Keyboard
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Move focus between clickable step buttons |
+| `Enter` / `Space` | Activate the focused step (when clickable) |
+
+---
+
+## Styling
+
+Visual properties use MD3 design tokens. Override on `:root` or a scoped parent to restyle without touching source.
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-primary` | Active step circle and caption |
+| `--md-sys-color-secondary` | Completed step circle, caption, and connector |
+| `--md-sys-color-outline` | Upcoming connector and circle border |
+| `--md-sys-color-on-surface-variant` | Upcoming caption and description |
+
+### State reference (non-glass)
+
+| State | Circle | Caption |
+|---|---|---|
+| Completed | `bg-secondary text-on-secondary` + `✓` | `text-secondary` |
+| Active | `bg-primary text-on-primary` + number | `text-primary` |
+| Upcoming | `border-2 border-outline/30 text-on-surface-variant/60` + number | `text-on-surface-variant/40` |
+
+### Glass effect
+
+**The container has no background.** Only step internals adjust.
+
+| State | Light | Dark |
+|---|---|---|
+| Completed circle | `bg-white/30 text-gray-900` | `bg-white/30 text-white/90` |
+| Active circle | `bg-white/80 text-gray-900` | `bg-white/80 text-gray-900` |
+| Upcoming circle | `border-gray-900/30 text-gray-600` | `border-white/30 text-white/50` |
+| Connector (completed) | `bg-gray-900/40` | `bg-white/50` |
+| Connector (upcoming) | `bg-gray-900/20` | `bg-white/30` |
+
+---
+
+## Related components
+
+- [Tabs](../?path=/docs/components-tabs--docs) — switch between views without a linear progress concept
+- [Panel](../?path=/docs/components-panel--docs) — wrap `StepsBuilder` inside a glass panel for wizard dialogs
+- [Dialog](../?path=/docs/components-dialog--docs) — embed a wizard with a step indicator inside a dialog overlay

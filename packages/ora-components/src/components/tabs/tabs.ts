@@ -62,15 +62,15 @@ export class TabsBuilder implements ComponentBuilder {
         // Header Section (Caption + Description + Tabs)
         const headerSection = document.createElement('div');
         headerSection.className = cn(
-            'flex flex-col md:flex-row md:items-end gap-4 border-b pb-0',
+            'flex flex-col border-b pb-0',
             !this.isGlass && 'border-outline-variant',
             this.isGlass && 'border-transparent'
         );
-        
+
         // Caption & Description Container
         if (this.caption$ || this.description$) {
             const textContainer = document.createElement('div');
-            textContainer.className = 'flex flex-col mb-2 mr-4 min-w-[200px] shrink-0';
+            textContainer.className = 'flex flex-col mb-3';
 
             if (this.caption$) {
                 const labelBuilder = new LabelBuilder()

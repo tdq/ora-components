@@ -4,10 +4,11 @@ import { map } from 'rxjs/operators';
 import { FormBuilder } from '@tdq/ora-components';
 import { PanelBuilder, PanelGap } from '@tdq/ora-components';
 import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
-import { Alignment, LayoutBuilder } from '@tdq/ora-components';
+import { Alignment, LayoutBuilder, LayoutGap, SlotSize } from '@tdq/ora-components';
 import { DialogBuilder } from '@tdq/ora-components';
 import { LabelBuilder, LabelSize } from '@tdq/ora-components';
-import { createActionLog, createButton, createControlStrip, createGlassBackdrop } from './story-helpers';
+import { StepsBuilder } from '@tdq/ora-components';
+import { createActionLog, createButton, createGlassBackdrop } from './story-helpers';
 
 export default {
     title: 'Examples/FormExamples',
@@ -677,11 +678,6 @@ export const MultiStepWizard = () => {
         .withError(emailError$)
         .withStyle(of(TextFieldStyle.TONAL));
 
-    const personalPanel = new PanelBuilder()
-        .withGap(PanelGap.MEDIUM)
-        .withClass(of('w-full max-w-md'))
-        .withContent(personalForm);
-
     // ── Step 1: Address Form ──
     const addressForm = new FormBuilder()
         .withCaption(of('Address'));
@@ -708,120 +704,102 @@ export const MultiStepWizard = () => {
         .withError(zipCodeError$)
         .withStyle(of(TextFieldStyle.TONAL));
 
-    const addressPanel = new PanelBuilder()
-        .withGap(PanelGap.MEDIUM)
-        .withClass(of('w-full max-w-md'))
-        .withContent(addressForm);
-
     // ── Step 2: Confirm (read-only summary) ──
     const confirmLayout = new LayoutBuilder()
         .asVertical()
         .withGap(LayoutGap.MEDIUM);
 
-    const summaryCaption = new LabelBuilder()
-        .withCaption(of('Review your information before submitting.'))
-        .withSize(LabelSize.SMALL)
-        .build();
-    confirmLayout.addSlot().withContent({ build: () => summaryCaption });
+    confirmLayout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Review your information'))
+            .withClass(of('text-headline-small font-bold'))
+    );
 
-    const fullNameLabel = new LabelBuilder()
-        .withCaption(firstName$.pipe(map(v => `First Name: ${v}`)))
-        .withSize(LabelSize.MEDIUM)
-        .build();
-    confirmLayout.addSlot().withContent({ build: () => fullNameLabel });
+    confirmLayout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Please confirm your details before submitting.'))
+            .withClass(of('text-body-medium text-on-surface-variant'))
+    );
 
-    const lastNameLabel = new LabelBuilder()
-        .withCaption(lastName$.pipe(map(v => `Last Name: ${v}`)))
-        .withSize(LabelSize.MEDIUM)
-        .build();
-    confirmLayout.addSlot().withContent({ build: () => lastNameLabel });
+    const summaryRows: { label: string; value$: BehaviorSubject<string> }[] = [
+        { label: 'First Name', value$: firstName$ },
+        { label: 'Last Name',  value$: lastName$ },
+        { label: 'Email',      value$: email$ },
+        { label: 'Street',     value$: street$ },
+        { label: 'City',       value$: city$ },
+        { label: 'ZIP Code',   value$: zipCode$ },
+    ];
 
-    const emailLabel = new LabelBuilder()
-        .withCaption(email$.pipe(map(v => `Email: ${v}`)))
-        .withSize(LabelSize.MEDIUM)
-        .build();
-    confirmLayout.addSlot().withContent({ build: () => emailLabel });
+    summaryRows.forEach(({ label, value$ }) => {
+        const row = new LayoutBuilder()
+            .asHorizontal()
+            .withGap(LayoutGap.MEDIUM)
+            .withAlignment(of(Alignment.LEFT));
 
-    const streetLabel = new LabelBuilder()
-        .withCaption(street$.pipe(map(v => `Street: ${v}`)))
-        .withSize(LabelSize.MEDIUM)
-        .build();
-    confirmLayout.addSlot().withContent({ build: () => streetLabel });
+        row.addSlot()
+            .withSize(SlotSize.THIRD)
+            .withContent(
+                new LabelBuilder()
+                    .withCaption(of(label))
+                    .withClass(of('text-sm font-medium text-on-surface-variant'))
+            );
 
-    const cityLabel = new LabelBuilder()
-        .withCaption(city$.pipe(map(v => `City: ${v}`)))
-        .withSize(LabelSize.MEDIUM)
-        .build();
-    confirmLayout.addSlot().withContent({ build: () => cityLabel });
+        row.addSlot()
+            .withContent(
+                new LabelBuilder()
+                    .withCaption(value$.pipe(map(v => v || '—')))
+                    .withClass(of('text-sm text-on-surface'))
+            );
 
-    const zipLabel = new LabelBuilder()
-        .withCaption(zipCode$.pipe(map(v => `ZIP Code: ${v}`)))
-        .withSize(LabelSize.MEDIUM)
-        .build();
-    confirmLayout.addSlot().withContent({ build: () => zipLabel });
-
-    const confirmPanel = new PanelBuilder()
-        .withGap(PanelGap.MEDIUM)
-        .withClass(of('w-full max-w-md'))
-        .withContent({ build: () => confirmLayout.build() });
-
-    // ── Build panel elements ──
-    const personalEl = personalPanel.build();
-    const addressEl = addressPanel.build();
-    const confirmEl = confirmPanel.build();
+        confirmLayout.addSlot().withContent(row);
+    });
 
     // ── Step indicator ──
-    const stepNames = ['Personal', 'Address', 'Confirm'];
-    const stepEls = stepNames.map((name, i) => {
-        const el = document.createElement('div');
-        el.textContent = name;
-        el.className = 'px-4 py-2 rounded-full text-sm font-medium transition-colors';
-        return el;
-    });
-
-    const stepIndicatorStrip = document.createElement('div');
-    stepIndicatorStrip.className = 'flex gap-2 items-center justify-center mb-4';
-    stepEls.forEach(el => stepIndicatorStrip.appendChild(el));
-
-    // Subscribe to update indicator styling
-    currentStep$.subscribe(step => {
-        stepEls.forEach((el, i) => {
-            if (i === step) {
-                el.className = 'px-4 py-2 rounded-full text-sm font-medium bg-primary text-on-primary transition-colors';
-            } else if (i < step) {
-                el.className = 'px-4 py-2 rounded-full text-sm font-medium bg-secondary text-on-secondary transition-colors';
-            } else {
-                el.className = 'px-4 py-2 rounded-full text-sm font-medium bg-surface text-on-surface border border-outline/20 transition-colors';
-            }
+    const steps = new StepsBuilder()
+        .asGlass()
+        .withActiveStep(currentStep$)
+        .withStepClick(i => {
+            // Allow jumping back to a previously-completed step; never skip ahead past validation.
+            if (i < currentStep$.value) currentStep$.next(i);
         });
+
+    steps.addStep()
+        .withCaption(of('Personal'))
+        .withDescription(of('Your name and email'));
+
+    steps.addStep()
+        .withCaption(of('Address'))
+        .withDescription(of('Where do you live?'));
+
+    steps.addStep()
+        .withCaption(of('Confirm'))
+        .withDescription(of('Review and submit'));
+
+    // ── Content: LayoutBuilder with visibility-gated slots ──
+    const contentLayout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.NONE);
+
+    contentLayout.addSlot()
+        .withVisible(currentStep$.pipe(map(s => s === 0)))
+        .withContent(personalForm);
+
+    contentLayout.addSlot()
+        .withVisible(currentStep$.pipe(map(s => s === 1)))
+        .withContent(addressForm);
+
+    contentLayout.addSlot()
+        .withVisible(currentStep$.pipe(map(s => s === 2)))
+        .withContent(confirmLayout);
+
+    // ── Navigation: LayoutBuilder with visibility-gated slots ──
+    const backBtn = createButton('← Back', () => {
+        if (currentStep$.value > 0) currentStep$.next(currentStep$.value - 1);
     });
 
-    // ── Content area ──
-    const contentArea = document.createElement('div');
-    contentArea.className = 'flex justify-center';
-    contentArea.appendChild(personalEl);
-    contentArea.appendChild(addressEl);
-    contentArea.appendChild(confirmEl);
-
-    currentStep$.subscribe(step => {
-        personalEl.style.display = step === 0 ? '' : 'none';
-        addressEl.style.display = step === 1 ? '' : 'none';
-        confirmEl.style.display = step === 2 ? '' : 'none';
-    });
-
-    // ── Navigation buttons ──
-    const backBtn = createButton('Back', () => {
-        if (currentStep$.value > 0) {
-            currentStep$.next(currentStep$.value - 1);
-        }
-    });
-
-    const nextBtn = createButton('Next', () => {
-        if (currentStep$.value < 2) {
-            currentStep$.next(currentStep$.value + 1);
-        }
-    }, ButtonStyle.FILLED)
-        .withEnabled(currentStepValid$);
+    const nextBtn = createButton('Next →', () => {
+        if (currentStep$.value < 2) currentStep$.next(currentStep$.value + 1);
+    }, ButtonStyle.FILLED).withEnabled(currentStepValid$);
 
     const submitBtn = new ButtonBuilder()
         .withCaption(of('Submit'))
@@ -834,29 +812,51 @@ export const MultiStepWizard = () => {
         })
         .withEnabled(currentStep$.pipe(map(step => step === 2)));
 
-    const backEl = backBtn.build();
-    const nextEl = nextBtn.build();
-    const submitEl = submitBtn.build();
+    const navLayout = new LayoutBuilder()
+        .asHorizontal()
+        .withGap(LayoutGap.MEDIUM);
 
-    const navStrip = createControlStrip([backEl, nextEl, submitEl]);
+    navLayout.addSlot()
+        .withSize(SlotSize.FIT)
+        .withAlignment(of(Alignment.LEFT))
+        .withVisible(currentStep$.pipe(map(s => s > 0)))
+        .withContent(backBtn);
 
-    currentStep$.subscribe(step => {
-        backEl.style.display = step === 0 ? 'none' : '';
-        nextEl.style.display = step === 2 ? 'none' : '';
-        submitEl.style.display = step === 2 ? '' : 'none';
-    });
+    navLayout.addSlot(); // spacer
 
-    // ── Assemble ──
-    const layout = new LayoutBuilder()
+    navLayout.addSlot()
+        .withSize(SlotSize.FIT)
+        .withAlignment(of(Alignment.RIGHT))
+        .withVisible(currentStep$.pipe(map(s => s < 2)))
+        .withContent(nextBtn);
+
+    navLayout.addSlot()
+        .withSize(SlotSize.FIT)
+        .withAlignment(of(Alignment.RIGHT))
+        .withVisible(currentStep$.pipe(map(s => s === 2)))
+        .withContent(submitBtn);
+
+    // ── Assemble inner layout ──
+    const wizardLayout = new LayoutBuilder()
         .asVertical()
         .withGap(LayoutGap.LARGE);
 
-    layout.addSlot().withContent({ build: () => stepIndicatorStrip });
-    layout.addSlot().withContent({ build: () => contentArea });
-    layout.addSlot().withContent({ build: () => navStrip });
-    layout.addSlot().withContent({ build: () => actionLog });
+    wizardLayout.addSlot().withContent(steps);
+    wizardLayout.addSlot().withContent(contentLayout);
+    wizardLayout.addSlot().withContent(navLayout);
 
-    const container = layout.build();
-    container.classList.add('p-4');
-    return container;
+    // ── Glass card ──
+    const wizardCard = new PanelBuilder()
+        .asGlass()
+        .withGap(PanelGap.EXTRA_LARGE)
+        .withClass(of('w-full max-w-lg'))
+        .withContent(wizardLayout);
+
+    // ── Gradient outer container ──
+    const outerContainer = document.createElement('div');
+    outerContainer.className = 'p-12 -m-4 flex flex-col items-center min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500';
+    outerContainer.appendChild(wizardCard.build());
+    outerContainer.appendChild(actionLog);
+
+    return outerContainer;
 };

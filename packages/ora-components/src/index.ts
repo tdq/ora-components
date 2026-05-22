@@ -15,6 +15,7 @@ export * from './components/form';
 export * from './components/toolbar';
 export * from './components/dialog';
 export * from './components/tabs';
+export * from './components/steps';
 export * from './components/chart';
 export * from './components/grid';
 export * from './components/date-picker';
