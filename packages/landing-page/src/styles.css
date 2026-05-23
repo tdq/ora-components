@@ -253,6 +253,63 @@ button {
     animation: pulseGlow 2s ease-in-out infinite;
   }
 
+  /* --- Hero ledger redesign --- */
+
+  @keyframes flashGreen {
+    0% { background-color: rgba(16, 185, 129, 0.35); }
+    100% { background-color: transparent; }
+  }
+
+  @keyframes flashRed {
+    0% { background-color: rgba(239, 68, 68, 0.35); }
+    100% { background-color: transparent; }
+  }
+
+  @keyframes slideInDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes rollDigit {
+    from { opacity: 0; transform: translateY(-40%); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes cursorSweep {
+    0% { transform: translateX(0%); opacity: 0; }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.7; }
+    100% { transform: translateX(100%); opacity: 0; }
+  }
+
+  @keyframes marqueeScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .flash-green {
+    animation: flashGreen 600ms ease-out 1;
+    border-radius: 4px;
+  }
+  .flash-red {
+    animation: flashRed 600ms ease-out 1;
+    border-radius: 4px;
+  }
+  .slide-in-down { animation: slideInDown 400ms ease-out both; }
+  .roll-digit { animation: rollDigit 250ms cubic-bezier(0.22, 1, 0.36, 1) both; display: inline-block; }
+  .cursor-sweep { animation: cursorSweep 6s linear infinite; }
+  .marquee-track { animation: marqueeScroll 28s linear infinite; }
+
+  .ledger-grid-bg {
+    background-image:
+      radial-gradient(circle, color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 0 0;
+  }
+
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+  .font-mono-code { font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace; }
+
   /* Opacity-modified color utilities — replaces broken Tailwind color/opacity notation
      (e.g. bg-primary/10) which silently no-ops when colors are defined as CSS var hex values. */
   .bg-primary-alpha-10 {
