@@ -219,7 +219,7 @@ h1 {
   box-shadow: var(--shadow);
 }
 .card header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 10px;
   margin-bottom: 16px;
 }
 .card h3 { margin: 0; font-size: 16px; }

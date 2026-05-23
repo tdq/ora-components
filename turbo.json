@@ -18,6 +18,10 @@
       "cache": false,
       "persistent": true
     },
+    "serve": {
+      "cache": false,
+      "persistent": true
+    },
     "pack:local": {
       "dependsOn": ["build"],
       "outputs": ["*.tgz"]
