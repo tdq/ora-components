@@ -35,7 +35,6 @@ jobs:
             packages/mcp-server/package.json
             packages/mcp-server/api/package.json
             packages/ora-components/package.json
-            packages/landing-page/package.json
             packages/stories/package.json
           )
           BEFORE="${{ github.event.before }}"
