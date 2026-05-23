@@ -22,7 +22,10 @@ The landing page includes links to external resources in three locations:
 |----------|-------|
 | **Header** (desktop) | GitHub, Storybook — rendered as icon-only buttons (`hidden md:flex`) |
 | **Header** (mobile drawer) | GitHub, Storybook — rendered as text links |
+| **Footer** "Explore" column | Features, Playground, Getting Started, **MCP Server** (→ `https://mcp.ora-components.com`) — text links |
 | **Footer** "Connect" column | GitHub, npm, Storybook — rendered as icon+text links |
+
+The "MCP Server" link in the Explore column points to a sibling deployment (a separate Static Web App) that hosts a remote Model Context Protocol endpoint for coding agents. See `.agent/mcp-server/` for that package's documentation.
 
 ### URL pattern
 

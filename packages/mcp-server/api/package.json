@@ -1,0 +1,17 @@
+{
+  "name": "ora-mcp-server-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/http-function.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.0",
+    "zod": "^3.0.0"
+  }
+}

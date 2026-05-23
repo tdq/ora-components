@@ -1,12 +1,12 @@
-import { getManifest } from '../manifest.js';
 import { readFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { createRequire } from 'module';
+import { join } from 'path';
+import { getManifest } from '../manifest.js';
+import { getExamplesDir } from '../data-paths.js';
+import { findFirstStorySource } from './get-component-stories.js';
 
 /**
  * Get a usage example for a specific component.
- * It first tries to find a prepared example in the aura-examples package.
- * If not found, it falls back to the example in the component manifest.
+ * Prefers a prepared example from the ora-examples package, falls back to the manifest example.
  */
 export function getUsageExample(name: string) {
   const manifest = getManifest();
@@ -19,29 +19,31 @@ export function getUsageExample(name: string) {
     return { error: `Component "${name}" not found. Use list_components to see available components.` };
   }
 
-  // Try to get a prepared example from the aura-examples package
-  try {
-    const require = createRequire(import.meta.url);
-    const examplesPkgPath = require.resolve('aura-examples/package.json');
-    const examplesPkgDir = dirname(examplesPkgPath);
-    const exampleFilePath = join(examplesPkgDir, 'src', 'components', `${component.componentName.toLowerCase()}.ts`);
-
+  const examplesDir = getExamplesDir();
+  if (examplesDir) {
+    const exampleFilePath = join(examplesDir, `${component.componentName.toLowerCase()}.ts`);
     if (existsSync(exampleFilePath)) {
-      const example = readFileSync(exampleFilePath, 'utf8');
       return {
         name: component.name,
-        example,
-        source: 'aura-examples'
+        example: readFileSync(exampleFilePath, 'utf8'),
+        source: 'ora-examples',
       };
     }
-  } catch (e) {
-    // Fallback if aura-examples is not found or other issues
   }
 
-  // Fallback to manifest example
+  const story = findFirstStorySource(component.componentName);
+  if (story) {
+    return {
+      name: component.name,
+      example: story.source,
+      source: 'storybook',
+      file: story.file,
+    };
+  }
+
   return {
     name: component.name,
     example: component.example,
-    source: 'manifest'
+    source: 'manifest',
   };
 }

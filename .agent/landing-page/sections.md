@@ -36,3 +36,4 @@ The landing page consists of several high-level sections, each designed for a sp
 - **Footer (`src/sections/landing-page.ts`):** Basic attribution and copyright info.
 - **GitHub link** Opens new tab for such URL: https://github.com/tdq/ora-components
 - **Storybook link** Opens new tab for such URL: https://storybook.ora-components.com/
+- **MCP Server link** Opens new tab for such URL: https://mcp.ora-components.com (Explore column of the footer; see `.agent/mcp-server/` for details)

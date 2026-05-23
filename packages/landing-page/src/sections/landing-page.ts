@@ -63,6 +63,7 @@ function createFooter(): HTMLElement {
             <li><a href="#features" class="text-body-medium text-on-surface-variant hover:text-primary transition-colors duration-200" style="opacity: 0.7;">Features</a></li>
             <li><a href="#playground" class="text-body-medium text-on-surface-variant hover:text-primary transition-colors duration-200" style="opacity: 0.7;">Playground</a></li>
             <li><a href="#get-started" class="text-body-medium text-on-surface-variant hover:text-primary transition-colors duration-200" style="opacity: 0.7;">Getting Started</a></li>
+            <li><a href="https://mcp.ora-components.com" target="_blank" rel="noopener" class="text-body-medium text-on-surface-variant hover:text-primary transition-colors duration-200" style="opacity: 0.7;">MCP Server</a></li>
         </ul>
     `;
 

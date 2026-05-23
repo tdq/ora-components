@@ -1,0 +1,28 @@
+{
+  "routes": [
+    {
+      "route": "/index.html",
+      "headers": { "cache-control": "no-cache" }
+    },
+    {
+      "route": "/styles.css",
+      "headers": { "cache-control": "public, max-age=3600" }
+    },
+    {
+      "route": "/app.js",
+      "headers": { "cache-control": "public, max-age=3600" }
+    },
+    {
+      "route": "/api/mcp",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, MCP-Session-Id"
+      }
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/api/*", "/styles.css", "/app.js", "/favicon.ico"]
+  }
+}

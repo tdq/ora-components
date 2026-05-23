@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ora MCP — Remote Model Context Protocol server for the Ora component library</title>
+<meta name="description" content="A hosted MCP endpoint that gives LLM coding agents structured knowledge of the Ora UI component library: APIs, usage examples, and architecture guides." />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="icon" type="image/x-icon" href="favicon.ico" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<header class="nav">
+  <a class="brand" href="#">
+    <span class="brand-mark"></span>
+    <span class="brand-name">Ora<span class="brand-sub">/mcp</span></span>
+  </a>
+  <nav class="nav-links">
+    <a href="#tools">Tools</a>
+    <a href="#connect">Connect</a>
+    <a href="#api">API</a>
+    <a class="ghost-btn" href="/api/mcp" target="_blank" rel="noopener">Try /api/mcp →</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="pulse" id="status-pulse"></span>
+      <span id="status-text">Remote MCP server · checking…</span>
+    </div>
+    <h1>
+      Give your coding agent <span class="gradient-text">first‑class knowledge</span><br/>
+      of the Ora component library.
+    </h1>
+    <p class="lede">
+      A hosted Model Context Protocol endpoint that exposes structured APIs, usage examples,
+      and architecture guides for every Ora component — over JSON‑RPC, ready to plug into
+      Claude, Cursor, Continue, OpenCode, or any MCP client.
+    </p>
+    <div class="cta-row">
+      <button class="primary-btn" data-copy="claude">
+        <span class="copy-label">Copy Claude Desktop config</span>
+        <span class="copy-icon">⧉</span>
+      </button>
+      <a class="secondary-btn" href="#connect">Connect another client →</a>
+    </div>
+    <div class="hero-stats">
+      <div><strong id="stat-tools">8</strong><span>tools</span></div>
+      <div><strong id="stat-components">30+</strong><span>components</span></div>
+      <div><strong>HTTP</strong><span>JSON‑RPC 2.0</span></div>
+      <div><strong>0ms</strong><span>cold-start coupling</span></div>
+    </div>
+  </section>
+
+  <section id="tools" class="section">
+    <div class="section-head">
+      <span class="kicker">Tools</span>
+      <h2>Eight tools, one endpoint.</h2>
+      <p>Each tool returns structured JSON the agent can reason over directly — no scraping, no guessing.</p>
+    </div>
+    <div class="tool-grid" id="tool-grid">
+      <!-- populated by JS -->
+    </div>
+  </section>
+
+  <section id="connect" class="section">
+    <div class="section-head">
+      <span class="kicker">Connect</span>
+      <h2>Wire it up in 30 seconds.</h2>
+      <p>The server speaks plain HTTP JSON‑RPC — point any MCP client at <code id="endpoint-inline">/api/mcp</code>.</p>
+    </div>
+
+    <div class="connect-grid">
+      <article class="card">
+        <header><h3>Claude Desktop</h3><span class="badge">stdio bridge</span></header>
+        <pre><code id="code-claude"></code></pre>
+        <button class="copy-link" data-copy="claude">Copy</button>
+      </article>
+
+      <article class="card">
+        <header><h3>Cursor / Continue</h3><span class="badge">HTTP</span></header>
+        <pre><code id="code-cursor"></code></pre>
+        <button class="copy-link" data-copy="cursor">Copy</button>
+      </article>
+
+      <article class="card">
+        <header><h3>OpenCode</h3><span class="badge">HTTP</span></header>
+        <pre><code id="code-opencode"></code></pre>
+        <button class="copy-link" data-copy="opencode">Copy</button>
+      </article>
+
+      <article class="card">
+        <header><h3>curl</h3><span class="badge">raw JSON-RPC</span></header>
+        <pre><code id="code-curl"></code></pre>
+        <button class="copy-link" data-copy="curl">Copy</button>
+      </article>
+    </div>
+  </section>
+
+  <section id="api" class="section">
+    <div class="section-head">
+      <span class="kicker">API</span>
+      <h2>One endpoint. Three methods.</h2>
+    </div>
+    <div class="api-rows">
+      <div class="api-row">
+        <code class="api-method">initialize</code>
+        <span>Returns protocol version, capabilities, server info.</span>
+      </div>
+      <div class="api-row">
+        <code class="api-method">tools/list</code>
+        <span>Lists every tool with its JSON schema.</span>
+      </div>
+      <div class="api-row">
+        <code class="api-method">tools/call</code>
+        <span>Invokes a tool by name; result is text content.</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-right">
+    <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">MCP spec ↗</a>
+    <a id="status-link" href="/api/mcp" target="_blank" rel="noopener">Endpoint status ↗</a>
+  </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,9 +1,6 @@
 import { readFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const AGENT_DIR = join(__dirname, '../../../../.agent');
+import { join } from 'path';
+import { getAgentDir } from '../data-paths.js';
 
 const VALID_TOPICS = ['architecture', 'builder-pattern', 'reactive', 'theme', 'glass-effects', 'icons', 'component'];
 
@@ -15,7 +12,7 @@ export function getArchitectureGuide(topic: string) {
     };
   }
 
-  const filePath = join(AGENT_DIR, `${normalized}.md`);
+  const filePath = join(getAgentDir(), `${normalized}.md`);
   if (!existsSync(filePath)) {
     return { error: `Guide file for topic "${topic}" not found.` };
   }

@@ -1,15 +1,13 @@
 import { existsSync, readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROUTER_DOC_PATH = join(__dirname, '../../../../.agent/router.md');
+import { join } from 'path';
+import { getAgentDir } from '../data-paths.js';
 
 export function getRouterDocs() {
-  if (!existsSync(ROUTER_DOC_PATH)) {
+  const filePath = join(getAgentDir(), 'router.md');
+  if (!existsSync(filePath)) {
     return { error: 'Router documentation not found.' };
   }
   return {
-    docs: readFileSync(ROUTER_DOC_PATH, 'utf8'),
+    docs: readFileSync(filePath, 'utf8'),
   };
 }

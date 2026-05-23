@@ -1,11 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 import { getManifest } from '../manifest.js';
-
-// Resolve monorepo root (packages/mcp-server/src/tools -> ../../../../)
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const AGENT_COMPONENTS_DIR = join(__dirname, '../../../../.agent/components');
+import { getAgentDir } from '../data-paths.js';
 
 export function getComponentGuide(name: string) {
   const manifest = getManifest();
@@ -18,9 +14,9 @@ export function getComponentGuide(name: string) {
   }
 
   const compName = component.componentName;
-  // Try flat file first, then subdirectory pattern
-  const flatPath = join(AGENT_COMPONENTS_DIR, `${compName}.md`);
-  const subPath = join(AGENT_COMPONENTS_DIR, compName, `${compName}.md`);
+  const componentsDir = join(getAgentDir(), 'components');
+  const flatPath = join(componentsDir, `${compName}.md`);
+  const subPath = join(componentsDir, compName, `${compName}.md`);
 
   let filePath = '';
   if (existsSync(flatPath)) filePath = flatPath;

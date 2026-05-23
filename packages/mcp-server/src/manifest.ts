@@ -1,6 +1,5 @@
 import { readFileSync } from 'fs';
-import { createRequire } from 'module';
-import { join, dirname } from 'path';
+import { getManifestPath } from './data-paths.js';
 
 export interface MethodParam {
   name: string;
@@ -40,13 +39,6 @@ let _manifest: ComponentManifest | null = null;
 
 export function getManifest(): ComponentManifest {
   if (_manifest) return _manifest;
-
-  // Resolve @tdq/ora-components package location
-  const require = createRequire(import.meta.url);
-  const pkgPath = require.resolve('@tdq/ora-components/package.json');
-  const pkgDir = dirname(pkgPath);
-  const manifestPath = join(pkgDir, 'dist', 'component-manifest.json');
-
-  _manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as ComponentManifest;
+  _manifest = JSON.parse(readFileSync(getManifestPath(), 'utf8')) as ComponentManifest;
   return _manifest;
 }

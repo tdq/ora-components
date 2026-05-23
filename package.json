@@ -11,7 +11,7 @@
     "dev": "turbo dev",
     "storybook": "turbo storybook",
     "pack:local": "turbo run pack:local --filter=@tdq/ora-components",
-    "mcp:build": "turbo run build --filter=aura-mcp-server",
+    "mcp:build": "turbo run build --filter=ora-mcp-server",
     "mcp:start": "node packages/mcp-server/dist/index.js",
     "landing:build": "turbo run build --filter=landing-page",
     "landing:start": "turbo run dev --filter=landing-page"
