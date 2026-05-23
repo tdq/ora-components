@@ -165,5 +165,6 @@ button {
     background: var(--accent-badge-bg);
     border: 1px solid var(--accent-badge-border);
     color: var(--accent-badge-text);
+    padding: 2px 4px;
   }
 }

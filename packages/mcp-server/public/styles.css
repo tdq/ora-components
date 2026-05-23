@@ -947,6 +947,10 @@ video {
   justify-content: space-between;
 }
 
+.gap-px-10 {
+  gap: 10px;
+}
+
 .gap-px-12 {
   gap: 12px;
 }
@@ -961,6 +965,10 @@ video {
 
 .gap-px-32 {
   gap: 32px;
+}
+
+.gap-px-6 {
+  gap: 6px;
 }
 
 .gap-px-8 {
@@ -1083,6 +1091,11 @@ video {
 .py-px-16 {
   padding-top: 16px;
   padding-bottom: 16px;
+}
+
+.py-px-2 {
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
 .py-px-4 {
@@ -1382,6 +1395,7 @@ video {
   background: var(--accent-badge-bg);
   border: 1px solid var(--accent-badge-border);
   color: var(--accent-badge-text);
+  padding: 2px 4px;
 }
 
 html,

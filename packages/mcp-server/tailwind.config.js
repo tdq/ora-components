@@ -65,8 +65,11 @@ module.exports = {
                 'extra-large': '24px',
             },
             spacing: {
+                'px-2': '2px',
                 'px-4': '4px',
+                'px-6': '6px',
                 'px-8': '8px',
+                'px-10': '10px',
                 'px-12': '12px',
                 'px-16': '16px',
                 'px-24': '24px',
