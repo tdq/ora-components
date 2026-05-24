@@ -5,6 +5,8 @@ import {
     PanelBuilder,
     LabelBuilder,
     LayoutBuilder,
+    FxTickerBuilder,
+    FxRate,
     themeManager,
     registerDestroy
 } from '@tdq/ora-components';
@@ -24,12 +26,6 @@ interface JournalEntry {
     credit: number;
 }
 
-interface FxRate {
-    pair: string;
-    rate: number;
-    prev: number;
-}
-
 // ---------- Helpers ----------
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -44,8 +40,6 @@ const fmtAmount = (n: number, currency: string): string => {
     const decimals = currency === 'JPY' ? 0 : 2;
     return sym + ' ' + n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 };
-
-const fmtRate = (n: number): string => n.toFixed(4);
 
 const pad2 = (n: number) => n.toString().padStart(2, '0');
 
@@ -151,51 +145,6 @@ function buildArAgingTile(): HTMLElement {
             ${buckets.map(b => `<div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full" style="background:${b.color};"></span><span>${b.label}</span></div>`).join('')}
         </div>
     `;
-    return root;
-}
-
-// ---------- FX ticker marquee ----------
-
-function buildFxTicker(rates$: BehaviorSubject<FxRate[]>, sub: Subscription): HTMLElement {
-    const root = document.createElement('div');
-    root.setAttribute('aria-hidden', 'true');
-    root.className = 'relative overflow-hidden rounded-large border border-outline-alpha-20 backdrop-blur-md bg-surface-variant-alpha-30 shadow-level-1';
-    root.innerHTML = `
-        <div class="flex items-center">
-            <div class="px-px-12 py-px-8 text-label-small font-semibold uppercase tracking-widest text-on-surface-variant opacity-70 border-r border-outline-alpha-20 whitespace-nowrap">FX &middot; live</div>
-            <div class="flex-1 overflow-hidden">
-                <div data-marquee class="flex marquee-track whitespace-nowrap will-change-transform"></div>
-            </div>
-        </div>
-    `;
-    const track = root.querySelector('[data-marquee]') as HTMLElement;
-
-    const render = (rates: FxRate[]) => {
-        const items = [...rates, ...rates];
-        track.innerHTML = items.map(r => {
-            const diff = r.rate - r.prev;
-            const color = diff >= 0 ? '#10B981' : '#EF4444';
-            const arrow = diff >= 0 ? '▲' : '▼';
-            return `
-                <div class="inline-flex items-center gap-px-8 px-px-16 py-px-8 tabular-nums">
-                    <span class="text-label-medium font-semibold text-on-surface opacity-80">${r.pair}</span>
-                    <span data-rate class="text-label-medium font-semibold text-on-surface">${fmtRate(r.rate)}</span>
-                    <span class="text-label-small font-semibold" style="color:${color};">${arrow} ${Math.abs(diff).toFixed(4)}</span>
-                </div>
-            `;
-        }).join('');
-        const rateEls = track.querySelectorAll('[data-rate]');
-        rateEls.forEach((el, i) => {
-            const r = items[i];
-            if (r.rate !== r.prev) {
-                const cls = r.rate > r.prev ? 'flash-green' : 'flash-red';
-                (el as HTMLElement).classList.add(cls);
-                setTimeout(() => (el as HTMLElement).classList.remove(cls), 650);
-            }
-        });
-    };
-
-    sub.add(rates$.subscribe(render));
     return root;
 }
 
@@ -352,21 +301,21 @@ export function createHero(): HTMLElement {
     }));
 
     const fxRates$ = new BehaviorSubject<FxRate[]>([
-        { pair: 'EUR/USD', rate: 1.0843, prev: 1.0843 },
-        { pair: 'EUR/GBP', rate: 0.8521, prev: 0.8521 },
-        { pair: 'EUR/JPY', rate: 168.42, prev: 168.42 },
-        { pair: 'EUR/CHF', rate: 0.9612, prev: 0.9612 },
-        { pair: 'EUR/CAD', rate: 1.4855, prev: 1.4855 },
-        { pair: 'EUR/AUD', rate: 1.6431, prev: 1.6431 },
+        { pair: 'EUR/USD', rate: 1.0843 },
+        { pair: 'EUR/GBP', rate: 0.8521 },
+        { pair: 'EUR/JPY', rate: 168.42, decimals: 2 },
+        { pair: 'EUR/CHF', rate: 0.9612 },
+        { pair: 'EUR/CAD', rate: 1.4855 },
+        { pair: 'EUR/AUD', rate: 1.6431 },
     ]);
     sub.add(interval(1500).subscribe(() => {
         const updated = fxRates$.value.map(r => {
             if (Math.random() < 0.55) {
-                const jitter = r.rate > 10 ? 0.18 : 0.0018;
-                const newRate = Math.round(randAround(r.rate, jitter) * 10000) / 10000;
-                return { pair: r.pair, rate: newRate, prev: r.rate };
+                const jitter = (r.rate as number) > 10 ? 0.18 : 0.0018;
+                const newRate = Math.round(randAround(r.rate as number, jitter) * 10000) / 10000;
+                return { ...r, rate: newRate };
             }
-            return { ...r, prev: r.rate };
+            return r;
         });
         fxRates$.next(updated);
     }));
@@ -389,7 +338,11 @@ export function createHero(): HTMLElement {
     // ----- Desktop collage -----
 
     // 1. FX ticker (top)
-    stack.appendChild(buildFxTicker(fxRates$, sub));
+    stack.appendChild(
+        new PanelBuilder().asGlass().withContent(
+            new FxTickerBuilder().withData(fxRates$)
+        ).build()
+    );
 
     // 2. Cashflow chart (left) + KPI stack (right)
     const middleRow = document.createElement('div');

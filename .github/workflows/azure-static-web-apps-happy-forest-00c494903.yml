@@ -3,6 +3,11 @@ name: Azure Static Web Apps CI/CD
 on:
   push:
     branches: [master]
+    paths:
+      - 'packages/stories/**'
+      - 'packages/ora-components/src/**'
+      - 'packages/ora-components/package.json'
+      - '.github/workflows/azure-static-web-apps-happy-forest-00c494903.yml'
 
 concurrency:
   group: swa-${{ github.workflow }}-${{ github.ref }}
@@ -23,33 +28,6 @@ jobs:
           submodules: true
           lfs: false
           fetch-depth: 2
-
-      - name: Detect version change
-        id: detect
-        run: |
-          set -u
-          PATHS=(
-            packages/stories/package.json
-            packages/ora-components/package.json
-          )
-          BEFORE="${{ github.event.before }}"
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
-             || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
-            echo "Deploy: yes (no usable previous commit — fail-open)" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          for p in "${PATHS[@]}"; do
-            prev=$(git show "${BEFORE}:${p}" 2>/dev/null | jq -r .version 2>/dev/null || echo "")
-            curr=$(jq -r .version "$p" 2>/dev/null || echo "")
-            if [ -n "$curr" ] && [ "$prev" != "$curr" ]; then
-              echo "should_deploy=true" >> "$GITHUB_OUTPUT"
-              echo "Deploy: yes — \`$p\` bumped \`${prev:-<absent>}\` → \`${curr}\`" >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
-          done
-          echo "should_deploy=false" >> "$GITHUB_OUTPUT"
-          echo "Deploy: no — no tracked package version changed since \`${BEFORE}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

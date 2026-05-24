@@ -1,0 +1,67 @@
+/* ── CSS custom property defaults ────────────────────────────────────────── */
+
+:root {
+    --fx-delta-up:   #10B981;
+    --fx-delta-down: #EF4444;
+}
+
+/* ── Delta color classes ─────────────────────────────────────────────────── */
+
+.fx-delta-up   { color: var(--fx-delta-up); }
+.fx-delta-down { color: var(--fx-delta-down); }
+.fx-delta-flat { color: var(--md-sys-color-on-surface); opacity: 0.6; }
+
+/* ── Marquee track ───────────────────────────────────────────────────────── */
+
+.fx-marquee-track {
+    animation-name: fxMarqueeScroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-duration: 28s; /* overridden by JS via style.animationDuration */
+}
+
+/* Pause on hover — applied to the root when pauseOnHover is true */
+.fx-pause-on-hover:hover .fx-marquee-track {
+    animation-play-state: paused;
+}
+
+/* Right-to-left becomes left-to-right by reversing the keyframes */
+.fx-direction-right .fx-marquee-track {
+    animation-direction: reverse;
+}
+
+@keyframes fxMarqueeScroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+/* ── Flash animations ────────────────────────────────────────────────────── */
+
+@keyframes fxFlashUp {
+    0%   { background-color: transparent; }
+    30%  { background-color: color-mix(in srgb, var(--fx-delta-up) 25%, transparent); }
+    100% { background-color: transparent; }
+}
+
+@keyframes fxFlashDown {
+    0%   { background-color: transparent; }
+    30%  { background-color: color-mix(in srgb, var(--fx-delta-down) 25%, transparent); }
+    100% { background-color: transparent; }
+}
+
+.fx-flash-up {
+    animation: fxFlashUp var(--fx-flash-duration, 600ms) ease-out 1;
+    border-radius: 4px;
+}
+
+.fx-flash-down {
+    animation: fxFlashDown var(--fx-flash-duration, 600ms) ease-out 1;
+    border-radius: 4px;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .fx-marquee-track { animation: none; }
+    .fx-flash-up, .fx-flash-down { animation: none; }
+}

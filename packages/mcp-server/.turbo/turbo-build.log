@@ -1,6 +1,15 @@
 
 
-> aura-mcp-server@0.1.0 build
-> tsc
+> ora-mcp-server@0.1.0 build
+> npm run build:css && tsc && node scripts/stage-api.mjs
 
-[1G[0K[1G[0K\[1G[0K
+[1G[0K
+> ora-mcp-server@0.1.0 build:css
+> tailwindcss -i ./public/src-styles.css -o ./public/styles.css
+
+[1G[0K
+Rebuilding...
+
+Done in 497ms.
+[1G[0K\[1G[0K[stage-api] OK -> /Users/nikolaigorokhov/Projects/1A/ora-components/packages/mcp-server/api/dist
+[1G[0K\[1G[0K

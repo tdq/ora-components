@@ -3,6 +3,15 @@ name: Azure Static Web Apps CI/CD
 on:
   push:
     branches: [master]
+    paths:
+      - 'packages/mcp-server/**'
+      - 'packages/ora-components/src/**'
+      - 'packages/ora-components/package.json'
+      - 'packages/stories/src/**'
+      - 'packages/stories/package.json'
+      - 'packages/examples/src/**'
+      - 'packages/examples/package.json'
+      - '.github/workflows/azure-static-web-apps-calm-beach-0bfd4e803.yml'
 
 # Cancel superseded master pushes so deploys don't pile up.
 concurrency:
@@ -26,35 +35,6 @@ jobs:
           submodules: true
           lfs: false
           fetch-depth: 2
-
-      - name: Detect version change
-        id: detect
-        run: |
-          set -u
-          PATHS=(
-            packages/mcp-server/package.json
-            packages/mcp-server/api/package.json
-            packages/ora-components/package.json
-            packages/stories/package.json
-          )
-          BEFORE="${{ github.event.before }}"
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
-             || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
-            echo "Deploy: yes (no usable previous commit — fail-open)" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          for p in "${PATHS[@]}"; do
-            prev=$(git show "${BEFORE}:${p}" 2>/dev/null | jq -r .version 2>/dev/null || echo "")
-            curr=$(jq -r .version "$p" 2>/dev/null || echo "")
-            if [ -n "$curr" ] && [ "$prev" != "$curr" ]; then
-              echo "should_deploy=true" >> "$GITHUB_OUTPUT"
-              echo "Deploy: yes — \`$p\` bumped \`${prev:-<absent>}\` → \`${curr}\`" >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
-          done
-          echo "should_deploy=false" >> "$GITHUB_OUTPUT"
-          echo "Deploy: no — no tracked package version changed since \`${BEFORE}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node
         uses: actions/setup-node@v4

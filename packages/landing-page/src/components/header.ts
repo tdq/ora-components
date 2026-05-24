@@ -149,15 +149,46 @@ export function createHeader(): HTMLElement {
     return header;
 }
 
+function getToggleColors(theme: string | null) {
+    if (theme === 'dark') {
+        return {
+            containerBg: 'rgba(40, 35, 50, 0.7)',
+            containerBorder: 'rgba(208, 188, 255, 0.18)',
+            indicatorBg: 'rgba(208, 188, 255, 0.18)',
+            indicatorShadow: '0 1px 6px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(208, 188, 255, 0.3)',
+            inactiveColor: 'rgba(230, 224, 233, 0.65)',
+            activeColor: '#D0BCFF',
+        };
+    }
+    if (theme === 'pink') {
+        return {
+            containerBg: 'rgba(255, 217, 228, 0.55)',
+            containerBorder: 'rgba(125, 41, 80, 0.18)',
+            indicatorBg: '#FFF0F5',
+            indicatorShadow: '0 1px 4px rgba(125,41,80,0.18)',
+            inactiveColor: 'rgba(125, 41, 80, 0.55)',
+            activeColor: '#7D2950',
+        };
+    }
+    return {
+        containerBg: 'rgba(231, 224, 235, 0.6)',
+        containerBorder: 'rgba(121, 116, 126, 0.15)',
+        indicatorBg: '#ffffff',
+        indicatorShadow: '0 1px 4px rgba(0,0,0,0.15)',
+        inactiveColor: 'rgba(73, 69, 79, 0.7)',
+        activeColor: '#4f46e5',
+    };
+}
+
 function createThemeToggle(onThemeChange?: () => void): HTMLElement {
     const container = document.createElement('div');
     container.className = 'flex items-center rounded-full p-0.5 gap-0.5';
-    container.style.cssText = 'position: relative; background: rgba(231, 224, 235, 0.6); border: 1px solid rgba(121, 116, 126, 0.15);';
+    container.style.cssText = 'position: relative; background: rgba(231, 224, 235, 0.6); border: 1px solid rgba(121, 116, 126, 0.15); transition: background-color 200ms ease, border-color 200ms ease;';
 
     // Sliding indicator pill
     const indicator = document.createElement('div');
     indicator.className = 'theme-slider-indicator';
-    indicator.style.cssText = 'position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 9999px; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.15); transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1); z-index: 0; pointer-events: none;';
+    indicator.style.cssText = 'position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 9999px; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.15); transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), background-color 200ms ease, box-shadow 200ms ease; z-index: 0; pointer-events: none;';
     container.appendChild(indicator);
 
     const themes = [
@@ -172,7 +203,12 @@ function createThemeToggle(onThemeChange?: () => void): HTMLElement {
 
     const updateActive = () => {
         const theme = document.documentElement.getAttribute('data-theme') || 'light';
-        const activeColor = theme === 'dark' ? '#D0BCFF' : theme === 'pink' ? '#FFB3D1' : '#4f46e5';
+        const colors = getToggleColors(theme);
+
+        container.style.background = colors.containerBg;
+        container.style.borderColor = colors.containerBorder;
+        indicator.style.background = colors.indicatorBg;
+        indicator.style.boxShadow = colors.indicatorShadow;
 
         // Slide indicator to active position
         const activeIndex = themes.findIndex(t => t.name === theme);
@@ -181,7 +217,7 @@ function createThemeToggle(onThemeChange?: () => void): HTMLElement {
 
         // Active button gets accent icon color; inactive get muted default
         buttons.forEach((b, i) => {
-            b.style.color = themes[i].name === theme ? activeColor : '';
+            b.style.color = themes[i].name === theme ? colors.activeColor : colors.inactiveColor;
         });
     };
 
@@ -204,6 +240,12 @@ function createThemeToggle(onThemeChange?: () => void): HTMLElement {
 
     // Set initial state
     updateActive();
+
+    // React to theme changes from anywhere (other toggles, system change)
+    themeManager.theme$.subscribe(() => {
+        updateActive();
+        if (onThemeChange) onThemeChange();
+    });
 
     return container;
 }

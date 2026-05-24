@@ -12,6 +12,7 @@ export * from './components/text-field';
 export * from './components/number-field';
 export * from './components/money-field';
 export * from './components/form';
+export * from './components/fx-ticker';
 export * from './components/toolbar';
 export * from './components/dialog';
 export * from './components/tabs';
