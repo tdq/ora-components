@@ -2,6 +2,7 @@ import { GridBuilder, TabsBuilder, PanelBuilder, PanelGap, ChartBuilder, LabelBu
 import { of } from 'rxjs';
 import { renderStatusChip } from './chip-utils';
 import { KPICardBuilder } from './kpi-card';
+import { themedColor$ } from './theme-tokens';
 
 interface Order {
     id: string;
@@ -111,7 +112,7 @@ function createOrdersCharts(): HTMLElement {
     const revenueChart = new ChartBuilder<{ x: string; y: number }>()
         .withData(of(revenueData))
         .withCategoryField('x');
-    revenueChart.addBarChart('y').withLabel('Revenue (€)').withColor('#6750A4');
+    revenueChart.addBarChart('y').withLabel('Revenue (€)').withColor(themedColor$('accent'));
 
     const revenueChartEl = revenueChart.build();
     revenueChartEl.classList.add('flex-1', 'min-h-0');
@@ -132,7 +133,7 @@ function createOrdersCharts(): HTMLElement {
     const statusChart = new ChartBuilder<{ x: string; y: number }>()
         .withData(of(statusCounts))
         .withCategoryField('x');
-    statusChart.addBarChart('y').withLabel('Orders').withColor('#0EA5E9');
+    statusChart.addBarChart('y').withLabel('Orders').withColor(themedColor$('sky'));
 
     const statusChartEl = statusChart.build();
     statusChartEl.classList.add('flex-1', 'min-h-0');

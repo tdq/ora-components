@@ -148,28 +148,6 @@ function buildArAgingTile(): HTMLElement {
     return root;
 }
 
-// ---------- Floating code-snippet overlay ----------
-
-function buildCodeSnippet(): HTMLElement {
-    const root = document.createElement('div');
-    root.className = 'absolute -bottom-6 -left-6 z-20 rounded-large border border-outline-alpha-20 shadow-level-4 font-mono-code text-xs leading-relaxed backdrop-blur-md animate-pulse-glow hidden md:block';
-    root.style.cssText = 'background: rgba(15, 23, 42, 0.92); color: #e2e8f0; padding: 14px 18px; max-width: 340px;';
-    root.innerHTML = `
-        <div class="flex items-center gap-1 mb-2 opacity-70">
-            <span class="w-2 h-2 rounded-full" style="background:#ef4444;"></span>
-            <span class="w-2 h-2 rounded-full" style="background:#f59e0b;"></span>
-            <span class="w-2 h-2 rounded-full" style="background:#10b981;"></span>
-            <span class="ml-2 text-[10px] uppercase tracking-widest opacity-70">balance.ts</span>
-        </div>
-        <div><span style="color:#c084fc;">const</span> <span style="color:#7dd3fc;">balance$</span> = entries$.pipe(</div>
-        <div>&nbsp;&nbsp;scan(<span style="color:#7dd3fc;">reconcile</span>, <span style="color:#fbbf24;">zero</span>)</div>
-        <div>);</div>
-        <div class="mt-1"><span style="color:#94a3b8;">// any RxJS Observable</span></div>
-        <div><span style="color:#7dd3fc;">label</span>.withCaption(<span style="color:#7dd3fc;">balance$</span>);</div>
-    `;
-    return root;
-}
-
 // ---------- Hero ----------
 
 export function createHero(): HTMLElement {
@@ -183,7 +161,7 @@ export function createHero(): HTMLElement {
                 <div id="hero-blob-anchor" class="absolute top-1/3 right-[8%] w-[28rem] h-[28rem] rounded-full blur-3xl transition-all duration-700 bg-accent-blob-1 opacity-70"></div>
             </div>
             <div class="relative z-10 container mx-auto px-4 pt-px-96 pb-px-64">
-                <div class="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-12 items-center min-h-[80vh]">
+                <div class="grid xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-12 items-center min-h-[80vh]">
                     <div class="space-y-8 min-w-0">
                         <div class="space-y-6">
                             <div id="hero-badge" class="inline-flex items-center gap-px-8 px-px-16 py-px-8 rounded-full text-label-medium mb-px-32 transition-all duration-500 badge-accent">
@@ -236,8 +214,8 @@ export function createHero(): HTMLElement {
                             </button>
                         </div>
                     </div>
-                    <div id="hero-visual-panel" class="relative">
-                        <div id="hero-visual-stack" class="relative space-y-4"></div>
+                    <div id="hero-visual-panel" class="relative min-w-0">
+                        <div id="hero-visual-stack" class="relative space-y-4 min-w-0"></div>
                     </div>
                 </div>
             </div>
@@ -346,7 +324,7 @@ export function createHero(): HTMLElement {
 
     // 2. Cashflow chart (left) + KPI stack (right)
     const middleRow = document.createElement('div');
-    middleRow.className = 'grid grid-cols-[minmax(0,7fr)_minmax(0,5fr)] gap-4';
+    middleRow.className = 'hero-middle-row';
     stack.appendChild(middleRow);
 
     const cashflowData$ = of([
@@ -389,7 +367,7 @@ export function createHero(): HTMLElement {
     middleRow.appendChild(chartWrap);
 
     const kpiStack = document.createElement('div');
-    kpiStack.className = 'flex flex-col gap-4 h-full [&>*]:flex-1';
+    kpiStack.className = 'hero-kpi-stack';
     kpiStack.appendChild(buildCashOnHandTile(cash$, sub));
     kpiStack.appendChild(buildArAgingTile());
     middleRow.appendChild(kpiStack);
@@ -488,11 +466,8 @@ export function createHero(): HTMLElement {
 
     journalPanel.withContent(journalLayout);
     const journalEl = journalPanel.build();
-    journalEl.classList.add('slide-in-down');
+    journalEl.classList.add('slide-in-down', 'hero-journal');
     stack.appendChild(journalEl);
-
-    // 4. Floating code-snippet overlay
-    visualPanel.appendChild(buildCodeSnippet());
 
     return section;
 }

@@ -44,11 +44,11 @@ function fmt(n: number): string {
 function renderSection(title: string, items: BSLineItem[], grandTotal: number, grandTotalLabel: string): HTMLElement {
     const panel = document.createElement('div');
     panel.className = 'p-px-24 rounded-extra-large border flex flex-col gap-0';
-    panel.style.cssText = 'background: var(--md-sys-color-surface); border-color: rgba(121,116,126,0.1);';
+    panel.style.cssText = 'background: var(--md-sys-color-surface); border-color: var(--dashboard-border-soft);';
 
     const heading = document.createElement('div');
     heading.className = 'text-title-medium font-semibold text-on-surface mb-px-16 pb-px-12 border-b';
-    heading.style.cssText = 'border-color: rgba(121,116,126,0.12);';
+    heading.style.cssText = 'border-color: var(--dashboard-border-soft);';
     heading.textContent = title;
     panel.appendChild(heading);
 
@@ -68,7 +68,7 @@ function renderSection(title: string, items: BSLineItem[], grandTotal: number, g
 
         if (item.isSubtotal) {
             row.className += ' mt-px-4 pt-px-8 border-t font-semibold';
-            row.style.cssText = 'border-color: rgba(121,116,126,0.12);';
+            row.style.cssText = 'border-color: var(--dashboard-border-soft);';
         }
 
         const labelEl = document.createElement('span');
@@ -93,7 +93,7 @@ function renderSection(title: string, items: BSLineItem[], grandTotal: number, g
     // Grand total row
     const totalRow = document.createElement('div');
     totalRow.className = 'flex justify-between items-center mt-px-8 pt-px-12';
-    totalRow.style.cssText = 'border-top: 2px solid rgba(103,80,164,0.25);';
+    totalRow.style.cssText = 'border-top: 2px solid var(--dashboard-accent-border);';
 
     const totalLabel = document.createElement('span');
     totalLabel.className = 'text-title-small font-bold text-on-surface';
@@ -101,7 +101,7 @@ function renderSection(title: string, items: BSLineItem[], grandTotal: number, g
 
     const totalAmount = document.createElement('span');
     totalAmount.className = 'text-title-small font-bold';
-    totalAmount.style.cssText = 'color: #6750A4;';
+    totalAmount.style.cssText = 'color: var(--dashboard-accent);';
     totalAmount.textContent = fmt(grandTotal);
 
     totalRow.appendChild(totalLabel);
@@ -141,11 +141,11 @@ export function createBalanceSheet(): HTMLElement {
     const banner = document.createElement('div');
     banner.className = 'flex items-center gap-px-12 p-px-16 rounded-extra-large border';
     banner.style.cssText = isBalanced
-        ? 'background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.2);'
-        : 'background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.2);';
+        ? 'background: var(--kpi-green-soft); border-color: color-mix(in srgb, var(--kpi-green) 22%, transparent);'
+        : 'background: var(--kpi-red-soft); border-color: color-mix(in srgb, var(--kpi-red) 22%, transparent);';
     banner.innerHTML = `
         <span style="font-size: 18px;">${isBalanced ? '✓' : '✗'}</span>
-        <span class="text-body-medium font-semibold" style="color: ${isBalanced ? '#10B981' : '#EF4444'};">
+        <span class="text-body-medium font-semibold" style="color: ${isBalanced ? 'var(--kpi-green)' : 'var(--kpi-red)'};">
             ${balanceMsg}
         </span>
     `;

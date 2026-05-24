@@ -6,7 +6,7 @@ import { router } from '../../routes';
 export function createDashboardHeader(): HTMLElement {
     const header = document.createElement('header');
     header.className = 'border-b px-px-24 flex items-center justify-between flex-shrink-0';
-    header.style.cssText = 'min-height: 64px; background: var(--md-sys-color-surface-container-low); backdrop-filter: blur(12px); border-color: rgba(121,116,126,0.08);';
+    header.style.cssText = 'min-height: 64px; background: var(--md-sys-color-surface-container-low); backdrop-filter: blur(12px); border-color: var(--dashboard-border-subtle);';
 
     // Left: title + live badge
     const leftSide = document.createElement('div');
@@ -32,7 +32,7 @@ export function createDashboardHeader(): HTMLElement {
 
     const liveBadge = document.createElement('div');
     liveBadge.className = 'flex items-center gap-px-8 px-px-12 py-px-4 rounded-full text-label-small';
-    liveBadge.style.cssText = 'background: rgba(40,200,64,0.08); color: #16a34a; border: 1px solid rgba(40,200,64,0.15);';
+    liveBadge.style.cssText = 'background: var(--kpi-green-soft); color: var(--kpi-green-text); border: 1px solid color-mix(in srgb, var(--kpi-green) 22%, transparent);';
     liveBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>Live data`;
 
     leftSide.appendChild(titleEl);
