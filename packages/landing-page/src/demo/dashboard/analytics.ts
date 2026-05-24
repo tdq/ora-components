@@ -1,6 +1,7 @@
 import { PanelBuilder, PanelGap, ChartBuilder, LabelBuilder, registerDestroy } from '@tdq/ora-components';
 import { of, timer, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { themedColor$ } from './theme-tokens';
 
 export function createAnalytics(): HTMLElement {
     const container = document.createElement('div');
@@ -45,7 +46,7 @@ function createRevenueChart(): HTMLElement {
     const chart = new ChartBuilder<{ x: string; y: number }>()
         .withData(dataRelay$)
         .withCategoryField('x');
-    chart.addAreaChart('y').withLabel('Revenue (€)').withColor('#6750A4');
+    chart.addAreaChart('y').withLabel('Revenue (€)').withColor(themedColor$('accent'));
 
     const chartEl = chart.build();
     chartEl.classList.add('flex-1', 'min-h-0');
@@ -75,7 +76,7 @@ function createUsersChart(): HTMLElement {
     const chart = new ChartBuilder<{ x: string; y: number }>()
         .withData(data$)
         .withCategoryField('x');
-    chart.addBarChart('y').withLabel('Users').withColor('#0EA5E9');
+    chart.addBarChart('y').withLabel('Users').withColor(themedColor$('sky'));
 
     const chartEl = chart.build();
     chartEl.classList.add('flex-1', 'min-h-0');
@@ -97,7 +98,7 @@ function createDeviceChart(): HTMLElement {
     const chart = new ChartBuilder<{ x: string; y: number }>()
         .withData(data$)
         .withCategoryField('x');
-    chart.addBarChart('y').withLabel('Share (%)').withColor('#10B981');
+    chart.addBarChart('y').withLabel('Share (%)').withColor(themedColor$('green'));
 
     const chartEl = chart.build();
     chartEl.classList.add('flex-1', 'min-h-0');
@@ -120,7 +121,7 @@ function createRegionalChart(): HTMLElement {
     const chart = new ChartBuilder<{ x: string; y: number }>()
         .withData(data$)
         .withCategoryField('x');
-    chart.addBarChart('y').withLabel('Revenue (€)').withColor('#F59E0B');
+    chart.addBarChart('y').withLabel('Revenue (€)').withColor(themedColor$('amber'));
 
     const chartEl = chart.build();
     chartEl.classList.add('flex-1', 'min-h-0');
@@ -145,7 +146,7 @@ function createSessionChart(): HTMLElement {
     const chart = new ChartBuilder<{ x: string; y: number }>()
         .withData(data$)
         .withCategoryField('x');
-    chart.addLineChart('y').withLabel('Minutes').withColor('#EC4899');
+    chart.addLineChart('y').withLabel('Minutes').withColor(themedColor$('pink'));
 
     const chartEl = chart.build();
     chartEl.classList.add('flex-1', 'min-h-0');
@@ -167,7 +168,7 @@ function createConversionChart(): HTMLElement {
     const chart = new ChartBuilder<{ x: string; y: number }>()
         .withData(data$)
         .withCategoryField('x');
-    chart.addBarChart('y').withLabel('Users').withColor('#8B5CF6');
+    chart.addBarChart('y').withLabel('Users').withColor(themedColor$('violet'));
 
     const chartEl = chart.build();
     chartEl.classList.add('flex-1', 'min-h-0');

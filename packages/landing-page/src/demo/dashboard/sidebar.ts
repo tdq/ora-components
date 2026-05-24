@@ -7,12 +7,12 @@ import oraComponentsPkg from '@tdq/ora-components/package.json';
 export function createSidebar(): HTMLElement {
     const container = document.createElement('div');
     container.className = 'flex flex-col h-full w-64 flex-shrink-0';
-    container.style.cssText = 'background: var(--md-sys-color-surface-container-low); border-right: 1px solid rgba(121,116,126,0.1);';
+    container.style.cssText = 'background: var(--md-sys-color-surface-container-low); border-right: 1px solid var(--dashboard-border-soft);';
 
     // Logo area
     const logoArea = document.createElement('div');
     logoArea.className = 'px-px-16 border-b flex items-center flex-shrink-0';
-    logoArea.style.cssText = 'height: 64px; border-color: rgba(121,116,126,0.08);';
+    logoArea.style.cssText = 'height: 64px; border-color: var(--dashboard-border-subtle);';
     logoArea.appendChild(createLogo({ text: 'Ora Dashboard', subtitle: `v${oraComponentsPkg.version} Demo`, onClick: () => router.navigate('/') }));
 
     // Nav section
@@ -84,7 +84,7 @@ export function createSidebar(): HTMLElement {
         const updateActive = (currentPath: string) => {
             const isActive = item.exact ? currentPath === item.path : currentPath.startsWith(item.path);
             if (isActive) {
-                btn.style.cssText = 'background: rgba(103,80,164,0.1); color: #6750A4;';
+                btn.style.cssText = 'background: var(--dashboard-accent-soft); color: var(--dashboard-accent);';
             } else {
                 btn.style.cssText = '';
                 btn.className = 'w-full flex items-center gap-px-12 px-px-12 py-px-8 rounded-large text-label-large mb-1 text-on-surface-variant transition-colors duration-150 hover:bg-surface-variant-alpha-40';
@@ -113,7 +113,7 @@ export function createSidebar(): HTMLElement {
     // Footer
     const sidebarFooter = document.createElement('div');
     sidebarFooter.className = 'p-px-12 border-t';
-    sidebarFooter.style.cssText = 'border-color: rgba(121,116,126,0.08);';
+    sidebarFooter.style.cssText = 'border-color: var(--dashboard-border-subtle);';
 
     const backBtn = document.createElement('button');
     backBtn.className = 'w-full flex items-center gap-px-12 px-px-12 py-px-8 rounded-large text-label-large text-on-surface-variant transition-colors duration-150 hover:bg-surface-variant-alpha-40';

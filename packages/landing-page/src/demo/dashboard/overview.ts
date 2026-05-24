@@ -2,6 +2,7 @@ import { PanelBuilder, ChartBuilder, GridBuilder, LabelBuilder, Money, LayoutBui
 import { KPICardBuilder } from './kpi-card';
 import { of } from 'rxjs';
 import { renderStatusChip } from './chip-utils';
+import { themedColor$ } from './theme-tokens';
 
 export function createOverview(): HTMLElement {
     const container = new LayoutBuilder()
@@ -66,8 +67,8 @@ function createSalesChart(): ComponentBuilder {
         .withLegend(true);
 
     chart.withSecondaryYAxis();
-    chart.addAreaChart('y').withLabel('Revenue (€)').withColor('#6750A4');
-    chart.addBarChart('orders').withLabel('Orders').withColor('#0EA5E9').asSecondaryAxis();
+    chart.addAreaChart('y').withLabel('Revenue (€)').withColor(themedColor$('accent'));
+    chart.addBarChart('orders').withLabel('Orders').withColor(themedColor$('sky')).asSecondaryAxis();
 
     const chartWrapper = new LayoutBuilder()
         .withClass(of('flex-1 min-h-0'))

@@ -126,6 +126,45 @@
     --accent-primary: #4f46e5;
     --accent-secondary: #4338ca;
   }
+
+  /* ----- Dashboard design tokens -----
+     Theme-dependent surfaces & accents derive from --md-sys-color-* so they
+     restyle automatically per [data-theme]. Semantic status hues stay constant
+     so positive/negative/info signals read the same across themes. */
+  :root {
+    --dashboard-accent: var(--md-sys-color-primary);
+    --dashboard-accent-soft: color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent);
+    --dashboard-accent-border: color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);
+    --dashboard-border-soft: color-mix(in srgb, var(--md-sys-color-outline) 25%, transparent);
+    --dashboard-border-subtle: color-mix(in srgb, var(--md-sys-color-outline) 15%, transparent);
+
+    --kpi-accent: var(--md-sys-color-primary);
+    --kpi-muted: var(--md-sys-color-secondary);
+    --kpi-rose: #7D5260;
+    --kpi-sky: #0EA5E9;
+    --kpi-green: #10B981;
+    --kpi-amber: #F59E0B;
+    --kpi-pink: #EC4899;
+    --kpi-red: #EF4444;
+    --kpi-violet: #8B5CF6;
+
+    --kpi-sky-soft: color-mix(in srgb, var(--kpi-sky) 10%, transparent);
+    --kpi-green-soft: color-mix(in srgb, var(--kpi-green) 10%, transparent);
+    --kpi-amber-soft: color-mix(in srgb, var(--kpi-amber) 10%, transparent);
+    --kpi-red-soft: color-mix(in srgb, var(--kpi-red) 10%, transparent);
+
+    --kpi-sky-text: #0369a1;
+    --kpi-green-text: #047857;
+    --kpi-amber-text: #b45309;
+    --kpi-red-text: #b91c1c;
+  }
+
+  [data-theme="dark"] {
+    --kpi-sky-text: #7dd3fc;
+    --kpi-green-text: #6ee7b7;
+    --kpi-amber-text: #fcd34d;
+    --kpi-red-text: #fca5a5;
+  }
 }
 
 html,

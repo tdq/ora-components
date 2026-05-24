@@ -41,12 +41,12 @@ function renderPayableChip(status: string): HTMLElement {
     const chip = document.createElement('span');
     chip.className = 'px-3 py-1 rounded-full text-xs font-medium';
     const colors: Record<string, { bg: string; text: string }> = {
-        'Current': { bg: 'rgba(14,165,233,0.1)', text: '#0369a1' },
-        'Due Soon': { bg: 'rgba(245,158,11,0.1)', text: '#b45309' },
-        'Overdue': { bg: 'rgba(239,68,68,0.1)', text: '#b91c1c' },
-        'Paid': { bg: 'rgba(16,185,129,0.1)', text: '#047857' },
+        'Current':  { bg: 'var(--kpi-sky-soft)',   text: 'var(--kpi-sky-text)' },
+        'Due Soon': { bg: 'var(--kpi-amber-soft)', text: 'var(--kpi-amber-text)' },
+        'Overdue':  { bg: 'var(--kpi-red-soft)',   text: 'var(--kpi-red-text)' },
+        'Paid':     { bg: 'var(--kpi-green-soft)', text: 'var(--kpi-green-text)' },
     };
-    const c = colors[status] ?? { bg: 'rgba(121,116,126,0.1)', text: 'var(--md-sys-color-on-surface-variant)' };
+    const c = colors[status] ?? { bg: 'var(--dashboard-border-soft)', text: 'var(--md-sys-color-on-surface-variant)' };
     chip.style.cssText = `background: ${c.bg}; color: ${c.text};`;
     chip.textContent = status;
     return chip;

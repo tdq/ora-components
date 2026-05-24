@@ -2,6 +2,7 @@ import { PanelBuilder, PanelGap, ChartBuilder, GridBuilder, LabelBuilder, Layout
 import { of, timer, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { KPICardBuilder } from './kpi-card';
+import { themedColor$ } from './theme-tokens';
 
 interface PLLineItem {
     category: string;
@@ -99,9 +100,9 @@ function createSummaryCards(period: PeriodData): HTMLElement {
     const isProfit = net >= 0;
 
     const cards = [
-        { label: 'Total Revenue',  value: fmt(period.revenue.total),  color: '#10B981' },
-        { label: 'Total Expenses', value: fmt(period.expenses.total), color: '#EF4444' },
-        { label: 'Net Income',     value: fmt(Math.abs(net)),          color: isProfit ? '#6750A4' : '#EF4444' },
+        { label: 'Total Revenue',  value: fmt(period.revenue.total),  colorClass: 'kpi-green' },
+        { label: 'Total Expenses', value: fmt(period.expenses.total), colorClass: 'kpi-red' },
+        { label: 'Net Income',     value: fmt(Math.abs(net)),         colorClass: isProfit ? 'kpi-accent' : 'kpi-red' },
     ];
 
     const grid = document.createElement('div');
@@ -111,7 +112,7 @@ function createSummaryCards(period: PeriodData): HTMLElement {
         const card = new KPICardBuilder()
             .withLabel(of(s.label))
             .withValue(of(s.value))
-            .withValueColor(of(s.color))
+            .withValueColorClass(of(s.colorClass))
             .build();
         grid.appendChild(card);
     });
@@ -140,8 +141,8 @@ function createRevenueExpensesChart(period: PeriodData): HTMLElement {
         .withData(dataRelay$)
         .withCategoryField('x')
         .withLegend(true);
-    chart.addAreaChart('revenue').withLabel('Revenue (€)').withColor('#10B981');
-    chart.addAreaChart('expenses').withLabel('Expenses (€)').withColor('#EF4444');
+    chart.addAreaChart('revenue').withLabel('Revenue (€)').withColor(themedColor$('green'));
+    chart.addAreaChart('expenses').withLabel('Expenses (€)').withColor(themedColor$('red'));
 
     const layout = new LayoutBuilder()
         .asVertical()

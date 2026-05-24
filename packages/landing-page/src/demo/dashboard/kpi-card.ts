@@ -2,8 +2,13 @@ import { ComponentBuilder, PanelBuilder, PanelGap, LabelBuilder, LayoutBuilder, 
 import { Observable, combineLatest, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+/**
+ * Legacy hex → token-class mapping. Kept so existing call sites that pass a
+ * raw hex (e.g. '#6750A4') still resolve to the theme-aware Tailwind class.
+ * Prefer `withValueColorClass('kpi-accent')` in new code.
+ */
 const HEX_TO_COLOR_NAME: Record<string, string> = {
-    '#6750A4': 'kpi-purple',
+    '#6750A4': 'kpi-accent',
     '#625B71': 'kpi-muted',
     '#7D5260': 'kpi-rose',
     '#0EA5E9': 'kpi-sky',
@@ -17,6 +22,7 @@ export class KPICardBuilder implements ComponentBuilder {
     private label$?: Observable<string>;
     private value$?: Observable<string>;
     private valueColor$?: Observable<string>;
+    private valueColorClass$?: Observable<string>;
     private trend$?: Observable<string>;
     private isPositive$?: Observable<boolean>;
     private footerBuilder?: ComponentBuilder;
@@ -36,6 +42,12 @@ export class KPICardBuilder implements ComponentBuilder {
 
     withValueColor(color: Observable<string>): this {
         this.valueColor$ = color;
+        return this;
+    }
+
+    /** Set the value's text color via a Tailwind token class (e.g. 'kpi-accent', 'kpi-green'). */
+    withValueColorClass(colorClass: Observable<string>): this {
+        this.valueColorClass$ = colorClass;
         return this;
     }
 
@@ -77,9 +89,11 @@ export class KPICardBuilder implements ComponentBuilder {
         // --- Value element using LabelBuilder ---
         let valueBuilder: ComponentBuilder | undefined;
         if (this.value$) {
-            const class$ = this.valueColor$
-                ? this.valueColor$.pipe(map(c => `text-${HEX_TO_COLOR_NAME[c] ?? 'on-surface'}`))
-                : of('text-on-surface');
+            const class$ = this.valueColorClass$
+                ? this.valueColorClass$.pipe(map(c => `text-${c}`))
+                : this.valueColor$
+                    ? this.valueColor$.pipe(map(c => `text-${HEX_TO_COLOR_NAME[c] ?? 'on-surface'}`))
+                    : of('text-on-surface');
 
             valueBuilder = new LabelBuilder()
                 .withCaption(this.value$)
