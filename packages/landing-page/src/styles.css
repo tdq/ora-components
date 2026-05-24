@@ -167,6 +167,10 @@
   }
 }
 
+.txn-amount-positive {
+  color: var(--kpi-green-text);
+}
+
 html,
 body {
   margin: 0;
