@@ -8,13 +8,20 @@ export function createHeader(): HTMLElement {
     header.className = 'sticky top-0 z-50 px-px-24 py-px-16 flex flex-wrap items-center justify-between';
     header.style.cssText = 'background: rgba(255, 255, 255, 0.92); border-bottom: 1px solid rgba(121, 116, 126, 0.12);';
 
+    let ctaBtn: HTMLButtonElement | undefined;
+    let mobileDemoBtn: HTMLButtonElement | undefined;
+
     // Update glass background + accent colors when theme changes
     const updateGlass = () => {
         const theme = document.documentElement.getAttribute('data-theme');
         const accents = getThemeAccents(theme);
         header.style.cssText = `background: ${accents.bg}; border-bottom: 1px solid rgba(121, 116, 126, 0.12);`;
-        ctaBtn.style.cssText = `background: ${accents.gradient}; box-shadow: 0 2px 12px ${accents.shadow};${isMobileViewport() ? ' display: none;' : ''}`;
-        mobileDemoBtn.style.cssText = `background: ${accents.gradient};`;
+        if (ctaBtn) {
+            ctaBtn.style.cssText = `background: ${accents.gradient}; box-shadow: 0 2px 12px ${accents.shadow};${isMobileViewport() ? ' display: none;' : ''}`;
+        }
+        if (mobileDemoBtn) {
+            mobileDemoBtn.style.cssText = `background: ${accents.gradient};`;
+        }
     };
 
     // Logo
@@ -71,7 +78,7 @@ export function createHeader(): HTMLElement {
         </svg>
     `;
 
-    const ctaBtn = document.createElement('button');
+    ctaBtn = document.createElement('button');
     ctaBtn.className = 'px-px-16 py-px-8 text-label-large text-white rounded-large font-medium transition-all duration-200 hover:shadow-level-3 hover:scale-105 active:scale-95';
     ctaBtn.style.cssText = 'background: linear-gradient(135deg, #4f46e5, #6366f1); box-shadow: 0 2px 12px rgba(79,70,229,0.3);';
     ctaBtn.textContent = 'View Demo';
@@ -124,7 +131,7 @@ export function createHeader(): HTMLElement {
     // Mobile "View Demo" CTA
     const mobileDemoBtnWrap = document.createElement('div');
     mobileDemoBtnWrap.className = 'px-px-16 py-px-12';
-    const mobileDemoBtn = document.createElement('button');
+    mobileDemoBtn = document.createElement('button');
     mobileDemoBtn.className = 'w-full py-px-12 text-label-large text-white rounded-large font-medium transition-all duration-200';
     mobileDemoBtn.style.cssText = 'background: linear-gradient(135deg, #4f46e5, #6366f1);';
     mobileDemoBtn.textContent = 'View Demo';
