@@ -5,8 +5,7 @@ import { isMobileViewport } from '../utils/viewport';
 
 export function createHeader(): HTMLElement {
     const header = document.createElement('header');
-    header.className = 'sticky top-0 z-50 px-px-24 py-px-16 flex flex-wrap items-center justify-between';
-    header.style.cssText = 'background: var(--header-bg); border-bottom: 1px solid rgba(121, 116, 126, 0.12);';
+    header.className = 'sticky top-0 z-50 px-px-24 py-px-16 flex flex-wrap items-center justify-between bg-[var(--header-bg)] border-b border-[rgba(121,116,126,0.12)]';
 
     // Logo
     const logo = createLogo({ text: 'Ora Components', onClick: () => router.navigate('/') });
@@ -27,7 +26,7 @@ export function createHeader(): HTMLElement {
         a.className = 'relative px-px-16 py-px-8 text-label-large text-on-surface-variant hover:text-on-surface transition-colors duration-200 rounded-medium hover:bg-surface-variant-alpha-40 group';
         a.innerHTML = `
             ${link.label}
-            <span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-0 group-hover:w-3/5 h-0.5 rounded-full bg-primary transition-all duration-300" style=""></span>
+            <span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-0 group-hover:w-3/5 h-0.5 rounded-full bg-primary transition-all duration-300"></span>
         `;
         nav.appendChild(a);
     });
@@ -66,8 +65,7 @@ export function createHeader(): HTMLElement {
 
     // Mobile menu drawer
     const mobileMenu = document.createElement('div');
-    mobileMenu.className = 'absolute top-full left-0 right-0 md:hidden overflow-hidden';
-    mobileMenu.style.cssText = 'max-height: 0; transition: max-height 0.3s ease; background: var(--md-sys-color-surface); border-bottom: 1px solid rgba(121, 116, 126, 0.12);';
+    mobileMenu.className = 'absolute top-full left-0 right-0 md:hidden overflow-hidden bg-surface border-b border-[rgba(121,116,126,0.12)] max-h-0 transition-[max-height] duration-300 ease';
 
     const mobileNav = document.createElement('nav');
     mobileNav.className = 'flex flex-col px-px-16 py-px-8';
@@ -122,13 +120,12 @@ export function createHeader(): HTMLElement {
 
 function createThemeToggle(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex items-center rounded-full p-0.5 gap-0.5';
-    container.style.cssText = 'position: relative; background: var(--toggle-container-bg); border: 1px solid var(--toggle-container-border); transition: background-color 200ms ease, border-color 200ms ease;';
+    container.className = 'flex items-center rounded-full p-0.5 gap-0.5 relative bg-[var(--toggle-container-bg)] border border-[var(--toggle-container-border)] transition-[background-color,border-color] duration-200 ease';
 
     // Sliding indicator pill
     const indicator = document.createElement('div');
-    indicator.className = 'theme-slider-indicator';
-    indicator.style.cssText = 'position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 9999px; background: var(--toggle-indicator-bg); box-shadow: var(--toggle-indicator-shadow); transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), background-color 200ms ease, box-shadow 200ms ease; z-index: 0; pointer-events: none;';
+    indicator.className = 'theme-slider-indicator absolute rounded-full transition-[transform,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] z-0 pointer-events-none';
+    indicator.style.cssText = 'top: 2px; left: 2px; width: 28px; height: 28px; background: var(--toggle-indicator-bg); box-shadow: var(--toggle-indicator-shadow);'
     container.appendChild(indicator);
 
     const themes = [
@@ -157,8 +154,7 @@ function createThemeToggle(): HTMLElement {
 
     themes.forEach(t => {
         const btn = document.createElement('button');
-        btn.className = 'w-7 h-7 flex items-center justify-center rounded-full transition-all duration-200';
-        btn.style.cssText = 'position: relative; z-index: 1; user-select: none;';
+        btn.className = 'w-7 h-7 flex items-center justify-center rounded-full transition-all duration-200 relative z-1 select-none';
         btn.innerHTML = t.icon;
         btn.setAttribute('aria-label', `${t.label} theme`);
         btn.title = t.label;
