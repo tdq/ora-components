@@ -77,14 +77,17 @@ export class NumberFieldLogic {
 
                 // Label
                 this.label.textContent = labelMsg;
+                this.input.setAttribute('aria-label', labelMsg);
                 this.label.classList.toggle('hidden', !labelMsg);
                 this.label.classList.toggle('text-error', !!errorMsg);
 
                 // Input
                 this.input.placeholder = placeholder;
                 this.input.disabled = !enabled;
-                this.input.setAttribute('aria-valuemin', min.toString());
-                this.input.setAttribute('aria-valuemax', max.toString());
+                if (isFinite(min)) this.input.setAttribute('aria-valuemin', min.toString());
+                else this.input.removeAttribute('aria-valuemin');
+                if (isFinite(max)) this.input.setAttribute('aria-valuemax', max.toString());
+                else this.input.removeAttribute('aria-valuemax');
                 this.input.setAttribute('aria-valuestep', step.toString());
                 this.input.setAttribute('aria-invalid', (!!errorMsg).toString());
 
@@ -107,7 +110,7 @@ export class NumberFieldLogic {
         this.subscriptions.add(
             this.state.value$.subscribe(val => {
                 this.syncInputValue(val, currentFormat, currentPrecision, currentStep, currentLocale);
-                if (val !== null) {
+                if (val !== null && isFinite(val)) {
                     this.input.setAttribute('aria-valuenow', val.toString());
                 } else {
                     this.input.removeAttribute('aria-valuenow');

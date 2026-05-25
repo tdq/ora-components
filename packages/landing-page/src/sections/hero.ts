@@ -200,15 +200,15 @@ export function createHero(): HTMLElement {
                                 class="ring-offset-background focus-visible:outline-hidden focus-visible:ring-ring inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-11 rounded-large text-white border-0 px-8 py-6 text-lg font-semibold group shadow-level-3 hover:shadow-level-4"
                                 style="background: linear-gradient(to right, #4f46e5, #818cf8);">
                                 Open Live Books
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 group-hover:translate-x-1 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true">
                                     <path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path>
                                 </svg>
                             </button>
-                            <button id="install-btn"
+                            <button id="install-btn" aria-label="Copy installation command to clipboard"
                                 class="ring-offset-background focus-visible:outline-hidden focus-visible:ring-ring inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-11 rounded-large backdrop-blur-md px-6 py-6 text-base font-mono-code border border-outline-alpha-20 bg-surface-variant-alpha-30 text-on-surface hover:bg-surface-variant-alpha-50">
-                                <span class="text-on-surface opacity-50">$</span>
+                                <span class="text-on-surface opacity-50" aria-hidden="true">$</span>
                                 <span>npm i @tdq/ora-components</span>
-                                <span data-copy-icon class="opacity-60 ml-1">
+                                <span data-copy-icon class="opacity-60 ml-1" aria-hidden="true">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                 </span>
                             </button>

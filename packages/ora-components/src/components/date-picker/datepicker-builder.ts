@@ -96,6 +96,9 @@ export class DatePickerBuilder implements ComponentBuilder {
         // 3. Calendar wrapped in a padding div (replaces the p-px-16 that was on the old popup)
         const calendarWrapper = document.createElement('div');
         calendarWrapper.className = 'p-px-16';
+        const calendarId = `calendar-${Math.random().toString(36).substr(2, 9)}`;
+        calendarWrapper.id = calendarId;
+        input.setAttribute('aria-controls', calendarId);
 
         const calendar = renderCalendar({
             selectedDate$: internalValue$,
@@ -178,6 +181,8 @@ export class DatePickerBuilder implements ComponentBuilder {
         input.type = 'text';
         input.className = 'px-px-16 w-full h-full bg-transparent outline-none body-large text-on-surface placeholder:text-on-surface-variant/50';
         input.placeholder = this.format;
+        input.setAttribute('role', 'combobox');
+        input.setAttribute('aria-autocomplete', 'none');
         inputWrapper.appendChild(input);
 
         const iconButton = document.createElement('button');
@@ -226,8 +231,11 @@ export class DatePickerBuilder implements ComponentBuilder {
 
         subs.push(this.caption$?.subscribe(text => {
             captionElement.textContent = text;
+            input.setAttribute('aria-label', text);
             captionElement.classList.toggle('hidden', !text);
         }));
+
+        iconButton.setAttribute('aria-label', 'Open calendar');
 
         subs.push(this.error$?.subscribe(text => {
             errorElement.textContent = text;

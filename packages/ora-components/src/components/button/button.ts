@@ -84,6 +84,7 @@ export class ButtonBuilder implements ComponentBuilder {
 
         const captionSub = this.caption$ ? this.caption$.subscribe(caption => {
             captionSpan.textContent = caption;
+            button.setAttribute('aria-label', caption);
             if (!caption) {
                 captionSpan.classList.add('hidden');
                 button.classList.add('aspect-square');

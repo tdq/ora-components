@@ -5,7 +5,7 @@ export const GridStyles = {
     glass: 'bg-transparent',
 
     header: 'flex flex-row items-stretch font-semibold h-[52px] text-on-surface-variant text-[11px] uppercase tracking-wider',
-    headerWrapper: 'flex-none w-full bg-[color-mix(in_srgb,var(--md-sys-color-surface-container-low)_30%,transparent)] overflow-x-scroll overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+    headerWrapper: 'flex-none sticky top-0 z-30 w-full bg-[color-mix(in_srgb,var(--md-sys-color-surface-container-low)_30%,transparent)] overflow-x-scroll overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
     headerGlass: '!bg-transparent',
 
     viewport: 'flex-1 overflow-auto relative outline-none',

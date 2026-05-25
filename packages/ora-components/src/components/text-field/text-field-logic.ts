@@ -96,10 +96,37 @@ export function buildTextField(config: TextFieldConfig, elements: TextFieldEleme
     const passwordType$ = new BehaviorSubject<string>('password');
     let isPasswordVisible = false;
 
+    const localError$ = new BehaviorSubject<string>('');
+    if (isEmail) {
+        const validate = (val: string) => {
+            if (!val) return '';
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(val) ? '' : 'Invalid email address';
+        };
+        if (value$) {
+            subs.add(value$.subscribe(val => {
+                localError$.next(validate(val));
+            }));
+        } else {
+            subs.add(fromEvent(input, 'input').pipe(
+                map(e => (e.target as HTMLInputElement).value)
+            ).subscribe(val => {
+                localError$.next(validate(val));
+            }));
+        }
+    }
+
+    const effectiveError$ = combineLatest([
+        error$.pipe(startWith('')),
+        localError$
+    ]).pipe(
+        map(([extErr, locErr]) => extErr || locErr)
+    );
+
     const visualState$ = combineLatest({
         style: style$,
         extraClass: className$,
-        errorText: error$.pipe(startWith('')),
+        errorText: effectiveError$,
         enabled: enabled$,
         placeholder: placeholder$,
         label: label$,
@@ -110,6 +137,7 @@ export function buildTextField(config: TextFieldConfig, elements: TextFieldEleme
 
     subs.add(visualState$.subscribe(state => {
         label.textContent = state.label;
+        input.setAttribute('aria-label', state.label);
         label.classList.toggle('hidden', !state.label);
         label.classList.toggle('text-error', !!state.errorText);
         label.classList.toggle('text-primary', !state.errorText && input === document.activeElement);

@@ -141,4 +141,16 @@ describe('ButtonBuilder', () => {
         expect(button).toHaveClass('glass-effect');
         expect(button).toHaveClass('elevation-1');
     });
+
+    it('should set aria-label from caption', () => {
+        const caption$ = new BehaviorSubject('Submit');
+        const button = new ButtonBuilder()
+            .withCaption(caption$)
+            .build();
+
+        expect(button.getAttribute('aria-label')).toBe('Submit');
+
+        caption$.next('Send');
+        expect(button.getAttribute('aria-label')).toBe('Send');
+    });
 });

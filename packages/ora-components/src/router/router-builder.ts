@@ -130,19 +130,23 @@ export class RouterBuilder implements ComponentBuilder {
             return;
         }
 
+        const oldDefinition = this.currentDefinition;
+        const oldElement = this.currentElement;
+
+        this.currentElement = null;
+        this.currentDefinition = null;
+
         // onLeave for old route
         try {
-            this.currentDefinition?.onLeave?.();
+            oldDefinition?.onLeave?.();
         } catch (error) {
             console.error('Route onLeave hook failed:', error);
         }
 
         // Remove old element (triggers registerDestroy cleanup on it)
-        if (this.currentElement && this.outlet) {
-            this.outlet.removeChild(this.currentElement);
+        if (oldElement && this.outlet) {
+            this.outlet.removeChild(oldElement);
         }
-        this.currentElement = null;
-        this.currentDefinition = null;
 
         // Resolve builder — may be sync or async
         let factoryPromise: Promise<ComponentBuilder>;

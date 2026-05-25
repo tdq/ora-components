@@ -136,9 +136,13 @@ export class CheckboxBuilder implements ComponentBuilder {
                 if (value === 'intermediate') {
                     input.checked = true;
                     input.indeterminate = true;
+                    iconContainer.style.transform = 'scale(0)';
+                    indeterminateContainer.style.transform = 'scale(1)';
                 } else {
                     input.checked = value;
                     input.indeterminate = false;
+                    iconContainer.style.transform = value ? 'scale(1)' : 'scale(0)';
+                    indeterminateContainer.style.transform = 'scale(0)';
                 }
             }));
 

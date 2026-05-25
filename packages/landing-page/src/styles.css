@@ -391,4 +391,60 @@ button {
   .focus\:border-primary-alpha-40:focus {
     border-color: color-mix(in srgb, var(--md-sys-color-primary) 40%, transparent);
   }
+
+  .cta-btn {
+    background: var(--cta-bg);
+    box-shadow: var(--cta-shadow);
+    transition: box-shadow 300ms ease, transform 300ms ease;
+  }
+
+  .cta-btn:hover {
+    box-shadow: var(--cta-hover-shadow);
+    transform: scale(1.05);
+  }
+}
+
+/* Theme-based CSS variables for header */
+:root[data-theme='light'] {
+    --header-bg: rgba(255, 255, 255, 0.92);
+    --cta-bg: linear-gradient(135deg, #4f46e5, #6366f1);
+    --cta-shadow: 0 2px 12px rgba(79,70,229,0.3);
+    --cta-hover-shadow: 0 4px 20px rgba(79,70,229,0.45);
+    --toggle-container-bg: rgba(231, 224, 235, 0.6);
+    --toggle-container-border: rgba(121, 116, 126, 0.15);
+    --toggle-indicator-bg: #ffffff;
+    --toggle-indicator-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    --toggle-inactive: rgba(73, 69, 79, 0.7);
+    --toggle-active: #4f46e5;
+}
+
+:root[data-theme='dark'] {
+    --header-bg: rgba(30, 27, 38, 0.92);
+    --cta-bg: linear-gradient(135deg, #4F378B, #633B48);
+    --cta-shadow: 0 2px 12px rgba(99,59,72,0.3);
+    --cta-hover-shadow: 0 4px 20px rgba(99,59,72,0.45);
+    --toggle-container-bg: rgba(40, 35, 50, 0.7);
+    --toggle-container-border: rgba(208, 188, 255, 0.18);
+    --toggle-indicator-bg: rgba(208, 188, 255, 0.18);
+    --toggle-indicator-shadow: 0 1px 6px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(208, 188, 255, 0.3);
+    --toggle-inactive: rgba(230, 224, 233, 0.65);
+    --toggle-active: #D0BCFF;
+}
+
+:root[data-theme='pink'] {
+    --header-bg: rgba(255, 250, 251, 0.92);
+    --cta-bg: linear-gradient(135deg, #7D2950, #db2777);
+    --cta-shadow: 0 2px 12px rgba(219,39,119,0.3);
+    --cta-hover-shadow: 0 4px 20px rgba(219,39,119,0.45);
+    --toggle-container-bg: rgba(255, 217, 228, 0.55);
+    --toggle-container-border: rgba(125, 41, 80, 0.18);
+    --toggle-indicator-bg: #FFF0F5;
+    --toggle-indicator-shadow: 0 1px 4px rgba(125,41,80,0.18);
+    --toggle-inactive: rgba(125, 41, 80, 0.55);
+    --toggle-active: #7D2950;
+}
+
+:root {
+    /* Apply global transition for theme-related properties */
+    transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease, color 300ms ease;
 }

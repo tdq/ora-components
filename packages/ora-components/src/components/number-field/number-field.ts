@@ -134,7 +134,6 @@ export class NumberFieldBuilder implements ComponentBuilder {
         input.id = id;
         input.type = 'text';
         input.inputMode = 'decimal';
-        input.setAttribute('role', 'spinbutton');
         input.setAttribute('aria-describedby', errorId);
         input.className = 'flex-1 min-w-0 bg-transparent outline-none transition-all body-large text-on-surface text-right placeholder:text-on-surface-variant placeholder:text-left disabled:opacity-38 disabled:cursor-not-allowed h-full';
         inputWrapper.appendChild(input);
