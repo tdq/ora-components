@@ -1,5 +1,5 @@
 import { PanelBuilder, PanelGap, GridBuilder, LabelBuilder, LayoutBuilder, LayoutGap, SlotSize, Money } from '@tdq/ora-components';
-import { of } from 'rxjs';
+import { BehaviorSubject, interval, map, of } from 'rxjs';
 import { KPICardBuilder } from './kpi-card';
 
 interface LedgerEntry {
@@ -12,7 +12,7 @@ interface LedgerEntry {
     balance: Money;
 }
 
-const generateLedgerData = (count: number): LedgerEntry[] => {
+const generateInitialData = (count: number): LedgerEntry[] => {
     const data: LedgerEntry[] = [];
     let runningBalance = 81400.00;
     const accounts = ['Cash & Bank', 'Revenue / SaaS Subscriptions', 'Accounts Receivable', 'Expenses / Payroll', 'Expenses / Office Rent', 'Revenue / Professional Services', 'Expenses / SaaS Tools', 'Accounts Payable', 'Revenue / Add-ons', 'Expenses / Marketing'];
@@ -20,7 +20,7 @@ const generateLedgerData = (count: number): LedgerEntry[] => {
     for (let i = 0; i < count; i++) {
         const amount = Math.floor(Math.random() * 500000) / 100;
         const isDebit = Math.random() > 0.5;
-        const entry: LedgerEntry = {
+        data.push({
             date: `2026-04-${String((i % 30) + 1).padStart(2, '0')}`,
             account: accounts[i % accounts.length],
             description: `Auto-generated entry ${i + 1}`,
@@ -28,13 +28,28 @@ const generateLedgerData = (count: number): LedgerEntry[] => {
             debit: { amount: isDebit ? amount : 0, currencyId: 'EUR' },
             credit: { amount: isDebit ? 0 : amount, currencyId: 'EUR' },
             balance: { amount: runningBalance += (isDebit ? -amount : amount), currencyId: 'EUR' }
-        };
-        data.push(entry);
+        });
     }
     return data;
 };
 
-const LEDGER_DATA = generateLedgerData(10000);
+const ledgerDataSubject = new BehaviorSubject<LedgerEntry[]>(generateInitialData(10000));
+
+// Update 100 random entries every 10ms
+interval(10).subscribe(() => {
+    const current = [...ledgerDataSubject.getValue()];
+    for (let i = 0; i < 100; i++) {
+        const index = Math.floor(Math.random() * current.length);
+        const amount = Math.floor(Math.random() * 500000) / 100;
+        const isDebit = Math.random() > 0.5;
+        current[index] = {
+            ...current[index],
+            debit: { amount: isDebit ? amount : 0, currencyId: 'EUR' },
+            credit: { amount: isDebit ? 0 : amount, currencyId: 'EUR' }
+        };
+    }
+    ledgerDataSubject.next(current);
+});
 
 
 function fmt(amount: number): string {
@@ -42,30 +57,28 @@ function fmt(amount: number): string {
 }
 
 function createSummaryStats(): HTMLElement {
-    const totalDebits  = LEDGER_DATA.reduce((s, e) => s + e.debit.amount, 0);
-    const totalCredits = LEDGER_DATA.reduce((s, e) => s + e.credit.amount, 0);
-    const netBalance   = totalCredits - totalDebits;
+    const container = document.createElement('div');
+    container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px-16 mb-px-24';
 
     const stats = [
-        { label: 'Total Debits',  value: fmt(totalDebits) },
-        { label: 'Total Credits', value: fmt(totalCredits) },
-        { label: 'Net Balance',   value: fmt(Math.abs(netBalance)) },
-        { label: 'Entries',       value: String(LEDGER_DATA.length) },
+        { label: 'Total Debits',  getValue: (d: LedgerEntry[]) => fmt(d.reduce((s, e) => s + e.debit.amount, 0)) },
+        { label: 'Total Credits', getValue: (d: LedgerEntry[]) => fmt(d.reduce((s, e) => s + e.credit.amount, 0)) },
+        { label: 'Net Balance',   getValue: (d: LedgerEntry[]) => fmt(Math.abs(d.reduce((s, e) => s + e.credit.amount, 0) - d.reduce((s, e) => s + e.debit.amount, 0))) },
+        { label: 'Entries',       getValue: (d: LedgerEntry[]) => String(d.length) },
     ];
 
-    const grid = document.createElement('div');
-    grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px-16 mb-px-24';
-
     stats.forEach(s => {
+        const value$ = ledgerDataSubject.pipe(map(s.getValue));
         const card = new KPICardBuilder()
             .withLabel(of(s.label))
-            .withValue(of(s.value))
+            .withValue(value$)
             .build();
-        grid.appendChild(card);
+        container.appendChild(card);
     });
 
-    return grid;
+    return container;
 }
+
 
 export function createLedger(): HTMLElement {
     const container = document.createElement('div');
@@ -74,7 +87,7 @@ export function createLedger(): HTMLElement {
     container.appendChild(createSummaryStats());
 
     const grid = new GridBuilder<LedgerEntry>()
-        .withItems(of(LEDGER_DATA));
+        .withItems(ledgerDataSubject);
     const cols = grid.withColumns();
     cols.addTextColumn('date').withHeader('Date').withWidth('110px');
     cols.addTextColumn('account').withHeader('Account').withWidth('1fr');
@@ -100,3 +113,4 @@ export function createLedger(): HTMLElement {
 
     return container;
 }
+
