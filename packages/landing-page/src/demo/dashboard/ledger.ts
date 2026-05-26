@@ -1,5 +1,5 @@
 import { PanelBuilder, PanelGap, GridBuilder, LabelBuilder, LayoutBuilder, LayoutGap, SlotSize, Money } from '@tdq/ora-components';
-import { BehaviorSubject, interval, map, of } from 'rxjs';
+import { animationFrames, BehaviorSubject, map, of } from 'rxjs';
 import { KPICardBuilder } from './kpi-card';
 
 interface LedgerEntry {
@@ -35,8 +35,8 @@ const generateInitialData = (count: number): LedgerEntry[] => {
 
 const ledgerDataSubject = new BehaviorSubject<LedgerEntry[]>(generateInitialData(10000));
 
-// Update 100 random entries every 10ms
-interval(16).subscribe(() => {
+// Update 100 random entries every frame
+animationFrames().subscribe(() => {
     const current = [...ledgerDataSubject.getValue()];
     for (let i = 0; i < 100; i++) {
         const index = Math.floor(Math.random() * current.length);
