@@ -1,4 +1,5 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
+import type { Server } from 'http';
+import { WebSocket, WebSocketServer } from 'ws';
 
 interface Money {
     amount: number;
@@ -15,7 +16,16 @@ interface LedgerEntry {
     balance: Money;
 }
 
+interface LedgerUpdate {
+    index: number;
+    entry: LedgerEntry;
+}
+
 const ACCOUNTS = ['Cash & Bank', 'Revenue / SaaS Subscriptions', 'Accounts Receivable', 'Expenses / Payroll', 'Expenses / Office Rent', 'Revenue / Professional Services', 'Expenses / SaaS Tools', 'Accounts Payable', 'Revenue / Add-ons', 'Expenses / Marketing'];
+
+const INITIAL_ROWS = 10000;
+const UPDATES_PER_TICK = 100;
+const TICK_MS = 16;
 
 function generateInitialData(count: number): LedgerEntry[] {
     const data: LedgerEntry[] = [];
@@ -37,51 +47,40 @@ function generateInitialData(count: number): LedgerEntry[] {
     return data;
 }
 
-export async function ledgerStream(req: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> {
-    const encoder = new TextEncoder();
-    const data = generateInitialData(10000);
+export function handleLedgerConnection(ws: WebSocket): void {
+    const data = generateInitialData(INITIAL_ROWS);
 
-    const stream = new ReadableStream({
-        start(controller) {
-            // Initial burst
-            controller.enqueue(encoder.encode(`event: initial\ndata: ${JSON.stringify(data)}\n\n`));
+    ws.send(JSON.stringify({ type: 'initial', data }));
 
-            const interval = setInterval(() => {
-                const updates: { index: number, entry: LedgerEntry }[] = [];
-                for (let i = 0; i < 100; i++) {
-                    const index = Math.floor(Math.random() * data.length);
-                    const amount = Math.floor(Math.random() * 500000) / 100;
-                    const isDebit = Math.random() > 0.5;
-                    data[index] = {
-                        ...data[index],
-                        debit: { amount: isDebit ? amount : 0, currencyId: 'EUR' },
-                        credit: { amount: isDebit ? 0 : amount, currencyId: 'EUR' }
-                    };
-                    updates.push({ index, entry: data[index] });
-                }
-                controller.enqueue(encoder.encode(`event: update\ndata: ${JSON.stringify(updates)}\n\n`));
-            }, 16);
-
-            (req as any).signal?.addEventListener('abort', () => {
-                clearInterval(interval);
-                controller.close();
-            });
+    const interval = setInterval(() => {
+        if (ws.readyState !== ws.OPEN) {
+            clearInterval(interval);
+            return;
         }
+        const updates: LedgerUpdate[] = [];
+        for (let i = 0; i < UPDATES_PER_TICK; i++) {
+            const index = Math.floor(Math.random() * data.length);
+            const amount = Math.floor(Math.random() * 500000) / 100;
+            const isDebit = Math.random() > 0.5;
+            data[index] = {
+                ...data[index],
+                debit: { amount: isDebit ? amount : 0, currencyId: 'EUR' },
+                credit: { amount: isDebit ? 0 : amount, currencyId: 'EUR' }
+            };
+            updates.push({ index, entry: data[index] });
+        }
+        ws.send(JSON.stringify({ type: 'update', data: updates }));
+    }, TICK_MS);
+
+    ws.on('close', () => {
+        clearInterval(interval);
     });
-
-    return {
-        body: stream as any,
-        headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-        }
-    };
 }
 
-app.http('ledger-stream', {
-    methods: ['GET'],
-    authLevel: 'anonymous',
-    route: 'ledger-stream',
-    handler: ledgerStream
-});
+export const LEDGER_STREAM_PATH = '/api/ledger-stream';
+
+export function attachLedgerStream(server: Server, path: string = LEDGER_STREAM_PATH): WebSocketServer {
+    const wss = new WebSocketServer({ server, path });
+    wss.on('connection', handleLedgerConnection);
+    return wss;
+}
