@@ -55,4 +55,4 @@ jobs:
           action: "upload"
           skip_app_build: true
           app_location: "packages/landing-page/dist"
-          api_location: ""
+          api_location: "packages/landing-page/api"

@@ -1,0 +1,10 @@
+{
+  "name": "landing-page-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/ledger.js",
+  "dependencies": {
+    "@azure/functions": "^4.5.0"
+  }
+}

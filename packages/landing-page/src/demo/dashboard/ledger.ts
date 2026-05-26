@@ -33,23 +33,65 @@ const generateInitialData = (count: number): LedgerEntry[] => {
     return data;
 };
 
-const ledgerDataSubject = new BehaviorSubject<LedgerEntry[]>(generateInitialData(10000));
+const ledgerDataSubject = new BehaviorSubject<LedgerEntry[]>([]);
 
-// Update 100 random entries every frame
-animationFrames().subscribe(() => {
-    const current = [...ledgerDataSubject.getValue()];
-    for (let i = 0; i < 100; i++) {
-        const index = Math.floor(Math.random() * current.length);
-        const amount = Math.floor(Math.random() * 500000) / 100;
-        const isDebit = Math.random() > 0.5;
-        current[index] = {
-            ...current[index],
-            debit: { amount: isDebit ? amount : 0, currencyId: 'EUR' },
-            credit: { amount: isDebit ? 0 : amount, currencyId: 'EUR' }
-        };
-    }
-    ledgerDataSubject.next(current);
-});
+function startLocalSimulation() {
+    const initialData = generateInitialData(10000);
+    ledgerDataSubject.next(initialData);
+
+    // Update 100 random entries every frame
+    animationFrames().subscribe(() => {
+        const current = [...ledgerDataSubject.getValue()];
+        if (current.length === 0) return;
+        for (let i = 0; i < 100; i++) {
+            const index = Math.floor(Math.random() * current.length);
+            const amount = Math.floor(Math.random() * 500000) / 100;
+            const isDebit = Math.random() > 0.5;
+            current[index] = {
+                ...current[index],
+                debit: { amount: isDebit ? amount : 0, currencyId: 'EUR' },
+                credit: { amount: isDebit ? 0 : amount, currencyId: 'EUR' }
+            };
+        }
+        ledgerDataSubject.next(current);
+    });
+}
+
+function connectToBackend() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/api/ledger-stream`);
+    let hasReceivedData = false;
+
+    ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'initial') {
+            hasReceivedData = true;
+            ledgerDataSubject.next(message.data);
+        } else if (message.type === 'update') {
+            const updates = message.data;
+            const current = [...ledgerDataSubject.getValue()];
+            updates.forEach((u: { index: number, entry: LedgerEntry }) => {
+                current[u.index] = u.entry;
+            });
+            ledgerDataSubject.next(current);
+        }
+    };
+
+    ws.onerror = () => {
+        ws.close();
+        if (!hasReceivedData) {
+            startLocalSimulation();
+        }
+    };
+
+    ws.onclose = () => {
+        if (!hasReceivedData) {
+            startLocalSimulation();
+        }
+    };
+}
+
+connectToBackend();
 
 
 function fmt(amount: number): string {
