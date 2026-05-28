@@ -6,7 +6,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC.svg)](https://tailwindcss.com/)
 [![Material Design 3](https://img.shields.io/badge/Design-Material_3-7F3FBF.svg)](https://m3.material.io/)
 
-> **A1 Web Components library** – A high-performance, lightweight UI component library built using **Vanilla TypeScript**, **RxJS** for state reactivity, and **Tailwind CSS** following **Material Design 3 (M3)** aesthetics.
+> **Ora web components library** – A high-performance, lightweight UI component library built using **Vanilla TypeScript**, **RxJS** for state reactivity, and **Tailwind CSS** following **Material Design 3 (M3)** aesthetics.
 
 Designed from the ground up to achieve sub-millisecond updates, zero framework overhead, and beautiful visual effects (including premium glassmorphism).
 
