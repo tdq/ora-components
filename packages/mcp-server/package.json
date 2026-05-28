@@ -1,6 +1,16 @@
 {
   "name": "ora-mcp-server",
   "version": "0.1.2",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tdq/ora-components.git",
+    "directory": "packages/mcp-server"
+  },
+  "bugs": {
+    "url": "https://github.com/tdq/ora-components/issues"
+  },
+  "homepage": "https://github.com/tdq/ora-components/tree/main/packages/mcp-server#readme",
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {

@@ -2,6 +2,26 @@
   "name": "@tdq/ora-components",
   "version": "0.1.4",
   "description": "A1 Web Components library",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tdq/ora-components.git",
+    "directory": "packages/ora-components"
+  },
+  "bugs": {
+    "url": "https://github.com/tdq/ora-components/issues"
+  },
+  "homepage": "https://github.com/tdq/ora-components/tree/main/packages/ora-components#readme",
+  "author": "1A Platform Team",
+  "keywords": [
+    "typescript",
+    "rxjs",
+    "tailwind-css",
+    "material-design-3",
+    "reactive-ui",
+    "builder-pattern",
+    "ora"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

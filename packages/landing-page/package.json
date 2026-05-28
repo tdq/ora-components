@@ -2,6 +2,16 @@
   "name": "landing-page",
   "version": "1.0.9",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tdq/ora-components.git",
+    "directory": "packages/landing-page"
+  },
+  "bugs": {
+    "url": "https://github.com/tdq/ora-components/issues"
+  },
+  "homepage": "https://github.com/tdq/ora-components/tree/main/packages/landing-page#readme",
   "type": "module",
   "scripts": {
     "dev": "vite",

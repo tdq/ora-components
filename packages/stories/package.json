@@ -2,6 +2,16 @@
   "name": "aura-stories",
   "version": "0.1.1",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tdq/ora-components.git",
+    "directory": "packages/stories"
+  },
+  "bugs": {
+    "url": "https://github.com/tdq/ora-components/issues"
+  },
+  "homepage": "https://github.com/tdq/ora-components/tree/main/packages/stories#readme",
   "type": "module",
   "scripts": {
     "storybook": "storybook dev -p 6006",
