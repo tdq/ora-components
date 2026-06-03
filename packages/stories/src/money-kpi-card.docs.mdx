@@ -1,0 +1,207 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './money-kpi-card.stories';
+
+<Meta of={Stories} />
+
+# MoneyKPICard
+
+The `MoneyKPICard` is a highly reactive, **Type 2** display component designed to present key monetary financial metrics (such as cash on hand, revenues, sales volume, and balances) clearly and elegantly. It is purely read-only (no direct user mutation of data), serving as an informative dashboard anchor.
+
+It features live, observable-driven updates, automatic locale-safe currency formatting via a custom registry, optional trend indicators, fine-print detail descriptors, and high-fidelity visual change animations (digit-rolling and direction-aware flashing) built to grab the eye while remaining accessible.
+
+---
+
+## Usage
+
+Here is a production-ready example demonstrating how to construct a `MoneyKPICard` using the fluent `MoneyKPICardBuilder` and RxJS streams:
+
+```typescript
+import { MoneyKPICardBuilder, Money, Trend } from '@tdq/ora-components';
+import { of, BehaviorSubject } from 'rxjs';
+
+// Define reactive data streams
+const balance$ = new BehaviorSubject<Money>({ amount: 2481902.14, currencyId: 'EUR' });
+const label$ = of('Cash on Hand');
+const trend$ = of({ value: 0.4, period: 'today' });
+const desc$ = of('live · reconciled to the cent');
+
+// Assemble the card
+const kpiCard = new MoneyKPICardBuilder()
+  .withValue(balance$)
+  .withLabel(label$)
+  .withTrend(trend$)
+  .withDescription(desc$)
+  .withPrecision(2)
+  .build();
+
+// Append to the DOM
+document.body.appendChild(kpiCard);
+```
+
+---
+
+## Builder API Reference
+
+All methods on the `MoneyKPICardBuilder` return `this` for easy chaining, with the exception of the terminating `build()` method.
+
+- **`withValue`** — `(value$: Observable<Money>): this` *(Required)*
+  Binds the main financial amount stream. When the value changes, the component automatically parses the number, extracts the currency symbol, formats the digits, and triggers corresponding up/down flash and digit-rolling animations.
+
+- **`withLabel`** — `(label$: Observable<string>): this`
+  Sets the top-left KPI caption text stream. The text is styled with subtle, uppercase, high-contrast typography (`text-label-medium` semantics).
+
+- **`withTrend`** — `(trend$: Observable<Trend>): this`
+  Applies an elegant trend-indicator badge on the top right. Displays relative performance rates or percentage shifts over a given timeframe (e.g., today, YoY, MoM), styled dynamically based on positive, negative, or flat trends.
+
+- **`withDescription`** — `(description$: Observable<string>): this`
+  Configures an optional footnote or detail caption stream (e.g., "live · reconciled") aligned below the main currency and number display.
+
+- **`withPrecision`** — `(precision: number | Observable<number>): this`
+  Controls the count of decimal points rendered. Accepts a static number or an observable stream. Defaults to `2`.
+
+- **`withClass`** — `(className$: Observable<string>): this`
+  Appends an observable-driven class list to the root card container element for specialized sizing, margins, or positioning overrides.
+
+- **`asGlass`** — `(): this`
+  Applies a frosted glass-effect visual styling layer with container transparency, backdrop-blur, and low-opacity outlines instead of solid cards. Best paired with vibrant gradient backdrops.
+
+- **`build`** — `(): HTMLElement`
+  Assembles and returns the fully compiled native `HTMLElement` structure. The builder wires up all RxJS subscriptions and establishes an automatic cleanup lifecycle on element destruction.
+
+---
+
+## Data Models
+
+The component's API operates on the following core financial interfaces:
+
+```typescript
+export interface Money {
+  amount: number;       // The raw decimal value (e.g., 2481902.14)
+  currencyId: string;   // ISO currency code (e.g., "USD", "EUR", "JPY")
+}
+
+export interface Trend {
+  value: number;        // Rate of change (positive, negative, or zero)
+  period: string;       // Time frame description (e.g., "today", "MoM", "YoY")
+}
+```
+
+---
+
+## When to use
+
+The `MoneyKPICard` is designed for high-density, real-time financial readouts:
+
+- **Dashboard Summaries** — Highlight macro metrics at the top of landing hubs (e.g., ARR, Cash Reserves, Net Revenue).
+- **Treasury Trackers** — Display active currency holdings and portfolio totals where continuous, automated updates occur.
+- **Investment Portfolios** — Monitor real-time account balances, gains, or assets featuring rapid rate shifts.
+
+### When NOT to use:
+- **Currency Entry** — For interactive user input of currency fields, use `MoneyFieldBuilder` instead.
+- **Detailed Lists** — To display multi-column tabular ledger lines, use `GridBuilder` instead.
+- **Time-Series Charts** — To plot long-term histories and visual curves, use `ChartBuilder` instead.
+
+---
+
+## Default KPI Card
+
+The simplest instantiation of the card, showing only the raw formatted monetary amount.
+
+<Canvas of={Stories.Default} />
+
+---
+
+## Style & Currency Variants
+
+The `Styles` story highlights the automatic formatting of various international currencies (EUR, USD, JPY, GBP, and BTC), decimal precisions (including zero decimals and high-decimal crypto values), and active trend chips inside a vertical stack.
+
+<Canvas of={Stories.Styles} />
+
+---
+
+## Trend States
+
+The `States` story showcases positive, negative, and flat trend states. Note how trend chip colors align visually with performance metrics (emerald for growth, crimson for decline, neutral for flat).
+
+<Canvas of={Stories.States} />
+
+---
+
+## Interactive Live Updates
+
+The `Interactive` story mounts a real-time updating financial card receiving continuous jittered emissions. Use the controls below the card to dynamically alter the trend state, toggle rounding precisions, and monitor activity logs.
+
+<Canvas of={Stories.Interactive} />
+
+---
+
+## Glass Effect
+
+Using the `.asGlass()` modifier switches the card body container to a frosted translucent backdrop. The card's border is rendered with a transparent outline, making it pop elegantly over colorful or gradient backgrounds.
+
+<Canvas of={Stories.GlassEffect} />
+
+---
+
+## Full Layout with Description
+
+Renders a complete KPI card layout incorporating a header label, trend indicator, formatted monetary amount, and a detailed description footnote.
+
+<Canvas of={Stories.WithDescription} />
+
+---
+
+## Animations
+
+To maximize UX fidelity and visual tracking, `MoneyKPICard` implements high-performance CSS animations:
+
+1. **Rolling-Digit Transition**:
+   - Whenever the cents/fractional portion of the currency emits a new value, a vertical roll-down and slide-in transition (`mkp-roll-digit`) is triggered.
+   - The viewport achieves this by tracking emissions, triggering forced element reflows (`void element.offsetWidth`), and applying keyframe transitions.
+
+2. **Direction-Aware Background Flash**:
+   - When the whole-number portion of the money object changes, the entire card container flashes based on direction.
+   - If the new amount is higher than the previous value, a soft green background flash (`.mkp-flash-up`) occurs.
+   - If the new amount is lower than the previous value, a soft red background flash (`.mkp-flash-down`) occurs.
+   - Leverages `color-mix` internally to overlay transparent trends over solid or glass backgrounds.
+
+3. **Accessibility (Reduced Motion)**:
+   - All rolling digit transitions and direction-aware flashes respect user OS accessibility preferences.
+   - If `prefers-reduced-motion: reduce` is detected, animations are instantly bypassed and values update statically.
+
+---
+
+## Keyboard Support
+
+The `MoneyKPICard` is a **Type 2 display-only component** (read-only), meaning it does not receive keyboard focus or direct keyboard inputs. Keyboard navigation flows around the card to standard interactive controls in the page layout.
+
+---
+
+## Styling (CSS Variables)
+
+The layout, colors, and borders of the component are governed by CSS design tokens. Override these custom properties to skin the component without editing its underlying TypeScript code:
+
+| CSS Variable | Default Value / Role |
+|---|---|
+| `--md-sys-color-surface` | Default background color of solid cards |
+| `--md-sys-color-on-surface` | Text color of values and currency symbols |
+| `--md-sys-color-surface-variant` | Default background color when solid variant is active |
+| `--md-sys-color-on-surface-variant` | Color of upper-row KPI labels and captions |
+| `--md-sys-color-outline` | Subtle border outline surrounding solid containers |
+| `--md-sys-shape-large` | Border radius applied to the card root (`rounded-large`) |
+| `--mkp-trend-up` | `#10B981` (Emerald color for positive background flashes) |
+| `--mkp-trend-down` | `#EF4444` (Crimson color for negative background flashes) |
+
+### Glass Mode Styling Details
+When `.asGlass()` is invoked, the component switches its background classes from solid elements to the custom `.glass-effect` style. This removes opaque solid boundaries and introduces:
+- A semi-transparent backdrop blend (`backdrop-filter backdrop-blur-md`).
+- Light-reflecting, low-opacity white outlines that shimmer on dark and gradient backgrounds.
+- High-contrast text values ensuring readability across dynamic backdrops.
+
+---
+
+## Related components
+
+- [Toolbar](../?path=/docs/components-toolbar--docs) — Align control strips and action bars adjacent to monetary readouts.
+- [Layout](../?path=/docs/components-layout--docs) — Arrange multiple KPI cards in structured multi-column grids or dashboard configurations.
+- [Panel](../?path=/docs/components-panel--docs) — Anchor cards and grouping blocks into clean, bordered surfaces.

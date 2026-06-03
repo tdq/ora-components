@@ -1,0 +1,19 @@
+:root {
+    --mkp-trend-up:   #10B981;
+    --mkp-trend-down: #EF4444;
+}
+
+.trend-up {
+    color: var(--mkp-trend-up);
+    background: color-mix(in srgb, var(--mkp-trend-up) 12%, transparent);
+}
+
+.trend-down {
+    color: var(--mkp-trend-down);
+    background: color-mix(in srgb, var(--mkp-trend-down) 12%, transparent);
+}
+
+.trend-flat {
+    color: var(--md-sys-color-on-surface-variant);
+    background: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 8%, transparent);
+}

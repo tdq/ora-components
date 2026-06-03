@@ -14,5 +14,5 @@
 - [x] 7. Implement `MoneyFieldLogic` (`money-field-logic.ts`). — ora-components-dev — Add input filtering, formatting, clamping, Arrow keys support, and currency combobox/suffix handling.
 - [x] 8. Code review: MoneyFieldLogic — code-reviewer
 - [x] 9. QA: MoneyField logic and tests — qa-tester
-- [x] 10. Create dashboard demo for MoneyField in landing-page. — aura-dashboard-demo — Add a demo page showing MoneyField features.
+- [x] 10. Create dashboard demo for MoneyField in landing-page. — ora-dashboard-demo — Add a demo page showing MoneyField features.
 - [x] 11. Update docs. — ora-components-docs — Update `.agent/` docs if necessary.

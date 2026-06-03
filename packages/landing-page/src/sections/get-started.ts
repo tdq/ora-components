@@ -185,7 +185,7 @@ function renderUsageCode(): string {
 function createStats(): HTMLElement {
     const stats = [
         { number: '0', unit: 'deps', label: 'Runtime deps (RxJS is a peer)' },
-        { number: '~45', unit: 'kb', label: 'Gzipped — lighter than a single icon font' },
+        { number: '~60', unit: 'kb', label: 'Gzipped — lighter than a single icon font' },
         { number: '100', unit: '%', label: 'TypeScript — strict, no any' },
     ];
 

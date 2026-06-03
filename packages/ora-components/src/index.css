@@ -1,4 +1,6 @@
 @import './components/fx-ticker/fx-ticker.css';
+@import './components/trend/trend.css';
+@import './components/money-kpi-card/money-kpi-card.css';
 
 @tailwind base;
 @tailwind components;
@@ -215,7 +217,7 @@
   .glass-effect {
     @apply backdrop-blur-xl;
     @apply bg-white/60 ring-1 ring-black/10 text-gray-900;
-    @apply dark:bg-white/10 dark:ring-white/20 dark:text-white;
+    @apply dark:bg-white/5 dark:ring-white/20 dark:text-white;
   }
 
   .glass-effect-hover:hover {

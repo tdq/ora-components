@@ -5,6 +5,6 @@
 
 ## Subtasks
 
-- [x] 1. Refactor KPICardBuilder.build() — aura-dashboard-demo — Rewrite to use PanelBuilder.withContent() + LayoutBuilder, no post-build manipulation
+- [x] 1. Refactor KPICardBuilder.build() — ora-dashboard-demo — Rewrite to use PanelBuilder.withContent() + LayoutBuilder, no post-build manipulation
 - [x] 2. Code review: kpi-card.ts + verify 5 demo files still work — code-reviewer — LGTM
 - [x] 3. QA: runtime behavior, no regressions in demo files — qa-tester — Approved (22 tests, all pass)

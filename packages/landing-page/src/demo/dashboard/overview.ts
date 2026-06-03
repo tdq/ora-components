@@ -1,4 +1,4 @@
-import { PanelBuilder, ChartBuilder, GridBuilder, LabelBuilder, Money, LayoutBuilder, LayoutGap, SlotSize, PanelGap, ComponentBuilder } from '@tdq/ora-components';
+import { PanelBuilder, ChartBuilder, GridBuilder, LabelBuilder, Money, MoneyKPICardBuilder, LayoutBuilder, LayoutGap, SlotSize, PanelGap, ComponentBuilder } from '@tdq/ora-components';
 import { KPICardBuilder } from './kpi-card';
 import { of } from 'rxjs';
 import { renderStatusChip } from './chip-utils';
@@ -28,18 +28,44 @@ function createStatsGrid(): HTMLElement {
     const grid = document.createElement('div');
     grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px-16 w-full';
 
-    const stats = [
-        { label: 'Total Revenue', value: '€248,592', trend: '+14.2%', positive: true },
+    const revenueBuilder = new MoneyKPICardBuilder()
+        .withValue(of({ amount: 248592, currencyId: 'EUR' }))
+        .withLabel(of('Total Revenue'))
+        .withTrend(of({ value: 14.2, period: 'this month' }))
+        .build();
+
+    const mrrBuilder = new MoneyKPICardBuilder()
+        .withValue(of({ amount: 31240, currencyId: 'EUR' }))
+        .withLabel(of('MRR'))
+        .withTrend(of({ value: 9.1, period: 'this month' }))
+        .build();
+
+    const aovBuilder = new MoneyKPICardBuilder()
+        .withValue(of({ amount: 447.30, currencyId: 'EUR' }))
+        .withLabel(of('Avg Order Value'))
+        .withTrend(of({ value: 3.8, period: 'this month' }))
+        .build();
+
+    const nonMoneyStats = [
         { label: 'Active Users', value: '24,891', trend: '+8.7%', positive: true },
         { label: 'Orders (Apr)', value: '2,847', trend: '-1.4%', positive: false },
         { label: 'Conversion', value: '4.1%', trend: '+0.6%', positive: true },
         { label: 'New Signups', value: '1,284', trend: '+22.3%', positive: true },
-        { label: 'MRR', value: '€31,240', trend: '+9.1%', positive: true },
-        { label: 'Avg Order Value', value: '€447.30', trend: '+3.8%', positive: true },
         { label: 'Churn Rate', value: '2.4%', trend: '-0.3%', positive: true },
     ];
 
-    stats.forEach(s => {
+    grid.appendChild(revenueBuilder);
+    nonMoneyStats.slice(0, 4).forEach(s => {
+        const card = new KPICardBuilder()
+            .withLabel(of(s.label))
+            .withValue(of(s.value))
+            .withTrend(of(s.trend), of(s.positive))
+            .build();
+        grid.appendChild(card);
+    });
+    grid.appendChild(mrrBuilder);
+    grid.appendChild(aovBuilder);
+    nonMoneyStats.slice(4).forEach(s => {
         const card = new KPICardBuilder()
             .withLabel(of(s.label))
             .withValue(of(s.value))

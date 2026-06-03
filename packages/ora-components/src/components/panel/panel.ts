@@ -57,6 +57,7 @@ export class PanelBuilder implements ComponentBuilder {
                 'w-full rounded-large [overflow:clip] transition-all',
                 !this.isGlass && 'border bg-surface border-outline text-on-surface',
                 this.isGlass && 'glass-effect',
+                //this.isGlass && 'border border-outline-alpha-20 bg-surface-variant-alpha-20',
                 GAP_MAP[this.gap],
                 extraClass
             );

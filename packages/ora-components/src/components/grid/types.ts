@@ -11,7 +11,8 @@ export enum ColumnType {
     BUTTON = 'BUTTON',
     CUSTOM = 'CUSTOM',
     ICON = 'ICON',
-    MONEY = 'MONEY'
+    MONEY = 'MONEY',
+    TREND = 'TREND'
 }
 
 export enum SortDirection {

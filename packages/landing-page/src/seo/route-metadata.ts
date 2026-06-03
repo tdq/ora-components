@@ -21,7 +21,7 @@ export const ROUTE_METADATA: Record<string, RouteMetadata> = {
     '/': {
         title: 'Ora Components — Reactive UI Library for Financial Applications',
         description:
-            'Enterprise-grade UI components built on RxJS, TypeScript, and Material 3. No Shadow DOM, no framework wrappers — reactive financial dashboards with ~45kb gzipped.',
+            'Enterprise-grade UI components built on RxJS, TypeScript, and Material 3. No Shadow DOM, no framework wrappers — reactive financial dashboards with ~60kb gzipped.',
         canonicalPath: '/',
         ogImage: OG_IMAGE,
         keywords: [
@@ -64,7 +64,7 @@ export const ROUTE_METADATA: Record<string, RouteMetadata> = {
                     'No Shadow DOM encapsulation',
                     'Material 3 design system',
                     'Full TypeScript type safety',
-                    'Tree-shakeable exports (~45kb gzipped)',
+                    'Tree-shakeable exports (~60kb gzipped)',
                     'Tailwind CSS integration',
                     'Financial dashboard components',
                     'Zero runtime framework dependencies',

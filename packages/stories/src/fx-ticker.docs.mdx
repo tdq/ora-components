@@ -1,0 +1,183 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './fx-ticker.stories';
+
+<Meta of={Stories} />
+
+# FxTicker
+
+The `FxTicker` component is an infinite scrolling marquee component designed to display real-time ticker rates (such as foreign exchange pairs, commodities, or stock values). It supports smooth animated transitions, customizable scrolling speed/direction, and temporary visual background flashes for rate ticks (up or down).
+
+Driven entirely by RxJS streams, `FxTickerBuilder` automatically handles subscription lifetimes, performing clean up when the ticker is detached from the DOM.
+
+---
+
+## Usage
+
+Below is a simple usage example showing how to bind a stream of rates using the builder.
+
+```typescript
+import { FxTickerBuilder, FxRate } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
+const rates: FxRate[] = [
+  { pair: 'EUR/USD', rate: 1.0843 },
+  { pair: 'EUR/GBP', rate: 0.8521 },
+  { pair: 'EUR/JPY', rate: 168.42, decimals: 2 }
+];
+
+const ticker = new FxTickerBuilder()
+  .withData(of(rates))
+  .withLabel(of('Forex · live'))
+  .build();
+
+document.body.appendChild(ticker);
+```
+
+---
+
+## Builder API
+
+All builder methods return `this` for chaining. Feed RxJS observables into the reactive setters — the component takes care of the lifecycle management, ensuring there are no memory leaks when elements are removed from the DOM.
+
+- **`withData`** — `(data: Observable<FxRate[]>): this`
+  Binds the main stream of FX or asset rates to the ticker. The component tracks updates across emissions based on the `pair` identifier, comparing consecutive rates to determine price ticks (up, down, or flat). Supports plain numbers or structured `Money` objects.
+
+- **`withLabel`** — `(caption: Observable<string>): this`
+  Binds a caption stream for the ticker's prefix label container (e.g., 'Equities', 'Markets'). Defaults to 'FX · live'.
+
+- **`withLabelVisible`** — `(visible: Observable<boolean>): this`
+  Controls whether the label pill is visible. Setting this to `false` allows the scrolling marquee to run edge-to-edge.
+
+- **`withRateFormatter`** — `(fn: (item: TickerItem) => string): this`
+  Customizes the formatting of individual rate amounts. Receives a normalized `TickerItem`.
+
+- **`withDeltaFormatter`** — `(fn: (item: TickerItem) => string): this`
+  Customizes the formatting of delta change values (e.g., showing a sign, limiting fractional digits).
+
+- **`withScrollDuration`** — `(seconds: Observable<number>): this`
+  Adjusts the scroll duration for a full marquee animation cycle. A lower number of seconds speeds up the marquee. Defaults to `28` seconds.
+
+- **`withDirection`** — `(direction: 'left' | 'right'): this`
+  Determines the scrolling direction. Defaults to `'left'`.
+
+- **`withPauseOnHover`** — `(enabled: boolean): this`
+  If true, the marquee animation pauses whenever the user hovers their mouse pointer over the ticker. Defaults to `true`.
+
+- **`withFlashDuration`** — `(ms: number): this`
+  Sets the animation duration in milliseconds for the flashing highlight background when rates change. Defaults to `600` ms.
+
+- **`withFlashColors`** — `(up: string, down: string): this`
+  Accepts CSS class names for custom up and down tick flashing classes. Defaults to `'fx-flash-up'` and `'fx-flash-down'`.
+
+- **`withClass`** — `(className: Observable<string>): this`
+  Appends additional CSS class names to the ticker's root element.
+
+- **`asAnnouncing`** — `(): this`
+  Configures the ticker for screen-readers. Removes the `aria-hidden="true"` attribute from cloned marquee tracks and introduces an `aria-live="polite"` region that announces rate fluctuations.
+
+- **`build`** — `(): HTMLElement`
+  Assembles and returns the native HTMLElement. Requires `withData` to have been called.
+
+---
+
+## Types & Interfaces
+
+### FxRate
+```typescript
+export interface FxRate {
+  pair: string;         // Unique key, e.g. 'EUR/USD' or 'AAPL'
+  rate: number | Money; // Numeric price or Money object ({ amount, currencyId })
+  decimals?: number;    // Formatting decimals override; default is 4 for numbers, 2 for Money
+}
+```
+
+### TickerItem
+```typescript
+export interface TickerItem {
+  pair: string;
+  rate: number | Money;  // Raw rate object from FxRate
+  amount: number;        // Normalized numeric value
+  decimals: number;      // Decimals used for display
+  delta: number;         // Current rate minus previous rate; 0 on initialization
+  direction: 'up' | 'down' | 'flat';
+}
+```
+
+### Money
+```typescript
+export interface Money {
+  amount: number;
+  currencyId: string;
+}
+```
+
+---
+
+## When to use
+
+The `FxTicker` is highly suited for financial dashboards, portal headers, or summary rows.
+
+- **Real-Time Feeds** — Use to display live-updating prices, currency pairs, or market indices where a marquee-style display is standard.
+- **Compact space** — Perfect for conveying density of real-time price info in a single-line horizontal track.
+- **Do not use** when absolute legibility of all rates simultaneously is required. If users need to scan or compare values concurrently, consider a standard `GridBuilder` instead.
+
+---
+
+## Style Variants
+
+### Default Static Rates
+
+The standard ticker displaying static FX rate values with the default brand styling.
+
+<Canvas of={Stories.Default} />
+
+---
+
+## Live Updates
+
+The `LiveUpdates` story simulates live stream changes with random ticks. Note how rates flash red/green in background colors upon fluctuating.
+
+<Canvas of={Stories.LiveUpdates} />
+
+---
+
+## Glass Effect
+
+Using `asGlass()` inside a parent `PanelBuilder` on a dark gradient background provides a beautiful frosted glass appearance.
+
+<Canvas of={Stories.GlassEffect} />
+
+---
+
+## Accessibility (Announcing)
+
+With `.asAnnouncing()`, the ticker ceases to be hidden from screen readers, rendering updates in an `aria-live` polite manner suitable for accessibility utilities.
+
+<Canvas of={Stories.Announcing} />
+
+---
+
+## Keyboard & Interaction Support
+
+| Gesture / Key | Action |
+|---|---|
+| Mouse Hover | Pauses the scrolling animation (when `.withPauseOnHover(true)` is set) |
+| `prefers-reduced-motion` | Automatically stops all marquees and flashes to respect OS-level motion reduction preferences |
+
+---
+
+## Styling
+
+Override visual design variables on `:root` or custom scopes.
+
+| CSS Variable | Default Value | Role |
+|---|---|---|
+| `--fx-delta-up` | `#10B981` | Green text/border/flash color for positive updates |
+| `--fx-delta-down` | `#EF4444` | Red text/border/flash color for negative updates |
+
+---
+
+## Related Components
+
+- **Grid** — [GridBuilder](../?path=/docs/components-grid--docs) is recommended when rates require full tabular listings, column searching, sorting, or complex multi-selection.
+- **Panel** — [PanelBuilder](../?path=/docs/components-panel--docs) is often used to wrap the ticker component with glass styling or custom borders.

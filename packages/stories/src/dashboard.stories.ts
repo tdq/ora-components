@@ -2,6 +2,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
     ChartBuilder,
+    ComponentBuilder,
     GridBuilder,
     SortDirection,
     PanelBuilder,
@@ -11,6 +12,7 @@ import {
     LabelBuilder,
     ButtonStyle,
     Alignment,
+    MoneyKPICardBuilder,
 } from '@tdq/ora-components';
 import { createActionLog } from './story-helpers/action-log';
 import { createButton } from './story-helpers/demo-controls';
@@ -111,13 +113,11 @@ const dashboardData$ = new BehaviorSubject<DashboardData>({
 });
 
 // Derived KPI display-value streams
-const revenueValue$ = dashboardData$.pipe(map(d => `$${d.kpis.revenue.value}K`));
 const ordersValue$ = dashboardData$.pipe(map(d => `${d.kpis.orders.value}K`));
 const usersValue$ = dashboardData$.pipe(map(d => `${d.kpis.users.value}K`));
 const conversionValue$ = dashboardData$.pipe(map(d => `${d.kpis.conversion.value}%`));
 
 // Derived KPI change-indicator streams
-const revenueChange$ = dashboardData$.pipe(map(d => `↑ ${d.kpis.revenue.change}%`));
 const ordersChange$ = dashboardData$.pipe(map(d => `↑ ${d.kpis.orders.change}%`));
 const usersChange$ = dashboardData$.pipe(map(d => `↑ ${d.kpis.users.change}%`));
 const conversionChange$ = dashboardData$.pipe(map(d => {
@@ -135,32 +135,39 @@ function createKpiCard(
     change$: any,
     isUp: boolean,
 ): PanelBuilder {
-    const layout = new LayoutBuilder()
-        .asVertical()
-        .withGap(LayoutGap.SMALL)
-        .withClass(of('p-4'));
+    const directionClass = isUp ? 'trend-up' : 'trend-down';
 
     const titleLabel = new LabelBuilder()
         .withCaption(of(title))
-        .withClass(of('text-sm text-on-surface-variant uppercase tracking-wider font-medium'));
+        .withClass(of('text-label-medium text-on-surface-variant opacity-70 uppercase tracking-wide'));
+
+    const trendPill = new LabelBuilder()
+        .withCaption(change$)
+        .withClass(of(`inline-flex items-center gap-px-4 text-label-small font-semibold px-px-8 py-px-4 rounded-full tabular-nums ${directionClass}`));
 
     const valueLabel = new LabelBuilder()
         .withCaption(value$)
-        .withClass(of('text-headline-large font-bold tracking-tight'));
+        .withClass(of('text-on-surface text-4xl font-bold leading-none tabular-nums'));
 
-    const changeLabel = new LabelBuilder()
-        .withCaption(change$)
-        .withClass(of(
-            isUp
-                ? 'text-green-600 font-medium text-sm'
-                : 'text-red-600 font-medium text-sm',
-        ));
+    const content: ComponentBuilder = {
+        build: () => {
+            const wrapper = document.createElement('div');
 
-    layout.addSlot().withContent(titleLabel);
-    layout.addSlot().withContent(valueLabel);
-    layout.addSlot().withContent(changeLabel);
+            const headerRow = new LayoutBuilder().asHorizontal();
+            headerRow.addSlot().withSize(SlotSize.FIT).withContent(titleLabel);
+            headerRow.addSlot().withSize(SlotSize.FIT).withContent(trendPill).withAlignment(of(Alignment.RIGHT));
+            const headerEl = headerRow.build();
+            headerEl.className = `flex items-center justify-between mb-px-12 w-full ${headerEl.className}`;
 
-    return new PanelBuilder().withContent(layout);
+            wrapper.appendChild(headerEl);
+            wrapper.appendChild(valueLabel.build());
+            return wrapper;
+        }
+    };
+
+    return new PanelBuilder()
+        .withClass(of('rounded-large p-px-24 border border-outline-alpha-20 shadow-level-2 bg-surface-variant-alpha-30'))
+        .withContent(content);
 }
 
 // ---------------------------------------------------------------------------
@@ -209,8 +216,13 @@ export const Dashboard = () => {
         .asHorizontal()
         .withGap(LayoutGap.MEDIUM);
 
+    const revenueMoneyKpi = new MoneyKPICardBuilder()
+        .withValue(dashboardData$.pipe(map(d => ({ amount: d.kpis.revenue.value * 1000, currencyId: 'USD' }))))
+        .withLabel(of('Revenue'))
+        .withTrend(dashboardData$.pipe(map(d => ({ value: d.kpis.revenue.change, period: 'this month' }))));
+
     const kpiCards = [
-        createKpiCard('Revenue', revenueValue$, revenueChange$, true),
+        revenueMoneyKpi,
         createKpiCard('Orders', ordersValue$, ordersChange$, true),
         createKpiCard('Users', usersValue$, usersChange$, true),
         createKpiCard('Conversion', conversionValue$, conversionChange$, false),

@@ -3,7 +3,7 @@
  * No Math.random() at module level — all values are index-based.
  */
 
-import type { Money } from '@tdq/ora-components';
+import type { Money, Trend } from '@tdq/ora-components';
 
 // ---------------------------------------------------------------------------
 // Shared lookup tables
@@ -17,6 +17,7 @@ const DEPARTMENTS = ['Engineering', 'Marketing', 'Sales', 'Support', 'HR', 'Fina
 const FIRST_NAMES = ['James', 'Mary', 'Robert', 'Patricia', 'John', 'Jennifer', 'Michael', 'Linda'];
 const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
 const CURRENCIES = ['USD', 'EUR', 'GBP'];
+const PERIODS = ['vs last month', 'vs last qtr', 'vs last year', 'YTD'];
 const CATEGORIES = ['Electronics', 'Clothing', 'Food', 'Furniture'];
 const STOCK_STATUSES = ['In Stock', 'Low Stock', 'Out of Stock'] as const;
 const PRODUCT_CATEGORIES = ['Electronics', 'Home & Garden', 'Apparel'];
@@ -60,6 +61,7 @@ export interface User {
     lastLogin: Date;
     balance: Money;
     progress: number;
+    trend: Trend;
 }
 
 /**
@@ -80,6 +82,10 @@ export function generateUsers(count: number): User[] {
             currencyId: CURRENCIES[i % CURRENCIES.length],
         },
         progress: detent(i, 3),
+        trend: {
+            value: parseFloat(((detent(i, 4) - 0.5) * 30).toFixed(1)),
+            period: PERIODS[i % PERIODS.length],
+        },
     }));
 }
 
@@ -175,6 +181,7 @@ export interface FullCoverageItem {
     balance: Money;
     priority: 'low' | 'medium' | 'high';
     buttonLabel: string;
+    trend: Trend;
 }
 
 /**
@@ -206,5 +213,9 @@ export function generateFullCoverageData(count: number): FullCoverageItem[] {
         },
         priority: PRIORITIES[i % PRIORITIES.length],
         buttonLabel: `Btn${i + 1}`,
+        trend: {
+            value: parseFloat(((detent(i, 9) - 0.5) * 30).toFixed(1)),
+            period: PERIODS[i % PERIODS.length],
+        },
     }));
 }

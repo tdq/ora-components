@@ -45,10 +45,10 @@
 
 ### Phase 5 — Real-World Examples (P7)
 
-- [x] 24. Dashboard layout (dashboard.stories.ts) — aura-dashboard-demo — full-screen enterprise dashboard with KPI cards, chart, grid
-- [x] 25. Audit log view (audit-log.stories.ts) — aura-dashboard-demo — immutable grid with color-coded action badges
-- [x] 26. Confirmation patterns (confirmation-patterns.stories.ts) — aura-dashboard-demo — soft delete, hard delete, bulk action
-- [x] 27. Settings panel (settings-panel.stories.ts) — aura-dashboard-demo — tabbed settings with theme switching
+- [x] 24. Dashboard layout (dashboard.stories.ts) — ora-dashboard-demo — full-screen enterprise dashboard with KPI cards, chart, grid
+- [x] 25. Audit log view (audit-log.stories.ts) — ora-dashboard-demo — immutable grid with color-coded action badges
+- [x] 26. Confirmation patterns (confirmation-patterns.stories.ts) — ora-dashboard-demo — soft delete, hard delete, bulk action
+- [x] 27. Settings panel (settings-panel.stories.ts) — ora-dashboard-demo — tabbed settings with theme switching
 - [ ] 28. Code review: Phase 5 — code-reviewer
 - [ ] 29. QA: Phase 5 — qa-tester
 

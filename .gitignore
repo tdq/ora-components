@@ -5,5 +5,8 @@ storybook-static
 *.tgz
 .turbo
 .npmrc
-ora-components/.turbo/*
+packages/ora-components/.turbo/*
+packages/examples/.turbo/*
+packages/mcp-server/.turbo/*
 .claude
+.antigravitycli

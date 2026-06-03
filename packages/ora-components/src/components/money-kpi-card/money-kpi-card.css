@@ -1,0 +1,36 @@
+@keyframes mkp-roll-digit {
+    from { opacity: 0; transform: translateY(-40%); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mkp-flash-up {
+    0%   { background-color: transparent; }
+    30%  { background-color: color-mix(in srgb, var(--mkp-trend-up, #10B981) 25%, transparent); }
+    100% { background-color: transparent; }
+}
+
+@keyframes mkp-flash-down {
+    0%   { background-color: transparent; }
+    30%  { background-color: color-mix(in srgb, var(--mkp-trend-down, #EF4444) 25%, transparent); }
+    100% { background-color: transparent; }
+}
+
+.mkp-roll-digit {
+    animation: mkp-roll-digit 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    display: inline-block;
+}
+
+.mkp-flash-up {
+    animation: mkp-flash-up 600ms ease-out 1;
+    border-radius: 4px;
+}
+
+.mkp-flash-down {
+    animation: mkp-flash-down 600ms ease-out 1;
+    border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mkp-roll-digit { animation: none; }
+    .mkp-flash-up, .mkp-flash-down { animation: none; }
+}

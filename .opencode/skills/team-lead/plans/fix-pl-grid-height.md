@@ -5,7 +5,7 @@
 
 ## Subtasks
 
-- [x] 1. Fix P&L breakdown grid height — aura-dashboard-demo — Add `.withHeight()` to GridBuilder in `createBreakdownGrid()` with dynamic calculation based on item count
+- [x] 1. Fix P&L breakdown grid height — ora-dashboard-demo — Add `.withHeight()` to GridBuilder in `createBreakdownGrid()` with dynamic calculation based on item count
 - [x] 2. Code review: P&L grid height fix — code-reviewer
 - [x] 3. QA: validate grid rows visible, tests pass — qa-tester
 - [x] 4. Update .agent/ docs — architect

@@ -5,7 +5,7 @@ description: >-
   routing. This excludes the demo area (src/demo/).
 
 mode: subagent
-model: deepseek/deepseek-v4-flash
+model: google/gemini-3.5-flash
 tools:
   bash: false
   webfetch: false

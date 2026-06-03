@@ -604,6 +604,9 @@ export const FullCoverage = () => {
             }
             return badge;
         });
+    columns.addTrendColumn('trend')
+        .withHeader('Trend')
+        .withWidth('180px');
 
     const editClick = (item: FullCoverageItem) => log(`Editing ${item.name}`);
     const deleteClick = (item: FullCoverageItem) => log(`Deleting ${item.name}`);
@@ -622,4 +625,53 @@ export const FullCoverage = () => {
     container.addSlot().withContent({ build: () => actionLog }).withSize(SlotSize.FULL);
 
     return container.build();
+};
+
+export const TrendColumn = () => {
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 15)))
+        .withHeight(of(500));
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addEnumColumn('role').withHeader('Role');
+    columns.addTrendColumn('trend')
+        .withHeader('Trend')
+        .withWidth('190px')
+        .asSortable();
+
+    return grid.build();
+};
+
+export const TrendColumnPeriod = () => {
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 12)))
+        .withHeight(of(400));
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addTrendColumn('trend')
+        .withHeader('Trend (vs Last Year)')
+        .withPeriod('vs last year')
+        .withWidth('200px');
+
+    return grid.build();
+};
+
+export const TrendColumnProvider = () => {
+    const grid = new GridBuilder<User>()
+        .withItems(of(users.slice(0, 12)))
+        .withHeight(of(400));
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addTrendColumn('progress')
+        .withHeader('Progress Trend')
+        .withTrendProvider((user) => ({
+            value: (user.progress - 0.5) * 20,
+            period: 'vs target',
+        }))
+        .withWidth('190px');
+
+    return grid.build();
 };

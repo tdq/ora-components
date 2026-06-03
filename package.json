@@ -23,8 +23,8 @@
     "mcp:build": "turbo run build --filter=ora-mcp-server",
     "mcp:start": "node packages/mcp-server/dist/index.js",
     "mcp:landing": "turbo run serve --filter=ora-mcp-server",
-    "landing:build": "turbo run build --filter=landing-page",
-    "landing:start": "turbo run dev --filter=landing-page"
+    "landing:build": "turbo run build --filter=ora-landing-page",
+    "landing:start": "turbo run dev --filter=ora-landing-page"
   },
   "overrides": {
     "storybook": "10.3.6"

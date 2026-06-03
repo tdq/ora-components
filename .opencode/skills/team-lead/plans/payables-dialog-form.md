@@ -5,7 +5,7 @@
 
 ## Subtasks
 
-- [x] 1. Refactor payables form into dialog — aura-dashboard-demo — Replace `createNewInvoiceForm()` with `createNewInvoiceButton()` + `showNewInvoiceDialog()` using `DialogBuilder`
+- [x] 1. Refactor payables form into dialog — ora-dashboard-demo — Replace `createNewInvoiceForm()` with `createNewInvoiceButton()` + `showNewInvoiceDialog()` using `DialogBuilder`
 - [x] 2. Code review: payables dialog refactor — code-reviewer
 - [x] 3. QA: validate dialog opens, submits, closes correctly — qa-tester
 - [x] 4. Update .agent/ docs — architect

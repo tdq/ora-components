@@ -5,6 +5,6 @@
 
 ## Subtasks
 
-- [x] 1. Refactor trend chip + tailwind config — aura-dashboard-demo — Add trend colors/safelist to tailwind.config.mjs, replace trend builder in kpi-card.ts
+- [x] 1. Refactor trend chip + tailwind config — ora-dashboard-demo — Add trend colors/safelist to tailwind.config.mjs, replace trend builder in kpi-card.ts
 - [x] 2. Code review: trend implementation — code-reviewer — LGTM
 - [x] 3. QA: trend rendering, no regressions — qa-tester — Approved

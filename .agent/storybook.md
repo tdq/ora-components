@@ -85,9 +85,14 @@ Every story's default export must include a `tags` array. Autodocs generation
 relies on `'autodocs'` being present (matching `docs.autodocs: "tag"` in
 `main.ts`).
 
+> [!WARNING]
+> **Storybook Indexing Conflict Warning:**
+> When a component has a custom documentation page (`*.docs.mdx`), do NOT include `'autodocs'` in the `tags` array of its CSF story file (`*.stories.ts`). Doing so causes a Storybook indexing conflict error:
+> `Error: You created a component docs page for '...', but also tagged the CSF file with 'autodocs'. This is probably a mistake.`
+
 ### Required tags
 
-- **`'autodocs'`** — enables automatic docs page generation for this component.
+- **`'autodocs'`** — enables automatic docs page generation for this component. *Only use this tag when there is no custom `*.docs.mdx` documentation file.*
 - **`'stable'`** — marks the component as stable/production-ready. Used for filtering.
 
 ### Optional tags

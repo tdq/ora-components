@@ -252,24 +252,6 @@ export class DatePickerBuilder implements ComponentBuilder {
             container.classList.toggle('pointer-events-none', !enabled);
         }));
 
-        if (this.isGlass) {
-            inputWrapper.classList.remove('bg-surface-variant', 'border-b', 'border-outline-variant', 'rounded-t-small');
-            inputWrapper.classList.add('glass-effect', 'rounded-small');
-
-            // Apply glass text colors
-            const glassLabelInputClasses = ['text-gray-900', 'dark:text-white'];
-            const glassIconClasses = ['text-gray-600', 'dark:text-white/60'];
-
-            captionElement.classList.remove('text-on-surface-variant');
-            captionElement.classList.add(...glassLabelInputClasses);
-
-            input.classList.remove('text-on-surface');
-            input.classList.add(...glassLabelInputClasses);
-
-            iconButton.classList.remove('text-on-surface-variant');
-            iconButton.classList.add(...glassIconClasses);
-        }
-
         subs.push(isExpanded$.pipe(distinctUntilChanged()).subscribe(expanded => {
             input.setAttribute('aria-expanded', expanded.toString());
 
@@ -290,6 +272,31 @@ export class DatePickerBuilder implements ComponentBuilder {
                 inputWrapper.classList.add('bg-surface-variant', 'rounded-t-small');
             } else if (style === FieldStyle.OUTLINED) {
                 inputWrapper.classList.add('border', 'border-outline', 'rounded-small', 'bg-transparent');
+            }
+
+            if (this.isGlass) {
+                inputWrapper.classList.remove('bg-surface-variant', 'border-b', 'border-outline-variant', 'rounded-t-small', 'border', 'rounded-small', 'bg-transparent');
+                inputWrapper.classList.add('glass-effect', 'rounded-small');
+
+                captionElement.classList.remove('text-on-surface-variant');
+                captionElement.classList.add('text-gray-900', 'dark:text-white');
+
+                input.classList.remove('text-on-surface');
+                input.classList.add('text-gray-900', 'dark:text-white');
+
+                iconButton.classList.remove('text-on-surface-variant');
+                iconButton.classList.add('text-gray-600', 'dark:text-white/60');
+            } else {
+                inputWrapper.classList.remove('glass-effect');
+
+                captionElement.classList.add('text-on-surface-variant');
+                captionElement.classList.remove('text-gray-900', 'dark:text-white');
+
+                input.classList.add('text-on-surface');
+                input.classList.remove('text-gray-900', 'dark:text-white');
+
+                iconButton.classList.add('text-on-surface-variant');
+                iconButton.classList.remove('text-gray-600', 'dark:text-white/60');
             }
         }));
 

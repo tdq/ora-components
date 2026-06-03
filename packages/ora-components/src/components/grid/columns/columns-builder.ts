@@ -10,6 +10,7 @@ import { ButtonColumnBuilder } from './button-column';
 import { CustomColumnBuilder } from './custom-column';
 import { IconColumnBuilder } from './icon-column';
 import { MoneyColumnBuilder } from './money-column';
+import { TrendColumnBuilder } from './trend-column';
 
 export class ColumnsBuilder<ITEM> {
     private builders: ColumnBuilder<ITEM>[] = [];
@@ -80,6 +81,16 @@ export class ColumnsBuilder<ITEM> {
      */
     addMoneyColumn(dtoField: string): MoneyColumnBuilder<ITEM> {
         const builder = new MoneyColumnBuilder<ITEM>(dtoField);
+        this.builders.push(builder);
+        return builder;
+    }
+
+    /**
+     * Adds a column for displaying trend values as styled chips (▲/▼ arrows, color-coded).
+     * @param dtoField The field in the data item containing a Trend object { value: number, period: string }.
+     */
+    addTrendColumn(dtoField: string): TrendColumnBuilder<ITEM> {
+        const builder = new TrendColumnBuilder<ITEM>(dtoField);
         this.builders.push(builder);
         return builder;
     }

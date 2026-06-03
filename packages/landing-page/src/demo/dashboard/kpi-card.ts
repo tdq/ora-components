@@ -1,5 +1,5 @@
-import { ComponentBuilder, PanelBuilder, PanelGap, LabelBuilder, LayoutBuilder, LabelSize, Alignment } from '@tdq/ora-components';
-import { Observable, combineLatest, of } from 'rxjs';
+import { ComponentBuilder, LabelBuilder, registerDestroy } from '@tdq/ora-components';
+import { Observable, combineLatest, of, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 /**
@@ -78,90 +78,97 @@ export class KPICardBuilder implements ComponentBuilder {
     }
 
     build(): HTMLElement {
-        // --- Label element using LabelBuilder ---
-        let labelBuilder: LabelBuilder | undefined;
-        if (this.label$) {
-            labelBuilder = new LabelBuilder()
-                .withCaption(this.label$)
-                .withClass(of('text-on-surface-variant opacity-60'));
-        }
+        const sub = new Subscription();
 
-        // --- Value element using LabelBuilder ---
-        let valueBuilder: ComponentBuilder | undefined;
-        if (this.value$) {
-            const class$ = this.valueColorClass$
-                ? this.valueColorClass$.pipe(map(c => `text-${c}`))
-                : this.valueColor$
-                    ? this.valueColor$.pipe(map(c => `text-${HEX_TO_COLOR_NAME[c] ?? 'on-surface'}`))
-                    : of('text-on-surface');
-
-            valueBuilder = new LabelBuilder()
-                .withCaption(this.value$)
-                .withSize(LabelSize.LARGE)
-                .withClass(class$);
-        }
-
-        // --- Trend chip using LabelBuilder ---
-        let trendBuilder: LabelBuilder | undefined;
-        if (this.trend$ && this.isPositive$) {
-            const class$ = combineLatest([this.trend$, this.isPositive$]).pipe(
-                map(([, isPositive]) =>
-                    isPositive
-                        ? 'text-label-small font-semibold px-px-8 py-px-4 rounded-full text-trend-positive bg-trend-positive-bg'
-                        : 'text-label-small font-semibold px-px-8 py-px-4 rounded-full text-trend-negative bg-trend-negative-bg'
-                )
-            );
-
-            trendBuilder = new LabelBuilder()
-                .withCaption(this.trend$)
-                .withClass(class$);
-        }
-
-        // --- Compose content with LayoutBuilder ---
-        const layout = new LayoutBuilder().asVertical();
-
-        if (labelBuilder) {
-            layout.addSlot().withContent(labelBuilder);
-        }
-
-        if (this.footerBuilder) {
-            // Footer mode: value above (if present), footer below
-            if (valueBuilder) {
-                layout.addSlot().withContent(valueBuilder);
-            }
-            layout.addSlot().withContent(this.footerBuilder);
-        } else if (trendBuilder && valueBuilder) {
-            // Trend mode: value (left) + trend chip (right)
-            const valueRow = new LayoutBuilder().asHorizontal();
-            valueRow.addSlot().withContent(valueBuilder);
-            valueRow.addSlot().withContent(trendBuilder).withAlignment(of(Alignment.RIGHT));
-            layout.addSlot().withContent(valueRow);
-        } else if (valueBuilder) {
-            // Plain value (no trend, no footer) — standalone
-            layout.addSlot().withContent(valueBuilder);
-        }
-
-        // --- Build panel as card container ---
-        const panelBuilder = new PanelBuilder();
-
+        // ---- Container ----
+        let baseClass: string;
         if (this.glass) {
-            panelBuilder.asGlass();
-        }
-
-        if (this.minimal) {
-            panelBuilder.withGap(PanelGap.LARGE);
-            if (this.panelClass$) {
-                panelBuilder.withClass(this.panelClass$);
-            }
+            baseClass = 'rounded-large p-px-24 border border-outline-alpha-20 shadow-level-2 relative overflow-hidden glass-effect';
+        } else if (this.minimal) {
+            baseClass = 'rounded-large p-px-24 bg-surface-variant-alpha-30 shadow-level-2 relative overflow-hidden';
         } else {
-            const classes = this.panelClass$
-                ? this.panelClass$.pipe(map(c => `p-px-24 rounded-extra-large ${c}`))
-                : of('p-px-24 rounded-extra-large');
-            panelBuilder.withClass(classes);
+            baseClass = 'rounded-large p-px-24 border border-outline-alpha-20 shadow-level-2 relative overflow-hidden bg-surface-variant-alpha-30';
         }
 
-        panelBuilder.withContent(layout);
+        const body = document.createElement('div');
+        body.className = baseClass;
 
-        return panelBuilder.build();
+        if (this.panelClass$) {
+            sub.add(this.panelClass$.subscribe(cls => {
+                body.className = `${baseClass} ${cls}`;
+            }));
+        }
+
+        // ---- Header row: label (left) + trend (right) ----
+        const hasLabel = !!this.label$;
+        const hasTrend = !!(this.trend$ && this.isPositive$);
+        if (hasLabel || hasTrend) {
+            const headerRow = document.createElement('div');
+            headerRow.className = 'flex items-center justify-between mb-px-12';
+
+            if (this.label$) {
+                headerRow.appendChild(
+                    new LabelBuilder()
+                        .withCaption(this.label$)
+                        .withClass(of('text-label-medium text-on-surface-variant opacity-70 uppercase tracking-wide'))
+                        .build()
+                );
+            }
+
+            if (this.trend$ && this.isPositive$) {
+                const trendPill = document.createElement('span');
+                sub.add(combineLatest([this.trend$, this.isPositive$]).subscribe(([text, isPositive]) => {
+                    const direction = isPositive ? 'up' : 'down';
+                    const arrow = direction === 'up' ? '▲' : '▼';
+                    trendPill.className = `inline-flex items-center gap-px-4 text-label-small font-semibold px-px-8 py-px-4 rounded-full tabular-nums trend-${direction}`;
+                    trendPill.innerHTML = '';
+                    const arrowSpan = document.createElement('span');
+                    arrowSpan.textContent = arrow;
+                    arrowSpan.setAttribute('aria-hidden', 'true');
+                    trendPill.appendChild(arrowSpan);
+                    trendPill.appendChild(document.createTextNode(` ${text}`));
+                }));
+                headerRow.appendChild(trendPill);
+            }
+
+            body.appendChild(headerRow);
+        }
+
+        // ---- Value row ----
+        if (this.value$) {
+            const valueRow = document.createElement('div');
+            valueRow.className = 'flex items-baseline tabular-nums';
+
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'text-on-surface text-4xl font-bold leading-none';
+
+            if (this.valueColorClass$ || this.valueColor$) {
+                const colorClass$ = this.valueColorClass$
+                    ? this.valueColorClass$.pipe(map(c => `text-${c} text-4xl font-bold leading-none`))
+                    : this.valueColor$!.pipe(map(c => `text-${HEX_TO_COLOR_NAME[c] ?? 'on-surface'} text-4xl font-bold leading-none`));
+
+                sub.add(colorClass$.subscribe(cls => {
+                    valueSpan.className = cls;
+                }));
+            }
+
+            sub.add(this.value$.subscribe(val => {
+                valueSpan.textContent = val;
+            }));
+
+            valueRow.appendChild(valueSpan);
+            body.appendChild(valueRow);
+        }
+
+        // ---- Footer ----
+        if (this.footerBuilder) {
+            const footerWrapper = document.createElement('div');
+            footerWrapper.className = 'mt-px-12';
+            footerWrapper.appendChild(this.footerBuilder.build());
+            body.appendChild(footerWrapper);
+        }
+
+        registerDestroy(body, () => sub.unsubscribe());
+        return body;
     }
 }

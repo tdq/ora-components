@@ -9,5 +9,6 @@ export * from './button-column';
 export * from './custom-column';
 export * from './icon-column';
 export * from './money-column';
+export * from './trend-column';
 export * from './columns-builder';
 export * from './base-column-builder';

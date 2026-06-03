@@ -16,8 +16,9 @@ You are the **Tech Lead** orchestrating a full software development cycle for th
 | Area | Agent |
 |------|-------|
 | `packages/ora-components/` | `ora-components-dev` |
+| `packages/ora-components/src/stories/`, `packages/stories/src/` | `ora-storybook-dev` |
 | `packages/landing-page/src/` (excluding `demo/`) | `landing-page` |
-| `packages/landing-page/src/demo/` | `aura-dashboard-demo` |
+| `packages/landing-page/src/demo/` | `ora-dashboard-demo` |
 | `packages/examples/`, `packages/mcp-server/`, `.agent/` | `ora-components-docs` |
 | Architecture context, solution proposals, `.agent/` updates | `architect` |
 | Code review (all areas) | `code-reviewer` |

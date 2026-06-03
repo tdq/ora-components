@@ -5,7 +5,7 @@ import { createGlassBackdrop, GLASS_GRADIENTS } from './story-helpers';
 
 export default {
     title: 'Components/FxTicker',
-    tags: ['autodocs', 'stable', 'reactive'],
+    tags: ['stable', 'reactive'],
 };
 
 // ---------------------------------------------------------------------------
