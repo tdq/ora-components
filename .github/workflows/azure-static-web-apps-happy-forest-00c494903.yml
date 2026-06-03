@@ -8,7 +8,6 @@ on:
       - 'packages/ora-components/src/**'
       - 'packages/ora-components/package.json'
       - 'package.json'
-      - 'package-lock.json'
       - '.github/workflows/azure-static-web-apps-happy-forest-00c494903.yml'
   workflow_dispatch:
 
