@@ -45,6 +45,11 @@ jobs:
       - name: Install dependencies (monorepo)
         run: npm ci --no-audit --no-fund
 
+      - name: Ensure rolldown linux native binding is present
+        run: |
+          ROLLDOWN_BINDING_VERSION="$(node -p "require('./node_modules/rolldown/package.json').optionalDependencies['@rolldown/binding-linux-x64-gnu']")"
+          npm install --no-save --no-audit --no-fund "@rolldown/binding-linux-x64-gnu@${ROLLDOWN_BINDING_VERSION}"
+
       - name: Build component library (manifest)
         run: npm run build --workspace=@tdq/ora-components --if-present
 
