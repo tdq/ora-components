@@ -7,6 +7,6 @@ storybook-static
 .npmrc
 packages/ora-components/.turbo/*
 packages/examples/.turbo/*
-packages/mcp-server/.turbo/*
+packages/ora-mcp-server/.turbo/*
 .claude
 .antigravitycli
