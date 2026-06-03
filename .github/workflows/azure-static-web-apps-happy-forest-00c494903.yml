@@ -40,6 +40,12 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      - name: Install Linux native build bindings
+        run: |
+          npm install --no-save --no-audit --no-fund \
+            @rolldown/binding-linux-x64-gnu@$(node -p "require('./node_modules/rolldown/package.json').version") \
+            lightningcss-linux-x64-gnu@$(node -p "require('./node_modules/lightningcss/package.json').version")
+
       - name: Build ora-components
         run: npx turbo run build --filter=@tdq/ora-components
 
