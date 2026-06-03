@@ -44,7 +44,7 @@ jobs:
         run: npx turbo run build --filter=@tdq/ora-components
 
       - name: Build Storybook
-        run: npm run build-storybook -w aura-stories
+        run: npm run build-storybook -w ora-stories
 
       - name: Verify Storybook output
         run: ls packages/stories/storybook-static/index.html
