@@ -5,3 +5,4 @@ export { FieldAffixBuilder, updateAffixContent } from './field-affix';
 export { generateFieldId } from './field-id';
 export { PopoverBuilder } from './popover';
 export type { PopoverWidth } from './popover';
+export { renderCalendar } from './calendar';

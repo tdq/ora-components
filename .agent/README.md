@@ -26,6 +26,7 @@ Logic and state are managed by RxJS.
 - [Checkbox](components/checkbox.md)
 - [ComboBox](components/combobox.md)
 - [DatePicker](components/datepicker.md)
+- [DateTimePicker](components/datetime-picker.md)
 - [Form](components/form.md)
 - [Panel](components/panel.md)
 - [Dialog](components/dialog.md)

@@ -1,24 +1,39 @@
-import { Observable, Subject, BehaviorSubject, distinctUntilChanged } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, combineLatest, distinctUntilChanged, of } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '@/core/destroyable-element';
-import { formatDate, parseDate, isValidDate } from './date-utils';
+import { formatDateTime, parseDateTime, isValidDate } from './datetime-utils';
 import { renderCalendar } from '../component-parts/calendar';
-import { DatePickerStyle, DayOfWeek } from './types';
+import { renderTimePicker } from './time-picker';
+import { LayoutBuilder, LayoutGap } from '../layout/layout';
+import { DateTimePickerStyle, DayOfWeek, Time } from './types';
 import { Icons } from '@/core/icons';
 import { PopoverBuilder } from '../component-parts/popover';
 
-export class DatePickerBuilder implements ComponentBuilder {
+/**
+ * Minimal helper that wraps an existing HTMLElement into a ComponentBuilder
+ * so it can be passed to Slot.withContent() without an ad-hoc wrapper object.
+ */
+class CalendarSlot implements ComponentBuilder {
+    constructor(private renderFn: () => HTMLElement) {}
+    build(): HTMLElement { return this.renderFn(); }
+}
+
+export class DateTimePickerBuilder implements ComponentBuilder {
     private value$?: Subject<Date | null>;
     private caption$?: Observable<string>;
     private minDate$?: Observable<Date>;
     private maxDate$?: Observable<Date>;
-    private format = 'DD-MM-YYYY';
+    private format = 'DD-MM-YYYY HH:mm';
     private enabled$?: Observable<boolean>;
     private error$?: Observable<string>;
-    private style$?: Observable<DatePickerStyle>;
+    private style$?: Observable<DateTimePickerStyle>;
     private className$?: Observable<string>;
+    private minTime$?: Observable<Time>;
+    private maxTime$?: Observable<Time>;
     private isGlass: boolean = false;
     private firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY;
+    private timeFormat: '12h' | '24h' = '24h';
 
     withValue(value: Subject<Date | null>): this {
         this.value$ = value;
@@ -40,6 +55,16 @@ export class DatePickerBuilder implements ComponentBuilder {
         return this;
     }
 
+    withMinTime(time: Observable<Time>): this {
+        this.minTime$ = time;
+        return this;
+    }
+
+    withMaxTime(time: Observable<Time>): this {
+        this.maxTime$ = time;
+        return this;
+    }
+
     withFormat(format: string): this {
         this.format = format;
         return this;
@@ -55,7 +80,7 @@ export class DatePickerBuilder implements ComponentBuilder {
         return this;
     }
 
-    withStyle(style: Observable<DatePickerStyle>): this {
+    withStyle(style: Observable<DateTimePickerStyle>): this {
         this.style$ = style;
         return this;
     }
@@ -75,25 +100,29 @@ export class DatePickerBuilder implements ComponentBuilder {
         return this;
     }
 
+    withTimeFormat(format: '12h' | '24h'): this {
+        this.timeFormat = format;
+        return this;
+    }
+
     build(): HTMLElement {
         const container = document.createElement('div');
         container.className = 'flex flex-col gap-px-4 w-full relative';
 
-        // 1. Template Structure
         const { captionElement, inputWrapper, input, iconButton, errorElement } = this.createTemplate();
 
         container.appendChild(captionElement);
         container.appendChild(inputWrapper);
         container.appendChild(errorElement);
 
-        // 2. Internal State
         const isExpanded$ = new BehaviorSubject<boolean>(false);
         const internalValue$ = new BehaviorSubject<Date | null>(null);
         const subs: any[] = [];
 
-        // 3. Calendar wrapped in a padding div (replaces the p-px-16 that was on the old popup)
-        const calendarWrapper = document.createElement('div');
-        calendarWrapper.className = 'p-px-16';
+        const popoverLayout = new LayoutBuilder()
+            .asHorizontal()
+            .withGap(LayoutGap.MEDIUM)
+            .withClass(of('p-px-16'));
 
         const calendar = renderCalendar({
             selectedDate$: internalValue$,
@@ -101,8 +130,18 @@ export class DatePickerBuilder implements ComponentBuilder {
             minDate$: this.minDate$,
             maxDate$: this.maxDate$,
             onSelect: (date) => {
-                this.value$?.next(date);
-                isExpanded$.next(false);
+                const currentValue = internalValue$.value;
+                const hours = currentValue ? currentValue.getHours() : 0;
+                const minutes = currentValue ? currentValue.getMinutes() : 0;
+                const combined = new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate(),
+                    hours,
+                    minutes
+                );
+                internalValue$.next(combined);
+                this.value$?.next(combined);
             },
             onClose: () => {
                 isExpanded$.next(false);
@@ -110,13 +149,109 @@ export class DatePickerBuilder implements ComponentBuilder {
             isGlass: this.isGlass,
             firstDayOfWeek: this.firstDayOfWeek
         });
+        const calendarWrapper = document.createElement('div');
+        calendarWrapper.className = 'w-[288px] shrink-0';
         calendarWrapper.appendChild(calendar);
+        popoverLayout.addSlot().withContent(new CalendarSlot(() => calendarWrapper));
 
-        // 4. PopoverBuilder replaces the manual popup div
+        const selectedHours$ = new BehaviorSubject<number>(internalValue$.value?.getHours() ?? 0);
+        const selectedMinutes$ = new BehaviorSubject<number>(internalValue$.value?.getMinutes() ?? 0);
+
+        // Keep hours/minutes subjects in sync with internal value
+        subs.push(internalValue$.subscribe(date => {
+            if (date) {
+                selectedHours$.next(date.getHours());
+                selectedMinutes$.next(date.getMinutes());
+            }
+        }));
+
+        const effectiveMinHour$ = combineLatest([
+            internalValue$,
+            this.minDate$ ?? of(null),
+            this.minTime$ ?? of(null),
+        ]).pipe(
+            map(([value, minDate, minTime]) => {
+                if (!value || !minDate || !minTime) return null;
+                const vd = new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+                const md = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate()).getTime();
+                return vd === md ? minTime.hour : null;
+            }),
+            startWith(null)
+        );
+
+        const effectiveMaxHour$ = combineLatest([
+            internalValue$,
+            this.maxDate$ ?? of(null),
+            this.maxTime$ ?? of(null),
+        ]).pipe(
+            map(([value, maxDate, maxTime]) => {
+                if (!value || !maxDate || !maxTime) return null;
+                const vd = new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+                const md = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate()).getTime();
+                return vd === md ? maxTime.hour : null;
+            }),
+            startWith(null)
+        );
+
+        const effectiveMinMinute$ = combineLatest([
+            internalValue$,
+            this.minDate$ ?? of(null),
+            this.minTime$ ?? of(null),
+            selectedHours$,
+        ]).pipe(
+            map(([value, minDate, minTime, hours]) => {
+                if (!value || !minDate || !minTime) return null;
+                const vd = new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+                const md = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate()).getTime();
+                return (vd === md && hours === minTime.hour) ? minTime.minute : null;
+            }),
+            startWith(null)
+        );
+
+        const effectiveMaxMinute$ = combineLatest([
+            internalValue$,
+            this.maxDate$ ?? of(null),
+            this.maxTime$ ?? of(null),
+            selectedHours$,
+        ]).pipe(
+            map(([value, maxDate, maxTime, hours]) => {
+                if (!value || !maxDate || !maxTime) return null;
+                const vd = new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+                const md = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate()).getTime();
+                return (vd === md && hours === maxTime.hour) ? maxTime.minute : null;
+            }),
+            startWith(null)
+        );
+
+        const timePicker = renderTimePicker({
+            selectedHours: selectedHours$,
+            selectedMinutes: selectedMinutes$,
+            onSelect: (hours, minutes) => {
+                const currentDate = internalValue$.value;
+                const baseDate = currentDate || new Date();
+                const combined = new Date(
+                    baseDate.getFullYear(),
+                    baseDate.getMonth(),
+                    baseDate.getDate(),
+                    hours,
+                    minutes
+                );
+                internalValue$.next(combined);
+                this.value$?.next(combined);
+            },
+            timeFormat: this.timeFormat,
+            isGlass: this.isGlass,
+            minHour$: effectiveMinHour$,
+            maxHour$: effectiveMaxHour$,
+            minMinute$: effectiveMinMinute$,
+            maxMinute$: effectiveMaxMinute$,
+        });
+        popoverLayout.addSlot().withContent(new CalendarSlot(() => timePicker));
+
         const popover = new PopoverBuilder()
             .withAnchor(inputWrapper)
-            .withContent({ build: () => calendarWrapper })
-            .withWidth('320px')
+            .withContent(popoverLayout)
+            .withWidth('548px')
             .withOnClose(() => {
                 input.focus();
                 isExpanded$.next(false);
@@ -128,14 +263,13 @@ export class DatePickerBuilder implements ComponentBuilder {
             popover.withClass('bg-surface border-outline');
         }
 
-        // 5. Logic & Subscriptions
         this.setupLogic(
             input,
             inputWrapper,
             captionElement,
             errorElement,
             popover,
-            calendarWrapper,
+            calendar,
             iconButton,
             container,
             isExpanded$,
@@ -143,18 +277,14 @@ export class DatePickerBuilder implements ComponentBuilder {
             subs
         );
 
-        // 6. Input Masking & Validation
         this.setupMasking(input);
 
-        // 7. Event Handlers
         this.setupEventHandlers(input, iconButton, isExpanded$);
 
-        // 8. Cleanup
         registerDestroy(container, () => {
             subs.forEach(s => s?.unsubscribe());
         });
 
-        // Expose public API
         const element = container as any;
         element.showPopover = () => isExpanded$.next(true);
         element.hidePopover = () => isExpanded$.next(false);
@@ -164,30 +294,35 @@ export class DatePickerBuilder implements ComponentBuilder {
     }
 
     private createTemplate() {
-        // Label
         const captionElement = document.createElement('span');
-        captionElement.className = 'md-label-small text-on-surface-variant px-px-16 hidden';
+        captionElement.className = this.isGlass
+            ? 'md-label-small text-gray-900 dark:text-white px-px-16 hidden'
+            : 'md-label-small text-on-surface-variant px-px-16 hidden';
 
-        // Input Field Container
         const inputWrapper = document.createElement('div');
-        inputWrapper.className = 'flex items-center relative bg-surface-variant rounded-t-small border-b border-outline-variant focus-within:border-primary transition-colors h-[48px]';
+        inputWrapper.className = this.isGlass
+            ? 'flex items-center relative glass-effect rounded-small focus-within:border-primary transition-colors h-[48px]'
+            : 'flex items-center relative bg-surface-variant rounded-t-small border-b border-outline-variant focus-within:border-primary transition-colors h-[48px]';
 
         const input = document.createElement('input');
         input.type = 'text';
-        input.className = 'px-px-16 w-full h-full bg-transparent outline-none body-large text-on-surface placeholder:text-on-surface-variant/50';
+        input.className = this.isGlass
+            ? 'px-px-16 w-full h-full bg-transparent outline-none body-large text-gray-900 dark:text-white placeholder:text-on-surface-variant/50'
+            : 'px-px-16 w-full h-full bg-transparent outline-none body-large text-on-surface placeholder:text-on-surface-variant/50';
         input.placeholder = this.format;
         inputWrapper.appendChild(input);
 
         const iconButton = document.createElement('button');
         iconButton.type = 'button';
-        iconButton.className = 'p-px-12 text-on-surface-variant hover:text-primary transition-colors focus:outline-none';
+        iconButton.className = this.isGlass
+            ? 'p-px-12 text-gray-600 dark:text-white/60 hover:text-primary transition-colors focus:outline-none'
+            : 'p-px-12 text-on-surface-variant hover:text-primary transition-colors focus:outline-none';
         const calendarIconWrapper = document.createElement('span');
         calendarIconWrapper.className = 'w-6 h-6 inline-flex items-center justify-center [&_svg]:w-full [&_svg]:h-full [&_svg]:block';
         calendarIconWrapper.innerHTML = Icons.CALENDAR;
         iconButton.appendChild(calendarIconWrapper);
         inputWrapper.appendChild(iconButton);
 
-        // Error message
         const errorElement = document.createElement('span');
         errorElement.className = 'md-label-small text-error px-px-16 hidden';
 
@@ -200,19 +335,18 @@ export class DatePickerBuilder implements ComponentBuilder {
         captionElement: HTMLElement,
         errorElement: HTMLElement,
         popover: PopoverBuilder,
-        calendarWrapper: HTMLElement,
+        popoverContent: HTMLElement,
         iconButton: HTMLButtonElement,
         container: HTMLElement,
         isExpanded$: BehaviorSubject<boolean>,
         internalValue$: BehaviorSubject<Date | null>,
         subs: any[]
     ) {
-        // Value subscription
         if (this.value$) {
             subs.push(this.value$.pipe(distinctUntilChanged()).subscribe(val => {
                 internalValue$.next(val || null);
                 if (isValidDate(val)) {
-                    const formatted = formatDate(val, this.format);
+                    const formatted = formatDateTime(val, this.format, this.timeFormat);
                     if (input.value !== formatted) {
                         input.value = formatted;
                     }
@@ -242,30 +376,12 @@ export class DatePickerBuilder implements ComponentBuilder {
             container.classList.toggle('pointer-events-none', !enabled);
         }));
 
-        if (this.isGlass) {
-            inputWrapper.classList.remove('bg-surface-variant', 'border-b', 'border-outline-variant', 'rounded-t-small');
-            inputWrapper.classList.add('glass-effect', 'rounded-small');
-
-            // Apply glass text colors
-            const glassLabelInputClasses = ['text-gray-900', 'dark:text-white'];
-            const glassIconClasses = ['text-gray-600', 'dark:text-white/60'];
-
-            captionElement.classList.remove('text-on-surface-variant');
-            captionElement.classList.add(...glassLabelInputClasses);
-
-            input.classList.remove('text-on-surface');
-            input.classList.add(...glassLabelInputClasses);
-
-            iconButton.classList.remove('text-on-surface-variant');
-            iconButton.classList.add(...glassIconClasses);
-        }
-
         subs.push(isExpanded$.pipe(distinctUntilChanged()).subscribe(expanded => {
             input.setAttribute('aria-expanded', expanded.toString());
 
             if (expanded) {
                 popover.show();
-                const grid = calendarWrapper.querySelector('[role="grid"]') as HTMLElement;
+                const grid = popoverContent.querySelector('[role="grid"]') as HTMLElement;
                 grid?.focus();
             } else {
                 popover.close();
@@ -290,35 +406,35 @@ export class DatePickerBuilder implements ComponentBuilder {
             if (e.ctrlKey || e.metaKey || e.altKey) return;
 
             const char = e.key;
-            // Only handle single character inputs
             if (char.length !== 1) return;
 
             const pos = input.selectionStart ?? 0;
 
-            // Prevent typing more than format length
             if (pos >= this.format.length && !this.isSelectionActive(input)) {
                 e.preventDefault();
                 return;
             }
 
             const expected = this.format[pos];
-            const isPlaceholder = /[YMD]/.test(expected);
+            const isDatePlaceholder = /[YMD]/.test(expected);
+            const isTimePlaceholder = /[HhAmP]/.test(expected);
 
-            if (isPlaceholder) {
-                // Expected a digit (Year, Month, or Day part)
+            if (isDatePlaceholder) {
                 if (!/\d/.test(char)) {
                     e.preventDefault();
                 }
+            } else if (isTimePlaceholder) {
+                if (!/\d/.test(char) && !/[APM: ]/i.test(char)) {
+                    e.preventDefault();
+                }
             } else {
-                // Expected a separator
                 if (char === expected) {
                     // Allowed
                 } else if (/\d/.test(char)) {
-                    // Auto-insert separator and then this digit if it matches the NEXT placeholder
                     e.preventDefault();
 
                     const nextPos = pos + 1;
-                    if (nextPos < this.format.length && /[YMD]/.test(this.format[nextPos])) {
+                    if (nextPos < this.format.length && /[YMDHh]/.test(this.format[nextPos])) {
                         const val = input.value;
                         const before = val.slice(0, pos);
                         const after = val.slice(input.selectionEnd ?? pos);
@@ -345,7 +461,7 @@ export class DatePickerBuilder implements ComponentBuilder {
         isExpanded$: BehaviorSubject<boolean>
     ) {
         input.oninput = () => {
-            const parsed = parseDate(input.value, this.format);
+            const parsed = parseDateTime(input.value, this.format, this.timeFormat);
             if (parsed || input.value === '') {
                 this.value$?.next(parsed);
             }
