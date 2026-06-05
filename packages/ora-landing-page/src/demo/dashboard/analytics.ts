@@ -1,5 +1,5 @@
 import { PanelBuilder, PanelGap, ChartBuilder, LabelBuilder, registerDestroy } from '@tdq/ora-components';
-import { of, timer, ReplaySubject, Subscription, BehaviorSubject } from 'rxjs';
+import { of, timer, Subscription, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { themedColor$ } from './theme-tokens';
 

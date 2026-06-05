@@ -1,5 +1,5 @@
 import { PanelBuilder, PanelGap, ChartBuilder, GridBuilder, LabelBuilder, LayoutBuilder, LayoutGap, SlotSize, TabsBuilder, Money, registerDestroy } from '@tdq/ora-components';
-import { of, timer, Subject, Subscription, BehaviorSubject } from 'rxjs';
+import { of, timer, Subscription, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { KPICardBuilder } from './kpi-card';
 import { themedColor$ } from './theme-tokens';
