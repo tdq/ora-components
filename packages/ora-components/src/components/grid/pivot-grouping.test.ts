@@ -4,6 +4,7 @@ import { AggregationType, SortDirection } from './types';
 
 describe('Grid Pivot and Grouping', () => {
     let container: HTMLElement;
+    const originalIntersectionObserver = window.IntersectionObserver;
 
     interface TestItem {
         category: string;
@@ -19,7 +20,45 @@ describe('Grid Pivot and Grouping', () => {
         { category: 'B', subcategory: 'B1', region: 'US', amount: 200 },
     ];
 
-    it('should allow expanding groups in pivot mode', (done) => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+
+        class MockIntersectionObserver implements IntersectionObserver {
+            readonly root: Element | Document | null = null;
+            readonly rootMargin: string = '';
+            readonly thresholds: ReadonlyArray<number> = [];
+
+            constructor(private callback: IntersectionObserverCallback) {}
+
+            observe(element: Element) {
+                const entry: IntersectionObserverEntry = {
+                    target: element,
+                    isIntersecting: true,
+                    intersectionRatio: 1,
+                    boundingClientRect: element.getBoundingClientRect(),
+                    intersectionRect: element.getBoundingClientRect(),
+                    rootBounds: null,
+                    time: Date.now(),
+                } as IntersectionObserverEntry;
+
+                this.callback([entry], this);
+                jest.advanceTimersByTime(150);
+            }
+
+            unobserve() {}
+            disconnect() {}
+            takeRecords() { return []; }
+        }
+
+        window.IntersectionObserver = MockIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
+    it('should allow expanding groups in pivot mode', () => {
         const grid = new GridBuilder<TestItem>()
             .withItems(of(items))
             .withPivot({
@@ -38,32 +77,31 @@ describe('Grid Pivot and Grouping', () => {
         document.body.appendChild(container);
 
         // Wait a tick for initial render
-        setTimeout(() => {
-            // Find group row for 'A'
-            const groupRows = container.querySelectorAll('.aura-grid-group-toggle');
-            expect(groupRows.length).toBe(2); // Groups for 'A' and 'B'
+        jest.advanceTimersByTime(50);
 
-            const groupA = groupRows[0].closest('.absolute.w-full') as HTMLElement;
-            expect(groupA.textContent).toContain('A');
+        // Find group row for 'A'
+        const groupRows = container.querySelectorAll('.aura-grid-group-toggle');
+        expect(groupRows.length).toBe(2); // Groups for 'A' and 'B'
 
-            // Find how many rows we have initially (only 2 group headers)
-            let totalRows = container.querySelectorAll('.absolute.w-full').length;
-            expect(totalRows).toBe(2);
+        const groupA = groupRows[0].closest('.absolute.w-full') as HTMLElement;
+        expect(groupA.textContent).toContain('A');
 
-            // Click to expand group 'A'
-            groupA.click();
+        // Find how many rows we have initially (only 2 group headers)
+        let totalRows = container.querySelectorAll('.absolute.w-full').length;
+        expect(totalRows).toBe(2);
 
-            // Wait a tick for update
-            setTimeout(() => {
-                totalRows = container.querySelectorAll('.absolute.w-full').length;
-                // Group A, Group B, and items under A.
-                // Items under A are pivoted rows: (A, A1) and (A, A2).
-                // So total should be 2 groups + 2 items = 4 rows.
-                expect(totalRows).toBe(4);
-                
-                document.body.removeChild(container);
-                done();
-            }, 50);
-        }, 50);
+        // Click to expand group 'A'
+        groupA.click();
+
+        // Wait a tick for update
+        jest.advanceTimersByTime(50);
+
+        totalRows = container.querySelectorAll('.absolute.w-full').length;
+        // Group A, Group B, and items under A.
+        // Items under A are pivoted rows: (A, A1) and (A, A2).
+        // So total should be 2 groups + 2 items = 4 rows.
+        expect(totalRows).toBe(4);
+        
+        document.body.removeChild(container);
     });
 });

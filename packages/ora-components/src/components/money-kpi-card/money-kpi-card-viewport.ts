@@ -116,19 +116,22 @@ export class MoneyKPICardViewport {
 
             if (formatted.cents !== prevCents && prevCents !== '') {
                 centsEl.classList.remove('mkp-roll-digit');
-                void centsEl.offsetWidth;
-                centsEl.classList.add('mkp-roll-digit');
+                requestAnimationFrame(() => {
+                    centsEl.classList.add('mkp-roll-digit');
+                });
             }
             prevCents = formatted.cents;
 
             if (direction === 'up') {
                 body.classList.remove('mkp-flash-up', 'mkp-flash-down');
-                void body.offsetWidth;
-                body.classList.add('mkp-flash-up');
+                requestAnimationFrame(() => {
+                    body.classList.add('mkp-flash-up');
+                });
             } else if (direction === 'down') {
                 body.classList.remove('mkp-flash-up', 'mkp-flash-down');
-                void body.offsetWidth;
-                body.classList.add('mkp-flash-down');
+                requestAnimationFrame(() => {
+                    body.classList.add('mkp-flash-down');
+                });
             }
         }));
 

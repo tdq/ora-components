@@ -19,13 +19,29 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
     EUR: '€', USD: '$', GBP: '£', JPY: '¥', CHF: 'Fr',
 };
 
+// Cache for Intl.NumberFormat instances to avoid expensive re-creation
+const formatters = new Map<string, Intl.NumberFormat>();
+
+function getFormatter(currency: string, decimals: number): Intl.NumberFormat {
+    const key = `${currency}-${decimals}`;
+    let fmt = formatters.get(key);
+    if (!fmt) {
+        fmt = new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        });
+        formatters.set(key, fmt);
+    }
+    return fmt;
+}
+
 const fmtEUR = (n: number): string =>
-    '€ ' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    '€ ' + getFormatter('EUR', 2).format(n);
 
 const fmtAmount = (n: number, currency: string): string => {
     const sym = CURRENCY_SYMBOLS[currency] ?? currency;
     const decimals = currency === 'JPY' ? 0 : 2;
-    return sym + ' ' + n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    return sym + ' ' + getFormatter(currency, decimals).format(n);
 };
 
 const pad2 = (n: number) => n.toString().padStart(2, '0');

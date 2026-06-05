@@ -163,10 +163,11 @@ export class MoneyFieldLogic {
     }
 
     private updateCurrencyDisplay(currencies: string[]) {
-        this.suffixContainer.innerHTML = '';
+        const container = this.suffixContainer;
 
         if (currencies.length === 0) {
-            this.suffixContainer.classList.add('hidden');
+            if (container.childNodes.length > 0) container.innerHTML = '';
+            container.classList.add('hidden');
             return;
         }
 
@@ -174,13 +175,23 @@ export class MoneyFieldLogic {
             // Single currency: show static symbol
             const currencyId = currencies[0];
             const symbol = CurrencyRegistry.getSymbol(currencyId);
-            const span = document.createElement('span');
-            span.className = this.state.isGlass
+            
+            // Reuse existing span if possible to avoid layout thrashing
+            let span = container.firstElementChild as HTMLSpanElement | null;
+            if (!span || span.tagName !== 'SPAN' || container.children.length > 1) {
+                container.innerHTML = '';
+                span = document.createElement('span');
+                container.appendChild(span);
+            }
+            
+            const targetClass = this.state.isGlass
                 ? 'body-large text-gray-900 dark:text-white/80 select-none'
                 : 'body-large text-on-surface-variant select-none';
-            span.textContent = symbol;
-            this.suffixContainer.appendChild(span);
-            this.suffixContainer.classList.remove('hidden');
+            
+            if (span.className !== targetClass) span.className = targetClass;
+            if (span.textContent !== symbol) span.textContent = symbol;
+            
+            container.classList.remove('hidden');
 
             // If we have a value with a different currency or no currency, update it
             if (this.currentValue && this.currentValue.currencyId !== currencyId) {
@@ -189,6 +200,7 @@ export class MoneyFieldLogic {
             this.currentCurrency = currencyId;
         } else {
             // Multiple currencies: create purpose-built currency dropdown
+            container.innerHTML = '';
             const dropdown = createCurrencyDropdown(
                 currencies,
                 this.currencyValue$,
@@ -197,10 +209,9 @@ export class MoneyFieldLogic {
                 this.container
             );
             dropdown.classList.add('h-full');
-            this.suffixContainer.appendChild(dropdown);
-            this.suffixContainer.classList.remove('hidden', 'gap-2');
-            this.suffixContainer.classList.add('gap-0');
-            this.suffixContainer.classList.add('border-l', 'border-outline-variant', 'pl-0');
+            container.appendChild(dropdown);
+            container.classList.remove('hidden', 'gap-2');
+            container.classList.add('gap-0', 'border-l', 'border-outline-variant', 'pl-0');
 
             // Set initial currency if we have one
             if (this.currentCurrency && currencies.includes(this.currentCurrency)) {

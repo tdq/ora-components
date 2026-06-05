@@ -68,6 +68,11 @@ async function prerenderRoute(
 
     const page = await browser.newPage();
     try {
+        // Set prerender mode flag before navigation
+        await page.addInitScript(() => {
+            (window as any).__PRERENDER_MODE__ = true;
+        });
+
         await page.goto(url, { waitUntil: 'networkidle' });
 
         // Wait for the app to signal it is ready

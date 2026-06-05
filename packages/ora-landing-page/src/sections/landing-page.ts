@@ -6,6 +6,7 @@ import { createGetStarted } from './get-started';
 import { createPlayground } from './playground';
 import { createLogo } from '../components/logo';
 import { router } from '../routes';
+import { createLazySection } from '../utils/lazy-section';
 
 export function createLandingPage(): HTMLElement {
     const container = document.createElement('div');
@@ -17,13 +18,15 @@ export function createLandingPage(): HTMLElement {
     main.className = 'flex flex-col w-full';
 
     main.appendChild(createHero());
-    main.appendChild(createProblem());
-    main.appendChild(createFeatures());
-    main.appendChild(createPlayground());
-    main.appendChild(createGetStarted());
+    
+    // Lazy load non-critical sections
+    main.appendChild(createLazySection(createProblem, { minHeight: '600px' }));
+    main.appendChild(createLazySection(createFeatures, { minHeight: '1000px' }));
+    main.appendChild(createLazySection(createPlayground, { minHeight: '1200px' }));
+    main.appendChild(createLazySection(createGetStarted, { minHeight: '800px' }));
 
     container.appendChild(main);
-    container.appendChild(createFooter());
+    container.appendChild(createLazySection(createFooter, { minHeight: '400px' }));
 
     return container;
 }

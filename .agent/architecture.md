@@ -9,10 +9,10 @@ packages/
 │   │   │       ├── index.ts
 │   │   │       ├── <name>.ts       # Builder class (e.g. ButtonBuilder)
 │   │   │       └── *.ts            # Supporting files (types, styles, logic, …)
-│   │   ├── core/          # ComponentBuilder base, icons, destroyable-element
+│   │   ├── core/          # ComponentBuilder base, icons, lifecycle-boundary, destroyable-element
 │   │   ├── theme/         # ThemeManager and types
 │   │   ├── types/         # Shared domain types used across multiple components (e.g. Money for Grid and MoneyField)
-│   │   └── utils/         # Shared utilities
+│   │   └── utils/         # Shared utilities (optimized-pipeline, formatters, …)
 │   ├── scripts/
 │   │   ├── reorganize-types.mjs   # Post-build: moves dist/components/* → dist/*
 │   │   └── generate-manifest.mjs  # Post-build: generates dist/component-manifest.json
@@ -94,6 +94,34 @@ The monorepo was renamed from `a1-components` to `ora-components`, and later sco
 
 All source code, configs, imports, generated CSS, and documentation have been updated.
 The npm package is published as `@tdq/ora-components` and imports use `@tdq/ora-components/<entry>` paths.
+
+## Shared infrastructure utilities
+
+Two reusable utilities from the shared library layer are used by multiple components:
+
+### `createOptimizedPipeline` (`src/utils/optimized-pipeline.ts`)
+
+A visibility-gated, energy-efficient data pipeline. Wraps a source `Observable<T>` with an `IntersectionObserver` that defers subscription until the host element enters the viewport, and tears down instantly on viewport exit. Includes exponential-backoff retry for network resilience.
+
+**Consumers**: `GridBuilder` (wraps `items$`), `MoneyKPICardViewport` (wraps `value$`), `FxTickerViewport` (wraps `data$`).
+
+### `createLifecycleBoundary` (`src/core/lifecycle-boundary.ts`)
+
+A deterministic one-shot teardown mechanism via a hidden `<ora-lifecycle-boundary>` custom element. Fires `onDisconnect` exactly once when the element is permanently removed from the DOM. Preferred over the legacy `registerDestroy` for new components.
+
+**Consumers**: `GridBuilder` (tears down logic, viewport, and subscriptions), `MoneyKPICardViewport` (unsubscribes from logic and description streams), `FxTickerViewport` (unsubscribes from data stream and clears flash timers).
+
+### Relationship between the two
+
+`createOptimizedPipeline` and `createLifecycleBoundary` are complementary:
+- `createOptimizedPipeline` **creates** a stream that only emits when the element is in view
+- `createLifecycleBoundary` **destroys** subscriptions when the element is removed from the DOM
+
+Both are wired in `build()`: the pipeline gates visibility during the element's lifetime, and the boundary tears down everything when the element leaves the DOM permanently.
+
+### Legacy alternative: `registerDestroy` (`src/core/destroyable-element.ts`)
+
+Older components use a `MutationObserver`-based `registerDestroy` pattern. Not recommended for new components — prefer `createLifecycleBoundary`.
 
 ## MCP server tools
 

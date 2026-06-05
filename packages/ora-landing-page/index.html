@@ -29,7 +29,36 @@
     <meta name="twitter:description" content="Enterprise-grade UI components built on RxJS, TypeScript, and Material 3. No Shadow DOM, no framework wrappers — reactive financial dashboards with ~60kb gzipped.">
     <meta name="twitter:image" content="https://ora-components.com/og-default.png">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="preload" href="./src/styles.css" as="style">
     <link rel="stylesheet" href="./src/styles.css">
+    <style>
+        :root {
+            --md-sys-color-background: #FFFFFF;
+            --md-sys-color-on-background: #0f172a;
+            --accent-gradient-text-1: linear-gradient(135deg, #0f172a, #3730a3, #0f172a);
+        }
+        [data-theme="dark"] {
+            --md-sys-color-background: #141218;
+            --md-sys-color-on-background: #E6E1E5;
+        }
+        body {
+            margin: 0;
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        #app { min-height: 100vh; display: flex; flex-direction: column; }
+        .text-gradient-1 {
+            background: var(--accent-gradient-text-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
 </head>
 
 <body>

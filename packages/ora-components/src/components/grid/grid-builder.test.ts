@@ -8,6 +8,45 @@ import { PercentageColumnBuilder } from './columns/percentage-column';
 
 describe('GridBuilder', () => {
     let container: HTMLElement;
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+
+        class MockIntersectionObserver implements IntersectionObserver {
+            readonly root: Element | Document | null = null;
+            readonly rootMargin: string = '';
+            readonly thresholds: ReadonlyArray<number> = [];
+
+            constructor(private callback: IntersectionObserverCallback) {}
+
+            observe(element: Element) {
+                const entry: IntersectionObserverEntry = {
+                    target: element,
+                    isIntersecting: true,
+                    intersectionRatio: 1,
+                    boundingClientRect: element.getBoundingClientRect(),
+                    intersectionRect: element.getBoundingClientRect(),
+                    rootBounds: null,
+                    time: Date.now(),
+                } as IntersectionObserverEntry;
+
+                this.callback([entry], this);
+                jest.advanceTimersByTime(150);
+            }
+
+            unobserve() {}
+            disconnect() {}
+            takeRecords() { return []; }
+        }
+
+        window.IntersectionObserver = MockIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
 
     interface TestItem {
         id: number;
