@@ -36,7 +36,8 @@ describe('LayoutBuilder', () => {
         builder.addSlot().withContent(new MockBuilder());
 
         const layout = builder.build();
-        expect(layout.children.length).toBe(2);
+        // 2 slots + 1 ora-lifecycle-boundary
+        expect(layout.children.length).toBe(3);
     });
 
     it('should apply slot sizes', () => {
@@ -44,7 +45,8 @@ describe('LayoutBuilder', () => {
         builder.addSlot().withSize(SlotSize.HALF);
 
         const layout = builder.build();
-        const slot = layout.children[0] as HTMLElement;
+        // Children: [boundary, slot]
+        const slot = layout.children[1] as HTMLElement;
         expect(slot.classList.contains('basis-1/2')).toBe(true);
     });
 
@@ -54,7 +56,8 @@ describe('LayoutBuilder', () => {
         builder.addSlot().withVisible(visible$);
 
         const layout = builder.build();
-        const slot = layout.children[0] as HTMLElement;
+        // Children: [boundary, slot]
+        const slot = layout.children[1] as HTMLElement;
         expect(slot.style.display).toBe('');
 
         visible$.next(false);
@@ -85,7 +88,8 @@ describe('LayoutBuilder', () => {
         builder.addSlot().withContent(new MockBuilder());
 
         const layout = builder.build();
-        const slot = layout.children[0] as HTMLElement;
+        // Children: [boundary, slot]
+        const slot = layout.children[1] as HTMLElement;
         expect(slot.classList.contains('justify-center')).toBe(true);
         expect(slot.classList.contains('items-center')).toBe(true);
 
@@ -105,7 +109,8 @@ describe('LayoutBuilder', () => {
             .withContent(new MockBuilder());
 
         const layout = builder.build();
-        const slot = layout.children[0] as HTMLElement;
+        // Children: [boundary, slot]
+        const slot = layout.children[1] as HTMLElement;
         
         expect(slot.classList.contains('justify-end')).toBe(true);
         
@@ -113,6 +118,7 @@ describe('LayoutBuilder', () => {
         expect(slot.classList.contains('justify-end')).toBe(false);
         expect(slot.classList.contains('justify-start')).toBe(true);
     });
+
 
     it('should handle layout alignment on horizontal container', () => {
         const alignment$ = new BehaviorSubject(Alignment.CENTER);

@@ -55,9 +55,8 @@ describe('Tabs Component', () => {
         const element = tabs.build();
         
         // Check for specific glass classes or structure
-        // Implementation details: header section gets glass classes
-        // The header section is the first child
-        const header = element.children[0] as HTMLElement;
+        // The header section is the one with border-b
+        const header = element.querySelector('.border-b') as HTMLElement;
         expect(header).not.toBeNull();
         
         // Should have transparent border in glass mode
@@ -68,4 +67,5 @@ describe('Tabs Component', () => {
         expect(header.className).not.toContain('backdrop-blur-xl');
         expect(header.className).not.toContain('ring-1');
     });
+
 });
