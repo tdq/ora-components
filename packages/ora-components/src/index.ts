@@ -1,6 +1,7 @@
 export * from './core/component-builder';
 export * from './core/destroyable-element';
 export * from './core/icons';
+export * from './core/lifecycle-boundary';
 export * from './types/money';
 export * from './types/trend';
 export * from './components/button';
@@ -28,3 +29,4 @@ export * from './components/multi-select-list';
 export * from './components/component-parts';
 export * from './theme';
 export * from './router';
+export * from './utils/optimized-pipeline';

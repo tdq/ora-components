@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
-import { FxRate, FxTickerLogic, TickerItem } from './fx-ticker-logic';
+import { FxRate, TickerItem } from './fx-ticker-logic';
 import { FxTickerViewport } from './fx-ticker-viewport';
 
 const DEFAULTS = {
@@ -93,9 +93,8 @@ export class FxTickerBuilder implements ComponentBuilder {
             throw new Error('FxTickerBuilder: withData() is required before build()');
         }
 
-        const logic = new FxTickerLogic(this._data$);
         const viewport = new FxTickerViewport({
-            logic,
+            data$:           this._data$,
             label$:          this._label$ ?? of(DEFAULTS.label),
             labelVisible$:   this._labelVisible$ ?? of(true),
             rateFormatter:   this._rateFormatter,

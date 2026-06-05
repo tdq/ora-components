@@ -1,11 +1,12 @@
 import { Observable, Subscription } from 'rxjs';
-import { FxTickerLogic, TickerItem } from './fx-ticker-logic';
+import { FxRate, FxTickerLogic, TickerItem } from './fx-ticker-logic';
 import { LabelBuilder } from '../label/label';
 import { CurrencyRegistry } from '../../utils/currency-registry';
-import { registerDestroy } from '../../core/destroyable-element';
+import { createLifecycleBoundary } from '../../core/lifecycle-boundary';
+import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 
 export interface FxTickerViewportConfig {
-    logic: FxTickerLogic;
+    data$: Observable<FxRate[]>;
     label$: Observable<string>;
     labelVisible$: Observable<boolean>;
     rateFormatter?: (item: TickerItem) => string;
@@ -70,7 +71,7 @@ export class FxTickerViewport {
 
     build(): HTMLElement {
         const {
-            logic,
+            data$,
             label$,
             labelVisible$,
             rateFormatter = defaultRateFormatter,
@@ -148,6 +149,10 @@ export class FxTickerViewport {
             ariaLive.setAttribute('aria-live', 'polite');
             root.appendChild(ariaLive);
         }
+
+        // ── Gate data$ on root visibility, then derive logic ──────────────────
+        const optimizedData$ = createOptimizedPipeline(root, data$);
+        const logic = new FxTickerLogic(optimizedData$);
 
         // ── Subscriptions & flash timers ──────────────────────────────────────
         const sub = new Subscription();
@@ -265,11 +270,13 @@ export class FxTickerViewport {
         );
 
         // ── Cleanup ───────────────────────────────────────────────────────────
-        registerDestroy(root, () => {
+        const boundary = createLifecycleBoundary();
+        root.appendChild(boundary);
+        boundary.onDisconnect = () => {
             sub.unsubscribe();
             flashTimers.forEach(clearTimeout);
             flashTimers.length = 0;
-        });
+        };
 
         return root;
     }

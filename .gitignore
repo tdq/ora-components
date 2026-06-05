@@ -10,3 +10,5 @@ packages/examples/.turbo/*
 packages/ora-mcp-server/.turbo/*
 .claude
 .antigravitycli
+tasks/*
+plans/*

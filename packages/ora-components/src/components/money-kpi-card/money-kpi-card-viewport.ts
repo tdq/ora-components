@@ -2,8 +2,10 @@ import { Observable, Subscription, of } from 'rxjs';
 import { MoneyKPICardLogic, MoneyKPIData } from './money-kpi-card-logic';
 import { LabelBuilder } from '../label/label';
 import { TrendBuilder } from '../trend/trend-builder';
-import { registerDestroy } from '../../core/destroyable-element';
+import { createLifecycleBoundary } from '../../core/lifecycle-boundary';
+import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { Trend } from '../../types/trend';
+import { Money } from '../../types/money';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -12,7 +14,8 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export interface MoneyKPICardViewportConfig {
-    logic: MoneyKPICardLogic;
+    value$: Observable<Money>;
+    precision$: Observable<number>;
     label$?: Observable<string>;
     trend$?: Observable<Trend>;
     description$?: Observable<string>;
@@ -32,7 +35,8 @@ export class MoneyKPICardViewport {
     }
 
     build(): HTMLElement {
-        const { logic, label$, trend$, description$, glass, extraClass$ } = this.config;
+        const { value$, precision$, label$, trend$, description$, glass, extraClass$ } = this.config;
+
         const sub = new Subscription();
 
         // ---- Header row: label + trend ----
@@ -87,6 +91,15 @@ export class MoneyKPICardViewport {
         body.appendChild(headerRow);
         body.appendChild(valueRow);
 
+        // ---- Create the lifecycle boundary (root element / visibility host) ----
+        const boundary = createLifecycleBoundary();
+
+        // ---- Gate value$ on viewport visibility (pipeline applies its own defaults) ----
+        const optimizedValue$ = createOptimizedPipeline(body, value$);
+
+        // ---- Derive logic from the visibility-gated stream ----
+        const logic = new MoneyKPICardLogic(optimizedValue$, precision$);
+
         if (description$) {
             body.appendChild(descRow);
         }
@@ -133,7 +146,14 @@ export class MoneyKPICardViewport {
             }));
         }
 
-        registerDestroy(body, () => sub.unsubscribe());
+        // ---- Nest the card body inside the boundary (boundary is the root) ----
+        body.appendChild(boundary);
+
+        // ---- Teardown: onDisconnect fires once when the boundary is removed from the DOM;
+        //      unsubscribing disposes the optimized pipeline, which disconnects the
+        //      IntersectionObserver and the source. ----
+        boundary.onDisconnect = () => sub.unsubscribe();
+
         return body;
     }
 }
