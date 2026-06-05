@@ -188,16 +188,19 @@ export class SeriesRenderer {
             return `${i === 0 ? 'M' : 'L'} ${x},${baselineY}`;
         }).join(' ');
 
-        const areaPathData = `${linePoints} L ${xScale(data.length - 1)},${baselineY} L ${xScale(0)},${baselineY} Z`;
-        const zeroAreaPathData = `${zeroLinePoints} L ${xScale(data.length - 1)},${baselineY} L ${xScale(0)},${baselineY} Z`;
+        const lastX = xScale(data.length - 1);
+        const firstX = xScale(0);
+        const areaPathData = `${linePoints} L ${lastX},${baselineY} L ${firstX},${baselineY} Z`;
+        const zeroAreaPathData = `${zeroLinePoints} L ${lastX},${baselineY} L ${firstX},${baselineY} Z`;
         
-        const area = this.createSvgElement('path', {
+        const areaAttrs: Record<string, string> = {
             d: state.animate ? zeroAreaPathData : areaPathData,
             fill: config.color || 'currentColor',
             'fill-opacity': String(config.opacity || 0.3),
             filter: `url(#${filterId})`
-        });
+        };
 
+        const area = this.createSvgElement('path', areaAttrs);
         if (state.animate) {
             const anim = this.createSvgElement('animate', {
                 attributeName: 'd',
@@ -212,14 +215,16 @@ export class SeriesRenderer {
         }
         g.appendChild(area);
 
-        const line = this.createSvgElement('path', {
+        const lineAttrs: Record<string, string> = {
             d: state.animate ? zeroLinePoints : linePoints,
             fill: 'none',
             stroke: config.color || 'currentColor',
-            'stroke-width': '2',
-            filter: `url(#${filterId})`
-        });
+            'stroke-width': '2'
+            // We omit filter here for the top line of the area chart 
+            // to avoid double-shadowing with the area's own filter.
+        };
 
+        const line = this.createSvgElement('path', lineAttrs);
         if (state.animate) {
             const anim = this.createSvgElement('animate', {
                 attributeName: 'd',

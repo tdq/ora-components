@@ -103,13 +103,13 @@ Two reusable utilities from the shared library layer are used by multiple compon
 
 A visibility-gated, energy-efficient data pipeline. Wraps a source `Observable<T>` with an `IntersectionObserver` that defers subscription until the host element enters the viewport, and tears down instantly on viewport exit. Includes exponential-backoff retry for network resilience.
 
-**Consumers**: `GridBuilder` (wraps `items$`), `MoneyKPICardViewport` (wraps `value$`), `FxTickerViewport` (wraps `data$`).
+**Consumers**: `GridBuilder` (wraps `items$`), `ChartBuilder` (wraps `data$`), `MoneyKPICardViewport` (wraps `value$`), `FxTickerViewport` (wraps `data$`).
 
 ### `createLifecycleBoundary` (`src/core/lifecycle-boundary.ts`)
 
 A deterministic one-shot teardown mechanism via a hidden `<ora-lifecycle-boundary>` custom element. Fires `onDisconnect` exactly once when the element is permanently removed from the DOM. Preferred over the legacy `registerDestroy` for new components.
 
-**Consumers**: `GridBuilder` (tears down logic, viewport, and subscriptions), `MoneyKPICardViewport` (unsubscribes from logic and description streams), `FxTickerViewport` (unsubscribes from data stream and clears flash timers).
+**Consumers**: `GridBuilder` (tears down logic, viewport, and subscriptions), `ChartViewport` (unsubscribes from logic state, destroys SVG, removes event listeners), `MoneyKPICardViewport` (unsubscribes from logic and description streams), `FxTickerViewport` (unsubscribes from data stream and clears flash timers).
 
 ### Relationship between the two
 

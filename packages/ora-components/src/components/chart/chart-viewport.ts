@@ -8,8 +8,8 @@ import { ChartLegend } from './chart-legend';
 import { ChartTooltip } from './chart-tooltip';
 import { HIGHLIGHT_RADIUS } from './constants';
 import { LabelBuilder, LabelSize } from '../label';
-import { registerDestroy } from '@/core/destroyable-element';
-import { map } from 'rxjs';
+import { createLifecycleBoundary } from '../../core/lifecycle-boundary';
+import { map, Subscription } from 'rxjs';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -54,10 +54,12 @@ export class ChartViewport<ITEM> {
         this.element.appendChild(this.legend.getElement());
         this.chartArea.appendChild(this.tooltip.getElement());
 
-        const sub = this.logic.state$.subscribe(state => {
+        const sub = new Subscription();
+
+        sub.add(this.logic.state$.subscribe(state => {
             this.lastState = state;
             this.render(state);
-        });
+        }));
 
         const svg = this.svgArea.getElement();
         const handleMouseMove = (e: MouseEvent) => {
@@ -80,13 +82,15 @@ export class ChartViewport<ITEM> {
 
         this.svgArea.observe(this.chartArea);
 
-        registerDestroy(this.element, () => {
+        const boundary = createLifecycleBoundary();
+        boundary.onDisconnect = () => {
             sub.unsubscribe();
             this.logic.destroy();
             this.svgArea.destroy();
             svg.removeEventListener('mousemove', handleMouseMove);
             svg.removeEventListener('mouseleave', handleMouseLeave);
-        });
+        };
+        this.element.appendChild(boundary);
     }
 
     getElement(): HTMLElement {

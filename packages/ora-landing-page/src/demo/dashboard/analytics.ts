@@ -1,5 +1,5 @@
 import { PanelBuilder, PanelGap, ChartBuilder, LabelBuilder, registerDestroy } from '@tdq/ora-components';
-import { of, timer, Subject, Subscription } from 'rxjs';
+import { of, timer, ReplaySubject, Subscription, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { themedColor$ } from './theme-tokens';
 
@@ -38,7 +38,7 @@ function createRevenueChart(): HTMLElement {
     const BASE = [18200, 15800, 22400, 28100, 24600, 31500, 29800, 33200, 36700, 34100, 38500, 42300];
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    const dataRelay$ = new Subject<Array<{ x: string; y: number }>>();
+    const dataRelay$ = new BehaviorSubject<Array<{ x: string; y: number }>>([]);
     const sub: Subscription = timer(0, 4000).pipe(
         map(() => MONTHS.map((x, i) => ({ x, y: BASE[i] + Math.round((Math.random() - 0.5) * 500) })))
     ).subscribe(data => dataRelay$.next(data));

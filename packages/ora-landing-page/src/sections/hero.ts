@@ -107,6 +107,23 @@ export function createHero(): HTMLElement {
                     ? 'linear-gradient(to right, #7D2950, #db2777)'
                     : 'linear-gradient(to right, #4f46e5, #818cf8)';
         }
+
+        const title1 = section.querySelector('#hero-title-1') as HTMLElement;
+        const title2 = section.querySelector('#hero-title-2') as HTMLElement;
+        if (title1) {
+            title1.style.backgroundImage = theme === 'dark'
+                ? 'linear-gradient(135deg, #ffffff, #dbeafe, #e9d5ff)'
+                : theme === 'pink'
+                    ? 'linear-gradient(135deg, #0f172a, #9d174d, #0f172a)'
+                    : 'linear-gradient(135deg, #0f172a, #3730a3, #0f172a)';
+        }
+        if (title2) {
+            title2.style.backgroundImage = theme === 'dark'
+                ? 'linear-gradient(135deg, #60a5fa, #c084fc)'
+                : theme === 'pink'
+                    ? 'linear-gradient(135deg, #db2777, #e11d48)'
+                    : 'linear-gradient(135deg, #4f46e5, #6366f1)';
+        }
     }));
 
     registerDestroy(section, () => sub.unsubscribe());

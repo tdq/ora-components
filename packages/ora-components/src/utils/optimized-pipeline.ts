@@ -30,7 +30,7 @@ export function createOptimizedPipeline<T>(
     const {
         rootMargin = '0px 0px 200px 0px',
         threshold = 0.01,
-        appearDebounceMs = 150,
+        appearDebounceMs = 20,
         retryCount = 5,
         retryBaseMs = 500,
         logger = console,

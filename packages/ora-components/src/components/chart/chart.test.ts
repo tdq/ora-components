@@ -3,7 +3,7 @@ import { ChartLogic } from './chart-logic';
 import { ChartState } from './types';
 import { AxisRenderer } from './axis-renderer';
 import { HIGHLIGHT_DIAMETER } from './constants';
-import { of, BehaviorSubject } from 'rxjs';
+import { Observable, of, BehaviorSubject } from 'rxjs';
 import '@testing-library/jest-dom';
 
 // ---------------------------------------------------------------------------
@@ -115,11 +115,70 @@ describe('AxisRenderer.getLabelRotation (ST-3)', () => {
 });
 
 describe('ChartBuilder', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+
+        class MockIntersectionObserver implements IntersectionObserver {
+            readonly root: Element | Document | null = null;
+            readonly rootMargin: string = '';
+            readonly thresholds: ReadonlyArray<number> = [];
+
+            constructor(private callback: IntersectionObserverCallback) {}
+
+            observe(element: Element) {
+                const entry: IntersectionObserverEntry = {
+                    target: element,
+                    isIntersecting: true,
+                    intersectionRatio: 1,
+                    boundingClientRect: element.getBoundingClientRect(),
+                    intersectionRect: element.getBoundingClientRect(),
+                    rootBounds: null,
+                    time: Date.now(),
+                } as IntersectionObserverEntry;
+
+                this.callback([entry], this);
+                jest.advanceTimersByTime(150);
+            }
+
+            unobserve() {}
+            disconnect() {}
+            takeRecords() { return []; }
+        }
+
+        window.IntersectionObserver = MockIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
     const testData = [
         { category: 'Jan', value1: 10, value2: 20 },
         { category: 'Feb', value1: 15, value2: 25 },
         { category: 'Mar', value1: 8, value2: 30 }
     ];
+
+    it('withData() stores the raw Observable without subscribing immediately', () => {
+        const spy = jest.fn();
+        const data$ = new Observable<any[]>(subscriber => {
+            spy();
+            subscriber.next(testData);
+        });
+
+        const builder = new ChartBuilder<any>()
+            .withData(data$)
+            .withCategoryField('category');
+
+        // Must NOT subscribe until build() is called
+        expect(spy).not.toHaveBeenCalled();
+
+        // build() subscribes and the pipeline delivers data
+        builder.build();
+        expect(spy).toHaveBeenCalledTimes(1);
+    });
 
     it('should create a chart container', () => {
         const chart = new ChartBuilder()
@@ -390,6 +449,46 @@ describe('ChartBuilder', () => {
 });
 
 describe('Chart Glass Effect', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+
+        class MockIntersectionObserver implements IntersectionObserver {
+            readonly root: Element | Document | null = null;
+            readonly rootMargin: string = '';
+            readonly thresholds: ReadonlyArray<number> = [];
+
+            constructor(private callback: IntersectionObserverCallback) {}
+
+            observe(element: Element) {
+                const entry: IntersectionObserverEntry = {
+                    target: element,
+                    isIntersecting: true,
+                    intersectionRatio: 1,
+                    boundingClientRect: element.getBoundingClientRect(),
+                    intersectionRect: element.getBoundingClientRect(),
+                    rootBounds: null,
+                    time: Date.now(),
+                } as IntersectionObserverEntry;
+
+                this.callback([entry], this);
+                jest.advanceTimersByTime(150);
+            }
+
+            unobserve() {}
+            disconnect() {}
+            takeRecords() { return []; }
+        }
+
+        window.IntersectionObserver = MockIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
     const testData = [
         { category: 'Jan', value1: 10 },
         { category: 'Feb', value1: 15 }
