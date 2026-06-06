@@ -1,7 +1,8 @@
-import { Subject } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { MoneyKPICardBuilder } from './money-kpi-card-builder';
 import { Money } from '../../types/money';
 import { Trend } from '../../types/trend';
+import { GatedObserver } from '../../utils/optimized-pipeline';
 
 // ---- Mock type helpers ----
 interface IntersectionObserverMockStatic {
@@ -323,6 +324,22 @@ describe('MoneyKPICard — always-on visibility gating', () => {
         const descEl = body.querySelector('.mkp-description');
         expect(descEl).not.toBeNull();
         expect(descEl?.textContent).toContain('vs last quarter');
+    });
+
+    // -----------------------------------------------------------------------
+    // 7. Idempotency guard: a GatedObserver source bypasses createOptimizedPipeline
+    //    and renders immediately without any triggerVisibility call.
+    // -----------------------------------------------------------------------
+    it('renders immediately when value$ is already a GatedObserver (no triggerVisibility needed)', () => {
+        const gatedValue$ = new GatedObserver(of({ amount: 1234.56, currencyId: 'USD' }));
+        const body = new MoneyKPICardBuilder()
+            .withValue(gatedValue$)
+            .build();
+        document.body.appendChild(body);
+
+        // No triggerVisibility call — the GatedObserver is used directly
+        const wholeEl = getWholeEl(body);
+        expect(wholeEl?.textContent).toBe('1,234');
     });
 
     // -----------------------------------------------------------------------

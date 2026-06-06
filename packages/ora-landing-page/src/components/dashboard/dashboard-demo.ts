@@ -65,20 +65,19 @@ export function createDashboardDemo(sub: Subscription): DashboardDemoResult {
     const stack = document.createElement('div');
     stack.className = 'relative space-y-4 min-w-0';
 
-    // 1. FX ticker (top) - Defer
-    const tickerPlaceholder = document.createElement('div');
-    tickerPlaceholder.style.height = '48px';
-    stack.appendChild(tickerPlaceholder);
+    // 1. FX ticker (top)
+    stack.appendChild(
+        new PanelBuilder().asGlass().withContent(
+            new FxTickerBuilder().withData(fxRates$)
+        ).build()
+    );
 
     // 2. Cashflow chart (left) + KPI stack (right)
     const middleRow = document.createElement('div');
     middleRow.className = 'hero-middle-row';
     stack.appendChild(middleRow);
 
-    const chartPlaceholder = document.createElement('div');
-    chartPlaceholder.className = 'flex-1';
-    chartPlaceholder.style.height = '320px';
-    middleRow.appendChild(chartPlaceholder);
+    middleRow.appendChild(buildCashflowChart());
 
     const kpiStack = document.createElement('div');
     kpiStack.className = 'hero-kpi-stack';
@@ -86,45 +85,8 @@ export function createDashboardDemo(sub: Subscription): DashboardDemoResult {
     kpiStack.appendChild(buildArAgingTile());
     middleRow.appendChild(kpiStack);
 
-    // 3. Journal entries — live grid (full width) - Defer
-    const journalPlaceholder = document.createElement('div');
-    journalPlaceholder.style.height = '360px';
-    stack.appendChild(journalPlaceholder);
-
-    // If we are in prerender mode, build immediately for full HTML capture
-    if ((window as any).__PRERENDER_MODE__) {
-        tickerPlaceholder.replaceWith(new PanelBuilder().asGlass().withContent(
-            new FxTickerBuilder().withData(fxRates$)
-        ).build());
-        chartPlaceholder.replaceWith(buildCashflowChart());
-        journalPlaceholder.replaceWith(buildJournalEntries(sub));
-
-        return {
-            desktopElement: stack,
-            mobileElement: cashKpi
-        };
-    }
-
-    // Use requestIdleCallback or setTimeout to build heavy pieces without blocking LCP
-    const defer = (window as any).requestIdleCallback || ((cb: any) => setTimeout(cb, 1));
-    
-    defer(() => {
-        // Build FX Ticker
-        const ticker = new PanelBuilder().asGlass().withContent(
-            new FxTickerBuilder().withData(fxRates$)
-        ).build();
-        tickerPlaceholder.replaceWith(ticker);
-
-        defer(() => {
-            // Build Cashflow Chart
-            chartPlaceholder.replaceWith(buildCashflowChart());
-
-            defer(() => {
-                // Build Journal Entries
-                journalPlaceholder.replaceWith(buildJournalEntries(sub));
-            });
-        });
-    });
+    // 3. Journal entries — live grid (full width)
+    stack.appendChild(buildJournalEntries(sub));
 
     return {
         desktopElement: stack,

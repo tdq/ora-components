@@ -2,6 +2,36 @@ import { BehaviorSubject, of, Subject } from 'rxjs';
 import '@testing-library/jest-dom';
 import { ListBoxBuilder } from './listbox';
 import { ListBoxStyle } from './types';
+import { GatedObserver } from '../../utils/optimized-pipeline';
+
+// ---- Mock type helpers ----
+interface IntersectionObserverMockStatic {
+    triggerVisibility(element: Element, isIntersecting: boolean, ratio?: number): void;
+    reset(): void;
+}
+
+interface GlobalWithIOMock {
+    IntersectionObserverMock: IntersectionObserverMockStatic;
+}
+
+function getIOMock(): IntersectionObserverMockStatic {
+    return (globalThis as unknown as GlobalWithIOMock).IntersectionObserverMock;
+}
+
+// ---- Visibility helper ----
+
+/**
+ * Attaches el to document.body (if not already attached), fires the
+ * IntersectionObserver mock, and advances fake timers past the
+ * optimized-pipeline appearDebounceMs (default 20 ms → use 50 ms).
+ */
+function triggerVisibleAndWait(el: HTMLElement): void {
+    if (!document.body.contains(el)) {
+        document.body.appendChild(el);
+    }
+    getIOMock().triggerVisibility(el, true);
+    jest.advanceTimersByTime(50);
+}
 
 const FRUITS = ['Apple', 'Banana', 'Cherry'];
 
@@ -45,6 +75,83 @@ function fireKey(ul: HTMLUListElement, key: string): KeyboardEvent {
 
 describe('ListBoxBuilder', () => {
 
+    beforeEach(() => {
+        jest.useFakeTimers();
+        getIOMock().reset();
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+        jest.useRealTimers();
+        getIOMock().reset();
+    });
+
+    // ── Viewport gating ──────────────────────────────────────────────────────
+
+    describe('viewport gating (optimized pipeline)', () => {
+
+        it('does NOT render items before the container is visible', () => {
+            const { el } = buildDefault();
+            document.body.appendChild(el);
+
+            // Do NOT trigger visibility — items must not appear
+            jest.advanceTimersByTime(200);
+
+            expect(getLiElements(el)).toHaveLength(0);
+        });
+
+        it('renders items after triggerVisibility(true) + debounce elapses', () => {
+            const { el } = buildDefault();
+            triggerVisibleAndWait(el);
+
+            expect(getLiElements(el)).toHaveLength(3);
+        });
+
+        it('stops rendering new items when the container leaves the viewport', () => {
+            const items$ = new BehaviorSubject<string[]>(FRUITS);
+            const value$ = new BehaviorSubject<string | null>(null);
+            const el = new ListBoxBuilder<string>()
+                .withItems(items$)
+                .withValue(value$)
+                .build();
+
+            triggerVisibleAndWait(el);
+            expect(getLiElements(el)).toHaveLength(3);
+
+            // Hide the container — pipeline switches to EMPTY
+            getIOMock().triggerVisibility(el, false);
+
+            // Push a new items array while hidden
+            items$.next([...FRUITS, 'Date']);
+            jest.advanceTimersByTime(200);
+
+            // DOM must still reflect the last visible render (3 items)
+            expect(getLiElements(el)).toHaveLength(3);
+        });
+    });
+
+    // ── GatedObserver idempotency guard ──────────────────────────────────────
+
+    describe('GatedObserver idempotency guard', () => {
+
+        it('renders items without triggerVisibility when source is already a GatedObserver', () => {
+            const value$ = new BehaviorSubject<string | null>(null);
+            const el = new ListBoxBuilder<string>()
+                .withItems(new GatedObserver(of(FRUITS)))
+                .withValue(value$)
+                .build();
+
+            // Attach to DOM — no triggerVisibility, no timer advancement needed
+            // because the instanceof check bypasses createOptimizedPipeline entirely.
+            document.body.appendChild(el);
+
+            expect(getLiElements(el)).toHaveLength(3);
+            expect(getLiElements(el)[0].querySelector('span:last-child')!.textContent).toBe('Apple');
+            expect(getLiElements(el)[1].querySelector('span:last-child')!.textContent).toBe('Banana');
+            expect(getLiElements(el)[2].querySelector('span:last-child')!.textContent).toBe('Cherry');
+        });
+    });
+
     // ── withStyle(BORDERLESS) ────────────────────────────────────────────────
 
     describe('withStyle(BORDERLESS)', () => {
@@ -52,6 +159,8 @@ describe('ListBoxBuilder', () => {
         // Spec 1: panel has no border classes
         it('panel does NOT have rounded-large, border, or border-outline classes', () => {
             const { el } = buildBorderless();
+            // Panel style is driven by style$/error$ streams (not gated), so no
+            // visibility trigger needed for these structural class assertions.
             const panel = getPanel(el);
             expect(panel).not.toHaveClass('rounded-large');
             expect(panel).not.toHaveClass('border');
@@ -67,6 +176,7 @@ describe('ListBoxBuilder', () => {
                 .withStyle(of(ListBoxStyle.BORDERLESS))
                 .build();
 
+            triggerVisibleAndWait(el);
             const lis = getLiElements(el);
             expect(lis[0]).toHaveClass('bg-on-secondary-container/20');
         });
@@ -80,6 +190,7 @@ describe('ListBoxBuilder', () => {
                 .withStyle(of(ListBoxStyle.BORDERLESS))
                 .build();
 
+            triggerVisibleAndWait(el);
             const lis = getLiElements(el);
             expect(lis[1]).not.toHaveClass('bg-on-secondary-container/20');
             expect(lis[2]).not.toHaveClass('bg-on-secondary-container/20');
@@ -147,6 +258,7 @@ describe('ListBoxBuilder', () => {
                 .withStyle(of(ListBoxStyle.BORDERLESS))
                 .asGlass()
                 .build();
+            triggerVisibleAndWait(el);
             const lis = getLiElements(el);
             expect(lis[0]).toHaveClass('bg-white/40');
         });
@@ -159,6 +271,7 @@ describe('ListBoxBuilder', () => {
                 .withStyle(of(ListBoxStyle.BORDERLESS))
                 .asGlass()
                 .build();
+            triggerVisibleAndWait(el);
             const lis = getLiElements(el);
             // Banana and Cherry are unselected — they get hover:bg-black/5
             expect(lis[1]).toHaveClass('hover:bg-black/5');
@@ -173,6 +286,7 @@ describe('ListBoxBuilder', () => {
                 .withStyle(of(ListBoxStyle.BORDERLESS))
                 .asGlass()
                 .build();
+            triggerVisibleAndWait(el);
             const lis = getLiElements(el);
             expect(lis[0]).not.toHaveClass('bg-on-secondary-container/20');
         });
@@ -206,6 +320,7 @@ describe('ListBoxBuilder', () => {
         // Spec 2: ArrowDown advances focused index; wraps from last to first
         it('ArrowDown moves focus forward through items', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'ArrowDown'); // -1 → 0
@@ -220,6 +335,7 @@ describe('ListBoxBuilder', () => {
 
         it('ArrowDown wraps from last item to first', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             // Navigate to last item (index 2)
@@ -234,6 +350,7 @@ describe('ListBoxBuilder', () => {
         // Spec 3: ArrowUp moves focus backward; wraps from first to last
         it('ArrowUp moves focus backward through items', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'End'); // jump to index 2
@@ -246,6 +363,7 @@ describe('ListBoxBuilder', () => {
 
         it('ArrowUp wraps from first item to last', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'Home'); // jump to index 0
@@ -258,6 +376,7 @@ describe('ListBoxBuilder', () => {
         // Spec 4: Home jumps to index 0
         it('Home jumps focused index to 0', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'End'); // go to last first
@@ -271,6 +390,7 @@ describe('ListBoxBuilder', () => {
         // Spec 5: End jumps to last index
         it('End jumps focused index to last item', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'End');
@@ -283,6 +403,7 @@ describe('ListBoxBuilder', () => {
         // Spec 6: Enter selects focused item via value$.next
         it('Enter calls value$.next with the focused item', () => {
             const { el, value$ } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             const emitted: (string | null)[] = [];
@@ -297,6 +418,7 @@ describe('ListBoxBuilder', () => {
 
         it('Enter on second focused item emits that item', () => {
             const { el, value$ } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             const emitted: (string | null)[] = [];
@@ -311,6 +433,7 @@ describe('ListBoxBuilder', () => {
 
         it('Enter with no focused item (index -1) does not emit', () => {
             const { el, value$ } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             const nexts: (string | null)[] = [];
@@ -326,36 +449,42 @@ describe('ListBoxBuilder', () => {
         // Spec 7: Navigation keys call preventDefault()
         it('ArrowDown calls preventDefault()', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const event = fireKey(getUl(el), 'ArrowDown');
             expect(event.defaultPrevented).toBe(true);
         });
 
         it('ArrowUp calls preventDefault()', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const event = fireKey(getUl(el), 'ArrowUp');
             expect(event.defaultPrevented).toBe(true);
         });
 
         it('Home calls preventDefault()', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const event = fireKey(getUl(el), 'Home');
             expect(event.defaultPrevented).toBe(true);
         });
 
         it('End calls preventDefault()', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const event = fireKey(getUl(el), 'End');
             expect(event.defaultPrevented).toBe(true);
         });
 
         it('Enter calls preventDefault()', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const event = fireKey(getUl(el), 'Enter');
             expect(event.defaultPrevented).toBe(true);
         });
 
         it('unrelated keys do NOT call preventDefault()', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const event = fireKey(getUl(el), 'Tab');
             expect(event.defaultPrevented).toBe(false);
         });
@@ -363,6 +492,7 @@ describe('ListBoxBuilder', () => {
         // Spec 8: Focused item renders with bg-on-surface/12
         it('focused item gets bg-on-surface/12 class', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'ArrowDown'); // focus index 0
@@ -376,6 +506,7 @@ describe('ListBoxBuilder', () => {
                 .withItems(of(FRUITS))
                 .withValue(value$)
                 .build();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'Home'); // focus index 0 (Apple = selected)
@@ -389,6 +520,7 @@ describe('ListBoxBuilder', () => {
                 .withItems(of(FRUITS))
                 .withValue(value$)
                 .build();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'End'); // focus index 2 (Cherry, not selected)
@@ -398,6 +530,7 @@ describe('ListBoxBuilder', () => {
         // Spec 10: focusout with relatedTarget outside the list resets focused index
         it('focusout to outside element resets focused index (removes bg-on-surface/12)', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'ArrowDown'); // index 0 highlighted
@@ -413,12 +546,11 @@ describe('ListBoxBuilder', () => {
             ul.dispatchEvent(focusOutEvent);
 
             expect(getLiElements(el)[0]).not.toHaveClass('bg-on-surface/12');
-
-            document.body.removeChild(outsideEl);
         });
 
         it('focusout with null relatedTarget resets focused index', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'ArrowDown');
@@ -435,6 +567,7 @@ describe('ListBoxBuilder', () => {
 
         it('focusout to a child element inside the list does NOT reset focused index', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
 
             fireKey(ul, 'ArrowDown'); // focus index 0
@@ -461,9 +594,16 @@ describe('ListBoxBuilder', () => {
                 .withFocusedIndex(externalIndex$)
                 .build();
 
+            // scrollIntoView is not implemented in jsdom; patch it so re-renders don't throw.
+            const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+            HTMLElement.prototype.scrollIntoView = jest.fn();
+
+            triggerVisibleAndWait(el);
             const lis = getLiElements(el);
             expect(lis[1]).toHaveClass('bg-on-surface/12');
             expect(lis[0]).not.toHaveClass('bg-on-surface/12');
+
+            HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
         });
 
         it('withFocusedIndex updates focus when observable emits a new index', () => {
@@ -475,11 +615,17 @@ describe('ListBoxBuilder', () => {
                 .withFocusedIndex(externalIndex$)
                 .build();
 
+            const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+            HTMLElement.prototype.scrollIntoView = jest.fn();
+
+            triggerVisibleAndWait(el);
             expect(getLiElements(el)[0]).toHaveClass('bg-on-surface/12');
 
             externalIndex$.next(2);
             expect(getLiElements(el)[2]).toHaveClass('bg-on-surface/12');
             expect(getLiElements(el)[0]).not.toHaveClass('bg-on-surface/12');
+
+            HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
         });
 
         it('withFocusedIndex -1 removes all focus highlights', () => {
@@ -491,18 +637,22 @@ describe('ListBoxBuilder', () => {
                 .withFocusedIndex(externalIndex$)
                 .build();
 
+            const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+            HTMLElement.prototype.scrollIntoView = jest.fn();
+
+            triggerVisibleAndWait(el);
             externalIndex$.next(-1);
             const lis = getLiElements(el);
             lis.forEach(li => expect(li).not.toHaveClass('bg-on-surface/12'));
+
+            HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
         });
 
         // Spec 12: focused li is scrolled into view on focus change
         it('focused item has scrollIntoView called on focus change', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
-
-            // Attach to DOM so scrollIntoView is accessible
-            document.body.appendChild(el);
 
             // Patch scrollIntoView on all li elements after navigation triggers a re-render
             let scrolledEl: Element | null = null;
@@ -517,13 +667,12 @@ describe('ListBoxBuilder', () => {
             expect(scrolledEl).toBe(getLiElements(el)[0]);
 
             HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
-            document.body.removeChild(el);
         });
 
         it('scrollIntoView is not called when focusedIndex is -1', () => {
             const { el } = buildDefault();
+            triggerVisibleAndWait(el);
             const ul = getUl(el);
-            document.body.appendChild(el);
 
             let scrollCalled = false;
             const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
@@ -542,7 +691,6 @@ describe('ListBoxBuilder', () => {
             expect(scrollCalled).toBe(false);
 
             HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
-            document.body.removeChild(el);
         });
 
     });

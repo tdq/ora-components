@@ -1,5 +1,5 @@
-import { Observable, Subject } from 'rxjs';
-import { createOptimizedPipeline } from './optimized-pipeline';
+import { Observable, Subject, of } from 'rxjs';
+import { createOptimizedPipeline, GatedObserver } from './optimized-pipeline';
 
 // The mock is installed globally via setupTests.ts
 interface IntersectionObserverMockStatic {
@@ -384,7 +384,52 @@ describe('createOptimizedPipeline', () => {
     });
 
     // -----------------------------------------------------------------------
-    // 11. DISTINCT VISIBILITY: rapid repeated same-state signals do not
+    // 11. GATED OBSERVER: return type branding
+    // -----------------------------------------------------------------------
+    it('returns a GatedObserver instance (also instanceof Observable)', () => {
+        const subject = new Subject<number>();
+        const pipeline$ = createOptimizedPipeline(element, subject.asObservable(), { logger });
+
+        expect(pipeline$).toBeInstanceOf(GatedObserver);
+        expect(pipeline$).toBeInstanceOf(Observable);
+    });
+
+    // -----------------------------------------------------------------------
+    // 12. GATED OBSERVER: standalone construction and subscription
+    // -----------------------------------------------------------------------
+    it('GatedObserver wrapping of(1,2,3) is instanceof GatedObserver and emits all values', () => {
+        const gated$ = new GatedObserver(of(1, 2, 3));
+
+        expect(gated$).toBeInstanceOf(GatedObserver);
+        expect(gated$).toBeInstanceOf(Observable);
+
+        const results: number[] = [];
+        gated$.subscribe(v => results.push(v));
+
+        expect(results).toEqual([1, 2, 3]);
+    });
+
+    it('is idempotent: returns an already-gated source untouched without creating a new observer', () => {
+        const element = document.createElement('div');
+        const alreadyGated$ = new GatedObserver(of(1, 2, 3));
+
+        const ioSpy = jest.spyOn(window, 'IntersectionObserver');
+        const result$ = createOptimizedPipeline(element, alreadyGated$);
+
+        // Same instance returned — no re-wrapping.
+        expect(result$).toBe(alreadyGated$);
+
+        // No IntersectionObserver is created for an already-gated source until/unless subscribed.
+        const results: number[] = [];
+        result$.subscribe(v => results.push(v));
+        expect(results).toEqual([1, 2, 3]);
+        expect(ioSpy).not.toHaveBeenCalled();
+
+        ioSpy.mockRestore();
+    });
+
+    // -----------------------------------------------------------------------
+    // 13. DISTINCT VISIBILITY: rapid repeated same-state signals do not
     //     re-subscribe to source$ (distinctUntilChanged guard)
     // -----------------------------------------------------------------------
     it('ignores repeated same-visibility signals without re-subscribing', () => {

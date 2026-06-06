@@ -5,6 +5,7 @@ import { SortDirection } from './types';
 import { MoneyColumnBuilder } from './columns/money-column';
 import { NumberColumnBuilder } from './columns/number-column';
 import { PercentageColumnBuilder } from './columns/percentage-column';
+import { GatedObserver } from '../../utils/optimized-pipeline';
 
 describe('GridBuilder', () => {
     let container: HTMLElement;
@@ -302,6 +303,40 @@ describe('GridBuilder', () => {
         expect(container.style.minHeight).toBe('0');
 
         document.body.removeChild(container);
+    });
+
+    it('idempotency guard: GatedObserver items$ skips createOptimizedPipeline (no IntersectionObserver created)', () => {
+        let ioConstructorCalls = 0;
+        const OriginalMock = window.IntersectionObserver;
+        window.IntersectionObserver = new Proxy(OriginalMock, {
+            construct(target, args) {
+                ioConstructorCalls++;
+                return Reflect.construct(target, args);
+            }
+        }) as any;
+
+        try {
+            const gatedItems$ = new GatedObserver(of(items));
+            const grid = new GridBuilder<TestItem>()
+                .withItems(gatedItems$)
+                .withHeight(of(400));
+
+            grid.withColumns().addTextColumn('name').withHeader('Name');
+
+            container = grid.build();
+            document.body.appendChild(container);
+
+            // GatedObserver is used directly — no IntersectionObserver instantiated
+            expect(ioConstructorCalls).toBe(0);
+
+            // Data still flows through and rows are rendered
+            const rows = container.querySelectorAll('.absolute.w-full');
+            expect(rows.length).toBeGreaterThan(0);
+
+            document.body.removeChild(container);
+        } finally {
+            window.IntersectionObserver = OriginalMock;
+        }
     });
 
     describe('column alignment', () => {

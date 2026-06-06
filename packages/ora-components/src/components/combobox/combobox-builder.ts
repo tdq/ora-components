@@ -1,4 +1,5 @@
 import { Observable, Subject, BehaviorSubject, combineLatest, map, distinctUntilChanged, Subscription, of } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '@/core/destroyable-element';
 import { ComboBoxStyle } from './types';
@@ -7,6 +8,7 @@ import { renderComboBoxInput } from './combobox-input';
 import { PopoverBuilder } from '../component-parts/popover';
 import { ListBoxBuilder } from '../listbox/listbox';
 import { ListBoxStyle } from '../listbox/types';
+import { createOptimizedPipeline, GatedObserver } from '../../utils/optimized-pipeline';
 
 export { ComboBoxStyle };
 
@@ -117,11 +119,19 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         const isExpanded$ = new BehaviorSubject<boolean>(false);
         const focusedIndex$ = new BehaviorSubject<number>(-1);
         const items$ = this.items$ || new BehaviorSubject<ITEM[]>([]);
+
+        // Gate the raw items source on the always-visible combobox container.
+        // This is the single gating point — the inner ListBox will detect the
+        // GatedObserver brand and skip re-gating the filtered stream.
+        const gatedItems$ = createOptimizedPipeline(container, items$).pipe(
+            shareReplay({ bufferSize: 1, refCount: true })
+        );
+
         const currentValue$ = new BehaviorSubject<ITEM | null>(null);
         const listBoxValue$ = new Subject<ITEM | null>();
         let isSyncingExternalValue = false;
 
-        const filteredItems$ = combineLatest([items$, searchTerm$, isFiltering$]).pipe(
+        const filteredItems$ = combineLatest([gatedItems$, searchTerm$, isFiltering$]).pipe(
             map(([items, term, isFiltering]) => {
                 if (!isFiltering || !term) return items;
                 const lowerTerm = term.toLowerCase();
@@ -152,9 +162,10 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             map((w: string) => w === 'match-input' ? 'match-anchor' : w)
         );
 
-        // Build ListBox
+        // Build ListBox — brand filteredItems$ as GatedObserver so the inner
+        // ListBox's instanceof check skips re-gating the already-gated stream.
         const listBoxBuilder = new ListBoxBuilder<ITEM>()
-            .withItems(filteredItems$)
+            .withItems(new GatedObserver(filteredItems$))
             .withValue(listBoxValue$)
             .withFocusedIndex(focusedIndex$)
             .withItemCaptionProvider(this.itemCaptionProvider)

@@ -74,7 +74,7 @@ export function createHero(): HTMLElement {
                             </button>
                         </div>
                     </div>
-                    <div id="hero-visual-panel" class="relative min-w-0" style="min-height: 600px;">
+                    <div id="hero-visual-panel" class="relative min-w-0">
                     </div>
                 </div>
             </div>
@@ -146,32 +146,22 @@ export function createHero(): HTMLElement {
     const visualPanel = section.querySelector('#hero-visual-panel') as HTMLElement;
 
     // ----- Dashboard Demo -----
-    // Defer the entire dashboard demo to allow the Hero heading (LCP) to paint first.
-    const startDashboard = () => {
-        const { desktopElement, mobileElement } = createDashboardDemo(sub);
+    const { desktopElement, mobileElement } = createDashboardDemo(sub);
 
-        if (isMobileViewport()) {
-            visualPanel.style.display = 'none';
-            const exploreBtnEl = section.querySelector('#explore-dashboard-btn') as HTMLElement;
-            if (exploreBtnEl) exploreBtnEl.style.display = 'none';
+    if (isMobileViewport()) {
+        visualPanel.style.display = 'none';
+        const exploreBtnEl = section.querySelector('#explore-dashboard-btn') as HTMLElement;
+        if (exploreBtnEl) exploreBtnEl.style.display = 'none';
 
-            if (mobileElement) {
-                const mobileTile = document.createElement('div');
-                mobileTile.className = 'mt-px-24';
-                mobileTile.appendChild(mobileElement);
-                const heroCol = section.querySelector('.space-y-8') as HTMLElement;
-                heroCol?.appendChild(mobileTile);
-            }
-        } else if (desktopElement) {
-            visualPanel.appendChild(desktopElement);
+        if (mobileElement) {
+            const mobileTile = document.createElement('div');
+            mobileTile.className = 'mt-px-24';
+            mobileTile.appendChild(mobileElement);
+            const heroCol = section.querySelector('.space-y-8') as HTMLElement;
+            heroCol?.appendChild(mobileTile);
         }
-    };
-
-    if ((window as any).__PRERENDER_MODE__) {
-        startDashboard();
-    } else {
-        // Use a slightly larger delay to ensure the main thread is free for the first paint
-        setTimeout(startDashboard, 50);
+    } else if (desktopElement) {
+        visualPanel.appendChild(desktopElement);
     }
 
     return section;

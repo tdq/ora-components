@@ -5,6 +5,7 @@ import { AxisRenderer } from './axis-renderer';
 import { HIGHLIGHT_DIAMETER } from './constants';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import '@testing-library/jest-dom';
+import { GatedObserver } from '../../utils/optimized-pipeline';
 
 // ---------------------------------------------------------------------------
 // Helpers for ChartLogic.calculateScales tests
@@ -431,20 +432,50 @@ describe('ChartBuilder', () => {
             .withData(of(testData))
             .withCategoryField('category')
             .withAnimation(false);
-        
+
         chartBuilder.addLineChart('value1').withColor(color$);
-        
+
         const chart = chartBuilder.build();
-        
+
         // Find the path for line chart
         const path = chart.querySelector('path[stroke="red"]');
         expect(path).not.toBeNull();
 
         color$.next('blue');
-        
+
         // Wait for potential microtasks? ChartLogic updates state$ synchronously on .next()
         const updatedPath = chart.querySelector('path[stroke="blue"]');
         expect(updatedPath).not.toBeNull();
+    });
+
+    it('idempotency guard: GatedObserver source skips createOptimizedPipeline (no IntersectionObserver created)', () => {
+        // Replace the mock with a spy that records construction calls
+        let ioConstructorCalls = 0;
+        const OriginalMock = window.IntersectionObserver;
+        window.IntersectionObserver = new Proxy(OriginalMock, {
+            construct(target, args) {
+                ioConstructorCalls++;
+                return Reflect.construct(target, args);
+            }
+        }) as any;
+
+        try {
+            const gatedData$ = new GatedObserver(of(testData));
+            const chartBuilder = new ChartBuilder<any>()
+                .withData(gatedData$)
+                .withCategoryField('category');
+            chartBuilder.addBarChart('value1');
+            const chart = chartBuilder.build();
+
+            // The GatedObserver is used directly — no IntersectionObserver instantiated
+            expect(ioConstructorCalls).toBe(0);
+
+            // Data still flows through and chart renders
+            const rects = chart.querySelectorAll('rect');
+            expect(rects.length).toBe(testData.length);
+        } finally {
+            window.IntersectionObserver = OriginalMock;
+        }
     });
 });
 

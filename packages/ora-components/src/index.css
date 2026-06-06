@@ -215,13 +215,37 @@
   }
 
   .glass-effect {
-    @apply backdrop-blur-xl;
-    @apply bg-white/60 ring-1 ring-black/10 text-gray-900;
-    @apply dark:bg-white/5 dark:ring-white/20 dark:text-white;
+    /* 1. Core Light Mode Styles */
+    @apply backdrop-blur-xl bg-white/60 text-gray-900 ring-1 ring-black/10;
+
+    /* 2. Seamless Dark Mode Adaptations */
+    @apply dark:bg-white/5 dark:text-white dark:ring-white/20;
+
+    /* 3. Hardware Acceleration (GPU) Promotion */
+    @apply will-change-[backdrop-filter] transform-gpu;
+
+    /* 4. THE CHROME FIX: Strict Layer Isolation */
+    contain: paint;       /* Tells Chrome nothing outside this box affects its paint */
+    isolation: isolate;   /* Forces a completely separate stacking context */
+  }
+
+  .glass-effect-hover {
+    /* Smooth transition for a premium feel */
+    @apply transition-all duration-300 ease-in-out;
   }
 
   .glass-effect-hover:hover {
-    background: rgba(255, 255, 255, 0.2);
+    /* Context-aware hover: gets slightly more opaque/vibrant in both modes */
+    @apply bg-white/75 ring-black/15;
+    @apply dark:bg-white/10 dark:ring-white/30;
+  }
+
+  .glass-effect .glass-effect:not([popover]) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none; /* Required for Safari */
+    
+    /* Tell the GPU it can stop tracking this element separately */
+    will-change: auto; 
   }
 }
 

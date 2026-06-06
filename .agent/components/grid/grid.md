@@ -168,14 +168,15 @@ this.logic.setItems(gatedItems$);
 |-----------|--------|
 | **Lazy subscribe** | Does not subscribe to `source$` until the element enters the viewport. |
 | **Instant teardown** | Unsubscribes from `source$` the moment the element leaves the viewport. |
-| **Asymmetric debounce** | 150ms appear debounce guards against fast scroll-through; disappear is instant (no debounce). |
+| **Asymmetric debounce** | `appearDebounceMs` (default 20ms) appear debounce guards against fast scroll-through; disappear is instant (no debounce). |
 | **Self-healing** | Exponential-backoff retry (up to 5 attempts, base 500ms) per visibility window. A new window starts fresh. |
+| **Idempotent** | `createOptimizedPipeline` returns a `GatedObserver`; passing an already-gated source returns it untouched (no double-wrapping). See [reactive.md](../../reactive.md#gatedobserver-and-idempotency). |
 | **Cleanup** | Unsubscribing disposes the IntersectionObserver, retry timers, and source subscription. |
 
 Default options (overridable via `OptimizedPipelineOptions`):
 - `rootMargin: '0px 0px 200px 0px'` — pre-loads 200px before the element scrolls into view.
 - `threshold: 0.01` — 1% visibility triggers appear.
-- `appearDebounceMs: 150` — guards against fast scroll-through.
+- `appearDebounceMs: 20` — guards against fast scroll-through.
 
 ### `createLifecycleBoundary` (from `src/core/lifecycle-boundary.ts`)
 

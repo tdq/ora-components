@@ -5,6 +5,7 @@ import { registerDestroy } from '@/core/destroyable-element';
 import { PopoverBuilder } from '../component-parts/popover';
 import { ListBoxBuilder } from '../listbox/listbox';
 import { ListBoxStyle } from '../listbox/types';
+import { GatedObserver } from '../../utils/optimized-pipeline';
 
 let dropdownIdCounter = 0;
 
@@ -91,8 +92,11 @@ export function createCurrencyDropdown(
     // ListBox setup
     const listBoxValue$ = new BehaviorSubject<CurrencyItem | null>(null);
 
+    // The currency list is static and lives inside a (display:none-when-closed) popover,
+    // so viewport-gating it would never resolve. Brand it as already-gated so the ListBox
+    // renders eagerly instead of wrapping it in createOptimizedPipeline.
     const listBox = new ListBoxBuilder<CurrencyItem>()
-        .withItems(of(currencyItems))
+        .withItems(new GatedObserver(of(currencyItems)))
         .withValue(listBoxValue$)
         .withItemCaptionProvider(item => item.label)
         .withItemIdProvider(item => item.id)

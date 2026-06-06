@@ -4,6 +4,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '../../core/destroyable-element';
+import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { ListBoxStyle } from './types';
 
 function cn(...inputs: ClassValue[]) {
@@ -197,12 +198,20 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         });
 
         // Items Rendering
-        const currentValue$ = this.value$ 
+        const currentValue$ = this.value$
             ? this.value$.pipe(startWith(null))
             : new BehaviorSubject<ITEM | null>(null);
 
+        // Gate the heavy items source on viewport visibility — items will not
+        // render (and the source will not be subscribed) until container enters
+        // the viewport.  All other streams (keyboard nav, selection, style) are
+        // intentionally left ungated so they remain reactive at all times.
+        // createOptimizedPipeline is idempotent: an already-gated source (e.g. a filtered
+        // view from a parent combobox branded as GatedObserver) is returned as-is.
+        const itemsSource$ = createOptimizedPipeline(container, this.items$);
+
         const itemsState$ = combineLatest([
-            this.items$,
+            itemsSource$,
             currentValue$,
             this.style$,
             focusedIndex$,

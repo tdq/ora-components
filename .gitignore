@@ -12,3 +12,4 @@ packages/ora-mcp-server/.turbo/*
 .antigravitycli
 tasks/*
 plans/*
+.idea/*

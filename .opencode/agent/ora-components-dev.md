@@ -88,6 +88,29 @@ Rules:
 3. Use `timer(0, interval)` (not `interval()`) for periodic streams.
 4. `complete()` any `Subject` you create in the same destroy callback as its feeder subscription.
 
+## Viewport-gating data-heavy sources — `createOptimizedPipeline`
+
+For data-heavy or below-the-fold components, gate the heavy source through `createOptimizedPipeline(hostElement, source$)` from `src/utils/optimized-pipeline.ts`. It defers the subscription until the host element is visible, tears it down instantly when it scrolls off-screen, and retries with exponential backoff. Keep `registerDestroy` for deterministic teardown — the pipeline does not replace it.
+
+```ts
+const gatedItems$ = createOptimizedPipeline(hostElement, items$);
+const sub = gatedItems$.subscribe(items => this._render(items));
+registerDestroy(hostElement, () => sub.unsubscribe());
+```
+
+Gate **only** the heavy data source; keep lightweight UI streams (style, error, selection, caption) ungated so they stay reactive at all times.
+
+**`GatedObserver` (idempotency).** `createOptimizedPipeline` returns a `GatedObserver<T>` and is idempotent: passing it a source that is already a `GatedObserver` returns it untouched (no second `IntersectionObserver`). So never branch on the source type — just call `createOptimizedPipeline`.
+
+When a parent gates a source and hands a *derived* stream to a child component that would otherwise re-gate it (e.g. a `ListBoxBuilder` living inside a `display:none`-when-closed popover that never intersects the viewport), brand the child's stream with `new GatedObserver(...)`:
+
+```ts
+const gated$ = createOptimizedPipeline(container, items$);            // gate once, at the visible parent
+listBoxBuilder.withItems(new GatedObserver(filteredItems$));          // child uses it as-is, no re-gating
+```
+
+Note: the brand only survives as the outermost wrapper — `.pipe()` drops it. See `.agent/reactive.md` (*GatedObserver and idempotency*) for full details.
+
 ## Builder pattern
 
 Every component is exposed via a builder class:

@@ -1,6 +1,7 @@
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 import { FxTickerViewport, FxTickerViewportConfig } from './fx-ticker-viewport';
 import { FxRate } from './fx-ticker-logic';
+import { GatedObserver } from '../../utils/optimized-pipeline';
 
 // ---------------------------------------------------------------------------
 // IntersectionObserver mock helpers (installed globally via setupTests.ts)
@@ -637,6 +638,34 @@ describe('FxTickerViewport', () => {
                 }).not.toThrow();
                 expect(track.querySelectorAll('[data-rate]').length).toBe(2);
                 document.body.innerHTML = '';
+            } finally {
+                jest.useRealTimers();
+            }
+        });
+
+        it('idempotency guard: GatedObserver data$ renders immediately without triggerVisibility', () => {
+            jest.useFakeTimers();
+            try {
+                const rates = makeRates(['EUR/USD', 'GBP/USD']);
+                const gatedData$ = new GatedObserver(of(rates));
+
+                const root = new FxTickerViewport({
+                    data$: gatedData$,
+                    label$: new BehaviorSubject('FX'),
+                    labelVisible$: new BehaviorSubject(true),
+                    scrollDuration$: new BehaviorSubject(28),
+                    direction: 'left',
+                    pauseOnHover: false,
+                    flashDuration: 600,
+                    flashUpClass: 'fx-flash-up',
+                    flashDownClass: 'fx-flash-down',
+                    announcing: false,
+                }).build();
+
+                // No triggerVisibility call — the GatedObserver bypasses the IO gate
+                const track = root.querySelector('[data-track]')!;
+                // 2 pairs × 2 copies = 4 [data-rate] spans
+                expect(track.querySelectorAll('[data-rate]').length).toBe(rates.length * 2);
             } finally {
                 jest.useRealTimers();
             }

@@ -6,6 +6,7 @@ import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '../../core/destroyable-element';
 import { Icons } from '../../core/icons';
 import { MultiSelectListStyle } from './types';
+import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -230,8 +231,12 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
             }
         };
 
+        // Gate heavy item rendering on viewport visibility. createOptimizedPipeline is
+        // idempotent: an already-gated (GatedObserver) source is returned as-is.
+        const gatedItems$ = createOptimizedPipeline(container, this.items$);
+
         // Full DOM rebuild only when items or style change
-        const itemsRenderSub = combineLatest([this.items$, this.style$]).subscribe(([items, style]) => {
+        const itemsRenderSub = combineLatest([gatedItems$, this.style$]).subscribe(([items, style]) => {
             currentItems = items;
             currentStyle = style;
             itemElements.clear();

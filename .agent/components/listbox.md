@@ -7,7 +7,7 @@ It has the following methods:
 - `withEnabled(enabled: Observable<boolean>): this` - sets enabled state of the ListBox.
 - `withStyle(style: Observable<ListBoxStyle>): this` - sets style of the ListBox. Accepts TONAL, OUTLINED, or BORDERLESS.
 - `withClass(className: Observable<string>): this` - sets class css name of the ListBox.
-- `withItems(items: Observable<ITEM[]>): this` - sets items which are displayed in ListBox.
+- `withItems(items: Observable<ITEM[]>): this` - sets items which are displayed in ListBox. The items source is **viewport-gated**: it is passed through `createOptimizedPipeline`, so items are not subscribed/rendered until the ListBox is visible, and the source is torn down when it scrolls off-screen. A source already branded as a `GatedObserver` (e.g. a filtered list handed down by a parent ComboBox/currency-dropdown) is used as-is — `createOptimizedPipeline` is idempotent and will not re-gate it. See [reactive.md](../reactive.md#gatedobserver-and-idempotency).
 - `withItemCaptionProvider(provider: (item: ITEM) => string): this` - sets item caption provider which is used for converting item into a string which will be displayed in the ListBox. Default caption provider just returns string presentation of item.
 - `withItemIdProvider(provider: (item: ITEM) => string | number): this` - sets item ID provider used for generating unique IDs for accessibility and for item comparison. Default is `String(item)`.
 - `withValue(value: Subject<ITEM | null>): this` - sets value for ListBox (which item is selected). It is also updated by ListBox itself on item selecting.
