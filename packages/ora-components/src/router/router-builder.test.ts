@@ -94,7 +94,8 @@ describe('RouterBuilder', () => {
 
         router.navigate('/about');
         // pushState updates window.location in jsdom
-        await Promise.resolve();
+        await Promise.resolve(); // flush scheduleNavigation microtask → swapView runs, factory called
+        await Promise.resolve(); // flush factory .then() → element mounted, routeSubject updated
 
         const paths: string[] = [];
         router.currentRoute$.subscribe((r) => { if (r) paths.push(r.path); });
@@ -139,9 +140,36 @@ describe('RouterBuilder', () => {
         await Promise.resolve();
 
         router.navigate('/about');
-        await Promise.resolve();
+        await Promise.resolve(); // flush scheduleNavigation microtask → swapView runs, onLeave fires
+        await Promise.resolve(); // flush factory .then() → element mounted, onEnter fires
 
         expect(order).toEqual(['leave-home', 'enter-about']);
+    });
+
+    it('onEnter fires after element is appended to outlet', async () => {
+        // M1 contract: when onEnter is called the route element must already
+        // exist inside the outlet — consumers can safely query the DOM there.
+        const router = new RouterBuilder();
+        let elementInOutletOnEnter: boolean | null = null;
+        const el = document.createElement('div');
+        el.id = 'target';
+
+        router.addRoute()
+            .withPattern('/')
+            .withOnEnter(() => {
+                // `outlet` is declared below but is assigned before onEnter fires
+                // (onEnter runs inside the factory .then() microtask, which is
+                // queued after build() returns and assigns `outlet`).
+                elementInOutletOnEnter = outlet.contains(el);
+            })
+            .withContent(() => mockBuilder(el));
+
+        const outlet = router.build();
+
+        await Promise.resolve(); // flush initial navigation microtask (build calls handleNavigation sync, factory .then() queued)
+        await Promise.resolve(); // flush factory .then() — element appended, onEnter fires here
+
+        expect(elementInOutletOnEnter).toBe(true);
     });
 
     it('resolves async (lazy) factory and mounts element', async () => {
@@ -323,6 +351,56 @@ describe('RouterBuilder', () => {
             expect.any(Error)
         );
         
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('async rejecting factory does not leave stale currentDefinition, subsequent navigation skips failed onLeave', async () => {
+        // Regression: before the fix, a rejecting async factory left
+        // currentDefinition pointing at the failed route.  The next cross-view
+        // navigation would read that stale definition as `oldDefinition` and
+        // fire its onLeave — even though the route never mounted or called onEnter.
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const onLeaveFailing = jest.fn();
+
+        const router = new RouterBuilder();
+
+        // Route that rejects on async factory load
+        router.addRoute()
+            .withPattern('/failing')
+            .withOnLeave(onLeaveFailing)
+            .withContent(async () => {
+                await Promise.resolve();
+                throw new Error('Async factory rejection');
+            });
+
+        // Route to navigate to afterwards
+        router.addRoute()
+            .withPattern('/next')
+            .withContent(() => mockBuilder());
+
+        router.build();
+        await Promise.resolve(); // initial navigation (no match for /, no fallback — fine)
+
+        // Navigate to the failing route
+        router.navigate('/failing');
+        await Promise.resolve(); // flush scheduleNavigation → swapView, factory called
+        await Promise.resolve(); // flush factory's internal `await Promise.resolve()` → factory throws → P1 rejects
+        await Promise.resolve(); // P1 rejection propagates through .then() chain → .catch() scheduled
+        await Promise.resolve(); // flush .catch() handler → currentDefinition reset to null
+
+        // Now navigate away to a different route
+        router.navigate('/next');
+        await Promise.resolve(); // flush scheduleNavigation microtask
+        await Promise.resolve(); // flush factory .then() → element mounted
+
+        // The failed route's onLeave must NOT have been called — it never mounted
+        expect(onLeaveFailing).not.toHaveBeenCalled();
+
+        // And the router must not have thrown — currentRoute$ should reflect /next
+        const paths: string[] = [];
+        router.currentRoute$.subscribe((r) => { if (r) paths.push(r.path); });
+        expect(paths[paths.length - 1]).toBe('/next');
+
         consoleErrorSpy.mockRestore();
     });
 

@@ -4,7 +4,6 @@ import { ColumnsBuilder } from './columns/columns-builder';
 import { ToolbarBuilder } from '../toolbar/toolbar-builder';
 import { ActionsBuilder } from './actions-builder';
 import { SortDirection, PivotConfig, ColumnType, GridColumn, GridRowData } from './types';
-import { createLifecycleBoundary } from '../../core/lifecycle-boundary';
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -13,6 +12,7 @@ import { GridLogic } from './grid-logic';
 import { GridViewport } from './grid-viewport';
 import { GridHeader } from './grid-header';
 import { PivotLogic } from './pivot-logic';
+import { registerDestroy } from '@/core/destroyable-element';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -265,14 +265,12 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         mainSub.add(sub);
         mainSub.add(visColSub);
 
-        const boundary = createLifecycleBoundary();
-        boundary.onDisconnect = () => {
+        registerDestroy(container, () => {
             mainSub.unsubscribe();
             visSubs.forEach(s => s.unsubscribe());
             this.logic.destroy();
             viewport.destroy();
-        };
-        container.appendChild(boundary);
+        });
 
         return container;
     }

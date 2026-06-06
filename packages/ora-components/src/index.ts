@@ -1,7 +1,6 @@
 export * from './core/component-builder';
 export * from './core/destroyable-element';
 export * from './core/icons';
-export * from './core/lifecycle-boundary';
 export * from './types/money';
 export * from './types/trend';
 export * from './components/button';

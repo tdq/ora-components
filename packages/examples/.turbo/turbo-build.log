@@ -1,14 +1,15 @@
 
+
 > ora-examples@0.1.0 build
 > vite build
 
-vite v8.0.16 building client environment for production...
+[1G[0K[36mvite v8.0.16 [32mbuilding client environment for production...[36m[39m
 
 node_modules/ora-components/dist/ora-components.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
-[2Ktransforming...✓ 372 modules transformed.
-rendering chunks...
-computing gzip size...
-dist/index.html                 0.40 kB │ gzip:  0.28 kB
-dist/assets/index-VcwZAUBI.js  63.11 kB │ gzip: 20.16 kB
+[2Ktransforming (52) [2m../ora-components/src/components/chart/chart-svg-area.ts[0m[2K[32m✓[39m 372 modules transformed.
+[2Krendering chunks (1)...[2Kcomputing gzip size...
+[2K[2mdist/[0m[32mindex.html                [39m[2m[1m 0.40 kB[0m[0m[2m │ gzip:  0.28 kB[0m
+[2mdist/[0m[2massets/[0m[36mindex-C9Wyvc-W.js  [39m[2m[1m63.14 kB[0m[0m[2m │ gzip: 20.18 kB[0m
 
-✓ built in 466ms
+[32m✓ built in 253ms[39m
+[1G[0K\[1G[0K

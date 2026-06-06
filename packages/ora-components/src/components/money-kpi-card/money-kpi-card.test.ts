@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 import { MoneyKPICardBuilder } from './money-kpi-card-builder';
-import { OraLifecycleBoundary } from '../../core/lifecycle-boundary';
 import { Money } from '../../types/money';
 import { Trend } from '../../types/trend';
 
@@ -23,17 +22,14 @@ function getIOMock(): IntersectionObserverMockStatic {
 /**
  * Builds a MoneyKPICard and returns:
  * - `body`: the actual HTMLElement returned by build() (a div — the card shell)
- * - `boundary`: the ora-lifecycle-boundary child element nested inside body
  * - `value$`: the reactive data source
  */
-function buildCard(): { body: HTMLElement; boundary: OraLifecycleBoundary; value$: Subject<Money> } {
+function buildCard(): { body: HTMLElement; value$: Subject<Money> } {
     const value$ = new Subject<Money>();
     const body = new MoneyKPICardBuilder()
         .withValue(value$)
         .build();
-    // The boundary is appended as the last child of body by MoneyKPICardViewport.build()
-    const boundary = body.querySelector('ora-lifecycle-boundary') as OraLifecycleBoundary;
-    return { body, boundary, value$ };
+    return { body, value$ };
 }
 
 function triggerVisibleAndWait(el: HTMLElement): void {
@@ -60,7 +56,7 @@ describe('MoneyKPICard — always-on visibility gating', () => {
     });
 
     // -----------------------------------------------------------------------
-    // 1. Root element must be a div (the card body), with an ora-lifecycle-boundary child
+    // 1. Root element must be a div (the card body)
     // -----------------------------------------------------------------------
     it('returns an HTMLElement (div) from build()', () => {
         const { body } = buildCard();
@@ -68,12 +64,17 @@ describe('MoneyKPICard — always-on visibility gating', () => {
         expect(body.tagName.toLowerCase()).toBe('div');
     });
 
-    it('contains an ora-lifecycle-boundary child element', () => {
-        const { body, boundary } = buildCard();
-        expect(boundary).not.toBeNull();
-        expect(boundary).toBeInstanceOf(OraLifecycleBoundary);
-        // Boundary is a child of body
-        expect(body.contains(boundary)).toBe(true);
+    it('cleans up subscriptions when body is removed from DOM', () => {
+        const { body, value$ } = buildCard();
+        document.body.appendChild(body);
+        triggerVisibleAndWait(body);
+        value$.next({ amount: 500.00, currencyId: 'USD' });
+        const wholeEl = getWholeEl(body);
+        expect(wholeEl?.textContent).toBe('500');
+        body.remove();
+        value$.next({ amount: 99999.00, currencyId: 'USD' });
+        jest.advanceTimersByTime(300);
+        expect(wholeEl?.textContent).toBe('500');
     });
 
     // -----------------------------------------------------------------------
@@ -141,7 +142,7 @@ describe('MoneyKPICard — always-on visibility gating', () => {
     });
 
     // -----------------------------------------------------------------------
-    // 6. Removing body from DOM triggers teardown (via the nested boundary) —
+    // 6. Removing body from DOM triggers registerDestroy teardown —
     //    no further updates.
     //    TRUE teardown guard: deliberately re-trigger visibility on the removed
     //    element (WITHOUT resetting the mock) and push a new value.  A leaked
@@ -159,8 +160,7 @@ describe('MoneyKPICard — always-on visibility gating', () => {
         const wholeEl = getWholeEl(body);
         expect(wholeEl?.textContent).toBe('500');
 
-        // Remove body — the nested boundary's disconnectedCallback fires →
-        // onDisconnect → sub.unsubscribe()
+        // Remove body — registerDestroy fires → cleanup runs (sub.unsubscribe())
         body.remove();
 
         // Do NOT reset the mock.  Re-trigger visibility on the removed element
@@ -175,39 +175,6 @@ describe('MoneyKPICard — always-on visibility gating', () => {
 
         // Teardown must have occurred; DOM stays at the last pre-removal value
         expect(wholeEl?.textContent).toBe('500');
-    });
-
-    // -----------------------------------------------------------------------
-    // 7. onDisconnect fires (and is then nulled) when body is removed from DOM
-    // -----------------------------------------------------------------------
-    it('calls boundary.onDisconnect when the body is removed from the DOM', () => {
-        const { body, boundary } = buildCard();
-        document.body.appendChild(body);
-
-        // Replace the wired onDisconnect with a spy that also calls through
-        const original = boundary.onDisconnect;
-        const spy = jest.fn(() => { original && original(); });
-        boundary.onDisconnect = spy;
-
-        // Removing body removes all its children (including boundary) from the DOM,
-        // which fires boundary's disconnectedCallback synchronously.
-        body.remove();
-
-        expect(spy).toHaveBeenCalledTimes(1);
-    });
-
-    // -----------------------------------------------------------------------
-    // 7b. boundary.onDisconnect is nulled after firing (one-shot contract)
-    // -----------------------------------------------------------------------
-    it('boundary.onDisconnect is nulled after the body is removed (one-shot)', () => {
-        const { body, boundary } = buildCard();
-        document.body.appendChild(body);
-
-        expect(typeof boundary.onDisconnect).toBe('function');
-
-        body.remove();
-
-        expect(boundary.onDisconnect).toBeUndefined();
     });
 
     // -----------------------------------------------------------------------
@@ -377,13 +344,4 @@ describe('MoneyKPICard — always-on visibility gating', () => {
         expect(centsEl?.textContent).toBe('5678');
     });
 
-    // -----------------------------------------------------------------------
-    // 15. Boundary display:none — connectedCallback hides boundary on insertion
-    // -----------------------------------------------------------------------
-    it('ora-lifecycle-boundary has display:none after body is appended to DOM', () => {
-        const { body, boundary } = buildCard();
-        // boundary.connectedCallback fires when body (and its children) are inserted
-        document.body.appendChild(body);
-        expect(boundary.style.display).toBe('none');
-    });
 });

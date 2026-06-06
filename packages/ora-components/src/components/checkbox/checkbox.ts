@@ -141,8 +141,8 @@ export class CheckboxBuilder implements ComponentBuilder {
                 } else {
                     input.checked = value;
                     input.indeterminate = false;
-                    iconContainer.style.transform = value ? 'scale(1)' : 'scale(0)';
-                    indeterminateContainer.style.transform = 'scale(0)';
+                    iconContainer.style.transform = '';
+                    indeterminateContainer.style.transform = '';
                 }
             }));
 

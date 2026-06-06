@@ -2,8 +2,8 @@ import { Observable, Subscription } from 'rxjs';
 import { FxRate, FxTickerLogic, TickerItem } from './fx-ticker-logic';
 import { LabelBuilder } from '../label/label';
 import { CurrencyRegistry } from '../../utils/currency-registry';
-import { createLifecycleBoundary } from '../../core/lifecycle-boundary';
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
+import { registerDestroy } from '@/core/destroyable-element';
 
 export interface FxTickerViewportConfig {
     data$: Observable<FxRate[]>;
@@ -270,13 +270,12 @@ export class FxTickerViewport {
         );
 
         // ── Cleanup ───────────────────────────────────────────────────────────
-        const boundary = createLifecycleBoundary();
-        root.appendChild(boundary);
-        boundary.onDisconnect = () => {
+        
+        registerDestroy(root, () => {
             sub.unsubscribe();
             flashTimers.forEach(clearTimeout);
             flashTimers.length = 0;
-        };
+        });
 
         return root;
     }

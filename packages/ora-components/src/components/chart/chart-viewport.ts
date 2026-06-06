@@ -8,10 +8,10 @@ import { ChartLegend } from './chart-legend';
 import { ChartTooltip } from './chart-tooltip';
 import { HIGHLIGHT_RADIUS } from './constants';
 import { LabelBuilder, LabelSize } from '../label';
-import { createLifecycleBoundary } from '../../core/lifecycle-boundary';
 import { map, Subscription } from 'rxjs';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { registerDestroy } from '@/core/destroyable-element';
 
 function cn(...inputs: any[]) {
     return twMerge(clsx(inputs));
@@ -82,15 +82,13 @@ export class ChartViewport<ITEM> {
 
         this.svgArea.observe(this.chartArea);
 
-        const boundary = createLifecycleBoundary();
-        boundary.onDisconnect = () => {
+        registerDestroy(this.element, () => {
             sub.unsubscribe();
             this.logic.destroy();
             this.svgArea.destroy();
             svg.removeEventListener('mousemove', handleMouseMove);
             svg.removeEventListener('mouseleave', handleMouseLeave);
-        };
-        this.element.appendChild(boundary);
+        });
     }
 
     getElement(): HTMLElement {

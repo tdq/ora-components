@@ -2,12 +2,12 @@ import { Observable, Subscription, of } from 'rxjs';
 import { MoneyKPICardLogic, MoneyKPIData } from './money-kpi-card-logic';
 import { LabelBuilder } from '../label/label';
 import { TrendBuilder } from '../trend/trend-builder';
-import { createLifecycleBoundary } from '../../core/lifecycle-boundary';
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { Trend } from '../../types/trend';
 import { Money } from '../../types/money';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { registerDestroy } from '@/core/destroyable-element';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -91,9 +91,6 @@ export class MoneyKPICardViewport {
         body.appendChild(headerRow);
         body.appendChild(valueRow);
 
-        // ---- Create the lifecycle boundary (root element / visibility host) ----
-        const boundary = createLifecycleBoundary();
-
         // ---- Gate value$ on viewport visibility (pipeline applies its own defaults) ----
         const optimizedValue$ = createOptimizedPipeline(body, value$);
 
@@ -149,13 +146,7 @@ export class MoneyKPICardViewport {
             }));
         }
 
-        // ---- Nest the card body inside the boundary (boundary is the root) ----
-        body.appendChild(boundary);
-
-        // ---- Teardown: onDisconnect fires once when the boundary is removed from the DOM;
-        //      unsubscribing disposes the optimized pipeline, which disconnects the
-        //      IntersectionObserver and the source. ----
-        boundary.onDisconnect = () => sub.unsubscribe();
+        registerDestroy(body, () => sub.unsubscribe());
 
         return body;
     }

@@ -36,7 +36,7 @@ describe('LayoutBuilder', () => {
         builder.addSlot().withContent(new MockBuilder());
 
         const layout = builder.build();
-        // 2 slots + 1 ora-lifecycle-boundary
+        // 2 slots + 1 element from registerDestroy
         expect(layout.children.length).toBe(3);
     });
 

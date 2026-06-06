@@ -650,7 +650,8 @@ describe('GridBuilder', () => {
             expect(rows.length).toBeGreaterThan(0);
 
             // Verify header cells are present
-            const headerCells = header!.querySelectorAll(':scope > div');
+            const headerElement = header!.children[0] as HTMLElement;
+            const headerCells = headerElement.querySelectorAll(':scope > div');
             expect(headerCells.length).toBeGreaterThanOrEqual(22);
 
             // Check resizability — count all resize handles (12 resizable columns)

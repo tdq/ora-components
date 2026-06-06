@@ -12,10 +12,11 @@ export const ORA_LIFECYCLE_BOUNDARY_TAG = 'ora-lifecycle-boundary';
  * element is always inert in layout (e.g. never a flex item). Consumers can
  * still override with an explicit inline style after insertion if needed.
  *
- * **Independent of `core/destroyable-element.ts`**: `destroyable-element` uses
- * a MutationObserver-based `registerDestroy` mechanism. Both may fire if a
- * consumer uses both on the same element — do NOT register the same teardown
- * function via both APIs, as it will execute twice.
+ * **Independent of `core/destroyable-element.ts`**: `destroyable-element`'s
+ * `registerDestroy` detects disconnect by inserting an `OraLifecycleBoundary`
+ * into the host itself. Both may fire if a consumer uses both on the same
+ * element — do NOT register the same teardown function via both APIs, as it
+ * will execute twice.
  */
 export class OraLifecycleBoundary extends HTMLElement {
     onDisconnect?: () => void;

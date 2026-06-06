@@ -570,13 +570,26 @@ describe('FxTickerViewport', () => {
             }
         });
 
-        it('root contains an ora-lifecycle-boundary child after build()', () => {
-            const { root } = buildViewport();
-            const boundary = root.querySelector('ora-lifecycle-boundary');
-            expect(boundary).not.toBeNull();
+        it('cleans up subscriptions when root is removed from DOM', () => {
+            jest.useFakeTimers();
+            try {
+                const { root, data$ } = buildViewport();
+                document.body.appendChild(root);
+                triggerVisible(root);
+                data$.next(makeRates(['EUR/USD']));
+                const track = root.querySelector('[data-track]')!;
+                expect(track.querySelectorAll('[data-rate]').length).toBe(2);
+                root.remove();
+                const htmlBefore = track.innerHTML;
+                data$.next(makeRates(['GBP/USD']));
+                expect(track.innerHTML).toBe(htmlBefore);
+                document.body.innerHTML = '';
+            } finally {
+                jest.useRealTimers();
+            }
         });
 
-        it('lifecycle-boundary teardown: removing root from DOM fires onDisconnect and subsequent data emissions do not throw', () => {
+        it('registerDestroy teardown: removing root from DOM fires cleanup and subsequent data emissions do not throw', () => {
             jest.useFakeTimers();
             try {
                 const { root, data$ } = buildViewport();
@@ -591,9 +604,8 @@ describe('FxTickerViewport', () => {
                 const track = root.querySelector('[data-track]')!;
                 expect(track.querySelectorAll('[data-rate]').length).toBe(2);
 
-                // Remove root from DOM — the ora-lifecycle-boundary child's
-                // disconnectedCallback fires synchronously in jsdom, which calls
-                // onDisconnect → sub.unsubscribe(), flashTimers cleared.
+                // Remove root from DOM — the registerDestroy cleanup fires synchronously
+                // in jsdom, which calls sub.unsubscribe(), flashTimers cleared.
                 root.remove();
 
                 // Further emissions must not throw and must not mutate the track
@@ -609,20 +621,25 @@ describe('FxTickerViewport', () => {
             }
         });
 
-        it('lifecycle-boundary onDisconnect is nulled after firing (one-shot, no double teardown)', () => {
-            const { root } = buildViewport();
-            document.body.appendChild(root);
-
-            const boundary = root.querySelector('ora-lifecycle-boundary') as any;
-            expect(boundary).not.toBeNull();
-            // onDisconnect is wired by build()
-            expect(typeof boundary.onDisconnect).toBe('function');
-
-            // Remove root — disconnectedCallback fires, onDisconnect nulled
-            root.remove();
-            expect(boundary.onDisconnect).toBeUndefined();
-
-            document.body.innerHTML = '';
+        it('registerDestroy runs exactly once on removal (no double teardown)', () => {
+            jest.useFakeTimers();
+            try {
+                const { root, data$ } = buildViewport();
+                document.body.appendChild(root);
+                triggerVisible(root);
+                data$.next(makeRates(['EUR/USD']));
+                const track = root.querySelector('[data-track]')!;
+                expect(track.querySelectorAll('[data-rate]').length).toBe(2);
+                root.remove();
+                // Subsequent emissions must not throw — teardown has already fired
+                expect(() => {
+                    data$.next(makeRates(['GBP/USD', 'USD/JPY']));
+                }).not.toThrow();
+                expect(track.querySelectorAll('[data-rate]').length).toBe(2);
+                document.body.innerHTML = '';
+            } finally {
+                jest.useRealTimers();
+            }
         });
     });
 });
