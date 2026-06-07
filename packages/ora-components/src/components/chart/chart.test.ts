@@ -227,8 +227,8 @@ describe('ChartBuilder', () => {
         
         const chart = chartBuilder.build();
 
-        // Check if rects exist in SVG (one per data point)
-        const rects = chart.querySelectorAll('rect');
+        // Check if rects exist in SVG (one per data point); exclude clipPath rects in defs
+        const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
         expect(rects.length).toBe(testData.length);
     });
 
@@ -257,7 +257,8 @@ describe('ChartBuilder', () => {
         const chart = chartBuilder.build();
 
         expect(chart.querySelector('path')).not.toBeNull();
-        expect(chart.querySelectorAll('rect').length).toBe(testData.length);
+        const seriesRects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
+        expect(seriesRects.length).toBe(testData.length);
     });
 
     it('should render legend when enabled', () => {
@@ -313,9 +314,9 @@ describe('ChartBuilder', () => {
         
         const chart = chartBuilder.build();
 
-        const rects = chart.querySelectorAll('rect');
+        const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
         const firstRectX = parseFloat(rects[0].getAttribute('x') || '0');
-        
+
         // Padding should be exactly 8px
         // firstRectX = xScale(0) - barWidth / 2 = (8 + barWidth/2) - barWidth/2 = 8
         expect(firstRectX).toBeCloseTo(8, 1);
@@ -411,7 +412,7 @@ describe('ChartBuilder', () => {
         
         const chart = chartBuilder.build();
         const svg = chart.querySelector('svg');
-        const mainG = svg?.querySelector('g > g'); // The g where series are rendered
+        const mainG = svg?.querySelector('g > g > g'); // The clipped series group inside the outer translated g
 
         if (!mainG) throw new Error('Main G not found');
 
@@ -470,8 +471,8 @@ describe('ChartBuilder', () => {
             // The GatedObserver is used directly — no IntersectionObserver instantiated
             expect(ioConstructorCalls).toBe(0);
 
-            // Data still flows through and chart renders
-            const rects = chart.querySelectorAll('rect');
+            // Data still flows through and chart renders; exclude clipPath rects in defs
+            const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
             expect(rects.length).toBe(testData.length);
         } finally {
             window.IntersectionObserver = OriginalMock;

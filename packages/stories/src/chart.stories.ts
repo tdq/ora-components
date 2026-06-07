@@ -317,3 +317,160 @@ export const Loading = () => {
 
     return container;
 };
+
+export const AxisMinFixed = () => {
+    const builder = new ChartBuilder<DataItem>()
+        .withData(of(data))
+        .withCategoryField('month')
+        .withTitle(of('Y Axis: Fixed Min (0)'))
+        .withHeight(400);
+
+    builder.addLineChart('sales')
+        .withLabel('Sales')
+        .withColor('var(--md-sys-color-primary)');
+
+    builder.withYAxis().withMin(0);
+
+    const container = document.createElement('div');
+    container.className = 'flex flex-col gap-4 p-8';
+
+    const info = document.createElement('div');
+    info.className = 'text-body-medium text-on-surface-variant mb-4 max-w-2xl';
+    info.innerHTML = `
+        <p><strong>withMin(0)</strong> forces the Y axis to start at 0, anchoring the baseline regardless of the data range.
+        Useful for any metric where zero is a meaningful reference point (e.g. showing that sales never dropped to zero).</p>
+    `;
+
+    container.appendChild(info);
+    const chart = builder.build();
+    chart.style.width = '100%';
+    container.appendChild(chart);
+
+    return container;
+};
+
+export const AxisMaxFixed = () => {
+    const builder = new ChartBuilder<DataItem>()
+        .withData(of(data))
+        .withCategoryField('month')
+        .withTitle(of('Y Axis: Fixed Max (5000)'))
+        .withHeight(400);
+
+    builder.addLineChart('sales')
+        .withLabel('Sales')
+        .withColor('var(--md-sys-color-primary)')
+        .withMarkers(true);
+
+    builder.withYAxis().withMax(5000);
+
+    const container = document.createElement('div');
+    container.className = 'flex flex-col gap-4 p-8';
+
+    const info = document.createElement('div');
+    info.className = 'text-body-medium text-on-surface-variant mb-4 max-w-2xl';
+    info.innerHTML = `
+        <p><strong>withMax(5000)</strong> sets a fixed ceiling for the Y axis, adding headroom above the data maximum.
+        Useful when you want to show the data is within a known capacity or budget.</p>
+    `;
+
+    container.appendChild(info);
+    const chart = builder.build();
+    chart.style.width = '100%';
+    container.appendChild(chart);
+
+    return container;
+};
+
+export const AxisMinMaxRange = () => {
+    const builder = new ChartBuilder<DataItem>()
+        .withData(of(data))
+        .withCategoryField('month')
+        .withTitle(of('Y Axis: Constrained Range (2000–4500)'))
+        .withHeight(400);
+
+    builder.addLineChart('sales')
+        .withLabel('Sales')
+        .withColor('var(--md-sys-color-primary)')
+        .withMarkers(true);
+
+    builder.addLineChart('profit')
+        .withLabel('Profit')
+        .withColor('var(--md-sys-color-secondary)')
+        .asDashed();
+
+    builder.withYAxis().withMin(2000).withMax(4500);
+
+    const container = document.createElement('div');
+    container.className = 'flex flex-col gap-4 p-8';
+
+    const info = document.createElement('div');
+    info.className = 'text-body-medium text-on-surface-variant mb-4 max-w-2xl';
+    info.innerHTML = `
+        <p><strong>withMin(2000) and withMax(4500)</strong> together constrain the visible domain, zooming in on the relevant range.
+        Values outside the range are cropped in both directions — the March profit spike at 9800 is clipped at the top,
+        and the May sales value of 1890 and February profit of 1398 are clipped at the bottom.</p>
+    `;
+
+    container.appendChild(info);
+    const chart = builder.build();
+    chart.style.width = '100%';
+    container.appendChild(chart);
+
+    return container;
+};
+
+export const AxisAutoVsFixed = () => {
+    const builderFixed = new ChartBuilder<DataItem>()
+        .withData(of(data))
+        .withCategoryField('month')
+        .withTitle(of('withMin(0) — Fixed baseline'))
+        .withHeight(300);
+
+    builderFixed.addLineChart('sales')
+        .withLabel('Sales')
+        .withColor('var(--md-sys-color-primary)')
+        .withMarkers(true);
+
+    builderFixed.withYAxis().withMin(0);
+
+    const builderAuto = new ChartBuilder<DataItem>()
+        .withData(of(data))
+        .withCategoryField('month')
+        .withTitle(of("withMin('auto') — Fits data range"))
+        .withHeight(300);
+
+    builderAuto.addLineChart('sales')
+        .withLabel('Sales')
+        .withColor('var(--md-sys-color-primary)')
+        .withMarkers(true);
+
+    builderAuto.withYAxis().withMin('auto');
+
+    const container = document.createElement('div');
+    container.className = 'flex flex-col gap-4 p-8';
+
+    const info = document.createElement('div');
+    info.className = 'text-body-medium text-on-surface-variant mb-4 max-w-2xl';
+    info.innerHTML = `
+        <p>Comparing <strong>withMin(0)</strong> (fixed baseline at zero) against <strong>withMin('auto')</strong>
+        (domain fitted tightly to the data range of ~1890–4000). The 'auto' value is the default behavior —
+        the Y axis starts at the lowest data point, maximising the use of vertical space.</p>
+    `;
+
+    container.appendChild(info);
+
+    const chartsRow = document.createElement('div');
+    chartsRow.className = 'flex gap-4';
+
+    const chartFixed = builderFixed.build();
+    chartFixed.style.flex = '1';
+    chartsRow.appendChild(chartFixed);
+
+    const chartAuto = builderAuto.build();
+    chartAuto.style.flex = '1';
+    chartsRow.appendChild(chartAuto);
+
+    container.appendChild(chartsRow);
+
+    return container;
+};
