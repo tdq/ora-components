@@ -96,7 +96,7 @@ class SlotBuilderImpl implements SlotBuilder {
             wrapper.className = cn(
                 'flex',
                 this.size && SIZE_MAP[this.size],
-                !this.size && !isVertical && 'flex-1', // Auto size for horizontal if not specified
+                !this.size && !isVertical && 'flex-1 min-w-0', // Auto size for horizontal if not specified; min-w-0 lets the slot shrink below content intrinsic width instead of overflowing
                 isVertical && 'w-full', // Full width for slots in vertical layout
                 alignment && ALIGNMENT_MAP[alignment]
             );

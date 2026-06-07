@@ -15,6 +15,7 @@ export function createDashboardHeader(): HTMLElement {
     const PAGE_TITLES: Record<string, string> = {
         'pl': 'P&L',
         'balance-sheet': 'Balance Sheet',
+        'trading': 'Trading terminal',
     };
 
     const title$ = router.currentRoute$.pipe(
