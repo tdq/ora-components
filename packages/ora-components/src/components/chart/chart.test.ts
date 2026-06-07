@@ -765,3 +765,94 @@ describe('ChartLogic.calculateScales — downsampling (ST-2)', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// getYDomain — default min/max behavior (ST-4)
+// ---------------------------------------------------------------------------
+
+describe('ChartLogic.calculateScales — Y domain defaults (ST-4)', () => {
+    let logic: ChartLogic<TestItem>;
+
+    beforeEach(() => {
+        logic = new ChartLogic<TestItem>();
+    });
+
+    afterEach(() => {
+        logic.destroy();
+    });
+
+    function stateWithChart(items: TestItem[], min?: number | 'auto', max?: number | 'auto'): ChartState<TestItem> {
+        const s = makeState(items);
+        s.charts = [{ type: 'line', field: 'value', label: 'v' }];
+        if (min !== undefined) s.yAxis.min = min;
+        if (max !== undefined) s.yAxis.max = max;
+        return s;
+    }
+
+    it('default: domain min equals actual data minimum', () => {
+        const items = [
+            { category: 'A', value: 5 },
+            { category: 'B', value: 20 },
+            { category: 'C', value: 10 },
+        ];
+        const scales = logic.calculateScales(stateWithChart(items), 400, 300);
+        expect(scales.yDomain[0]).toBe(5);
+    });
+
+    it('default: domain max equals actual data maximum', () => {
+        const items = [
+            { category: 'A', value: 5 },
+            { category: 'B', value: 20 },
+            { category: 'C', value: 10 },
+        ];
+        const scales = logic.calculateScales(stateWithChart(items), 400, 300);
+        expect(scales.yDomain[1]).toBe(20);
+    });
+
+    it('default: does NOT force min to zero when all values are positive', () => {
+        const items = [
+            { category: 'A', value: 10 },
+            { category: 'B', value: 50 },
+        ];
+        const scales = logic.calculateScales(stateWithChart(items), 400, 300);
+        expect(scales.yDomain[0]).toBe(10);
+    });
+
+    it("withMin('auto'): same as default — uses data minimum", () => {
+        const items = [{ category: 'A', value: 7 }, { category: 'B', value: 42 }];
+        const scales = logic.calculateScales(stateWithChart(items, 'auto'), 400, 300);
+        expect(scales.yDomain[0]).toBe(7);
+    });
+
+    it("withMax('auto'): same as default — uses data maximum", () => {
+        const items = [{ category: 'A', value: 7 }, { category: 'B', value: 42 }];
+        const scales = logic.calculateScales(stateWithChart(items, undefined, 'auto'), 400, 300);
+        expect(scales.yDomain[1]).toBe(42);
+    });
+
+    it('explicit min: overrides data minimum', () => {
+        const items = [{ category: 'A', value: 10 }, { category: 'B', value: 50 }];
+        const scales = logic.calculateScales(stateWithChart(items, 0), 400, 300);
+        expect(scales.yDomain[0]).toBe(0);
+    });
+
+    it('explicit max: overrides data maximum', () => {
+        const items = [{ category: 'A', value: 10 }, { category: 'B', value: 50 }];
+        const scales = logic.calculateScales(stateWithChart(items, undefined, 100), 400, 300);
+        expect(scales.yDomain[1]).toBe(100);
+    });
+
+    it('explicit min and max: no padding applied on top', () => {
+        const items = [{ category: 'A', value: 10 }, { category: 'B', value: 50 }];
+        const scales = logic.calculateScales(stateWithChart(items, 5, 60), 400, 300);
+        expect(scales.yDomain[0]).toBe(5);
+        expect(scales.yDomain[1]).toBe(60);
+    });
+
+    it('degenerate case: min === max after all — adds ±10', () => {
+        const items = [{ category: 'A', value: 30 }, { category: 'B', value: 30 }];
+        const scales = logic.calculateScales(stateWithChart(items), 400, 300);
+        expect(scales.yDomain[0]).toBe(20);
+        expect(scales.yDomain[1]).toBe(40);
+    });
+});

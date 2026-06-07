@@ -212,15 +212,9 @@ export class ChartLogic<ITEM> {
             if (axis?.min !== undefined && axis.min !== 'auto') min = axis.min;
             if (axis?.max !== undefined && axis.max !== 'auto') max = axis.max;
 
-            // Padding
             if (min === max) {
                 min -= 10;
                 max += 10;
-            } else {
-                const range = max - min;
-                max += range * 0.1;
-                if (min > 0) min = 0; // Usually start at 0 for charts unless negative values exist
-                else min -= range * 0.1;
             }
 
             return [min, max];
