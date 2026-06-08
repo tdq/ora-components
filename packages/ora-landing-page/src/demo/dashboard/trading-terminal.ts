@@ -1,13 +1,22 @@
 import {
     ChartBuilder,
+    ComponentBuilder,
     PanelBuilder,
     PanelGap,
     GridBuilder,
     FxTickerBuilder,
     FxRate,
+    LayoutBuilder,
+    LayoutGap,
+    SlotSize,
+    LabelBuilder,
+    LabelSize,
+    TrendBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     registerDestroy,
 } from '@tdq/ora-components';
-import { BehaviorSubject, interval, Subscription, of } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable, Subscription, timer, of } from 'rxjs';
 import { themedColor$ } from './theme-tokens';
 
 // ---------------------------------------------------------------------------
@@ -104,7 +113,6 @@ const SYMBOLS: SymbolDef[] = [
 // ---------------------------------------------------------------------------
 
 function jitter(base: number, bps: number): number {
-    // bps = basis points, e.g. 30 = ±0.30%
     return base * (1 + (Math.random() - 0.5) * 2 * (bps / 10000));
 }
 
@@ -116,24 +124,16 @@ function formatPrice(n: number): string {
     return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function formatDelta(price: number, prevClose: number): string {
-    const pct = ((price - prevClose) / prevClose) * 100;
-    const sign = pct >= 0 ? '+' : '';
-    return `${sign}${pct.toFixed(2)}%`;
-}
-
 function buildOrderBook(mid: number): Array<{ buy: string; price: string; sell: string; side: 'bid' | 'ask' }> {
     const levels = 6;
     const rows: Array<{ buy: string; price: string; sell: string; side: 'bid' | 'ask' }> = [];
     const tickSize = mid > 500 ? 0.10 : mid > 100 ? 0.05 : 0.02;
 
-    // Asks above mid (lowest ask first → sorted ascending by price)
     for (let i = levels; i >= 1; i--) {
         const price = round2(mid + i * tickSize);
         const vol = Math.round(100 + Math.random() * 900);
         rows.push({ buy: '', price: formatPrice(price), sell: vol.toString(), side: 'ask' });
     }
-    // Bids below mid (highest bid first → sorted descending by price)
     for (let i = 1; i <= levels; i++) {
         const price = round2(mid - i * tickSize);
         const vol = Math.round(100 + Math.random() * 900);
@@ -147,11 +147,12 @@ function buildOrderBook(mid: number): Array<{ buy: string; price: string; sell: 
 // ---------------------------------------------------------------------------
 
 export function createTradingTerminal(): HTMLElement {
-    const masterSub = new Subscription();
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('flex-1 p-px-24'));
 
-    const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
-    container.style.cssText = 'display:flex; flex-direction:column; gap:16px; min-width:0; overflow-x:hidden;';
+    const masterSub = new Subscription();
 
     // -- Live price state per symbol --
     const prices = SYMBOLS.map(s => s.basePrice);
@@ -160,7 +161,7 @@ export function createTradingTerminal(): HTMLElement {
     const stockTicker$ = new BehaviorSubject<FxRate[]>(
         SYMBOLS.map((s, i) => ({ pair: s.ticker, rate: prices[i] }))
     );
-    masterSub.add(interval(1200).subscribe(() => {
+    masterSub.add(timer(0, 1200).subscribe(() => {
         const updated = SYMBOLS.map((s, i) => {
             prices[i] = round2(jitter(prices[i], 30));
             return { pair: s.ticker, rate: prices[i] };
@@ -173,45 +174,43 @@ export function createTradingTerminal(): HTMLElement {
 
     // -- FxTicker bar --
     const tickerPanel = new PanelBuilder()
-        .withContent(new FxTickerBuilder().withData(stockTicker$))
-        .build();
-    container.appendChild(tickerPanel);
+        .withContent(new FxTickerBuilder().withData(stockTicker$));
 
     // -- Symbol pill tabs --
     const tabBar = buildSymbolTabBar(selectedIdx$);
-    container.appendChild(tabBar);
 
-    // -- Main two-column grid --
-    const mainGrid = document.createElement('div');
-    mainGrid.className = 'grid grid-cols-[280px_1fr] gap-px-24';
-    mainGrid.style.cssText = 'flex:1; min-height:0;';
-    container.appendChild(mainGrid);
-
-    // Left column: stock overview + news
-    const leftCol = document.createElement('div');
-    leftCol.style.cssText = 'display:flex; flex-direction:column; gap:16px; min-width:0;';
-    mainGrid.appendChild(leftCol);
-
-    // Right column: chart + order book
-    const rightCol = document.createElement('div');
-    rightCol.style.cssText = 'display:flex; flex-direction:column; gap:16px; min-width:0;';
-    mainGrid.appendChild(rightCol);
-
-    // -- Stock overview panel (live price + stats) --
+    // -- Build panels --
     const { el: overviewEl, update: updateOverview } = buildOverviewPanel(masterSub, selectedIdx$, prices);
-    leftCol.appendChild(overviewEl);
-
-    // -- News panel --
-    const { el: newsEl, update: updateNews } = buildNewsPanel();
-    leftCol.appendChild(newsEl);
-
-    // -- Price chart panel --
+    const { el: newsEl, update: updateNews } = buildNewsPanel(selectedIdx$);
     const { el: chartEl, update: updateChart } = buildPriceChartPanel(masterSub, selectedIdx$, prices);
-    rightCol.appendChild(chartEl);
-
-    // -- Order book panel --
     const { el: orderBookEl, update: updateOrderBook } = buildOrderBookPanel(masterSub, selectedIdx$, prices);
-    rightCol.appendChild(orderBookEl);
+
+    // -- Left column: overview (fixed) + news (fill) --
+    const leftColLayout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+    leftColLayout.addSlot().withSize(SlotSize.FIT).withContent({ build: () => overviewEl });
+    leftColLayout.addSlot().withSize(SlotSize.FULL).withContent({ build: () => newsEl });
+
+    // -- Right column: chart (fill) + order book (fixed) --
+    const rightColLayout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+    rightColLayout.addSlot().withSize(SlotSize.HALF).withContent({ build: () => chartEl });
+    rightColLayout.addSlot().withSize(SlotSize.HALF).withContent({ build: () => orderBookEl });
+
+    // -- Two-column horizontal layout --
+    const mainGridLayout = new LayoutBuilder()
+        .asHorizontal()
+        .withGap(LayoutGap.LARGE);
+    mainGridLayout.addSlot().withSize(SlotSize.QUARTER).withContent(leftColLayout);
+    mainGridLayout.addSlot().withSize(SlotSize.FULL).withContent(rightColLayout);
+
+    container.addSlot().withContent(tickerPanel);
+    container.addSlot().withContent({ build: () => tabBar });
+    container.addSlot().withSize(SlotSize.FULL).withContent(mainGridLayout);
+
+    const containerElement = container.build();
 
     // -- Wire up symbol switching --
     masterSub.add(selectedIdx$.subscribe(idx => {
@@ -219,13 +218,12 @@ export function createTradingTerminal(): HTMLElement {
         updateNews(idx);
         updateChart(idx);
         updateOrderBook(idx);
-        updateTabHighlight(tabBar, idx);
     }));
 
     // -- Cleanup --
-    registerDestroy(container, () => masterSub.unsubscribe());
+    registerDestroy(containerElement, () => masterSub.unsubscribe());
 
-    return container;
+    return containerElement;
 }
 
 // ---------------------------------------------------------------------------
@@ -233,60 +231,26 @@ export function createTradingTerminal(): HTMLElement {
 // ---------------------------------------------------------------------------
 
 function buildSymbolTabBar(selectedIdx$: BehaviorSubject<number>): HTMLElement {
-    const bar = document.createElement('div');
-    bar.style.cssText = 'display:flex; align-items:center; gap:8px; flex-wrap:wrap;';
+    const barLayout = new LayoutBuilder().asHorizontal().withGap(LayoutGap.SMALL);
 
     SYMBOLS.forEach((sym, idx) => {
-        const btn = document.createElement('button');
-        btn.dataset['idx'] = String(idx);
-        btn.style.cssText = [
-            'display:inline-flex; align-items:center; gap:6px; padding:4px 14px;',
-            'border-radius:999px; border:1px solid var(--dashboard-border-soft);',
-            'font-size:13px; font-weight:500; cursor:pointer;',
-            'transition:background 0.15s, color 0.15s, border-color 0.15s;',
-            'background:transparent; color:var(--md-sys-color-on-surface);',
-        ].join('');
+        const isActive$ = selectedIdx$.pipe(map(i => i === idx));
+        const extraClass$ = isActive$.pipe(map(active =>
+            'h-auto py-1 px-[14px] rounded-full text-[13px] font-medium ' + (active
+                ? '!border-[--dashboard-accent] !bg-[--dashboard-accent-soft] !text-[--dashboard-accent]'
+                : '!border-[--dashboard-border-soft] !text-on-surface')
+        ));
 
-        if (idx === 0) {
-            // Active dot indicator for first item by default
-            const dot = document.createElement('span');
-            dot.className = 'js-active-dot';
-            dot.style.cssText = 'width:7px; height:7px; border-radius:50%; background:var(--dashboard-accent); flex-shrink:0;';
-            btn.appendChild(dot);
-        }
-
-        btn.appendChild(document.createTextNode(sym.ticker));
-        btn.addEventListener('click', () => selectedIdx$.next(idx));
-        bar.appendChild(btn);
+        barLayout.addSlot().withSize(SlotSize.FIT).withContent(
+            new ButtonBuilder()
+                .withCaption(of(sym.ticker))
+                .withStyle(of(ButtonStyle.OUTLINED))
+                .withClass(extraClass$)
+                .withClick(() => selectedIdx$.next(idx))
+        );
     });
 
-    return bar;
-}
-
-function updateTabHighlight(tabBar: HTMLElement, activeIdx: number): void {
-    const buttons = tabBar.querySelectorAll<HTMLButtonElement>('button[data-idx]');
-    buttons.forEach(btn => {
-        const idx = Number(btn.dataset['idx']);
-        const isActive = idx === activeIdx;
-
-        // Remove existing dot
-        const existingDot = btn.querySelector('.js-active-dot');
-        if (existingDot) btn.removeChild(existingDot);
-
-        if (isActive) {
-            const dot = document.createElement('span');
-            dot.className = 'js-active-dot';
-            dot.style.cssText = 'width:7px; height:7px; border-radius:50%; background:var(--dashboard-accent); flex-shrink:0;';
-            btn.insertBefore(dot, btn.firstChild);
-            btn.style.background = 'var(--dashboard-accent-soft)';
-            btn.style.color = 'var(--dashboard-accent)';
-            btn.style.borderColor = 'var(--dashboard-accent)';
-        } else {
-            btn.style.background = 'transparent';
-            btn.style.color = 'var(--md-sys-color-on-surface)';
-            btn.style.borderColor = 'var(--dashboard-border-soft)';
-        }
-    });
+    return barLayout.build();
 }
 
 // ---------------------------------------------------------------------------
@@ -299,102 +263,86 @@ interface OverviewHandles {
 }
 
 function buildOverviewPanel(
-    masterSub: Subscription,
+    _masterSub: Subscription,
     selectedIdx$: BehaviorSubject<number>,
     prices: number[],
 ): OverviewHandles {
-    const panel = new PanelBuilder().withGap(PanelGap.LARGE).build();
-    panel.style.cssText = 'flex-shrink:0;';
+    // Combines symbol selection and a live price tick — components own their subscriptions
+    const liveState$ = combineLatest([selectedIdx$, timer(0, 800)]).pipe(
+        map(([idx]) => ({ idx, price: prices[idx] }))
+    );
 
-    const header = document.createElement('div');
-    header.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;';
-    const headerTitle = document.createElement('span');
-    headerTitle.className = 'text-label-large font-semibold text-on-surface';
-    headerTitle.textContent = 'Stock Overview';
-    header.appendChild(headerTitle);
-    panel.appendChild(header);
+    const priceText$ = liveState$.pipe(map(({ price }) => `$${formatPrice(price)}`));
+    const trend$ = liveState$.pipe(map(({ idx, price }) => ({
+        value: ((price - SYMBOLS[idx].prevClose) / SYMBOLS[idx].prevClose) * 100,
+        period: '',
+    })));
+    const metaText$ = selectedIdx$.pipe(map(idx => `${SYMBOLS[idx].name} · ${SYMBOLS[idx].market}`));
 
-    // Price display
-    const priceRow = document.createElement('div');
-    priceRow.style.cssText = 'display:flex; align-items:baseline; gap:10px; margin-bottom:8px;';
+    const statDefs: Array<[string, Observable<string>]> = [
+        ['Open',       selectedIdx$.pipe(map(idx => `$${formatPrice(SYMBOLS[idx].open)}`))],
+        ['Prev Close', selectedIdx$.pipe(map(idx => `$${formatPrice(SYMBOLS[idx].prevClose)}`))],
+        ['Change',     liveState$.pipe(map(({ idx, price }) => `$${formatPrice(Math.abs(price - SYMBOLS[idx].prevClose))}`))],
+        ['Day Range',  selectedIdx$.pipe(map(idx => {
+            const sym = SYMBOLS[idx];
+            return `$${formatPrice(sym.prevClose * 0.995)} – $${formatPrice(sym.prevClose * 1.005)}`;
+        }))],
+    ];
 
-    const priceEl = document.createElement('span');
-    priceEl.style.cssText = [
-        'font-size:32px; font-weight:700; line-height:1;',
-        'color:var(--md-sys-color-on-surface); font-variant-numeric:tabular-nums;',
-    ].join('');
+    const panel = new PanelBuilder().withGap(PanelGap.LARGE).withClass(of('flex-shrink-0')).build();
 
-    const badgeEl = document.createElement('span');
-    badgeEl.style.cssText = [
-        'display:inline-flex; align-items:center; padding:2px 10px;',
-        'border-radius:999px; font-size:12px; font-weight:600;',
-    ].join('');
+    // Section header
+    panel.appendChild(
+        new LabelBuilder()
+            .withCaption(of('Stock Overview'))
+            .withSize(LabelSize.LARGE)
+            .withClass(of('font-semibold text-on-surface block mb-3'))
+            .build()
+    );
 
-    priceRow.appendChild(priceEl);
-    priceRow.appendChild(badgeEl);
-    panel.appendChild(priceRow);
+    // Price + trend row
+    const priceRowLayout = new LayoutBuilder().asHorizontal().withGap(LayoutGap.MEDIUM)
+        .withClass(of('items-baseline mb-2'));
+    priceRowLayout.addSlot().withSize(SlotSize.FIT).withContent(
+        new LabelBuilder()
+            .withCaption(priceText$)
+            .withClass(of('text-[32px] font-bold leading-none text-on-surface tabular-nums'))
+    );
+    priceRowLayout.addSlot().withSize(SlotSize.FIT).withContent(
+        new TrendBuilder().withTrend(trend$)
+    );
+    panel.appendChild(priceRowLayout.build());
 
-    // Meta row (name, market)
-    const metaEl = document.createElement('div');
-    metaEl.style.cssText = 'font-size:12px; color:var(--md-sys-color-on-surface); opacity:0.55; margin-bottom:14px;';
-    panel.appendChild(metaEl);
+    // Symbol name · market
+    panel.appendChild(
+        new LabelBuilder()
+            .withCaption(metaText$)
+            .withSize(LabelSize.SMALL)
+            .withClass(of('opacity-55 text-on-surface block mb-[14px]'))
+            .build()
+    );
 
-    // Stats table
-    const statsEl = document.createElement('div');
-    statsEl.style.cssText = [
-        'display:grid; grid-template-columns:1fr 1fr; gap:8px 12px;',
-        'font-size:12px;',
-    ].join('');
-    panel.appendChild(statsEl);
-
-    function renderStats(idx: number, price: number): void {
-        const sym = SYMBOLS[idx];
-        const delta = price - sym.prevClose;
-        const isUp = delta >= 0;
-
-        priceEl.textContent = `$${formatPrice(price)}`;
-
-        badgeEl.textContent = formatDelta(price, sym.prevClose);
-        badgeEl.style.background = isUp ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)';
-        badgeEl.style.color = isUp ? 'var(--kpi-green)' : 'var(--kpi-red-text)';
-
-        metaEl.textContent = `${sym.name} · ${sym.market}`;
-
-        const rows: Array<[string, string]> = [
-            ['Open',       `$${formatPrice(sym.open)}`],
-            ['Prev Close', `$${formatPrice(sym.prevClose)}`],
-            ['Change',     `$${formatPrice(Math.abs(delta))}`],
-            ['Day Range',  `$${formatPrice(sym.prevClose * 0.995)} – $${formatPrice(sym.prevClose * 1.005)}`],
-        ];
-
-        while (statsEl.firstChild) statsEl.removeChild(statsEl.firstChild);
-        for (const [label, value] of rows) {
-            const labelEl = document.createElement('span');
-            labelEl.style.cssText = 'color:var(--md-sys-color-on-surface); opacity:0.5;';
-            labelEl.textContent = label;
-
-            const valueEl = document.createElement('span');
-            valueEl.style.cssText = 'color:var(--md-sys-color-on-surface); font-weight:500; font-variant-numeric:tabular-nums;';
-            valueEl.textContent = value;
-
-            statsEl.appendChild(labelEl);
-            statsEl.appendChild(valueEl);
-        }
+    // Stats grid
+    const statsLayout = new LayoutBuilder().asVertical().withGap(LayoutGap.SMALL);
+    for (const [label, value$] of statDefs) {
+        const row = new LayoutBuilder().asHorizontal().withGap(LayoutGap.MEDIUM);
+        row.addSlot().withSize(SlotSize.HALF).withContent(
+            new LabelBuilder()
+                .withCaption(of(label))
+                .withSize(LabelSize.SMALL)
+                .withClass(of('opacity-50 text-on-surface'))
+        );
+        row.addSlot().withSize(SlotSize.HALF).withContent(
+            new LabelBuilder()
+                .withCaption(value$)
+                .withSize(LabelSize.SMALL)
+                .withClass(of('font-medium text-on-surface tabular-nums'))
+        );
+        statsLayout.addSlot().withContent(row);
     }
+    panel.appendChild(statsLayout.build());
 
-    // Initial render
-    renderStats(0, prices[0]);
-
-    // Re-render at 800ms cadence; prices[] is owned by the FxTicker interval (1200ms)
-    masterSub.add(interval(800).subscribe(() => {
-        const idx = selectedIdx$.value;
-        renderStats(idx, prices[idx]);
-    }));
-
-    return {
-        el: panel,
-        update: (idx) => renderStats(idx, prices[idx]),
-    };
+    return { el: panel, update: () => {} };
 }
 
 // ---------------------------------------------------------------------------
@@ -406,52 +354,49 @@ interface NewsHandles {
     update: (idx: number) => void;
 }
 
-function buildNewsPanel(): NewsHandles {
-    const panel = new PanelBuilder().withGap(PanelGap.LARGE).build();
-    panel.style.cssText = 'flex:1; min-height:0;';
+function buildNewsPanel(selectedIdx$: BehaviorSubject<number>): NewsHandles {
+    const ticker$ = selectedIdx$.pipe(map(idx => SYMBOLS[idx].ticker));
+    const heading$ = selectedIdx$.pipe(map(idx => SYMBOLS[idx].news.heading));
+    const body$ = selectedIdx$.pipe(map(idx => SYMBOLS[idx].news.body));
 
-    const headerEl = document.createElement('div');
-    headerEl.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;';
-    const headerTitle = document.createElement('span');
-    headerTitle.className = 'text-label-large font-semibold text-on-surface';
-    headerTitle.textContent = 'News';
-    headerEl.appendChild(headerTitle);
-    panel.appendChild(headerEl);
+    const panel = new PanelBuilder().withGap(PanelGap.LARGE).withClass(of('flex-1 min-h-0')).build();
 
-    const tagEl = document.createElement('span');
-    tagEl.style.cssText = [
-        'display:inline-flex; align-items:center; padding:2px 8px; margin-bottom:10px;',
-        'border-radius:999px; font-size:11px; font-weight:600;',
-        'background:var(--dashboard-accent-soft); color:var(--dashboard-accent);',
-    ].join('');
-    tagEl.textContent = SYMBOLS[0].ticker;
-    panel.appendChild(tagEl);
+    // Section header
+    panel.appendChild(
+        new LabelBuilder()
+            .withCaption(of('News'))
+            .withSize(LabelSize.LARGE)
+            .withClass(of('font-semibold text-on-surface block mb-3'))
+            .build()
+    );
 
-    const headingEl = document.createElement('p');
-    headingEl.style.cssText = [
-        'font-size:13px; font-weight:600; line-height:1.4;',
-        'color:var(--md-sys-color-on-surface); margin-bottom:8px;',
-    ].join('');
-    headingEl.textContent = SYMBOLS[0].news.heading;
-    panel.appendChild(headingEl);
+    // Ticker tag
+    panel.appendChild(
+        new LabelBuilder()
+            .withCaption(ticker$)
+            .withSize(LabelSize.SMALL)
+            .withClass(of('inline-flex items-center px-2 py-0.5 rounded-full font-semibold bg-[--dashboard-accent-soft] text-[--dashboard-accent] mb-[10px] block'))
+            .build()
+    );
 
-    const bodyEl = document.createElement('p');
-    bodyEl.style.cssText = [
-        'font-size:12px; line-height:1.6;',
-        'color:var(--md-sys-color-on-surface); opacity:0.65;',
-    ].join('');
-    bodyEl.textContent = SYMBOLS[0].news.body;
-    panel.appendChild(bodyEl);
+    // Heading
+    panel.appendChild(
+        new LabelBuilder()
+            .withCaption(heading$)
+            .withClass(of('text-[13px] font-semibold leading-[1.4] text-on-surface mb-2 block'))
+            .build()
+    );
 
-    return {
-        el: panel,
-        update: (idx) => {
-            const sym = SYMBOLS[idx];
-            tagEl.textContent = sym.ticker;
-            headingEl.textContent = sym.news.heading;
-            bodyEl.textContent = sym.news.body;
-        },
-    };
+    // Body
+    panel.appendChild(
+        new LabelBuilder()
+            .withCaption(body$)
+            .withSize(LabelSize.SMALL)
+            .withClass(of('leading-[1.6] text-on-surface opacity-65 block'))
+            .build()
+    );
+
+    return { el: panel, update: () => {} };
 }
 
 // ---------------------------------------------------------------------------
@@ -470,19 +415,27 @@ function buildPriceChartPanel(
 ): ChartHandles {
     const HISTORY_LEN = 30;
 
-    const panel = new PanelBuilder().withGap(PanelGap.LARGE).build();
-    panel.style.cssText = 'flex:1; min-height:0; display:flex; flex-direction:column;';
+    const panel = new PanelBuilder()
+        .withGap(PanelGap.LARGE);
 
-    const headerRow = document.createElement('div');
-    headerRow.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; flex-shrink:0;';
+    const content = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+    
+    panel.withContent(content);
 
-    const titleEl = document.createElement('span');
-    titleEl.className = 'text-label-large font-semibold text-on-surface';
-    titleEl.textContent = `${SYMBOLS[0].ticker} · Price`;
-    headerRow.appendChild(titleEl);
-    panel.appendChild(headerRow);
+    // Header
+    const headerLayout = new LayoutBuilder()
+        .asHorizontal()
+        .withGap(LayoutGap.NONE);
+    headerLayout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(selectedIdx$.pipe(map(idx => `${SYMBOLS[idx].ticker} · Price`)))
+            .withSize(LabelSize.LARGE)
+    );
 
-    // Seed 30 historical data points slightly before current price
+    content.addSlot().withSize(SlotSize.FIT).withContent(headerLayout);
+
     function seedHistory(symIdx: number): Array<{ x: string; y: number }> {
         const base = prices[symIdx];
         return Array.from({ length: HISTORY_LEN }, (_, i) => ({
@@ -500,13 +453,10 @@ function buildPriceChartPanel(
         .withLabel('Price (USD)')
         .withColor(themedColor$('accent'));
 
-    const chartEl = chart.build();
-    chartEl.style.cssText = 'flex:1; min-height:200px;';
-    panel.appendChild(chartEl);
+    content.addSlot().withSize(SlotSize.FULL).withContent(chart);
 
-    // Append a new price point every 2s
     let pointCounter = HISTORY_LEN + 1;
-    masterSub.add(interval(2000).subscribe(() => {
+    masterSub.add(timer(0, 2000).subscribe(() => {
         const idx = selectedIdx$.value;
         const cur = history$.value;
         const next: Array<{ x: string; y: number }> = [
@@ -519,11 +469,10 @@ function buildPriceChartPanel(
     let currentIdx = 0;
 
     return {
-        el: panel,
+        el: panel.build(),
         update: (idx) => {
             if (idx === currentIdx) return;
             currentIdx = idx;
-            titleEl.textContent = `${SYMBOLS[idx].ticker} · Price`;
             pointCounter = HISTORY_LEN + 1;
             history$.next(seedHistory(idx));
         },
@@ -551,84 +500,72 @@ function buildOrderBookPanel(
     selectedIdx$: BehaviorSubject<number>,
     prices: number[],
 ): OrderBookHandles {
-    const panel = new PanelBuilder().withGap(PanelGap.LARGE).build();
-    panel.style.cssText = 'flex-shrink:0;';
+    const panel = new PanelBuilder().withGap(PanelGap.LARGE);
 
-    const headerRow = document.createElement('div');
-    headerRow.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;';
-    const titleEl = document.createElement('span');
-    titleEl.className = 'text-label-large font-semibold text-on-surface';
-    titleEl.textContent = 'Order Book — DOM';
-    headerRow.appendChild(titleEl);
+    const content = new LayoutBuilder()
+        .asVertical()
+        .withClass(of('h-full'))
+        .withGap(LayoutGap.LARGE);
+    
+    panel.withContent(content);
 
-    const liveBadge = document.createElement('span');
-    liveBadge.style.cssText = [
-        'display:inline-flex; align-items:center; gap:5px;',
-        'font-size:11px; font-weight:600; color:var(--kpi-green); opacity:0.85;',
-    ].join('');
-    const pingWrap = document.createElement('span');
-    pingWrap.style.cssText = 'position:relative; display:inline-flex; width:7px; height:7px;';
-
-    const pingRing = document.createElement('span');
-    pingRing.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; border-radius:50%; background:var(--kpi-green); opacity:0.6; animation:ping 1.2s ease-in-out infinite;';
-
-    const pingDot = document.createElement('span');
-    pingDot.style.cssText = 'position:relative; width:7px; height:7px; border-radius:50%; background:var(--kpi-green);';
-
-    pingWrap.appendChild(pingRing);
-    pingWrap.appendChild(pingDot);
-    liveBadge.appendChild(pingWrap);
-    liveBadge.appendChild(document.createTextNode('live'));
-    headerRow.appendChild(liveBadge);
-    panel.appendChild(headerRow);
+    // Header: title + live badge
+    const headerLayout = new LayoutBuilder()
+        .asHorizontal()
+        .withGap(LayoutGap.NONE)
+        .withClass(of('items-center justify-between mb-1'));
+    headerLayout.addSlot().withSize(SlotSize.FIT).withContent(
+        new LabelBuilder()
+            .withCaption(of('Order Book — DOM'))
+            .withSize(LabelSize.LARGE)
+            .withClass(of('font-semibold text-on-surface'))
+    );
+    headerLayout.addSlot().withSize(SlotSize.FIT).withContent(buildLiveBadge());
+    content.addSlot().withSize(SlotSize.FIT).withContent(headerLayout);
 
     const dom$ = new BehaviorSubject<DomRow[]>(buildOrderBook(prices[0]));
 
     const grid = new GridBuilder<DomRow>()
-        .withItems(dom$)
-        .withHeight(of(220));
+        .withItems(dom$);
 
     const cols = grid.withColumns();
 
     cols.addCustomColumn()
         .withHeader('Buy')
         .withWidth('1fr')
-        .withRenderer((row: DomRow) => {
-            const el = document.createElement('span');
-            el.style.cssText = 'font-variant-numeric:tabular-nums; font-size:12px; font-weight:500;';
-            el.style.color = row.buy ? 'var(--kpi-green)' : 'transparent';
-            el.textContent = row.buy || '—';
-            return el;
-        });
+        .withRenderer((row: DomRow) =>
+            new LabelBuilder()
+                .withCaption(of(row.buy || '—'))
+                .withSize(LabelSize.SMALL)
+                .withClass(of(`tabular-nums text-[12px] font-medium${row.buy ? '' : ' invisible'}`))
+                .build()
+        );
 
     cols.addCustomColumn()
         .withHeader('Price')
         .withWidth('100px')
-        .withRenderer((row: DomRow) => {
-            const el = document.createElement('span');
-            el.style.cssText = [
-                'font-variant-numeric:tabular-nums; font-size:12px; font-weight:600;',
-                `color:${row.side === 'ask' ? 'var(--kpi-red-text)' : 'var(--kpi-green)'};`,
-            ].join('');
-            el.textContent = row.price;
-            return el;
-        });
+        .withRenderer((row: DomRow) =>
+            new LabelBuilder()
+                .withCaption(of(row.price))
+                .withSize(LabelSize.SMALL)
+                .withClass(of(`tabular-nums text-[12px] font-semibold ${row.side === 'ask' ? 'text-[var(--kpi-red-text)]' : 'text-[var(--kpi-green)]'}`))
+                .build()
+        );
 
     cols.addCustomColumn()
         .withHeader('Sell')
         .withWidth('1fr')
-        .withRenderer((row: DomRow) => {
-            const el = document.createElement('span');
-            el.style.cssText = 'font-variant-numeric:tabular-nums; font-size:12px; font-weight:500;';
-            el.style.color = row.sell ? 'var(--kpi-red-text)' : 'transparent';
-            el.textContent = row.sell || '—';
-            return el;
-        });
+        .withRenderer((row: DomRow) =>
+            new LabelBuilder()
+                .withCaption(of(row.sell || '—'))
+                .withSize(LabelSize.SMALL)
+                .withClass(of(`tabular-nums text-[12px] font-medium${row.sell ? '' : ' invisible'}`))
+                .build()
+        );
 
-    panel.appendChild(grid.build());
+    content.addSlot().withSize(SlotSize.FULL).withContent(grid);
 
-    // Live-update every 1500ms
-    masterSub.add(interval(1500).subscribe(() => {
+    masterSub.add(timer(0, 1500).subscribe(() => {
         const idx = selectedIdx$.value;
         dom$.next(buildOrderBook(prices[idx]));
     }));
@@ -636,11 +573,18 @@ function buildOrderBookPanel(
     let currentIdx = 0;
 
     return {
-        el: panel,
+        el: panel.build(),
         update: (idx) => {
             if (idx === currentIdx) return;
             currentIdx = idx;
             dom$.next(buildOrderBook(prices[idx]));
         },
     };
+}
+
+function buildLiveBadge(): ComponentBuilder {
+    return new LabelBuilder()
+        .withCaption(of('live'))
+        .withSize(LabelSize.SMALL)
+        .withClass(of('inline-flex items-center gap-[5px] text-[11px] font-semibold text-[--kpi-green] opacity-85'));
 }

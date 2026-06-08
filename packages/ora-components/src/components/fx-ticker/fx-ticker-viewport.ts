@@ -130,13 +130,13 @@ export class FxTickerViewport {
 
         // ── Marquee viewport ──────────────────────────────────────────────────
         const marqueeViewport = document.createElement('div');
-        marqueeViewport.className = 'overflow-hidden flex-1';
+        marqueeViewport.className = 'overflow-hidden flex-1 relative w-full h-[30px]';
         root.appendChild(marqueeViewport);
 
         // ── Track ─────────────────────────────────────────────────────────────
         const track = document.createElement('div');
         track.setAttribute('data-track', '');
-        track.className = 'fx-marquee-track flex whitespace-nowrap will-change-transform';
+        track.className = 'fx-marquee-track flex whitespace-nowrap will-change-transform absolute inset-0';
 
         marqueeViewport.appendChild(track);
 

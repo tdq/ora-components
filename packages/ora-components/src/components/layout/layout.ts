@@ -47,7 +47,7 @@ const SIZE_MAP: Record<SlotSize, string> = {
     [SlotSize.TWO_THIRDS]: 'basis-2/3',
     [SlotSize.THREE_QUARTERS]: 'basis-3/4',
     [SlotSize.FULL]: 'basis-full',
-    [SlotSize.FIT]: 'flex-none'
+    [SlotSize.FIT]: 'flex-none',
 };
 
 const ALIGNMENT_MAP: Record<Alignment, string> = {
@@ -96,7 +96,7 @@ class SlotBuilderImpl implements SlotBuilder {
             wrapper.className = cn(
                 'flex',
                 this.size && SIZE_MAP[this.size],
-                !this.size && !isVertical && 'flex-1 min-w-0', // Auto size for horizontal if not specified; min-w-0 lets the slot shrink below content intrinsic width instead of overflowing
+                !this.size && !isVertical && 'flex-1', // Auto size for horizontal if not specified; min-w-0 lets the slot shrink below content intrinsic width instead of overflowing
                 isVertical && 'w-full', // Full width for slots in vertical layout
                 alignment && ALIGNMENT_MAP[alignment]
             );
