@@ -1,22 +1,201 @@
+import { LayoutBuilder, LayoutGap, LabelBuilder, LabelSize, SlotSize, ComponentBuilder } from '@tdq/ora-components';
 import { of } from 'rxjs';
-import { createButtonExample } from './components/button';
-import { createPanelExample } from './components/panel';
-import { createLabelExample } from './components/label';
-import { createTextFieldExample } from './components/textfield';
 
-import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
+// Labels
+import {
+    createSmallLabelExample,
+    createMediumLabelExample,
+    createLargeLabelExample,
+    createStyledLabelExample,
+    createGlassLabelExample,
+    createReactiveLabelExample,
+} from './components/label';
+
+// Text Fields
+import {
+    createTextFieldExample,
+    createOutlinedTextFieldExample,
+    createPasswordTextFieldExample,
+    createPrefixTextFieldExample,
+    createErrorTextFieldExample,
+    createDisabledTextFieldExample,
+    createReactiveTextFieldExample,
+    createGlassTextFieldExample,
+} from './components/textfield';
+
+// Buttons
+import {
+    createFilledButtonExample,
+    createTonalButtonExample,
+    createOutlinedButtonExample,
+    createElevatedButtonExample,
+    createTextButtonExample,
+    createIconButtonExample,
+    createDisabledButtonExample,
+    createGlassButtonExample,
+} from './components/button';
+
+// Panels
+import {
+    createPanelExample,
+    createCompactPanelExample,
+    createSpacedPanelExample,
+    createGlassPanelExample,
+    createChartPanelExample,
+} from './components/panel';
+
+// Charts
+import {
+    createLineChartExample,
+    createBarChartExample,
+    createAreaChartExample,
+    createMultiSeriesChartExample,
+    createDualAxisChartExample,
+    createAxisConfigExample,
+    createLiveChartExample,
+    createChartLegendTooltipExample,
+    createGlassChartExample,
+} from './components/chart';
+
+// Grids
+import {
+    createBasicGridExample,
+    createColumnTypesExample,
+    createSortableGridExample,
+    createEditableGridExample,
+    createActionsGridExample,
+    createMultiSelectGridExample,
+    createCustomColumnGridExample,
+    createReactiveGridExample,
+    createGroupedGridExample,
+} from './components/grid';
+
+// Layouts
+import {
+    createVerticalLayoutExample,
+    createHorizontalLayoutExample,
+    createSlotSizesExample,
+    createGapVariationsExample,
+    createAlignmentExample,
+    createVisibilityExample,
+    createNestedLayoutExample,
+    createComplexLayoutExample,
+} from './components/layout';
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function sectionHeader(title: string): LabelBuilder {
+    return new LabelBuilder()
+        .withCaption(of(title))
+        .withSize(LabelSize.LARGE)
+        .withClass(of('font-bold uppercase tracking-widest opacity-50 text-[11px] block mt-6'));
+}
+
+function row(...builders: ComponentBuilder[]): LayoutBuilder {
+    const layout = new LayoutBuilder().asHorizontal().withGap(LayoutGap.MEDIUM);
+    builders.forEach(b => layout.addSlot().withSize(SlotSize.FIT).withContent(b));
+    return layout;
+}
+
+// ─── page ───────────────────────────────────────────────────────────────────
 
 const app = document.getElementById('app')!;
 
-const layout = new LayoutBuilder()
-  .asVertical()
-  .withGap(LayoutGap.LARGE);
+const page = new LayoutBuilder()
+    .asVertical()
+    .withGap(LayoutGap.LARGE)
+    .withClass(of('p-8 max-w-4xl mx-auto'));
 
-layout.addSlot().withContent(createLabelExample());
-layout.addSlot().withContent(createTextFieldExample());
-layout.addSlot().withContent(createButtonExample());
+// Labels
+page.addSlot().withContent(sectionHeader('Labels'));
+page.addSlot().withContent(row(
+    createSmallLabelExample(),
+    createMediumLabelExample(),
+    createLargeLabelExample(),
+));
+page.addSlot().withContent(row(
+    createStyledLabelExample(),
+    createGlassLabelExample(),
+    createReactiveLabelExample(),
+));
 
-const panel = createPanelExample();
-layout.addSlot().withContent(panel);
+// Text Fields
+page.addSlot().withContent(sectionHeader('Text Fields'));
+page.addSlot().withContent(row(
+    createTextFieldExample(),
+    createOutlinedTextFieldExample(),
+    createPasswordTextFieldExample(),
+));
+page.addSlot().withContent(row(
+    createPrefixTextFieldExample(),
+    createErrorTextFieldExample(),
+    createDisabledTextFieldExample(),
+));
+page.addSlot().withContent(row(
+    createReactiveTextFieldExample(),
+    createGlassTextFieldExample(),
+));
 
-app.appendChild(layout.build());
+// Buttons
+page.addSlot().withContent(sectionHeader('Buttons'));
+page.addSlot().withContent(row(
+    createFilledButtonExample(),
+    createTonalButtonExample(),
+    createOutlinedButtonExample(),
+    createElevatedButtonExample(),
+    createTextButtonExample(),
+));
+page.addSlot().withContent(row(
+    createIconButtonExample(),
+    createDisabledButtonExample(),
+    createGlassButtonExample(),
+));
+
+// Panels
+page.addSlot().withContent(sectionHeader('Panels'));
+page.addSlot().withContent(createPanelExample());
+page.addSlot().withContent(row(
+    createCompactPanelExample(),
+    createSpacedPanelExample(),
+));
+page.addSlot().withContent(row(
+    createGlassPanelExample(),
+    createChartPanelExample(),
+));
+
+// Charts
+page.addSlot().withContent(sectionHeader('Charts'));
+page.addSlot().withContent(createLineChartExample());
+page.addSlot().withContent(createBarChartExample());
+page.addSlot().withContent(createAreaChartExample());
+page.addSlot().withContent(createMultiSeriesChartExample());
+page.addSlot().withContent(createDualAxisChartExample());
+page.addSlot().withContent(createAxisConfigExample());
+page.addSlot().withContent(createLiveChartExample());
+page.addSlot().withContent(createChartLegendTooltipExample());
+page.addSlot().withContent(createGlassChartExample());
+
+// Grids
+page.addSlot().withContent(sectionHeader('Grids'));
+page.addSlot().withContent(createBasicGridExample());
+page.addSlot().withContent(createColumnTypesExample());
+page.addSlot().withContent(createSortableGridExample());
+page.addSlot().withContent(createEditableGridExample());
+page.addSlot().withContent(createActionsGridExample());
+page.addSlot().withContent(createMultiSelectGridExample());
+page.addSlot().withContent(createCustomColumnGridExample());
+page.addSlot().withContent(createReactiveGridExample());
+page.addSlot().withContent(createGroupedGridExample());
+
+// Layouts
+page.addSlot().withContent(sectionHeader('Layouts'));
+page.addSlot().withContent(createVerticalLayoutExample());
+page.addSlot().withContent(createHorizontalLayoutExample());
+page.addSlot().withContent(createSlotSizesExample());
+page.addSlot().withContent(createGapVariationsExample());
+page.addSlot().withContent(createAlignmentExample());
+page.addSlot().withContent(createVisibilityExample());
+page.addSlot().withContent(createNestedLayoutExample());
+page.addSlot().withContent(createComplexLayoutExample());
+
+app.appendChild(page.build());
