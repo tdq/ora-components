@@ -69,3 +69,7 @@ document.body.appendChild(moneyField);
   The dropdown list is rendered using `ListBoxBuilder` (BORDERLESS style) inside a `PopoverBuilder`. When the dropdown opens, the current currency is pre-selected in the ListBox and the `<ul>` is focused for immediate keyboard navigation. Keyboard navigation is fully delegated to ListBox (ArrowDown/Up/Home/End/Enter — wraps around). The trigger button handles: ArrowDown/ArrowUp/Space to open, Escape to close.
 
   Because the ListBox is viewport-gated by default and lives inside a `display:none`-when-closed popover (which never intersects the viewport), the static currency list is branded as `new GatedObserver(of(currencyItems))` before being passed to `withItems`. This makes the ListBox render eagerly instead of waiting for a visibility signal that would never arrive. See [reactive.md](../reactive.md#gatedobserver-and-idempotency).
+
+## Keyboard
+- When popover is expanded focus on ListBox. Up and Down keys are used to select next or previous elements.
+- When popover is closed (by selecting an item or pressing Escape), focus returns to the currency button.

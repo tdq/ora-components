@@ -85,6 +85,14 @@ export class PopoverBuilder implements PopupBuilder {
 
     show(): void {
         this._buildIfNeeded();
+
+        // Re-check parent: if anchor is now in a dialog but popover is not, move it.
+        // This handles cases where popover was built before anchor was in a dialog.
+        const dialog = this._anchor!.closest('dialog');
+        if (dialog && this._popoverEl!.parentElement !== dialog) {
+            dialog.appendChild(this._popoverEl!);
+        }
+
         this._position();
         if (!this._isOpen) {
             if (_activePopover !== null && _activePopover !== this) {
@@ -286,9 +294,21 @@ export class PopoverBuilder implements PopupBuilder {
     private _onClose(): void {
         if (!this._popoverEl || !this._isOpen) return;
         this._isOpen = false;           // set BEFORE hidePopover so toggle sees false
+
+        // Restore focus to the anchor if focus is currently inside the popover.
+        // popover="manual" gets no automatic browser focus restoration, so hiding it
+        // while it holds focus would drop document.activeElement onto <body> — which,
+        // inside a modal dialog, silently breaks the dialog's focus trap.
+        const shouldRestoreFocus = this._popoverEl.contains(document.activeElement);
+
         (this._popoverEl as any).hidePopover();
         this._popoverEl.style.display = 'none';
         if (_activePopover === this) _activePopover = null;
+
+        if (shouldRestoreFocus) {
+            this._anchor?.focus();
+        }
+
         this._onCloseCb?.();
     }
 

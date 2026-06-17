@@ -91,6 +91,7 @@ export function createCurrencyDropdown(
 
     // ListBox setup
     const listBoxValue$ = new BehaviorSubject<CurrencyItem | null>(null);
+    const focusedIndex$ = new BehaviorSubject<number>(-1);
 
     // The currency list is static and lives inside a (display:none-when-closed) popover,
     // so viewport-gating it would never resolve. Brand it as already-gated so the ListBox
@@ -98,11 +99,20 @@ export function createCurrencyDropdown(
     const listBox = new ListBoxBuilder<CurrencyItem>()
         .withItems(new GatedObserver(of(currencyItems)))
         .withValue(listBoxValue$)
+        .withFocusedIndex(focusedIndex$)
         .withItemCaptionProvider(item => item.label)
         .withItemIdProvider(item => item.id)
         .withStyle(of(ListBoxStyle.BORDERLESS));
 
     const listBoxEl = isGlass ? listBox.asGlass().build() : listBox.build();
+
+    // Close on Escape when focus is inside the listbox
+    listBoxEl.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeDropdown();
+        }
+    });
 
     // Assign the listId to the inner <ul> so aria-controls on the button points to it
     const ul = listBoxEl.querySelector('ul[role="listbox"]') as HTMLUListElement | null;
@@ -120,6 +130,7 @@ export function createCurrencyDropdown(
             isOpen = false;
             button.setAttribute('aria-expanded', 'false');
             button.removeAttribute('aria-activedescendant');
+            focusedIndex$.next(-1);
         });
 
     if (positionReference) {
@@ -137,9 +148,12 @@ export function createCurrencyDropdown(
         isOpen = true;
 
         // Pre-select the current currency for visual highlight — suppress the selection callback
-        const current = currencyItems.find(c => c.id === currentCurrency);
+        const currentIndex = currencyItems.findIndex(c => c.id === currentCurrency);
+        const current = currentIndex >= 0 ? currencyItems[currentIndex] : null;
+        
         isPreSelecting = true;
-        listBoxValue$.next(current ?? null);
+        listBoxValue$.next(current);
+        focusedIndex$.next(currentIndex);
         isPreSelecting = false;
 
         popover.show();
@@ -153,6 +167,7 @@ export function createCurrencyDropdown(
     function closeDropdown() {
         if (!isOpen) return;
         popover.close();
+        button.focus();
         // State reset happens in withOnClose callback
     }
 

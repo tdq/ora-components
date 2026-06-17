@@ -240,17 +240,20 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
                 let itemTextColor: string;
                 let selectedBg: string;
                 let hoverBg: string;
+                let focusBg: string;
 
                 if (this.isGlass) {
                     itemTextColor = '';
                     selectedBg = 'bg-white/40';
                     hoverBg = 'hover:bg-black/5 dark:hover:bg-white/10';
+                    focusBg = 'bg-black/10 dark:bg-white/20';
                 } else {
                     itemTextColor = (isSelected && isOutlined)
                         ? 'text-on-primary-container'
                         : (isTonal ? 'text-on-secondary-container' : 'text-on-surface');
                     selectedBg = isTonal ? 'bg-on-secondary-container/20' : 'bg-primary-container';
                     hoverBg = 'hover:bg-on-surface/8';
+                    focusBg = 'bg-on-surface/12';
                 }
 
                 li.className = cn(
@@ -259,8 +262,15 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
                     isSelected && 'font-bold',
                     isSelected && selectedBg,
                     !isSelected && hoverBg,
-                    isFocused && !isSelected && 'bg-on-surface/12'
+                    isFocused && !isSelected && focusBg
                 );
+
+                // Focus Accent Bar
+                if (isFocused) {
+                    const focusIndicator = document.createElement('div');
+                    focusIndicator.className = 'absolute left-0 top-0 bottom-0 w-[4px] bg-primary z-20';
+                    li.appendChild(focusIndicator);
+                }
 
                 // State Layer (for focus/hover/active visual consistency)
                 const stateLayer = document.createElement('div');
@@ -285,7 +295,10 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
             });
 
             if (focusedIndex >= 0) {
-                (list.children[focusedIndex] as HTMLElement | null)?.scrollIntoView({ block: 'nearest' });
+                const item = list.children[focusedIndex] as HTMLElement | null;
+                if (item && typeof item.scrollIntoView === 'function') {
+                    item.scrollIntoView({ block: 'nearest' });
+                }
             }
         });
         registerDestroy(container, () => itemsSub.unsubscribe());

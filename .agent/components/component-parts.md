@@ -20,7 +20,8 @@ Popover behavior:
 - Auto-closes after 5 seconds.
 - Closes on click outside (via `popover="auto"` attribute).
 - Uses `showPopover()` / `hidePopover()` API with fallback to `display` style.
-- Popover element is appended to `document.body` and cleaned up via `registerDestroy()`.
+- Popover element is appended to `document.body` (or to the enclosing `<dialog>` if the button is inside one, re-checked at show time so a modal dialog does not make it `inert`) and cleaned up via `registerDestroy()`.
+- On close, if focus is inside the popover it is restored to the trigger button. The browser only auto-restores focus for `popover="auto"` when it dismisses *itself* with focus inside; programmatic/timeout-driven closes are not guaranteed to, which inside a modal dialog can break the dialog's focus trap.
 
 ### FieldLabelBuilder
 Builds a `<label>` element for a field.

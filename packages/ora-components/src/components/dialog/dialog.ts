@@ -6,6 +6,7 @@ import { LayoutBuilder, LayoutGap } from '../layout/layout';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '@/core/destroyable-element';
+import { setupFocusTrap } from '@/core/focus-trap';
 
 export enum DialogSize {
     SMALL = 'SMALL',
@@ -263,6 +264,8 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
         registerDestroy(dialog, () => {
             dialog.removeEventListener('close', handleClose);
         });
+
+        setupFocusTrap(dialog);
 
         this.element = dialog;
         return dialog;

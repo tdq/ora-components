@@ -1326,4 +1326,50 @@ describe('PopoverBuilder', () => {
             expect(cb).toHaveBeenCalledTimes(1); // no double-fire
         });
     });
+
+    // ────────────────────────────────────────────────
+    // Focus restoration on close
+    // ────────────────────────────────────────────────
+
+    describe('focus restoration on close', () => {
+        // NOTE: the suite simulates focus by overriding document.activeElement via
+        // Object.defineProperty (real .focus() does not reliably update activeElement
+        // in jsdom and earlier tests leave it overridden), so we assert restoration by
+        // spying on anchor.focus() rather than reading document.activeElement.
+        afterEach(() => {
+            Object.defineProperty(document, 'activeElement', { value: document.body, configurable: true });
+        });
+
+        test('restores focus to the anchor when focus was inside the popover', () => {
+            const anchor = makeAnchor();
+            const focusSpy = jest.spyOn(anchor, 'focus');
+            const builder = new PopoverBuilder().withAnchor(anchor).withContent(makeContent());
+            builder.show();
+
+            // Simulate real DOM focus living inside the popover (the failing scenario
+            // for manual popovers, which get no automatic browser focus restoration).
+            const focusedEl = document.createElement('input');
+            const popoverEl = document.body.querySelector('[popover]') as HTMLElement;
+            popoverEl.appendChild(focusedEl);
+            Object.defineProperty(document, 'activeElement', { value: focusedEl, configurable: true });
+
+            builder.close();
+
+            expect(focusSpy).toHaveBeenCalledTimes(1);
+        });
+
+        test('does NOT move focus to the anchor when focus was outside the popover', () => {
+            const anchor = makeAnchor();
+            const focusSpy = jest.spyOn(anchor, 'focus');
+            const builder = new PopoverBuilder().withAnchor(anchor).withContent(makeContent());
+            builder.show();
+
+            // Focus is outside the popover (e.g. the user clicked elsewhere first).
+            Object.defineProperty(document, 'activeElement', { value: document.body, configurable: true });
+
+            builder.close();
+
+            expect(focusSpy).not.toHaveBeenCalled();
+        });
+    });
 });

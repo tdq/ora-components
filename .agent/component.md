@@ -22,6 +22,16 @@ Keep them under the same folder.
 Each component should be defined in its own file.
 Try to reuse existing components for building more complex components.
 
+## Focus Management
+Popups and Dialogs must implement focus trapping. Use `setupFocusTrap(container)` from `@/core/focus-trap` to ensure:
+- `Tab` navigates between focusable elements inside the container.
+- Tabbing from the last element wraps back to the first.
+- `Shift+Tab` from the first element wraps back to the last.
+- Focus that escapes the container (e.g. when a nested native popover closes) is pulled back in via a `focusin` fallback.
+- Focusable elements inside a `display:none` subtree (such as a closed popover that remains in the DOM) are excluded from the trap, so it never tries to focus a hidden element.
+
+Components that move real DOM focus into a popover (via `PopoverBuilder` / `ErrorPopoverBuilder`) get focus restored to the anchor automatically on close — they do not need to call `anchor.focus()` themselves.
+
 ## Types of components
 1. Components which provides value. This components has method "withValue(value: Subject<T>)". It also should have method "withError(error: Observable<string>)".
 2. Components which is used for layout. This components has method "withContent(content: ComponentBuilder)", or "addSlot(): SlotBuilder".

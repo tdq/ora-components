@@ -499,8 +499,36 @@ describe('ListBoxBuilder', () => {
             expect(getLiElements(el)[0]).toHaveClass('bg-on-surface/12');
         });
 
+        it('focused item has 4px vertical accent bar', () => {
+            const { el } = buildDefault();
+            triggerVisibleAndWait(el);
+            const ul = getUl(el);
+
+            fireKey(ul, 'ArrowDown'); // focus index 0
+            const lis = getLiElements(el);
+            const accentBar = lis[0].querySelector('.bg-primary.w-\\[4px\\]');
+            expect(accentBar).toBeTruthy();
+            expect(accentBar).toHaveClass('absolute', 'left-0', 'top-0', 'bottom-0');
+        });
+
+        it('glass mode: focused item uses glass focus background', () => {
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(['Item 1', 'Item 2']))
+                .asGlass()
+                .build();
+            triggerVisibleAndWait(el);
+            const ul = getUl(el);
+
+            fireKey(ul, 'ArrowDown'); // focus index 0
+            const lis = getLiElements(el);
+            expect(lis[0]).toHaveClass('bg-black/10', 'dark:bg-white/20');
+            
+            const accentBar = lis[0].querySelector('.bg-primary.w-\\[4px\\]');
+            expect(accentBar).toBeTruthy();
+        });
+
         // Spec 9: bg-on-surface/12 is NOT applied when item is focused AND selected
-        it('focused AND selected item does NOT get bg-on-surface/12', () => {
+        it('focused AND selected item does NOT get bg-on-surface/12 but DOES get accent bar', () => {
             const value$ = new BehaviorSubject<string | null>('Apple');
             const el = new ListBoxBuilder<string>()
                 .withItems(of(FRUITS))
@@ -512,6 +540,9 @@ describe('ListBoxBuilder', () => {
             fireKey(ul, 'Home'); // focus index 0 (Apple = selected)
             const lis = getLiElements(el);
             expect(lis[0]).not.toHaveClass('bg-on-surface/12');
+            
+            const accentBar = lis[0].querySelector('.bg-primary.w-\\[4px\\]');
+            expect(accentBar).toBeTruthy();
         });
 
         it('focused but NOT selected item keeps bg-on-surface/12', () => {

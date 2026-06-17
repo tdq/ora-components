@@ -29,7 +29,17 @@ ListBox supports full keyboard navigation when the `<ul>` element has focus (`ta
 - `End` — move focus to the last item
 - `Enter` — select the currently focused item (emits via `withValue` subject)
 
-All navigation keys call `preventDefault()`. The focused item is highlighted with `bg-on-surface/12` (distinct from the selection highlight). When the `<ul>` loses focus (`focusout` with `relatedTarget` outside the list), the focus highlight is cleared.
+All navigation keys call `preventDefault()`. 
+
+### Focus Highlight Design
+The focused item (driven by keyboard or `withFocusedIndex`) is visually distinguished to provide clear feedback:
+- **Vertical Accent Bar**: A 4px wide bar on the left edge using `bg-primary`.
+- **Background Layer**: 
+    - Standard: `bg-on-surface/12`.
+    - Glass: `bg-black/10` (light) or `bg-white/20` (dark).
+- **States**: The focus highlight is distinct from selection (`bg-secondary-container`). If an item is both selected and focused, it shows the selection background and the focus accent bar.
+
+When the `<ul>` loses focus (`focusout` with `relatedTarget` outside the list), the focus highlight is cleared.
 
 The focused item is automatically scrolled into view (`scrollIntoView({ block: 'nearest' })`).
 

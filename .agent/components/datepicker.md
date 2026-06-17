@@ -33,7 +33,7 @@ It should close on any event outside of the calendar.
 ## Styling
 
 - **Theme**: Use Material Design 3 tokens (`bg-surface-variant`, `text-on-surface`, `primary`).
-- **States**: Hover/focus effects for input and day cells (`hover:bg-primary-container`).
+- **States**: Hover/focus effects for input and day cells (`hover:bg-primary-container`). The calendar icon button uses a compact `40px` focus target with `focus-visible:ring-2 focus-visible:ring-primary rounded-sm` for a clear, rectangular keyboard focus indicator.
 - **Glass Effect**: Applies `backdrop-blur-md`, `bg-white/10`, and `border-white/20`.
 - **Transitions**: Smooth transitions (150-200ms) for popup entry and day selection.
 Height is 48px
@@ -70,3 +70,4 @@ Key rules:
   - `Alt + ArrowDown` to open popup.
   - Arrow keys to navigate calendar grid.
   - `Enter` to select, `Esc` to close.
+  - When the calendar closes, focus returns to the element that triggered it (input or calendar button).

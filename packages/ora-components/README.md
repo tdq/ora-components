@@ -226,7 +226,7 @@ const chart = performanceChart.build();
 ```
 
 ### Dialog
-Create fully accessible overlay portals utilizing the HTML5 native `<dialog>` element.
+Create fully accessible overlay portals utilizing the HTML5 native `<dialog>` element. Focus is automatically trapped within the dialog for seamless keyboard navigation, including any dynamically opened popovers (e.g., DatePicker, ComboBox) and elements with `tabindex="-1"` (e.g., calendar grid cells).
 
 ```typescript
 import { DialogBuilder } from '@tdq/ora-components';

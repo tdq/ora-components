@@ -120,13 +120,27 @@ The `WithVisibilityToggle` story shows dynamic tab visibility controlled by a `B
 
 ## Keyboard
 
+Keyboard navigation follows WAI-ARIA standards for automatic activation — moving focus with arrows automatically selects the tab.
+
 | Key | Action |
 |---|---|
-| `Tab` / `Shift+Tab` | Move focus between tab navigation and tab content |
-| `Enter` / `Space` | Activate the focused tab |
-| `Arrow Left` / `Arrow Right` | Switch to the previous / next tab |
-| `Home` | Switch to the first tab |
-| `End` | Switch to the last tab |
+| `Tab` | Only the active tab is focusable. Moves focus into the active tab panel. |
+| `Arrow Right` | Focus and activate the next visible tab (wraps to start). |
+| `Arrow Left` | Focus and activate the previous visible tab (wraps to end). |
+| `Home` | Focus and activate the first visible tab. |
+| `End` | Focus and activate the last visible tab. |
+
+---
+
+## Accessibility
+
+The component implements full ARIA support:
+- **`role="tablist"`** on the navigation container.
+- **`role="tab"`** on each button, with `aria-selected` indicating active state.
+- **`aria-controls`** linking tabs to their respective panels.
+- **`role="tabpanel"`** on the content area.
+- **`aria-labelledby`** linking the panel back to its tab for screen readers.
+- **`tabindex` management** ensuring only the active tab is in the focus sequence.
 
 ---
 
@@ -136,7 +150,7 @@ All visual properties are driven by MD3 design tokens. Override them on `:root` 
 
 | CSS variable | Role |
 |---|---|
-| `--md-sys-color-primary` | Active tab indicator and text colour |
+| `--md-sys-color-primary` | Active tab indicator, text colour, and focus ring |
 | `--md-sys-color-surface` | Tab navigation background |
 | `--md-sys-color-on-surface-variant` | Inactive tab text colour |
 | `--md-sys-color-outline` | Tab divider |
@@ -147,6 +161,7 @@ See the [Theming guide](../?path=/docs/system-theming--docs) for token reference
 
 - **Caption and description**: Displayed above the tab navigation on the left side. Caption uses `text-headline-small` with bold weight; description uses `text-body-medium` in `text-on-surface-variant`.
 - **Active tab indicator**: Uses a `border-b-2` bottom border in `text-primary` colour for the active tab.
+- **Focus Indicator**: When focused via keyboard, a 2px primary-coloured outline appears. It uses an internal offset (`outline-offset-[-2px]`) to ensure it stays within the tab boundaries.
 - **Horizontal scrolling**: The tab navigation bar (`overflow-x-auto`) allows users to scroll horizontally when tabs overflow the container width. Scrollbar is hidden with `no-scrollbar`.
 - **Glass effect**: Overrides tab colours for translucent appearance — active tab uses `text-gray-900` / `text-white/80`, inactive uses `text-gray-600` / `text-white/60`. Caption and description colours also adapt.
 - **Tab visibility**: The `withVisible` observable controls `display: none/block` on the tab button. If the currently active tab is hidden, the component automatically switches to the first visible tab.

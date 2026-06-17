@@ -111,6 +111,18 @@ A deterministic one-shot teardown mechanism via a hidden `<ora-lifecycle-boundar
 
 **Consumers**: `GridBuilder` (tears down logic, viewport, and subscriptions), `ChartViewport` (unsubscribes from logic state, destroys SVG, removes event listeners), `MoneyKPICardViewport` (unsubscribes from logic and description streams), `FxTickerViewport` (unsubscribes from data stream and clears flash timers).
 
+### `setupFocusTrap` (`src/core/focus-trap.ts`)
+
+Traps keyboard focus within a container, allowing for circular Tab navigation. It automatically cleans up its listeners when the container is removed from the DOM using `registerDestroy`.
+
+It registers two listeners:
+- A `keydown` listener on the container for circular `Tab` / `Shift+Tab` wrapping.
+- A document-level `focusin` listener as a defense-in-depth fallback: if focus escapes the container by any means other than Tab (e.g. a native popover closing and dropping focus onto `<body>`, or a stray programmatic `.focus()`), focus is pulled back to the first focusable element. Without this, once `document.activeElement` lands outside the container, keydown events no longer bubble through it and the Tab-wrap logic can never re-engage.
+
+**Visibility filtering**: the focusable-element set excludes elements with a hidden ancestor *between* the element and the container. This is necessary because `getComputedStyle(el).display` reports an element's *own* value (not `none`) when it merely sits inside a `display:none` subtree. A closed native popover (e.g. a `DatePicker` calendar) stays in the dialog's DOM as `display:none`; without the ancestor walk, its buttons would be treated as focusable and the trap could wrap/recover focus onto a hidden element, silently dropping focus to `<body>` and breaking the trap. The container itself is deliberately not checked (a closed `<dialog>` is `display:none` by UA stylesheet).
+
+**Consumers**: `DialogBuilder`.
+
 ### Relationship between the two
 
 `createOptimizedPipeline` and `createLifecycleBoundary` are complementary:
