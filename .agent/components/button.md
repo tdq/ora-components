@@ -34,6 +34,11 @@ When `withCaption` is **not called**, the caption `<span>` is never inserted int
 ### Text Selection
 Button caption text has `select-none` — it is not user-selectable to prevent accidental text highlights on click.
 
+## Accessibility
+
+### Keyboard focus (Safari Tab navigation)
+The button is rendered as a native `<button>`, which Safari **excludes** from Tab-key navigation by default (Safari only tabs through text-entry fields unless the user enables *"Press Tab to highlight each item on a webpage"*). To guarantee buttons are reachable by keyboard in every browser, `build()` sets an explicit `tabindex="0"`, which forces the element into the sequential focus order regardless of that setting. The `disabled` attribute still removes a disabled button from the tab order as expected.
+
 ### Glass effect
 Button styles:
 1. Filled button has glass background, border and caption color according to generic glass effect instructions and color theme.

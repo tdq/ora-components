@@ -54,6 +54,11 @@ export class CheckboxBuilder implements ComponentBuilder {
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.className = 'sr-only peer';
+        // Safari skips native checkboxes in Tab navigation unless the user enables
+        // "Press Tab to highlight each item on a webpage". An explicit tabindex
+        // forces it into the sequential focus order; the `disabled` attribute still
+        // removes it from the tab order when set (see ButtonBuilder.build).
+        input.tabIndex = 0;
 
         const box = document.createElement('div');
         const updateBoxClasses = (isGlass: boolean) => {

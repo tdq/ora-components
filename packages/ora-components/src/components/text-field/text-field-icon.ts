@@ -15,6 +15,9 @@ export function updateIconContent(container: HTMLElement, content: HTMLElement |
 export function createPasswordToggle(onToggle: (isVisible: boolean) => void, isVisible: boolean): HTMLElement {
     const toggleBtn = document.createElement('button');
     toggleBtn.type = 'button';
+    // Explicit tabindex so Safari includes the toggle in Tab navigation, which it
+    // otherwise skips for native <button> elements (see ButtonBuilder.build).
+    toggleBtn.tabIndex = 0;
     toggleBtn.className = 'flex items-center justify-center w-6 h-6 rounded-full hover:bg-black/5 transition-colors focus:outline-none text-on-surface-variant';
 
     const updateIcon = (visible: boolean) => {

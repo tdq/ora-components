@@ -26,7 +26,7 @@ It uses the builder pattern (implements ComponentBuilder) and follows Material D
 ## Requirements
 - In password mode, display "*" symbols instead of actual text.
 - Prefix and suffix are non-editable parts of the text field.
-- "asPassword" mode adds a suffix icon button (uses `Icons.EYE_OPEN` and `Icons.EYE_CLOSED`) to toggle password visibility.
+- "asPassword" mode adds a suffix icon button (uses `Icons.EYE_OPEN` and `Icons.EYE_CLOSED`) to toggle password visibility. This toggle is a native `<button>` with an explicit `tabindex="0"` so Safari includes it in Tab-key navigation, which it otherwise skips for native buttons (see the Button component's Accessibility notes).
 - All logic must be implemented in `text-field-logic.ts`.
 - "as\<Something\>" methods set corresponding boolean fields to true. Logic and styling react to these boolean values.
 - "asEmail()" sets input type="email" for native validation but does not auto-set the error observable.

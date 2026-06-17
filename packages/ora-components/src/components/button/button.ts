@@ -76,6 +76,12 @@ export class ButtonBuilder implements ComponentBuilder {
 
         button.className = cn(BASE_CLASSES);
 
+        // Safari skips native <button> elements in Tab navigation unless the user
+        // enables "Press Tab to highlight each item on a webpage". An explicit
+        // tabindex forces the button into the sequential focus order regardless;
+        // the `disabled` attribute still removes it from the tab order when set.
+        button.tabIndex = 0;
+
         const iconSpan = document.createElement('span');
         iconSpan.className = 'w-5 h-5 flex items-center justify-center';
         

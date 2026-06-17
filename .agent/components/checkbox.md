@@ -26,5 +26,10 @@ Style according to Material Design 3. Icons are driven by CSS `peer-checked:` an
 
 Glass effect applied only for the checkbox clickable part (the box). Uses `Icons.CHECKMARK` for the checked indicator and `Icons.INDETERMINATE` for the indeterminate indicator.
 
+## Accessibility
+
+### Keyboard focus (Safari Tab navigation)
+The focusable element is the visually hidden (`sr-only`) native `<input type="checkbox">`; focus is surfaced visually via `peer-focus-visible:ring-2` on the box. Safari **excludes** native checkboxes from Tab-key navigation by default (it only tabs through text-entry fields unless the user enables *"Press Tab to highlight each item on a webpage"*). To guarantee the checkbox is reachable by keyboard in every browser, `build()` sets an explicit `tabindex="0"` on the input, which forces it into the sequential focus order regardless of that setting. The `disabled` attribute still removes a disabled checkbox from the tab order as expected.
+
 ## Memory Management
 Subscriptions are cleaned up via `registerDestroy` — when the root `<label>` element is removed from the DOM, all RxJS subscriptions and DOM event listeners are unsubscribed automatically.

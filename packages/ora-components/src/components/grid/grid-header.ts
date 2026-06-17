@@ -122,6 +122,13 @@ export class GridHeader<ITEM> {
                 const iconSvg = isCurrent && sort.direction === SortDirection.ASC ? Icons.SORT_UP :
                     isCurrent && sort.direction === SortDirection.DESC ? Icons.SORT_DOWN : Icons.SORT;
 
+                // Make the sortable header keyboard-navigable.
+                cell.tabIndex = 0;
+                cell.setAttribute('role', 'button');
+                cell.setAttribute('aria-sort',
+                    isCurrent && sort.direction === SortDirection.ASC ? 'ascending' :
+                    isCurrent && sort.direction === SortDirection.DESC ? 'descending' : 'none');
+
                 if (!iconWrapper) {
                     iconWrapper = document.createElement('span');
                     cell.appendChild(iconWrapper);
@@ -139,15 +146,25 @@ export class GridHeader<ITEM> {
                 }
 
                 if (!reuse) {
-                    cell.addEventListener('click', (e) => {
-                        if ((e.target as HTMLElement).classList.contains('resize-handle')) return;
-
+                    const triggerSort = () => {
                         let nextDirection = SortDirection.ASC;
                         if (this.currentSort?.field === col.field) {
                             if (this.currentSort.direction === SortDirection.ASC) nextDirection = SortDirection.DESC;
                             else if (this.currentSort.direction === SortDirection.DESC) nextDirection = SortDirection.NONE;
                         }
                         this.onSort(col.field as string, nextDirection);
+                    };
+
+                    cell.addEventListener('click', (e) => {
+                        if ((e.target as HTMLElement).classList.contains('resize-handle')) return;
+                        triggerSort();
+                    });
+
+                    cell.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            triggerSort();
+                        }
                     });
                 }
             }
