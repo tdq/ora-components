@@ -21,6 +21,46 @@ describe('setupFocusTrap', () => {
         return { container, first, last };
     }
 
+    function buildThreeFieldContainer(): {
+        container: HTMLElement;
+        first: HTMLInputElement;
+        middle: HTMLButtonElement;
+        last: HTMLInputElement;
+    } {
+        const container = document.createElement('div');
+        const first = document.createElement('input');
+        first.id = 'first';
+        // A button in the middle: Safari natively skips buttons on Tab, so the trap
+        // must move focus to it explicitly rather than relying on native navigation.
+        const middle = document.createElement('button');
+        middle.id = 'middle';
+        const last = document.createElement('input');
+        last.id = 'last';
+        container.append(first, middle, last);
+        document.body.appendChild(container);
+        return { container, first, middle, last };
+    }
+
+    it('explicitly advances focus to the next element on Tab (Safari skips buttons natively)', () => {
+        const { container, first, middle } = buildThreeFieldContainer();
+        setupFocusTrap(container);
+
+        first.focus();
+        first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+
+        expect(document.activeElement).toBe(middle);
+    });
+
+    it('explicitly moves focus to the previous element on Shift+Tab', () => {
+        const { container, middle, last } = buildThreeFieldContainer();
+        setupFocusTrap(container);
+
+        last.focus();
+        last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+
+        expect(document.activeElement).toBe(middle);
+    });
+
     it('wraps focus from last to first element on Tab', () => {
         const { container, first, last } = buildContainer();
         setupFocusTrap(container);

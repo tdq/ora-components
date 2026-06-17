@@ -39,6 +39,14 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
  * @param container The element to trap focus within.
  */
 export function setupFocusTrap(container: HTMLElement): void {
+    // We drive Tab navigation entirely ourselves rather than letting the browser
+    // move focus and only correcting at the boundaries. Safari's default keyboard
+    // navigation only tabs between form fields and SKIPS <button>/<a> elements
+    // (unless macOS "Full Keyboard Access" is enabled). Relying on native Tab there
+    // makes toolbar buttons unreachable and, because the trap's "last element" is
+    // often a button that Safari never focuses, the boundary wrap never engages and
+    // focus escapes the dialog. Computing the next/previous focusable ourselves and
+    // always calling preventDefault makes navigation deterministic across browsers.
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key !== 'Tab') return;
 
@@ -49,44 +57,40 @@ export function setupFocusTrap(container: HTMLElement): void {
             return;
         }
 
+        e.preventDefault();
+
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
-        const activeElement = document.activeElement as HTMLElement;
+        const activeElement = document.activeElement as HTMLElement | null;
 
-        // If focus is somehow outside the container, wrap it back in
+        // If focus is outside the container (or on the container itself), enter at
+        // the appropriate end.
         if (!activeElement || !container.contains(activeElement)) {
-            if (e.shiftKey) {
-                lastElement.focus();
-            } else {
-                firstElement.focus();
-            }
-            e.preventDefault();
+            (e.shiftKey ? lastElement : firstElement).focus();
+            return;
+        }
+
+        // Find where we currently are. The active element may be a focusable element
+        // itself, or a descendant of one (e.g. focus inside a composite widget), so
+        // fall back to the nearest ancestor that is in the focusable list.
+        let currentIndex = focusableElements.indexOf(activeElement);
+        if (currentIndex === -1) {
+            currentIndex = focusableElements.findIndex(el => el.contains(activeElement));
+        }
+
+        // Unknown position (e.g. focus on the container itself): enter at the end
+        // matching the direction.
+        if (currentIndex === -1) {
+            (e.shiftKey ? lastElement : firstElement).focus();
             return;
         }
 
         if (e.shiftKey) {
-            // Shift + Tab: wrap from first to last
-            // Wrap if we are at or before the first normally focusable element
-            const isAtOrBeforeFirst = activeElement === firstElement || 
-                                     firstElement.contains(activeElement) ||
-                                     activeElement === container ||
-                                     (activeElement.compareDocumentPosition(firstElement) & Node.DOCUMENT_POSITION_FOLLOWING);
-            
-            if (isAtOrBeforeFirst) {
-                lastElement.focus();
-                e.preventDefault();
-            }
+            const prev = currentIndex === 0 ? lastElement : focusableElements[currentIndex - 1];
+            prev.focus();
         } else {
-            // Tab: wrap from last to first
-            // Wrap if we are at or after the last normally focusable element
-            const isAtOrAfterLast = activeElement === lastElement || 
-                                   lastElement.contains(activeElement) ||
-                                   (activeElement.compareDocumentPosition(lastElement) & Node.DOCUMENT_POSITION_PRECEDING);
-            
-            if (isAtOrAfterLast) {
-                firstElement.focus();
-                e.preventDefault();
-            }
+            const next = currentIndex === focusableElements.length - 1 ? firstElement : focusableElements[currentIndex + 1];
+            next.focus();
         }
     };
 
