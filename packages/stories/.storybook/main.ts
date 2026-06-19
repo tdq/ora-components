@@ -7,7 +7,8 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const config: StorybookConfig = {
     stories: [
-        "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+        "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
+        "../src/**/*.mdx"
     ],
     viteFinal: async (config) => {
         config.resolve ??= {};
