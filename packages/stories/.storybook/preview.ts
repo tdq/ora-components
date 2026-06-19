@@ -79,6 +79,7 @@ const getBgClass = (theme: ThemeValue): string => {
 
 const preview: Preview = {
     parameters: {
+        viewMode: 'docs',
         layout: 'fullscreen',
         backgrounds: { disable: true },
         actions: { argTypesRegex: "^on[A-Z].*" },
