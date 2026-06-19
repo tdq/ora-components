@@ -28,3 +28,4 @@ export * from './components/multi-select-list';
 export * from './components/component-parts';
 export * from './theme';
 export * from './router';
+export * from './utils/optimized-pipeline';

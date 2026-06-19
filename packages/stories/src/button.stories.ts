@@ -44,6 +44,7 @@ export const DynamicStyle = () => {
 
     const select = document.createElement('select');
     select.className = 'p-2 border rounded w-max bg-surface text-on-surface';
+    select.setAttribute('aria-label', 'Button style');
     Object.values(ButtonStyle).forEach(style => {
         const option = document.createElement('option');
         option.value = style;
@@ -183,12 +184,14 @@ export const WithIcons = () => {
         new ButtonBuilder()
             .withIcon(Icons.CALENDAR)
             .withStyle(of(ButtonStyle.FILLED))
+            .withAriaLabel(of('Open calendar'))
     );
 
     row2.addSlot().withContent(
         new ButtonBuilder()
             .withIcon(Icons.EXPAND)
             .withStyle(of(ButtonStyle.ELEVATED))
+            .withAriaLabel(of('Expand'))
     );
 
     row2.addSlot().withContent(
@@ -196,6 +199,7 @@ export const WithIcons = () => {
             .withIcon(Icons.ERROR)
             .withStyle(of(ButtonStyle.TEXT))
             .withClass(of('text-error'))
+            .withAriaLabel(of('Show error'))
     );
 
     layout.addSlot().withContent(row2);

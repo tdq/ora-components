@@ -267,4 +267,201 @@ describe('DialogBuilder', () => {
             runCycle();
         }).not.toThrow();
     });
+
+    describe('Focus Trapping', () => {
+        it('should wrap focus from last to first element on Tab', () => {
+            const dialogBuilder = new DialogBuilder()
+                .withCaption(of('Focus Test'))
+                .withContent({
+                    build: () => {
+                        const div = document.createElement('div');
+                        const input1 = document.createElement('input');
+                        input1.id = 'input1';
+                        const input2 = document.createElement('input');
+                        input2.id = 'input2';
+                        div.appendChild(input1);
+                        div.appendChild(input2);
+                        return div;
+                    }
+                });
+
+            dialogBuilder.withToolbar().withPrimaryButton().withCaption(of('OK'));
+
+            const dialog = dialogBuilder.build();
+            document.body.appendChild(dialog);
+
+            const input1 = dialog.querySelector('#input1') as HTMLInputElement;
+            const okButton = dialog.querySelector('button') as HTMLButtonElement;
+
+            // Simulate focus on last element (toolbar is after content)
+            okButton.focus();
+
+            // Press Tab on OK button (the last focusable element)
+            const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true });
+            okButton.dispatchEvent(tabEvent);
+
+            expect(document.activeElement).toBe(input1);
+
+            document.body.removeChild(dialog);
+        });
+
+        it('should skip a disabled primary toolbar button when wrapping focus on Tab', () => {
+            // Mirrors a registration/login dialog: the primary "Submit" button is
+            // disabled via withEnabled(false) until the form is valid, and is the
+            // last focusable element in the dialog.
+            const dialogBuilder = new DialogBuilder()
+                .withCaption(of('Registration'))
+                .withContent({
+                    build: () => {
+                        const div = document.createElement('div');
+                        const input1 = document.createElement('input');
+                        input1.id = 'input1';
+                        div.appendChild(input1);
+                        return div;
+                    }
+                });
+
+            dialogBuilder.withToolbar().withPrimaryButton()
+                .withCaption(of('Register'))
+                .withEnabled(new BehaviorSubject(false));
+
+            const dialog = dialogBuilder.build();
+            document.body.appendChild(dialog);
+
+            const input1 = dialog.querySelector('#input1') as HTMLInputElement;
+
+            input1.focus();
+
+            const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true });
+            input1.dispatchEvent(tabEvent);
+
+            // The disabled button can never receive focus, so it must not be treated
+            // as the wrap target; focus should wrap back to the first element instead.
+            expect(document.activeElement).toBe(input1);
+
+            document.body.removeChild(dialog);
+        });
+
+        it('should wrap focus from first to last element on Shift+Tab', () => {
+            const dialogBuilder = new DialogBuilder()
+                .withCaption(of('Focus Test'))
+                .withContent({
+                    build: () => {
+                        const div = document.createElement('div');
+                        const input1 = document.createElement('input');
+                        input1.id = 'input1';
+                        const input2 = document.createElement('input');
+                        input2.id = 'input2';
+                        div.appendChild(input1);
+                        div.appendChild(input2);
+                        return div;
+                    }
+                });
+
+            dialogBuilder.withToolbar().withPrimaryButton().withCaption(of('OK'));
+
+            const dialog = dialogBuilder.build();
+            document.body.appendChild(dialog);
+
+            const input1 = dialog.querySelector('#input1') as HTMLInputElement;
+            const okButton = dialog.querySelector('button') as HTMLButtonElement;
+
+            input1.focus();
+
+            // Press Shift+Tab on first element
+            const shiftTabEvent = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true });
+            input1.dispatchEvent(shiftTabEvent);
+
+            expect(document.activeElement).toBe(okButton);
+
+            document.body.removeChild(dialog);
+        });
+
+        it('should wrap focus correctly even when focus is on a child with tabindex="-1"', () => {
+            const dialogBuilder = new DialogBuilder()
+                .withCaption(of('Child Focus Test'))
+                .withContent({
+                    build: () => {
+                        const div = document.createElement('div');
+                        const input1 = document.createElement('input');
+                        input1.id = 'input1';
+                        
+                        // Last focusable element is a div with focusable children
+                        const lastWrapper = document.createElement('div');
+                        lastWrapper.tabIndex = 0;
+                        lastWrapper.id = 'last-wrapper';
+                        
+                        const child = document.createElement('button');
+                        child.tabIndex = -1;
+                        child.textContent = 'Child Button';
+                        lastWrapper.appendChild(child);
+                        
+                        div.appendChild(input1);
+                        div.appendChild(lastWrapper);
+                        return div;
+                    }
+                });
+
+            const dialog = dialogBuilder.build();
+            document.body.appendChild(dialog);
+
+            const input1 = dialog.querySelector('#input1') as HTMLInputElement;
+            const lastWrapper = dialog.querySelector('#last-wrapper') as HTMLElement;
+            const childButton = dialog.querySelector('button') as HTMLButtonElement;
+
+            // 1. Focus on child button (which has tabindex="-1")
+            childButton.focus();
+            expect(document.activeElement).toBe(childButton);
+
+            // 2. Press Tab. Since childButton is inside the last focusable element (lastWrapper), it should wrap.
+            const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true });
+            childButton.dispatchEvent(tabEvent);
+
+            expect(document.activeElement).toBe(input1);
+
+            document.body.removeChild(dialog);
+        });
+
+        it('should wrap focus from a tabindex="-1" element that is positioned AFTER the last normally focusable element', () => {
+            const dialogBuilder = new DialogBuilder()
+                .withCaption(of('Tabindex -1 After Test'))
+                .withContent({
+                    build: () => {
+                        const div = document.createElement('div');
+                        const input1 = document.createElement('input');
+                        input1.id = 'input1';
+                        
+                        const lastNormallyFocusable = document.createElement('button');
+                        lastNormallyFocusable.id = 'last-normal';
+                        
+                        const tabMinusOne = document.createElement('div');
+                        tabMinusOne.id = 'tab-minus-one';
+                        tabMinusOne.tabIndex = -1;
+                        
+                        div.appendChild(input1);
+                        div.appendChild(lastNormallyFocusable);
+                        div.appendChild(tabMinusOne);
+                        return div;
+                    }
+                });
+
+            const dialog = dialogBuilder.build();
+            document.body.appendChild(dialog);
+
+            const input1 = dialog.querySelector('#input1') as HTMLElement;
+            const tabMinusOne = dialog.querySelector('#tab-minus-one') as HTMLElement;
+
+            // Focus the tabindex="-1" element that is AFTER the last normally focusable element
+            tabMinusOne.focus();
+            expect(document.activeElement).toBe(tabMinusOne);
+
+            // Press Tab. It should wrap to the first focusable element.
+            const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true });
+            tabMinusOne.dispatchEvent(tabEvent);
+
+            expect(document.activeElement).toBe(input1);
+
+            document.body.removeChild(dialog);
+        });
+    });
 });

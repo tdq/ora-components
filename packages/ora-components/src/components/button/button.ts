@@ -33,6 +33,7 @@ export class ButtonBuilder implements ComponentBuilder {
     private clickListener?: ClickListener<void>;
     private style$?: Observable<ButtonStyle>;
     private className$?: Observable<string>;
+    private ariaLabel$?: Observable<string>;
     private isGlass: boolean = false;
 
     asGlass(isGlass: boolean = true): ButtonBuilder {
@@ -40,6 +41,12 @@ export class ButtonBuilder implements ComponentBuilder {
         return this;
     }
 
+    /**
+     * Set the button's visible text caption.
+     *
+     * This caption is also used as the default aria-label for accessibility.
+     * To override the aria-label (e.g., for icon-only buttons), use withAriaLabel().
+     */
     withCaption(caption: Observable<string>): ButtonBuilder {
         this.caption$ = caption;
         return this;
@@ -70,11 +77,38 @@ export class ButtonBuilder implements ComponentBuilder {
         return this;
     }
 
+    /**
+     * Set an explicit aria-label, overriding the default (which is derived from caption).
+     *
+     * Use this to provide a custom accessible label different from the button's visible text.
+     * For icon-only buttons (no caption), an explicit aria-label is required for accessibility.
+     *
+     * @param label The aria-label observable. Takes precedence over caption.
+     */
+    withAriaLabel(label: Observable<string>): ButtonBuilder {
+        this.ariaLabel$ = label;
+        return this;
+    }
+
+    /**
+     * By default, aria-label is derived from caption. Set explicitly with withAriaLabel()
+     * to override. When icon-only (no caption), an explicit aria-label is required.
+     */
+    getAriaLabel$(): Observable<string> | undefined {
+        return this.ariaLabel$ ?? this.caption$;
+    }
+
     build(): HTMLButtonElement {
         const button = document.createElement('button');
         const BASE_CLASSES = 'h-[46px] px-px-24 rounded-small font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-label-large inline-flex items-center justify-center gap-2';
 
         button.className = cn(BASE_CLASSES);
+
+        // Safari skips native <button> elements in Tab navigation unless the user
+        // enables "Press Tab to highlight each item on a webpage". An explicit
+        // tabindex forces the button into the sequential focus order regardless;
+        // the `disabled` attribute still removes it from the tab order when set.
+        button.tabIndex = 0;
 
         const iconSpan = document.createElement('span');
         iconSpan.className = 'w-5 h-5 flex items-center justify-center';
@@ -84,7 +118,6 @@ export class ButtonBuilder implements ComponentBuilder {
 
         const captionSub = this.caption$ ? this.caption$.subscribe(caption => {
             captionSpan.textContent = caption;
-            button.setAttribute('aria-label', caption);
             if (!caption) {
                 captionSpan.classList.add('hidden');
                 button.classList.add('aspect-square');
@@ -111,6 +144,12 @@ export class ButtonBuilder implements ComponentBuilder {
             } else {
                 iconSpan.remove();
             }
+        }) : null;
+
+        // Derive aria-label: use explicit ariaLabel$ if provided, otherwise fall back to caption$
+        const ariaLabel$ = this.ariaLabel$ ?? this.caption$;
+        const ariaLabelSub = ariaLabel$ ? ariaLabel$.subscribe(label => {
+            button.setAttribute('aria-label', label);
         }) : null;
 
         const enabledSub = this.enabled$ ? this.enabled$.subscribe(enabled => {
@@ -167,6 +206,7 @@ export class ButtonBuilder implements ComponentBuilder {
         registerDestroy(button, () => {
             captionSub?.unsubscribe();
             iconSub?.unsubscribe();
+            ariaLabelSub?.unsubscribe();
             enabledSub?.unsubscribe();
             styleSub?.unsubscribe();
         });

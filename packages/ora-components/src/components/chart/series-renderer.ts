@@ -59,7 +59,10 @@ export class SeriesRenderer {
 
     private renderLine(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: LineChartConfig<any>, xScale: any, yScale: any, filterId: string) {
         const data = scales.displayData;
-        const baselineY = yScale(0);
+        const relevantDomain = config.useSecondaryAxis && scales.secondaryYDomain
+            ? scales.secondaryYDomain
+            : scales.yDomain;
+        const baselineY = yScale(Math.max(relevantDomain[0], Math.min(relevantDomain[1], 0)));
         const points = data.map((d, i) => {
             const x = xScale(i);
             const y = yScale(Number(d[config.field]) || 0);
@@ -127,7 +130,10 @@ export class SeriesRenderer {
     private renderBars(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: BarChartConfig<any>, xScale: any, yScale: any, filterId: string) {
         const data = scales.displayData;
         const barWidth = scales.barWidth || 32;
-        const baselineY = yScale(0);
+        const relevantDomain = config.useSecondaryAxis && scales.secondaryYDomain
+            ? scales.secondaryYDomain
+            : scales.yDomain;
+        const baselineY = yScale(Math.max(relevantDomain[0], Math.min(relevantDomain[1], 0)));
 
         data.forEach((d: any, i: number) => {
             const val = Number(d[config.field]) || 0;
@@ -176,7 +182,10 @@ export class SeriesRenderer {
         const data = scales.displayData;
         if (data.length === 0) return;
 
-        const baselineY = yScale(0);
+        const relevantDomain = config.useSecondaryAxis && scales.secondaryYDomain
+            ? scales.secondaryYDomain
+            : scales.yDomain;
+        const baselineY = yScale(relevantDomain[0]);
         const linePoints = data.map((d: any, i: number) => {
             const x = xScale(i);
             const y = yScale(Number(d[config.field]) || 0);
@@ -188,16 +197,19 @@ export class SeriesRenderer {
             return `${i === 0 ? 'M' : 'L'} ${x},${baselineY}`;
         }).join(' ');
 
-        const areaPathData = `${linePoints} L ${xScale(data.length - 1)},${baselineY} L ${xScale(0)},${baselineY} Z`;
-        const zeroAreaPathData = `${zeroLinePoints} L ${xScale(data.length - 1)},${baselineY} L ${xScale(0)},${baselineY} Z`;
+        const lastX = xScale(data.length - 1);
+        const firstX = xScale(0);
+        const areaPathData = `${linePoints} L ${lastX},${baselineY} L ${firstX},${baselineY} Z`;
+        const zeroAreaPathData = `${zeroLinePoints} L ${lastX},${baselineY} L ${firstX},${baselineY} Z`;
         
-        const area = this.createSvgElement('path', {
+        const areaAttrs: Record<string, string> = {
             d: state.animate ? zeroAreaPathData : areaPathData,
             fill: config.color || 'currentColor',
             'fill-opacity': String(config.opacity || 0.3),
             filter: `url(#${filterId})`
-        });
+        };
 
+        const area = this.createSvgElement('path', areaAttrs);
         if (state.animate) {
             const anim = this.createSvgElement('animate', {
                 attributeName: 'd',
@@ -212,14 +224,16 @@ export class SeriesRenderer {
         }
         g.appendChild(area);
 
-        const line = this.createSvgElement('path', {
+        const lineAttrs: Record<string, string> = {
             d: state.animate ? zeroLinePoints : linePoints,
             fill: 'none',
             stroke: config.color || 'currentColor',
-            'stroke-width': '2',
-            filter: `url(#${filterId})`
-        });
+            'stroke-width': '2'
+            // We omit filter here for the top line of the area chart 
+            // to avoid double-shadowing with the area's own filter.
+        };
 
+        const line = this.createSvgElement('path', lineAttrs);
         if (state.animate) {
             const anim = this.createSvgElement('animate', {
                 attributeName: 'd',

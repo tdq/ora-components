@@ -1,4 +1,4 @@
-import { Subscription, BehaviorSubject, skip } from 'rxjs';
+import { Subscription, BehaviorSubject, skip, of } from 'rxjs';
 import { GridColumn, GridAction, ColumnType } from './types';
 import { GridStyles, getAlignClass, applyColumnWidth } from './grid-styles';
 import { CheckboxBuilder } from '../checkbox/checkbox';
@@ -89,6 +89,7 @@ export class GridRow<ITEM> {
             const checkboxEl = new CheckboxBuilder()
                 .asGlass(this.isGlass)
                 .withValue(value$)
+                .withAriaLabel(of('Select row'))
                 .build();
             
             this.checkboxValue$ = value$;

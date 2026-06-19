@@ -113,9 +113,11 @@ describe('NumberColumnBuilder', () => {
 
             const editor = column.renderEditor!(item, false);
             const input = editor.element.querySelector('input') as HTMLInputElement;
-            
-            expect(input.getAttribute('aria-valuestep')).toBe('0.001');
+
             expect(input.value).toBe('1.235');
+
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+            expect(editor.getValue()).toBeCloseTo(1.236, 3);
         });
 
         it('should not round 10.55 incorrectly on blur with 2 decimals', () => {
@@ -146,9 +148,7 @@ describe('NumberColumnBuilder', () => {
 
             const editor = column.renderEditor!(item, false);
             const input = editor.element.querySelector('input') as HTMLInputElement;
-            
-            expect(input.getAttribute('aria-valuestep')).toBe('0.01');
-            
+
             // Start at 10.55
             input.value = '10.55';
             input.dispatchEvent(new Event('input'));

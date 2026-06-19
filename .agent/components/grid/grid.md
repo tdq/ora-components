@@ -20,7 +20,7 @@ The `GridBuilder<ITEM>` class uses a generic type `ITEM` to ensure type safety a
 
 ### Data & Dimensions
 - `withHeight(height: Observable<number>): this`: Sets the fixed height of the grid container in pixels. If not called, the grid defaults to `height: 100%` of its parent container.
-- `withItems(items: Observable<ITEM[]>): this`: Sets the data source for the grid.
+- `withItems(items: Observable<ITEM[]>): this`: Sets the data source for the grid. Subscription is deferred until the grid element enters the viewport (via `createOptimizedPipeline`).
 - `withGrouping(fields$: Observable<(keyof ITEM | string)[]>): this`: Enables multi-level grouping by the provided fields.
 - `withSort(field: keyof ITEM | string, direction: SortDirection): this`: Sets the initial sort configuration.
 
@@ -150,9 +150,69 @@ When navigating to a row that is outside the current viewport, `GridViewport` sc
 - `columns/columns-builder.ts`: Orchestrator for defining the grid's column set.
 - `actions-builder.ts`: Logic for defining row-level actions.
 
+## Viewport-gated data subscription
+
+GridBuilder defers subscribing to the `items$` data stream until the grid container enters the browser viewport. This avoids unnecessary network/data work for grids on hidden tabs, below-the-fold sections, or lazy-loaded panels. The pattern uses two utilities from the shared library infrastructure:
+
+### `createOptimizedPipeline` (from `src/utils/optimized-pipeline.ts`)
+
+Wraps a source `Observable<T>` with an `IntersectionObserver` that gates subscription lazily:
+
+```typescript
+const gatedItems$ = createOptimizedPipeline(container, this.rawItems$);
+this.logic.setItems(gatedItems$);
+// No subscription to rawItems$ happens until `container` is visible.
+```
+
+| Behaviour | Detail |
+|-----------|--------|
+| **Lazy subscribe** | Does not subscribe to `source$` until the element enters the viewport. |
+| **Instant teardown** | Unsubscribes from `source$` the moment the element leaves the viewport. |
+| **Asymmetric debounce** | `appearDebounceMs` (default 20ms) appear debounce guards against fast scroll-through; disappear is instant (no debounce). |
+| **Self-healing** | Exponential-backoff retry (up to 5 attempts, base 500ms) per visibility window. A new window starts fresh. |
+| **Idempotent** | `createOptimizedPipeline` returns a `GatedObserver`; passing an already-gated source returns it untouched (no double-wrapping). See [reactive.md](../../reactive.md#gatedobserver-and-idempotency). |
+| **Cleanup** | Unsubscribing disposes the IntersectionObserver, retry timers, and source subscription. |
+
+Default options (overridable via `OptimizedPipelineOptions`):
+- `rootMargin: '0px 0px 200px 0px'` — pre-loads 200px before the element scrolls into view.
+- `threshold: 0.01` — 1% visibility triggers appear.
+- `appearDebounceMs: 20` — guards against fast scroll-through.
+
+### `createLifecycleBoundary` (from `src/core/lifecycle-boundary.ts`)
+
+Creates a hidden custom element (`<ora-lifecycle-boundary>`) that fires an `onDisconnect` callback **exactly once** when permanently removed from the DOM. Used by GridBuilder for deterministic teardown:
+
+```typescript
+const boundary = createLifecycleBoundary();
+boundary.onDisconnect = () => {
+    mainSub.unsubscribe();
+    visSubs.forEach(s => s.unsubscribe());
+    this.logic.destroy();
+    viewport.destroy();
+};
+container.appendChild(boundary);
+```
+
+Key properties:
+- **One-shot**: DOM moves (remove + re-insert) do NOT re-trigger teardown. The callback is nulled before invocation.
+- **Non-rendering**: `display: none` by default, set in `connectedCallback`.
+- **Independent of `registerDestroy`**: Both may coexist, but do not register the same teardown via both APIs.
+
+### Usage in `build()`
+
+Within `GridBuilder.build()`, the pipeline is wired as follows:
+
+1. `createOptimizedPipeline(container, rawItems$)` produces a gated stream that only emits when the container is visible.
+2. The gated stream is passed to `GridLogic.setItems()` for processing.
+3. All internal subscriptions (logic state, column visibility, height) are collected into a `Subscription` bag.
+4. A `createLifecycleBoundary()` element is appended to the container; its `onDisconnect` unsubscribes the subscription bag, destroys the logic engine, and destroys the viewport.
+
+This means the consumer's code does not change — `withItems(observable)` works the same as before, but the subscription is now gated automatically.
+
 ## Shared Dependencies
 - `ComponentBuilder` (`src/core/`): Standard builder interface.
-- `registerDestroy` (`src/core/`): RxJS subscription cleanup utility.
+- `createLifecycleBoundary` (`src/core/lifecycle-boundary.ts`): Preferred deterministic one-shot teardown via custom element disconnect.
+- `createOptimizedPipeline` (`src/utils/optimized-pipeline.ts`): Viewport-gated lazy data pipeline with self-healing retry.
 - `ToolbarBuilder` (`src/components/toolbar/`): Integration for optional headers.
 - `CheckboxBuilder` (`src/components/checkbox/`): Used for multi-select and boolean columns.
 - `LabelBuilder` (`src/components/label/`): Used for consistent header and cell typography.

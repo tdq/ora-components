@@ -1,5 +1,5 @@
 import { PanelBuilder, PanelGap, ChartBuilder, GridBuilder, LabelBuilder, LayoutBuilder, LayoutGap, SlotSize, TabsBuilder, Money, registerDestroy } from '@tdq/ora-components';
-import { of, timer, Subject, Subscription } from 'rxjs';
+import { of, timer, Subscription, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { KPICardBuilder } from './kpi-card';
 import { themedColor$ } from './theme-tokens';
@@ -128,7 +128,7 @@ function createRevenueExpensesChart(period: PeriodData): HTMLElement {
         expenses: period.chartExpenses[i],
     }));
 
-    const dataRelay$ = new Subject<ChartRow[]>();
+    const dataRelay$ = new BehaviorSubject<ChartRow[]>([]);
     const sub: Subscription = timer(0, 6000).pipe(
         map(() => BASE.map(d => ({
             x: d.x,

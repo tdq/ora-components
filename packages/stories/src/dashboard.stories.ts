@@ -139,7 +139,7 @@ function createKpiCard(
 
     const titleLabel = new LabelBuilder()
         .withCaption(of(title))
-        .withClass(of('text-label-medium text-on-surface-variant opacity-70 uppercase tracking-wide'));
+        .withClass(of('text-label-medium text-on-surface-variant uppercase tracking-wide'));
 
     const trendPill = new LabelBuilder()
         .withCaption(change$)

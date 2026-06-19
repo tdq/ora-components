@@ -41,6 +41,9 @@ The dropdown is powered by `PopoverBuilder` (from `component-parts`) with a `Lis
 
 When the dropdown opens with an existing selected value, that item is shown with the selection highlight (bold, `bg-on-secondary-container/20`). A "No results" message is shown when the filter produces no matches; the `<ul role="listbox">` remains in the DOM at all times for accessibility.
 
+### Viewport-gating of items
+The raw `items$` is viewport-gated **once**, at the always-visible ComboBox container, via `createOptimizedPipeline`. The gated stream is wrapped in `shareReplay({ bufferSize: 1, refCount: true })` because it has two consumers — the ComboBox's own bookkeeping subscription (currentItems / "No results" / aria-id assignment) and the inner ListBox — which must share a single `IntersectionObserver`/source subscription. The filtered list handed to the ListBox is branded as `new GatedObserver(filteredItems$)` so the ListBox does **not** re-gate it: gating on the ListBox's own container would never resolve, since the dropdown lives in a `display:none`-when-closed popover that never intersects the viewport. Net effect: `items$` is active only while the ComboBox is on-screen, and the dropdown list renders instantly on open. See [reactive.md](../reactive.md#gatedobserver-and-idempotency).
+
 ### Keyboard Navigation (input-driven)
 The input element captures all keyboard events:
 - `ArrowDown` — opens dropdown if closed; moves focus to the next item (wraps)

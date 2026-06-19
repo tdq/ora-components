@@ -46,7 +46,7 @@ describe('DatePickerBuilder', () => {
             .build();
         document.body.appendChild(container);
 
-        const input = screen.getByRole('textbox') as HTMLInputElement;
+        const input = container.querySelector('input') as HTMLInputElement;
         expect(input.value).toBe('01-01-2023');
     });
 
@@ -77,7 +77,7 @@ describe('DatePickerBuilder', () => {
             .build();
         document.body.appendChild(container);
 
-        const input = screen.getByRole('textbox') as HTMLInputElement;
+        const input = container.querySelector('input') as HTMLInputElement;
         fireEvent.input(input, { target: { value: '25-12-2023' } });
 
         const updatedDate = value$.getValue();
@@ -198,7 +198,7 @@ describe('DatePickerBuilder', () => {
         document.body.appendChild(container);
 
         // Change value via input to Dec 2023
-        const input = screen.getByRole('textbox') as HTMLInputElement;
+        const input = container.querySelector('input') as HTMLInputElement;
         fireEvent.input(input, { target: { value: '25-12-2023' } });
 
         // Open calendar
@@ -212,7 +212,7 @@ describe('DatePickerBuilder', () => {
     test('should enforce input masking', () => {
         const container = builder.build();
         document.body.appendChild(container);
-        const input = screen.getByRole('textbox') as HTMLInputElement;
+        const input = container.querySelector('input') as HTMLInputElement;
 
         // Mock selectionStart/End since JSDOM might not handle it perfectly in all fireEvent scenarios
         input.setSelectionRange(0, 0);
@@ -253,7 +253,7 @@ describe('DatePickerBuilder', () => {
     test('should block invalid characters', () => {
         const container = builder.build();
         document.body.appendChild(container);
-        const input = screen.getByRole('textbox') as HTMLInputElement;
+        const input = container.querySelector('input') as HTMLInputElement;
 
         input.value = '';
         input.setSelectionRange(0, 0);

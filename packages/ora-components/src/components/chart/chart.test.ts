@@ -3,8 +3,9 @@ import { ChartLogic } from './chart-logic';
 import { ChartState } from './types';
 import { AxisRenderer } from './axis-renderer';
 import { HIGHLIGHT_DIAMETER } from './constants';
-import { of, BehaviorSubject } from 'rxjs';
+import { Observable, of, BehaviorSubject } from 'rxjs';
 import '@testing-library/jest-dom';
+import { GatedObserver } from '../../utils/optimized-pipeline';
 
 // ---------------------------------------------------------------------------
 // Helpers for ChartLogic.calculateScales tests
@@ -115,11 +116,70 @@ describe('AxisRenderer.getLabelRotation (ST-3)', () => {
 });
 
 describe('ChartBuilder', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+
+        class MockIntersectionObserver implements IntersectionObserver {
+            readonly root: Element | Document | null = null;
+            readonly rootMargin: string = '';
+            readonly thresholds: ReadonlyArray<number> = [];
+
+            constructor(private callback: IntersectionObserverCallback) {}
+
+            observe(element: Element) {
+                const entry: IntersectionObserverEntry = {
+                    target: element,
+                    isIntersecting: true,
+                    intersectionRatio: 1,
+                    boundingClientRect: element.getBoundingClientRect(),
+                    intersectionRect: element.getBoundingClientRect(),
+                    rootBounds: null,
+                    time: Date.now(),
+                } as IntersectionObserverEntry;
+
+                this.callback([entry], this);
+                jest.advanceTimersByTime(150);
+            }
+
+            unobserve() {}
+            disconnect() {}
+            takeRecords() { return []; }
+        }
+
+        window.IntersectionObserver = MockIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
     const testData = [
         { category: 'Jan', value1: 10, value2: 20 },
         { category: 'Feb', value1: 15, value2: 25 },
         { category: 'Mar', value1: 8, value2: 30 }
     ];
+
+    it('withData() stores the raw Observable without subscribing immediately', () => {
+        const spy = jest.fn();
+        const data$ = new Observable<any[]>(subscriber => {
+            spy();
+            subscriber.next(testData);
+        });
+
+        const builder = new ChartBuilder<any>()
+            .withData(data$)
+            .withCategoryField('category');
+
+        // Must NOT subscribe until build() is called
+        expect(spy).not.toHaveBeenCalled();
+
+        // build() subscribes and the pipeline delivers data
+        builder.build();
+        expect(spy).toHaveBeenCalledTimes(1);
+    });
 
     it('should create a chart container', () => {
         const chart = new ChartBuilder()
@@ -167,8 +227,8 @@ describe('ChartBuilder', () => {
         
         const chart = chartBuilder.build();
 
-        // Check if rects exist in SVG (one per data point)
-        const rects = chart.querySelectorAll('rect');
+        // Check if rects exist in SVG (one per data point); exclude clipPath rects in defs
+        const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
         expect(rects.length).toBe(testData.length);
     });
 
@@ -197,7 +257,8 @@ describe('ChartBuilder', () => {
         const chart = chartBuilder.build();
 
         expect(chart.querySelector('path')).not.toBeNull();
-        expect(chart.querySelectorAll('rect').length).toBe(testData.length);
+        const seriesRects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
+        expect(seriesRects.length).toBe(testData.length);
     });
 
     it('should render legend when enabled', () => {
@@ -253,9 +314,9 @@ describe('ChartBuilder', () => {
         
         const chart = chartBuilder.build();
 
-        const rects = chart.querySelectorAll('rect');
+        const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
         const firstRectX = parseFloat(rects[0].getAttribute('x') || '0');
-        
+
         // Padding should be exactly 8px
         // firstRectX = xScale(0) - barWidth / 2 = (8 + barWidth/2) - barWidth/2 = 8
         expect(firstRectX).toBeCloseTo(8, 1);
@@ -351,7 +412,7 @@ describe('ChartBuilder', () => {
         
         const chart = chartBuilder.build();
         const svg = chart.querySelector('svg');
-        const mainG = svg?.querySelector('g > g'); // The g where series are rendered
+        const mainG = svg?.querySelector('g > g > g'); // The clipped series group inside the outer translated g
 
         if (!mainG) throw new Error('Main G not found');
 
@@ -372,24 +433,94 @@ describe('ChartBuilder', () => {
             .withData(of(testData))
             .withCategoryField('category')
             .withAnimation(false);
-        
+
         chartBuilder.addLineChart('value1').withColor(color$);
-        
+
         const chart = chartBuilder.build();
-        
+
         // Find the path for line chart
         const path = chart.querySelector('path[stroke="red"]');
         expect(path).not.toBeNull();
 
         color$.next('blue');
-        
+
         // Wait for potential microtasks? ChartLogic updates state$ synchronously on .next()
         const updatedPath = chart.querySelector('path[stroke="blue"]');
         expect(updatedPath).not.toBeNull();
     });
+
+    it('idempotency guard: GatedObserver source skips createOptimizedPipeline (no IntersectionObserver created)', () => {
+        // Replace the mock with a spy that records construction calls
+        let ioConstructorCalls = 0;
+        const OriginalMock = window.IntersectionObserver;
+        window.IntersectionObserver = new Proxy(OriginalMock, {
+            construct(target, args) {
+                ioConstructorCalls++;
+                return Reflect.construct(target, args);
+            }
+        }) as any;
+
+        try {
+            const gatedData$ = new GatedObserver(of(testData));
+            const chartBuilder = new ChartBuilder<any>()
+                .withData(gatedData$)
+                .withCategoryField('category');
+            chartBuilder.addBarChart('value1');
+            const chart = chartBuilder.build();
+
+            // The GatedObserver is used directly — no IntersectionObserver instantiated
+            expect(ioConstructorCalls).toBe(0);
+
+            // Data still flows through and chart renders; exclude clipPath rects in defs
+            const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
+            expect(rects.length).toBe(testData.length);
+        } finally {
+            window.IntersectionObserver = OriginalMock;
+        }
+    });
 });
 
 describe('Chart Glass Effect', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+
+        class MockIntersectionObserver implements IntersectionObserver {
+            readonly root: Element | Document | null = null;
+            readonly rootMargin: string = '';
+            readonly thresholds: ReadonlyArray<number> = [];
+
+            constructor(private callback: IntersectionObserverCallback) {}
+
+            observe(element: Element) {
+                const entry: IntersectionObserverEntry = {
+                    target: element,
+                    isIntersecting: true,
+                    intersectionRatio: 1,
+                    boundingClientRect: element.getBoundingClientRect(),
+                    intersectionRect: element.getBoundingClientRect(),
+                    rootBounds: null,
+                    time: Date.now(),
+                } as IntersectionObserverEntry;
+
+                this.callback([entry], this);
+                jest.advanceTimersByTime(150);
+            }
+
+            unobserve() {}
+            disconnect() {}
+            takeRecords() { return []; }
+        }
+
+        window.IntersectionObserver = MockIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
     const testData = [
         { category: 'Jan', value1: 10 },
         { category: 'Feb', value1: 15 }
@@ -633,5 +764,96 @@ describe('ChartLogic.calculateScales — downsampling (ST-2)', () => {
             const last = scales.displayData.length - 1;
             expect(scales.categories[last]).toBe(String((scales.displayData[last] as TestItem).category));
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getYDomain — default min/max behavior (ST-4)
+// ---------------------------------------------------------------------------
+
+describe('ChartLogic.calculateScales — Y domain defaults (ST-4)', () => {
+    let logic: ChartLogic<TestItem>;
+
+    beforeEach(() => {
+        logic = new ChartLogic<TestItem>();
+    });
+
+    afterEach(() => {
+        logic.destroy();
+    });
+
+    function stateWithChart(items: TestItem[], min?: number | 'auto', max?: number | 'auto'): ChartState<TestItem> {
+        const s = makeState(items);
+        s.charts = [{ type: 'line', field: 'value', label: 'v' }];
+        if (min !== undefined) s.yAxis.min = min;
+        if (max !== undefined) s.yAxis.max = max;
+        return s;
+    }
+
+    it('default: domain min equals actual data minimum', () => {
+        const items = [
+            { category: 'A', value: 5 },
+            { category: 'B', value: 20 },
+            { category: 'C', value: 10 },
+        ];
+        const scales = logic.calculateScales(stateWithChart(items), 400, 300);
+        expect(scales.yDomain[0]).toBe(5);
+    });
+
+    it('default: domain max equals actual data maximum', () => {
+        const items = [
+            { category: 'A', value: 5 },
+            { category: 'B', value: 20 },
+            { category: 'C', value: 10 },
+        ];
+        const scales = logic.calculateScales(stateWithChart(items), 400, 300);
+        expect(scales.yDomain[1]).toBe(20);
+    });
+
+    it('default: does NOT force min to zero when all values are positive', () => {
+        const items = [
+            { category: 'A', value: 10 },
+            { category: 'B', value: 50 },
+        ];
+        const scales = logic.calculateScales(stateWithChart(items), 400, 300);
+        expect(scales.yDomain[0]).toBe(10);
+    });
+
+    it("withMin('auto'): same as default — uses data minimum", () => {
+        const items = [{ category: 'A', value: 7 }, { category: 'B', value: 42 }];
+        const scales = logic.calculateScales(stateWithChart(items, 'auto'), 400, 300);
+        expect(scales.yDomain[0]).toBe(7);
+    });
+
+    it("withMax('auto'): same as default — uses data maximum", () => {
+        const items = [{ category: 'A', value: 7 }, { category: 'B', value: 42 }];
+        const scales = logic.calculateScales(stateWithChart(items, undefined, 'auto'), 400, 300);
+        expect(scales.yDomain[1]).toBe(42);
+    });
+
+    it('explicit min: overrides data minimum', () => {
+        const items = [{ category: 'A', value: 10 }, { category: 'B', value: 50 }];
+        const scales = logic.calculateScales(stateWithChart(items, 0), 400, 300);
+        expect(scales.yDomain[0]).toBe(0);
+    });
+
+    it('explicit max: overrides data maximum', () => {
+        const items = [{ category: 'A', value: 10 }, { category: 'B', value: 50 }];
+        const scales = logic.calculateScales(stateWithChart(items, undefined, 100), 400, 300);
+        expect(scales.yDomain[1]).toBe(100);
+    });
+
+    it('explicit min and max: no padding applied on top', () => {
+        const items = [{ category: 'A', value: 10 }, { category: 'B', value: 50 }];
+        const scales = logic.calculateScales(stateWithChart(items, 5, 60), 400, 300);
+        expect(scales.yDomain[0]).toBe(5);
+        expect(scales.yDomain[1]).toBe(60);
+    });
+
+    it('degenerate case: min === max after all — adds ±10', () => {
+        const items = [{ category: 'A', value: 30 }, { category: 'B', value: 30 }];
+        const scales = logic.calculateScales(stateWithChart(items), 400, 300);
+        expect(scales.yDomain[0]).toBe(20);
+        expect(scales.yDomain[1]).toBe(40);
     });
 });

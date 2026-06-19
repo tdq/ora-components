@@ -1,11 +1,12 @@
 import { Observable, Subscription } from 'rxjs';
-import { FxTickerLogic, TickerItem } from './fx-ticker-logic';
+import { FxRate, FxTickerLogic, TickerItem } from './fx-ticker-logic';
 import { LabelBuilder } from '../label/label';
 import { CurrencyRegistry } from '../../utils/currency-registry';
-import { registerDestroy } from '../../core/destroyable-element';
+import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
+import { registerDestroy } from '@/core/destroyable-element';
 
 export interface FxTickerViewportConfig {
-    logic: FxTickerLogic;
+    data$: Observable<FxRate[]>;
     label$: Observable<string>;
     labelVisible$: Observable<boolean>;
     rateFormatter?: (item: TickerItem) => string;
@@ -70,7 +71,7 @@ export class FxTickerViewport {
 
     build(): HTMLElement {
         const {
-            logic,
+            data$,
             label$,
             labelVisible$,
             rateFormatter = defaultRateFormatter,
@@ -110,7 +111,6 @@ export class FxTickerViewport {
             'uppercase',
             'tracking-widest',
             'text-on-surface-variant',
-            'opacity-70',
             'border-r',
             'border-outline-alpha-20',
             'px-px-12',
@@ -129,13 +129,13 @@ export class FxTickerViewport {
 
         // ── Marquee viewport ──────────────────────────────────────────────────
         const marqueeViewport = document.createElement('div');
-        marqueeViewport.className = 'overflow-hidden flex-1';
+        marqueeViewport.className = 'overflow-hidden flex-1 relative w-full h-[30px]';
         root.appendChild(marqueeViewport);
 
         // ── Track ─────────────────────────────────────────────────────────────
         const track = document.createElement('div');
         track.setAttribute('data-track', '');
-        track.className = 'fx-marquee-track flex whitespace-nowrap will-change-transform';
+        track.className = 'fx-marquee-track flex whitespace-nowrap will-change-transform absolute inset-0';
 
         marqueeViewport.appendChild(track);
 
@@ -148,6 +148,10 @@ export class FxTickerViewport {
             ariaLive.setAttribute('aria-live', 'polite');
             root.appendChild(ariaLive);
         }
+
+        // ── Gate data$ on root visibility, then derive logic ──────────────────
+        const optimizedData$ = createOptimizedPipeline(root, data$);
+        const logic = new FxTickerLogic(optimizedData$);
 
         // ── Subscriptions & flash timers ──────────────────────────────────────
         const sub = new Subscription();
@@ -265,6 +269,7 @@ export class FxTickerViewport {
         );
 
         // ── Cleanup ───────────────────────────────────────────────────────────
+        
         registerDestroy(root, () => {
             sub.unsubscribe();
             flashTimers.forEach(clearTimeout);

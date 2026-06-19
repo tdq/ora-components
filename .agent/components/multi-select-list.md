@@ -10,7 +10,7 @@ It has the following methods:
 - `withEnabled(enabled: Observable<boolean>): this` — enables or disables the entire component.
 - `withStyle(style: Observable<MultiSelectListStyle>): this` — sets the visual style of the panel border.
 - `withClass(className: Observable<string>): this` — sets additional CSS class on the root element.
-- `withItems(items: Observable<ITEM[]>): this` — sets the source list of items to display.
+- `withItems(items: Observable<ITEM[]>): this` — sets the source list of items to display. The items source is **viewport-gated** via `createOptimizedPipeline`: the list is not subscribed/rendered until the component is visible, and the source is torn down when it scrolls off-screen. Selection state (`withValue`) is *not* gated — it stays reactive at all times. An already-`GatedObserver` source is used as-is (idempotent). See [reactive.md](../reactive.md#gatedobserver-and-idempotency).
 - `withItemCaptionProvider(provider: (item: ITEM) => string): this` — converts an item to its display label. Defaults to `String(item)`.
 - `withItemIdProvider(provider: (item: ITEM) => string | number): this` — produces a unique ID for each item, used for selection comparison. Defaults to `String(item)`.
 - `withValue(value: Subject<ITEM[]>): this` — reactive two-way binding for the selected items array. The component reads initial state from the Subject and emits an updated array on every checkbox toggle.

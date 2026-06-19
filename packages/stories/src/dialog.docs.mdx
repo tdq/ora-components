@@ -154,7 +154,7 @@ The `GlassEffect` story renders a dialog with `asGlass()` applied on top of a gr
 
 | Key | Action |
 |---|---|
-| `Tab` / `Shift+Tab` | Move focus between focusable elements inside the dialog |
+| `Tab` / `Shift+Tab` | Move focus between focusable elements inside the dialog. **Note:** Focus is trapped and wraps around from the last to the first element (and vice versa). |
 | `Enter` / `Space` | Activate focused button or control |
 | `Escape` | Close the dialog |
 | `Arrow keys` | Navigate tab content or scrollable areas when dialog contains tabs |
@@ -178,6 +178,7 @@ See the [Theming guide](../?path=/docs/system-theming--docs) for token reference
 ### Additional notes
 
 - **Dialog container** uses the native `<dialog>` element with `showModal()` for correct focus trapping and ESC-key dismissal.
+- **Focus Trapping** ensures that keyboard navigation remains strictly within the dialog while it is visible. Tabbing from the last focusable element wraps focus back to the first element, providing a seamless loop for keyboard users. Tab navigation is driven explicitly by the dialog (not the browser's native Tab), so toolbar buttons and other controls are reliably reachable in all browsers — including Safari, whose default keyboard navigation otherwise skips buttons and links.
 - **Header** is draggable — click and drag anywhere on the caption area to reposition the dialog.
 - **Sizes** are defined as viewport-relative widths (vw) so they scale with the window.
 - **Toolbar** sits at the bottom of the dialog and is separated from the content by padding.

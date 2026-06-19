@@ -12,7 +12,12 @@ declare global {
 const app = document.getElementById('app')!;
 ThemeManager.getInstance();
 
-app.replaceChildren(router.build());
+// Defer the initial build to allow the shell to paint first.
+// setTimeout(..., 1) yields the main thread more effectively than requestAnimationFrame
+// for the very first paint of the HTML/CSS shell.
+setTimeout(() => {
+    app.replaceChildren(router.build());
+}, 1);
 
 controlAnimations(['.cursor-sweep', '.marquee-track', '.js-pulse-badge']);
 

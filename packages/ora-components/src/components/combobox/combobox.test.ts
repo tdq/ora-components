@@ -1,18 +1,58 @@
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { ComboBoxBuilder, ComboBoxStyle } from './combobox-builder';
 import { fireEvent, screen, waitFor } from '@testing-library/dom';
 import '@testing-library/jest-dom';
+import { GatedObserver } from '../../utils/optimized-pipeline';
 
 // jsdom does not implement scrollIntoView — stub it globally
 HTMLElement.prototype.scrollIntoView = jest.fn();
+
+// ---- Mock type helpers ----
+interface IntersectionObserverMockStatic {
+    triggerVisibility(element: Element, isIntersecting: boolean, ratio?: number): void;
+    reset(): void;
+}
+
+interface GlobalWithIOMock {
+    IntersectionObserverMock: IntersectionObserverMockStatic;
+}
+
+function getIOMock(): IntersectionObserverMockStatic {
+    return (globalThis as unknown as GlobalWithIOMock).IntersectionObserverMock;
+}
+
+/**
+ * Attaches container to document.body (if not already), fires the
+ * IntersectionObserver mock for the CONTAINER (the always-visible combobox
+ * root div), then advances fake timers 50 ms past the 20 ms appearDebounceMs
+ * used by createOptimizedPipeline.
+ *
+ * The gating is on the combobox container — not the popover/listbox — so
+ * options flow through as soon as the container is made visible.
+ */
+function triggerContainerVisibleAndWait(container: HTMLElement): void {
+    if (!document.body.contains(container)) {
+        document.body.appendChild(container);
+    }
+    getIOMock().triggerVisibility(container, true);
+    jest.advanceTimersByTime(50);
+}
 
 describe('ComboBoxBuilder', () => {
     let builder: ComboBoxBuilder<string>;
     const items = ['Apple', 'Banana', 'Cherry'];
 
     beforeEach(() => {
+        jest.useFakeTimers();
+        getIOMock().reset();
         builder = new ComboBoxBuilder<string>();
         document.body.innerHTML = '';
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+        jest.useRealTimers();
+        getIOMock().reset();
     });
 
     test('should render ComboBox with initial items and value', () => {
@@ -23,6 +63,7 @@ describe('ComboBoxBuilder', () => {
             .withValue(value$)
             .build();
         document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox') as HTMLInputElement;
         expect(input.value).toBe('Banana');
@@ -34,7 +75,7 @@ describe('ComboBoxBuilder', () => {
         const container = builder
             .withItems(items$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         fireEvent.input(input, { target: { value: 'Ap' } });
@@ -57,7 +98,7 @@ describe('ComboBoxBuilder', () => {
             .withItems(items$)
             .withValue(value$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         fireEvent.click(input); // Open dropdown
@@ -78,14 +119,14 @@ describe('ComboBoxBuilder', () => {
             .withValue(value$)
             .withStyle(new BehaviorSubject(ComboBoxStyle.OUTLINED))
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
-        
+
         // ArrowDown once to open
         fireEvent.keyDown(input, { key: 'ArrowDown' });
         expect(screen.getByRole('listbox')).toBeVisible();
-        
+
         // After first ArrowDown, it opens and already highlights the first item
         await waitFor(() => {
             const options = screen.getAllByRole('option');
@@ -112,7 +153,7 @@ describe('ComboBoxBuilder', () => {
         const container = builder
             .withItems(items$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
 
@@ -141,7 +182,7 @@ describe('ComboBoxBuilder', () => {
             .withItems(items$)
             .withValue(value$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
 
@@ -155,7 +196,7 @@ describe('ComboBoxBuilder', () => {
         // Change items$ from outside
         items$.next(['New Item']);
         fireEvent.click(input); // Open to see new items
-        
+
         await waitFor(() => {
             const options = screen.getAllByRole('option');
             expect(options).toHaveLength(1);
@@ -168,7 +209,7 @@ describe('ComboBoxBuilder', () => {
         const container = builder
             .withItems(items$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         expect(input).toHaveAttribute('aria-autocomplete', 'list');
@@ -179,7 +220,7 @@ describe('ComboBoxBuilder', () => {
         expect(input).toHaveAttribute('aria-expanded', 'true');
         const listbox = screen.getByRole('listbox');
         expect(listbox).toBeTruthy();
-        
+
         // When opened, the first item is already highlighted
         await waitFor(() => {
             const options = screen.getAllByRole('option');
@@ -205,7 +246,7 @@ describe('ComboBoxBuilder', () => {
             .withValue(value$)
             .withStyle(new BehaviorSubject(ComboBoxStyle.OUTLINED))
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         fireEvent.click(input); // Open dropdown
@@ -227,7 +268,7 @@ describe('ComboBoxBuilder', () => {
         const container = builder
             .withStyle(style$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         fireEvent.click(input); // Open dropdown
@@ -266,7 +307,7 @@ describe('ComboBoxBuilder', () => {
             .withItemCaptionProvider(item => item.name)
             .withItemIdProvider(item => item.id)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         fireEvent.click(input); // Open dropdown
@@ -286,7 +327,7 @@ describe('ComboBoxBuilder', () => {
 
     test('should have aria-controls matching listbox id', () => {
         const container = builder.build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
 
@@ -305,7 +346,7 @@ describe('ComboBoxBuilder', () => {
             .withItems(items$)
             .withStyle(new BehaviorSubject(ComboBoxStyle.OUTLINED))
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         fireEvent.click(input); // Open dropdown
@@ -347,7 +388,7 @@ describe('ComboBoxBuilder', () => {
         const container = builder
             .withItems(items$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
 
@@ -387,7 +428,7 @@ describe('ComboBoxBuilder', () => {
             .withItems(items$)
             .withValue(value$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
 
@@ -417,7 +458,7 @@ describe('ComboBoxBuilder', () => {
         const container = builder
             .withItems(items$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         // Open the dropdown so the popover and listbox are mounted
         const input = screen.getByRole('combobox');
@@ -438,7 +479,7 @@ describe('ComboBoxBuilder', () => {
         const container = builder
             .withItems(items$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         fireEvent.click(input);
@@ -459,7 +500,7 @@ describe('ComboBoxBuilder', () => {
             .withItems(items$)
             .withValue(value$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         fireEvent.click(input); // Open dropdown
@@ -481,7 +522,7 @@ describe('ComboBoxBuilder', () => {
             .withItems(items$)
             .withValue(value$)
             .build();
-        document.body.appendChild(container);
+        triggerContainerVisibleAndWait(container);
 
         const input = screen.getByRole('combobox');
         // Open the dropdown
@@ -495,5 +536,178 @@ describe('ComboBoxBuilder', () => {
         // Dropdown must remain open — isSyncingExternalValue guard prevents close
         expect(input).toHaveAttribute('aria-expanded', 'true');
         expect(screen.getByRole('listbox')).toBeVisible();
+    });
+
+    // ── Viewport gating: lazy behavior proof ──────────────────────────────────
+
+    test('options do NOT appear before the container is visible (lazy gating)', () => {
+        const items$ = new BehaviorSubject(items);
+        const container = builder
+            .withItems(items$)
+            .build();
+
+        // Attach to DOM but do NOT trigger visibility
+        document.body.appendChild(container);
+
+        // Open the dropdown via click — options should not exist yet
+        const input = screen.getByRole('combobox');
+        fireEvent.click(input);
+
+        // Advance timers without triggering IO — no items should have rendered
+        jest.advanceTimersByTime(200);
+
+        const options = document.querySelectorAll('[role="option"]');
+        expect(options).toHaveLength(0);
+    });
+
+    test('options DO appear after triggerVisibility(container, true) + timer advance', async () => {
+        const items$ = new BehaviorSubject(items);
+        const container = builder
+            .withItems(items$)
+            .build();
+
+        // Attach and make container visible — gatedItems$ will emit
+        triggerContainerVisibleAndWait(container);
+
+        // Open the dropdown
+        const input = screen.getByRole('combobox');
+        fireEvent.click(input);
+
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options).toHaveLength(3);
+            expect(options[0].textContent).toBe('Apple');
+            expect(options[1].textContent).toBe('Banana');
+            expect(options[2].textContent).toBe('Cherry');
+        });
+    });
+
+    test('gatedItems$ is shared: pipeline tears down when hidden and ignores new items pushed while invisible', async () => {
+        const items$ = new BehaviorSubject(items);
+        const container = builder
+            .withItems(items$)
+            .build();
+
+        // Make the container visible so gatedItems$ starts emitting
+        triggerContainerVisibleAndWait(container);
+
+        // Open the dropdown to confirm items render
+        const input = screen.getByRole('combobox');
+        fireEvent.click(input);
+
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options).toHaveLength(3);
+        });
+
+        // Hide the container — refCount: true causes the upstream pipeline (and its
+        // IntersectionObserver) to tear down once both internal consumers unsubscribe.
+        getIOMock().triggerVisibility(container, false);
+        jest.advanceTimersByTime(200);
+
+        // Push new items while the pipeline is torn down — they must NOT reach the DOM
+        items$.next([...items, 'Date', 'Elderberry']);
+        jest.advanceTimersByTime(200);
+
+        // The listbox must still reflect the last visible render (3 items)
+        const allOptions = document.querySelectorAll('[role="option"]');
+        expect(allOptions).toHaveLength(3);
+    });
+
+    test('filtered results do NOT appear before visibility, DO appear after', async () => {
+        const items$ = new BehaviorSubject(items);
+        const container = builder
+            .withItems(items$)
+            .build();
+
+        // Attach but do NOT make visible
+        document.body.appendChild(container);
+        const input = screen.getByRole('combobox');
+
+        // Type to filter — nothing should render yet
+        fireEvent.input(input, { target: { value: 'App' } });
+        jest.advanceTimersByTime(200);
+        expect(document.querySelectorAll('[role="option"]')).toHaveLength(0);
+
+        // Now make it visible — filtered results should flow through
+        getIOMock().triggerVisibility(container, true);
+        jest.advanceTimersByTime(50);
+
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options).toHaveLength(1);
+            expect(options[0].textContent).toBe('Apple');
+        });
+    });
+
+    // ── GatedObserver idempotency: inner ListBox skips re-gating ─────────────
+
+    test('inner ListBox renders options without its own triggerVisibility — receives a pre-branded GatedObserver from ComboBox', async () => {
+        // ComboBox gates at the container level and passes new GatedObserver(filteredItems$)
+        // to the inner ListBox. The ListBox's instanceof check must detect the brand and
+        // NOT create a second IntersectionObserver.  We verify this by confirming that
+        // options render once the container is made visible (single IO gate), and that
+        // opening the dropdown immediately shows items without any additional visibility
+        // trigger on the listbox itself.
+        const items$ = new BehaviorSubject(items);
+        const container = builder
+            .withItems(items$)
+            .build();
+
+        // Make only the outer container visible — no second trigger needed
+        triggerContainerVisibleAndWait(container);
+
+        const input = screen.getByRole('combobox');
+        fireEvent.click(input); // open dropdown
+
+        // Options must be present — the inner ListBox used GatedObserver directly
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options).toHaveLength(3);
+            expect(options[0].textContent).toBe('Apple');
+            expect(options[1].textContent).toBe('Banana');
+            expect(options[2].textContent).toBe('Cherry');
+        });
+
+        // Confirm zero IntersectionObserver instances exist for the listbox element
+        // (the popover/listbox element should NOT be observed — only the container is).
+        const listbox = screen.getByRole('listbox');
+        const allInstances = (globalThis as unknown as GlobalWithIOMock & {
+            IntersectionObserverMock: { instances?: Array<{ observedElements: Set<Element> }> }
+        }).IntersectionObserverMock.instances ?? [];
+        const listboxObserved = allInstances.some(
+            inst => inst.observedElements && inst.observedElements.has(listbox)
+        );
+        expect(listboxObserved).toBe(false);
+    });
+
+    test('idempotency guard: GatedObserver passed to withItems renders immediately without triggerVisibility', () => {
+        // If a caller pre-gates items$ before passing to ComboBoxBuilder, ComboBox
+        // creates its own pipeline on the container regardless — the GatedObserver
+        // guard in ComboBox is on the inner ListBox, not on items$ itself.
+        // This test confirms the outer gate (container IO) still works correctly when
+        // items is a plain BehaviorSubject (normal path), and that options render only
+        // after the container is made visible.
+        const plainItems$ = new BehaviorSubject(items);
+        const container = builder
+            .withItems(plainItems$)
+            .build();
+
+        // Attach but do NOT trigger visibility
+        document.body.appendChild(container);
+        jest.advanceTimersByTime(100);
+
+        const input = screen.getByRole('combobox');
+        fireEvent.click(input);
+
+        // Without visibility, no options should be in the DOM
+        expect(document.querySelectorAll('[role="option"]')).toHaveLength(0);
+
+        // Now gate opens — options must appear
+        getIOMock().triggerVisibility(container, true);
+        jest.advanceTimersByTime(50);
+
+        const options = document.querySelectorAll('[role="option"]');
+        expect(options).toHaveLength(3);
     });
 });

@@ -27,6 +27,13 @@ It uses existing components: layout, label
 Use HTML <dialog> tag for implementation.
 Always display dialog as modal.
 On opening dialog must be displayed in center.
+**Focus Trapping:** Keyboard navigation (Tab/Shift+Tab) must be restricted to the dialog while it is visible. Tabbing from the last focusable element must wrap focus back to the first element (circular navigation). Implemented via `setupFocusTrap(dialog)` (see `core/focus-trap.ts`). This implementation must correctly handle:
+1. Dynamically added elements like **Popovers** (DatePicker, ComboBox).
+2. Elements with `tabindex="-1"` that might have focus (e.g. calendar grid cells).
+3. The circular navigation must include all visible children of the dialog.
+4. A **closed popover that remains in the dialog's DOM** as `display:none` (e.g. the DatePicker calendar after it closes). Its focusable elements must be excluded from the trap — they live in a hidden subtree, so the trap skips elements with a hidden ancestor. Otherwise the trap could try to focus a hidden element and drop focus to `<body>`, breaking the trap.
+5. Recovery when focus escapes the dialog by means other than Tab (e.g. a native popover hiding itself): a `focusin` fallback pulls focus back inside.
+6. **Safari keyboard navigation.** The trap drives all Tab movement itself (explicitly focusing the next/previous element on every Tab) rather than relying on the browser's native Tab. Safari's default keyboard navigation skips `<button>` / `<a>` elements, so native delegation would make toolbar buttons unreachable and let focus escape after the last form field.
 
 ## Styling
 Style according to Material Design 3 

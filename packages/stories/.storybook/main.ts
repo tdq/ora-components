@@ -6,6 +6,9 @@ import remarkGfm from "remark-gfm";
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const config: StorybookConfig = {
+    stories: [
+        "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+    ],
     viteFinal: async (config) => {
         config.resolve ??= {};
         config.resolve.alias = {
@@ -16,7 +19,6 @@ const config: StorybookConfig = {
         };
         return config;
     },
-    stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
     addons: [
         "@storybook/addon-links",
         {

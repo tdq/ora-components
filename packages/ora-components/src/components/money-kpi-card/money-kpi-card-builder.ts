@@ -2,7 +2,6 @@ import { Observable, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { Money } from '../../types/money';
 import { Trend } from '../../types/trend';
-import { MoneyKPICardLogic } from './money-kpi-card-logic';
 import { MoneyKPICardViewport } from './money-kpi-card-viewport';
 
 const DEFAULTS = {
@@ -58,9 +57,9 @@ export class MoneyKPICardBuilder implements ComponentBuilder {
             throw new Error('MoneyKPICardBuilder: withValue() is required before build()');
         }
 
-        const logic = new MoneyKPICardLogic(this.value$, this.precision$);
         const viewport = new MoneyKPICardViewport({
-            logic,
+            value$: this.value$,
+            precision$: this.precision$,
             label$: this.label$,
             trend$: this.trend$,
             description$: this.description$,

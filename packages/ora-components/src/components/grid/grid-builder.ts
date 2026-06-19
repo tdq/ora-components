@@ -4,7 +4,7 @@ import { ColumnsBuilder } from './columns/columns-builder';
 import { ToolbarBuilder } from '../toolbar/toolbar-builder';
 import { ActionsBuilder } from './actions-builder';
 import { SortDirection, PivotConfig, ColumnType, GridColumn, GridRowData } from './types';
-import { registerDestroy } from '@/core/destroyable-element';
+import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { GridStyles } from './grid-styles';
@@ -12,6 +12,7 @@ import { GridLogic } from './grid-logic';
 import { GridViewport } from './grid-viewport';
 import { GridHeader } from './grid-header';
 import { PivotLogic } from './pivot-logic';
+import { registerDestroy } from '@/core/destroyable-element';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -28,6 +29,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     private _onCommit: (item: ITEM) => void = () => { };
 
     private logic = new GridLogic<ITEM>();
+    private rawItems$?: Observable<ITEM[]>;
 
     withHeight(height: Observable<number>): this {
         this.height$ = height;
@@ -66,7 +68,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     }
 
     withItems(items: Observable<ITEM[]>): this {
-        this.logic.setItems(items);
+        this.rawItems$ = items;
         return this;
     }
 
@@ -109,6 +111,11 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             GridStyles.container,
             this.isGlass && GridStyles.glass
         );
+
+        if (this.rawItems$) {
+            const gatedItems$ = createOptimizedPipeline(container, this.rawItems$);
+            this.logic.setItems(gatedItems$);
+        }
 
         if (this.toolbarBuilder) {
             if (this.isGlass) this.toolbarBuilder.asGlass();
@@ -254,9 +261,12 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             viewport.update(state.rows, state.selectedItems);
         });
 
+        const mainSub = new Subscription();
+        mainSub.add(sub);
+        mainSub.add(visColSub);
+
         registerDestroy(container, () => {
-            sub.unsubscribe();
-            visColSub.unsubscribe();
+            mainSub.unsubscribe();
             visSubs.forEach(s => s.unsubscribe());
             this.logic.destroy();
             viewport.destroy();

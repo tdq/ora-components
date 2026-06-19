@@ -110,6 +110,22 @@ export function createSidebar(): HTMLElement {
 
     accountingItems.forEach(item => navSection.appendChild(makeNavButton(item)));
 
+    // Trading section
+    const tradingLabel = document.createElement('div');
+    tradingLabel.className = 'px-px-12 mb-px-8 mt-px-16 text-label-small font-semibold text-on-surface-variant uppercase tracking-widest';
+    tradingLabel.style.cssText = 'opacity: 0.4; letter-spacing: 0.1em;';
+    tradingLabel.textContent = 'Trading';
+    navSection.appendChild(tradingLabel);
+
+    const tradingItems = [
+        {
+            label: 'Trading terminal',
+            path: '/dashboard/trading',
+            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`
+        }
+    ];
+    tradingItems.forEach(item => navSection.appendChild(makeNavButton(item)));
+
     // Footer
     const sidebarFooter = document.createElement('div');
     sidebarFooter.className = 'p-px-12 border-t';

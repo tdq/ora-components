@@ -3,6 +3,19 @@ import { FxTickerBuilder } from './fx-ticker-builder';
 import { FxRate } from './fx-ticker-logic';
 
 // ---------------------------------------------------------------------------
+// IntersectionObserver mock helpers (installed globally via setupTests.ts)
+// ---------------------------------------------------------------------------
+
+interface IntersectionObserverMockStatic {
+    triggerVisibility(element: Element, isIntersecting: boolean, ratio?: number): void;
+    reset(): void;
+}
+
+function getIOMock(): IntersectionObserverMockStatic {
+    return (globalThis as any).IntersectionObserverMock as IntersectionObserverMockStatic;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -287,11 +300,28 @@ describe('FxTickerBuilder — package root re-exports', () => {
 
 // ---------------------------------------------------------------------------
 // Extra integration: reactive data stream updates track content
+// Data is now gated behind IntersectionObserver via createOptimizedPipeline.
+// Tests must trigger visibility and advance past the 150 ms appear-debounce
+// before asserting on track content.
 // ---------------------------------------------------------------------------
 describe('FxTickerBuilder — reactive data integration', () => {
-    it('track contains pair text after a synchronous data emission', () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+        getIOMock().reset();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    it('track contains pair text after root is intersected and data is emitted', () => {
         const rates$ = of<FxRate[]>([{ pair: 'EUR/USD', rate: 1.1234 }]);
         const root = freshBuilder().withData(rates$).build();
+
+        // Gate: trigger visibility then advance past appear-debounce (150 ms)
+        getIOMock().triggerVisibility(root, true);
+        jest.advanceTimersByTime(150);
+
         const track = root.querySelector('[data-track]');
         expect(track).not.toBeNull();
         expect(track!.textContent).toContain('EUR/USD');
@@ -300,14 +330,23 @@ describe('FxTickerBuilder — reactive data integration', () => {
     it('track remains empty when no data is emitted (empty array)', () => {
         const rates$ = of<FxRate[]>([]);
         const root = freshBuilder().withData(rates$).build();
+
+        // Even after intersecting, an empty-array emission produces no DOM items
+        getIOMock().triggerVisibility(root, true);
+        jest.advanceTimersByTime(150);
+
         const track = root.querySelector('[data-track]')!;
-        expect(track.innerHTML).toBe('');
+        expect(track.children.length).toBe(0);
     });
 
-    it('track updates reactively when Subject emits', () => {
+    it('track updates reactively when Subject emits after visibility', () => {
         const subject = new Subject<FxRate[]>();
         const root = freshBuilder().withData(subject).build();
         const track = root.querySelector('[data-track]')!;
+
+        // Gate: trigger visibility then advance past appear-debounce
+        getIOMock().triggerVisibility(root, true);
+        jest.advanceTimersByTime(150);
 
         subject.next([{ pair: 'GBP/USD', rate: 1.3 }]);
         expect(track.textContent).toContain('GBP/USD');

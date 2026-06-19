@@ -9,8 +9,8 @@ By default, the chart is transparent and occupies 100% of the available width an
 
 ## Architecture
 The chart is modularized into specialized classes to separate configuration, state management, and rendering concerns:
-- **`ChartBuilder<ITEM>`**: The public API and configuration orchestrator.
-- **`ChartViewport<ITEM>`**: The main DOM orchestrator and view component.
+- **`ChartBuilder<ITEM>`**: The public API and configuration orchestrator. Wraps data streams through `createOptimizedPipeline` for viewport-gated, energy-efficient subscriptions.
+- **`ChartViewport<ITEM>`**: The main DOM orchestrator and view component. Uses `createLifecycleBoundary` for deterministic one-shot teardown.
 - **`ChartLogic<ITEM>`**: Manages data processing, scaling, and reactive state.
 - **`ChartSvgArea`**: Manages the `<svg>` element, `<defs>`, and responsive `viewBox`.
 - **`AxisRenderer`**: Renders X and Y axes, grid lines, and labels.
@@ -18,6 +18,8 @@ The chart is modularized into specialized classes to separate configuration, sta
 - **`ChartLegend`**: Handles the rendering of the series legend.
 - **`ChartTooltip`**: Manages tooltip visibility, content, and positioning.
 - **`LabelBuilder`**: Used for all text elements outside the SVG.
+- **`createOptimizedPipeline`**: Visibility-gated pipeline that defers data subscription until the chart element enters the viewport (used by `ChartBuilder.build()`).
+- **`createLifecycleBoundary`**: Custom element providing deterministic teardown on DOM removal via `onDisconnect` (used by `ChartViewport`).
 
 ## ChartBuilder Methods
 `ChartBuilder<ITEM>` uses a generic type `ITEM` to ensure type safety for data fields and tooltips.
@@ -57,7 +59,7 @@ Each method returns a specialized builder for that series.
 - **Individual Shadows**: `SeriesRenderer` MUST handle the creation of filters in `<defs>` with ID `shadow-${index}`.
 - **Hover Interaction**: `ChartViewport.renderHoverEffects` MUST use the downsampled `displayData` from `ChartScales` instead of the raw `state.data` to correctly map the hover index to the visible points. The highlight ring radius MUST use `HIGHLIGHT_RADIUS` (6px).
 - **Tooltip Glass Effect**: When `state.isGlass` is true, `ChartTooltip` MUST apply the `glass-effect` style, matching the visual appearance of a glassy `Panel` (including `rounded-large` and `[overflow:clip]`).
-- **Cleanup**: `ChartViewport` MUST use `registerDestroy` to unsubscribe from RxJS and disconnect observers.
+- **Cleanup**: `ChartViewport` MUST use `createLifecycleBoundary` to unsubscribe from RxJS and disconnect observers.
 
 ## Styling
 - Hovered point should be highlighted with a ring of radius **6px** (`HIGHLIGHT_RADIUS`) only on line and area charts.

@@ -6,6 +6,7 @@ import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '../../core/destroyable-element';
 import { Icons } from '../../core/icons';
 import { MultiSelectListStyle } from './types';
+import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -108,6 +109,11 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
                 className
             );
             container.style.height = height ? `${height}px` : '';
+            if (enabled) {
+                container.removeAttribute('aria-disabled');
+            } else {
+                container.setAttribute('aria-disabled', 'true');
+            }
         });
         registerDestroy(container, () => containerSub.unsubscribe());
 
@@ -199,19 +205,20 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
         }
 
         // Items list
-        const list = document.createElement('ul');
-        list.role = 'listbox';
-        list.setAttribute('aria-multiselectable', 'true');
+        const list = document.createElement('div');
+        list.role = 'group';
         list.className = 'w-full h-full overflow-y-auto py-0';
         if (captionId) {
             list.setAttribute('aria-labelledby', captionId);
+        } else {
+            list.setAttribute('aria-label', 'Select items');
         }
         panel.appendChild(list);
 
         // Reactive rendering
         let currentItems: ITEM[] = [];
         let currentStyle: MultiSelectListStyle = MultiSelectListStyle.TONAL;
-        const itemElements = new Map<string | number, { input: HTMLInputElement; li: HTMLLIElement; label: HTMLElement }>();
+        const itemElements = new Map<string | number, { input: HTMLInputElement; li: HTMLDivElement; label: HTMLElement }>();
 
         const updateHeaderState = (selectedIds: Set<string | number>, items: ITEM[]) => {
             if (!headerInput) return;
@@ -230,8 +237,12 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
             }
         };
 
+        // Gate heavy item rendering on viewport visibility. createOptimizedPipeline is
+        // idempotent: an already-gated (GatedObserver) source is returned as-is.
+        const gatedItems$ = createOptimizedPipeline(container, this.items$);
+
         // Full DOM rebuild only when items or style change
-        const itemsRenderSub = combineLatest([this.items$, this.style$]).subscribe(([items, style]) => {
+        const itemsRenderSub = combineLatest([gatedItems$, this.style$]).subscribe(([items, style]) => {
             currentItems = items;
             currentStyle = style;
             itemElements.clear();
@@ -246,9 +257,7 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
                 const isSelected = selectedIds.has(itemId);
                 const caption = this.itemCaptionProvider(item);
 
-                const li = document.createElement('li');
-                li.role = 'option';
-                li.setAttribute('aria-selected', String(isSelected));
+                const li = document.createElement('div');
 
                 const itemLabel = document.createElement('label');
                 itemLabel.className = cn(
@@ -330,10 +339,9 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
             const selectedIds = new Set(selectedItems.map(i => this.itemIdProvider(i)));
             const isTonal = (currentStyle === MultiSelectListStyle.TONAL || currentStyle === MultiSelectListStyle.BORDERLESS) && !this.isGlass;
 
-            itemElements.forEach(({ input, li, label }, itemId) => {
+            itemElements.forEach(({ input, label }, itemId) => {
                 const isSelected = selectedIds.has(itemId);
                 input.checked = isSelected;
-                li.setAttribute('aria-selected', String(isSelected));
                 label.className = cn(
                     'flex items-center gap-px-8 px-px-16 py-px-12 cursor-pointer select-none',
                     'transition-colors relative overflow-hidden group',

@@ -47,7 +47,7 @@ const SIZE_MAP: Record<SlotSize, string> = {
     [SlotSize.TWO_THIRDS]: 'basis-2/3',
     [SlotSize.THREE_QUARTERS]: 'basis-3/4',
     [SlotSize.FULL]: 'basis-full',
-    [SlotSize.FIT]: 'flex-none'
+    [SlotSize.FIT]: 'flex-none',
 };
 
 const ALIGNMENT_MAP: Record<Alignment, string> = {
@@ -96,7 +96,7 @@ class SlotBuilderImpl implements SlotBuilder {
             wrapper.className = cn(
                 'flex',
                 this.size && SIZE_MAP[this.size],
-                !this.size && !isVertical && 'flex-1', // Auto size for horizontal if not specified
+                !this.size && !isVertical && 'flex-1', // Auto size for horizontal if not specified; min-w-0 lets the slot shrink below content intrinsic width instead of overflowing
                 isVertical && 'w-full', // Full width for slots in vertical layout
                 alignment && ALIGNMENT_MAP[alignment]
             );
@@ -134,7 +134,6 @@ export class LayoutBuilder implements ComponentBuilder {
     private gap: LayoutGap = LayoutGap.MEDIUM;
     private alignment$?: Observable<Alignment>;
     private className$?: Observable<string>;
-    private isGlass = false;
 
     addSlot(): SlotBuilder {
         const slot = new SlotBuilderImpl();
@@ -167,11 +166,6 @@ export class LayoutBuilder implements ComponentBuilder {
         return this;
     }
 
-    withGlass(): LayoutBuilder {
-        this.isGlass = true;
-        return this;
-    }
-
     build(): HTMLElement {
         const container = document.createElement('div');
         
@@ -184,7 +178,6 @@ export class LayoutBuilder implements ComponentBuilder {
                 this.isVertical ? 'flex-col' : 'flex-row',
                 GAP_MAP[this.gap],
                 alignment && !this.isVertical && ALIGNMENT_MAP[alignment as Alignment],
-                this.isGlass && 'glass-effect p-4 rounded-large',
                 cls
             );
         });

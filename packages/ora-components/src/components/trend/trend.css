@@ -1,15 +1,17 @@
 :root {
     --mkp-trend-up:   #10B981;
     --mkp-trend-down: #EF4444;
+    --mkp-trend-up-text:   #047857;
+    --mkp-trend-down-text: #B91C1C;
 }
 
 .trend-up {
-    color: var(--mkp-trend-up);
+    color: var(--mkp-trend-up-text);
     background: color-mix(in srgb, var(--mkp-trend-up) 12%, transparent);
 }
 
 .trend-down {
-    color: var(--mkp-trend-down);
+    color: var(--mkp-trend-down-text);
     background: color-mix(in srgb, var(--mkp-trend-down) 12%, transparent);
 }
 

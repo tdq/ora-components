@@ -57,10 +57,6 @@ export class FormBuilder implements ComponentBuilder {
             .asVertical()
             .withGap(LayoutGap.EXTRA_LARGE);
 
-        if (this.isGlass) {
-            layout.withGlass();
-        }
-
         // 1. Header (Caption & Description)
         const headerLayout = new LayoutBuilder()
             .asVertical()

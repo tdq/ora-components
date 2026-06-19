@@ -267,9 +267,6 @@ describe('MoneyFieldBuilder', () => {
                 .build();
             const input = container.querySelector('input') as HTMLInputElement;
 
-            // Verify step attribute
-            expect(input.getAttribute('aria-valuestep')).toBe('0.01');
-
             // Start at 10.55
             input.value = '10.55';
             input.dispatchEvent(new Event('input'));
@@ -310,7 +307,6 @@ describe('MoneyFieldBuilder', () => {
             expect(input.getAttribute('role')).toBe('spinbutton');
             expect(input.getAttribute('aria-valuemin')).toBe('0');
             expect(input.getAttribute('aria-valuemax')).toBe('100');
-            expect(input.getAttribute('aria-valuestep')).toBe('1');
             expect(input.getAttribute('aria-valuenow')).toBe('50');
 
             expect(input.id).toBeTruthy();

@@ -215,13 +215,27 @@
   }
 
   .glass-effect {
-    @apply backdrop-blur-xl;
-    @apply bg-white/60 ring-1 ring-black/10 text-gray-900;
-    @apply dark:bg-white/5 dark:ring-white/20 dark:text-white;
+    @apply backdrop-blur-xl backdrop-saturate-150 bg-white/70 text-gray-900 ring-1 ring-black/10;
+    @apply dark:bg-white/5 dark:text-white dark:ring-white/20;
+    @apply will-change-[backdrop-filter] transform-gpu;
+
+    isolation: isolate;
+  }
+
+  .glass-effect-hover {
+    @apply transition-all duration-300 ease-in-out;
   }
 
   .glass-effect-hover:hover {
-    background: rgba(255, 255, 255, 0.2);
+    @apply bg-white/75 ring-black/15;
+    @apply dark:bg-white/10 dark:ring-white/30;
+  }
+
+  .glass-effect .glass-effect:not([popover]) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    
+    will-change: opacity;
   }
 }
 

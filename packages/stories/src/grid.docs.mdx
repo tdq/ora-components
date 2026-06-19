@@ -66,7 +66,7 @@ All builder methods return `this` for chaining unless they return a sub-builder.
 ### Data & Dimensions
 
 - **`withItems`** — `(items: Observable<ITEM[]>) => this`
-  Sets the data source for the grid. The grid re-renders when new data is emitted.
+  Sets the data source for the grid. Subscription is deferred (lazily subscribed) until the grid is visible in the viewport, and is automatically torn down when the grid leaves the viewport or is removed from the DOM.
 
 - **`withHeight`** — `(height: Observable<number>) => this`
   Sets the fixed height of the grid container in pixels. If not called, the grid defaults to `height: 100%` of its parent.
@@ -419,6 +419,7 @@ See the [Theming guide](../?path=/docs/system-theming--docs) for token reference
 - **Glass effect**: Enabled via `asGlass()`. Only the header receives backdrop blur; rows remain transparent.
 - **Virtual scrolling**: Uses `requestAnimationFrame` for scroll updates, `transform: translateY` for row positioning, and a buffer of 5 extra rows above and below the viewport.
 - **Selection**: Checkbox-based multi-select with header "Select All". Selection updates are optimised to avoid full row re-renders.
+- **Viewport-gated data pipeline**: Subscription to the `items$` observable is lazy and occurs only when the grid is visible in the viewport (using `IntersectionObserver` via `createOptimizedPipeline`). Subscriptions are automatically and deterministically torn down when the grid leaves the viewport or is detached from the DOM, managed via `ora-lifecycle-boundary`.
 
 ---
 

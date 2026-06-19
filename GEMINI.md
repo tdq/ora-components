@@ -50,6 +50,7 @@ To prevent memory leaks from RxJS subscriptions, components use `registerDestroy
 4. **Cleanup:** Always use `registerDestroy` to manage subscription lifecycles.
 5. **Atomic Components:** Keep components focused on a single task.
 6. **Styling:** Use `twMerge` and `clsx` for dynamic Tailwind class management.
+7. **Focus Management:** Popups and Dialogs must implement focus trapping to ensure accessible keyboard navigation.
 
 ## Contributing a New Component
 1. Analyze requirements and compare with existing components.

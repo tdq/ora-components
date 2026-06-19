@@ -32,3 +32,23 @@ Light theme:
 Dark theme:
 1. Caption color is `text-white/80`
 2. Description color is `text-white/60`
+
+### Focus State Styling
+To ensure keyboard visibility, tabs use the following focus styling:
+- **Outline**: `outline-2` (2px) using the `primary` theme color.
+- **Trigger**: Visible only when focused via keyboard (`focus-visible`).
+- **Offset**: `outline-offset-[-2px]` to keep the focus ring inside the button boundaries, preventing layout shifts and ensuring it doesn't overlap with the bottom border indicator.
+
+## Accessibility & Keyboard Navigation
+Tabs follow WAI-ARIA best practices for the [Tabs pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/).
+
+### ARIA Roles
+- **Container for buttons**: `role="tablist"`
+- **Tab buttons**: `role="tab"`, `aria-selected`, `aria-controls`
+- **Content area**: `role="tabpanel"`, `aria-labelledby`
+
+### Keyboard Shortcuts
+- `ArrowRight` / `ArrowLeft`: Move focus between visible tabs and automatically activate the focused tab (wrapping around).
+- `Home` / `End`: Jump to and activate the first / last visible tab.
+- `Tab`: Only the active tab button is in the tab order (`tabindex="0"`). Pressing `Tab` from the active tab moves focus into the current tab panel.
+- `Space` / `Enter`: If a tab is focused manually, it can be activated with these keys (though focus navigation automatically activates them).

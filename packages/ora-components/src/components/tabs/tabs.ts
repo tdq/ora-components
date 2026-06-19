@@ -6,6 +6,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '../../core/destroyable-element';
 import { LabelBuilder, LabelSize } from '../label/label';
+import { generateFieldId } from '../component-parts';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -46,6 +47,7 @@ export class TabsBuilder implements ComponentBuilder {
     }
 
     build(): HTMLElement {
+        const tabsId = generateFieldId('tabs');
         const container = document.createElement('div');
         
         // Base classes
@@ -103,11 +105,17 @@ export class TabsBuilder implements ComponentBuilder {
         tabsNavWrapper.className = 'flex-1 overflow-hidden w-full'; // To contain the scrollable area
 
         const tabsNav = document.createElement('div');
+        tabsNav.role = 'tablist';
         tabsNav.className = 'flex flex-row overflow-x-auto gap-0 no-scrollbar items-end';
         
         // Render tabs
         this.tabs.forEach((tab, index) => {
             const tabBtn = document.createElement('button');
+            tabBtn.role = 'tab';
+            tabBtn.id = `${tabsId}-tab-${index}`;
+            tabBtn.setAttribute('aria-controls', `${tabsId}-panel-${index}`);
+            tabBtn.dataset.index = index.toString();
+
             const isActive$ = this.activeTabIndex$.pipe(map(i => i === index));
             
             // Tab visibility
@@ -126,8 +134,13 @@ export class TabsBuilder implements ComponentBuilder {
 
             // Styling subscriptions
             const styleSub = isActive$.subscribe(active => {
+                tabBtn.setAttribute('aria-selected', String(active));
+                tabBtn.tabIndex = active ? 0 : -1;
                 tabBtn.className = cn(
-                    'relative px-4 py-3 min-w-[90px] text-label-large font-medium transition-colors duration-200 whitespace-nowrap outline-none select-none',
+                    'relative px-4 py-3 min-w-[90px] text-label-large font-medium transition-colors duration-200 whitespace-nowrap select-none',
+                    // Focus state
+                    'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]',
+                    
                     // Border bottom logic
                     'border-b-2',
                     
@@ -153,12 +166,42 @@ export class TabsBuilder implements ComponentBuilder {
             tabsNav.appendChild(tabBtn);
         });
 
+        // Keyboard navigation
+        tabsNav.onkeydown = (e: KeyboardEvent) => {
+            const buttons = Array.from(tabsNav.querySelectorAll('button[role="tab"]')) as HTMLButtonElement[];
+            const visibleButtons = buttons.filter(btn => btn.style.display !== 'none');
+            const currentBtn = document.activeElement as HTMLButtonElement;
+            const currentIndex = visibleButtons.indexOf(currentBtn);
+            
+            if (currentIndex === -1) return;
+
+            let nextIndex = -1;
+            if (e.key === 'ArrowRight') {
+                nextIndex = (currentIndex + 1) % visibleButtons.length;
+            } else if (e.key === 'ArrowLeft') {
+                nextIndex = (currentIndex - 1 + visibleButtons.length) % visibleButtons.length;
+            } else if (e.key === 'Home') {
+                nextIndex = 0;
+            } else if (e.key === 'End') {
+                nextIndex = visibleButtons.length - 1;
+            }
+
+            if (nextIndex !== -1) {
+                e.preventDefault();
+                const nextBtn = visibleButtons[nextIndex];
+                const originalIndex = parseInt(nextBtn.dataset.index!);
+                this.activeTabIndex$.next(originalIndex);
+                nextBtn.focus();
+            }
+        };
+
         tabsNavWrapper.appendChild(tabsNav);
         headerSection.appendChild(tabsNavWrapper);
         container.appendChild(headerSection);
 
         // Content Area
         const contentArea = document.createElement('div');
+        contentArea.role = 'tabpanel';
         contentArea.className = cn(
             'flex-1 p-4'
         );
@@ -166,6 +209,9 @@ export class TabsBuilder implements ComponentBuilder {
         // Render content for active tab
         const contentSub = this.activeTabIndex$.subscribe(index => {
             contentArea.innerHTML = '';
+            contentArea.id = `${tabsId}-panel-${index}`;
+            contentArea.setAttribute('aria-labelledby', `${tabsId}-tab-${index}`);
+            
             const tab = this.tabs[index];
             if (tab && tab.content) {
                 // If the tab is visible (we should check visibility too but let's assume active implies visible or at least intended)

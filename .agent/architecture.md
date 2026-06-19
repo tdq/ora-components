@@ -9,10 +9,10 @@ packages/
 │   │   │       ├── index.ts
 │   │   │       ├── <name>.ts       # Builder class (e.g. ButtonBuilder)
 │   │   │       └── *.ts            # Supporting files (types, styles, logic, …)
-│   │   ├── core/          # ComponentBuilder base, icons, destroyable-element
+│   │   ├── core/          # ComponentBuilder base, icons, lifecycle-boundary, destroyable-element
 │   │   ├── theme/         # ThemeManager and types
 │   │   ├── types/         # Shared domain types used across multiple components (e.g. Money for Grid and MoneyField)
-│   │   └── utils/         # Shared utilities
+│   │   └── utils/         # Shared utilities (optimized-pipeline, formatters, …)
 │   ├── scripts/
 │   │   ├── reorganize-types.mjs   # Post-build: moves dist/components/* → dist/*
 │   │   └── generate-manifest.mjs  # Post-build: generates dist/component-manifest.json
@@ -94,6 +94,46 @@ The monorepo was renamed from `a1-components` to `ora-components`, and later sco
 
 All source code, configs, imports, generated CSS, and documentation have been updated.
 The npm package is published as `@tdq/ora-components` and imports use `@tdq/ora-components/<entry>` paths.
+
+## Shared infrastructure utilities
+
+Two reusable utilities from the shared library layer are used by multiple components:
+
+### `createOptimizedPipeline` (`src/utils/optimized-pipeline.ts`)
+
+A visibility-gated, energy-efficient data pipeline. Wraps a source `Observable<T>` with an `IntersectionObserver` that defers subscription until the host element enters the viewport, and tears down instantly on viewport exit. Includes exponential-backoff retry for network resilience.
+
+**Consumers**: `GridBuilder` (wraps `items$`), `ChartBuilder` (wraps `data$`), `MoneyKPICardViewport` (wraps `value$`), `FxTickerViewport` (wraps `data$`).
+
+### `createLifecycleBoundary` (`src/core/lifecycle-boundary.ts`)
+
+A deterministic one-shot teardown mechanism via a hidden `<ora-lifecycle-boundary>` custom element. Fires `onDisconnect` exactly once when the element is permanently removed from the DOM. Preferred over the legacy `registerDestroy` for new components.
+
+**Consumers**: `GridBuilder` (tears down logic, viewport, and subscriptions), `ChartViewport` (unsubscribes from logic state, destroys SVG, removes event listeners), `MoneyKPICardViewport` (unsubscribes from logic and description streams), `FxTickerViewport` (unsubscribes from data stream and clears flash timers).
+
+### `setupFocusTrap` (`src/core/focus-trap.ts`)
+
+Traps keyboard focus within a container, allowing for circular Tab navigation. It automatically cleans up its listeners when the container is removed from the DOM using `registerDestroy`.
+
+It registers two listeners:
+- A `keydown` listener on the container that **fully drives** `Tab` / `Shift+Tab` navigation: on every Tab it computes the visible focusable set, finds the current index (or nearest focusable ancestor), and explicitly focuses the next/previous element with wraparound, always calling `preventDefault()`. The trap does **not** rely on the browser's native Tab movement. This is required for Safari, whose default keyboard navigation only tabs between form fields and skips `<button>` / `<a>` elements (unless macOS "Full Keyboard Access" is enabled). Delegating mid-list movement to native Tab would make toolbar buttons unreachable in Safari and, because the trap's "last element" is often a button Safari never focuses, the boundary wrap would never engage and focus would escape the dialog.
+- A document-level `focusin` listener as a defense-in-depth fallback: if focus escapes the container by any means other than Tab (e.g. a native popover closing and dropping focus onto `<body>`, or a stray programmatic `.focus()`), focus is pulled back to the first focusable element. Without this, once `document.activeElement` lands outside the container, keydown events no longer bubble through it and the Tab-navigation logic can never re-engage.
+
+**Visibility filtering**: the focusable-element set excludes elements with a hidden ancestor *between* the element and the container. This is necessary because `getComputedStyle(el).display` reports an element's *own* value (not `none`) when it merely sits inside a `display:none` subtree. A closed native popover (e.g. a `DatePicker` calendar) stays in the dialog's DOM as `display:none`; without the ancestor walk, its buttons would be treated as focusable and the trap could wrap/recover focus onto a hidden element, silently dropping focus to `<body>` and breaking the trap. The container itself is deliberately not checked (a closed `<dialog>` is `display:none` by UA stylesheet).
+
+**Consumers**: `DialogBuilder`.
+
+### Relationship between the two
+
+`createOptimizedPipeline` and `createLifecycleBoundary` are complementary:
+- `createOptimizedPipeline` **creates** a stream that only emits when the element is in view
+- `createLifecycleBoundary` **destroys** subscriptions when the element is removed from the DOM
+
+Both are wired in `build()`: the pipeline gates visibility during the element's lifetime, and the boundary tears down everything when the element leaves the DOM permanently.
+
+### Legacy alternative: `registerDestroy` (`src/core/destroyable-element.ts`)
+
+Older components use a `MutationObserver`-based `registerDestroy` pattern. Not recommended for new components — prefer `createLifecycleBoundary`.
 
 ## MCP server tools
 

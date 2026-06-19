@@ -22,9 +22,11 @@ export class ErrorPopoverBuilder implements ComponentBuilder {
         popover.className = 'error-popover bg-error text-on-error md-label-small px-3 py-2 rounded-small elevation-2 max-w-xs transition-opacity duration-200';
         popover.textContent = this.errorText;
 
-        const dialog = button.closest('dialog');
-        if (dialog) {
-            dialog.appendChild(popover);
+        // Default attachment. If the button is already in a dialog (unlikely during build), 
+        // we append there. Otherwise, append to body so it's queryable in tests.
+        const initialDialog = button.closest('dialog');
+        if (initialDialog) {
+            initialDialog.appendChild(popover);
         } else {
             document.body.appendChild(popover);
         }
@@ -37,15 +39,33 @@ export class ErrorPopoverBuilder implements ComponentBuilder {
                 clearTimeout(timeoutId);
                 timeoutId = null;
             }
+
+            // Restore focus to the trigger button if focus is inside the popover.
+            // The browser only auto-restores focus for popover="auto" when it dismisses
+            // *itself* with focus inside; programmatic/timeout-driven closes here are not
+            // guaranteed to, which inside a modal dialog can break the dialog's focus trap.
+            const shouldRestoreFocus = popover.contains(document.activeElement);
+
             if ((popover as any).hidePopover) {
                 (popover as any).hidePopover();
             } else {
                 popover.style.display = 'none';
             }
             isVisible = false;
+
+            if (shouldRestoreFocus) {
+                button.focus();
+            }
         };
 
         const showPopover = () => {
+            // Re-check parent: if button is now in a dialog but popover is not, move it.
+            // This ensures the popover is not made inert by a modal dialog.
+            const dialog = button.closest('dialog');
+            if (dialog && popover.parentElement !== dialog) {
+                dialog.appendChild(popover);
+            }
+
             const rect = button.getBoundingClientRect();
             popover.style.position = 'absolute';
             popover.style.margin = '0';

@@ -15,26 +15,28 @@ body {
 
 /* MDX docs table styling */
 .sbdocs-content table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-    font-size: 14px;
-    line-height: 1.5;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 2rem 0 !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    border: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 20%, transparent) !important;
 }
 
 .sbdocs-content table th {
-    text-align: left;
-    padding: 10px 16px;
-    font-weight: 600;
-    border-bottom: 2px solid var(--md-sys-color-outline, #938F99);
-    color: var(--md-sys-color-on-surface, #1C1B1F);
+    text-align: left !important;
+    padding: 12px 16px !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid var(--md-sys-color-outline) !important;
+    color: var(--md-sys-color-on-background) !important;
+    background-color: color-mix(in srgb, var(--md-sys-color-on-background) 5%, transparent) !important;
 }
 
 .sbdocs-content table td {
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--md-sys-color-outline, #938F99);
-    color: var(--md-sys-color-on-surface, #1C1B1F);
-    vertical-align: top;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 30%, transparent) !important;
+    color: var(--md-sys-color-on-surface) !important;
+    vertical-align: top !important;
 }
 
 .sbdocs-content table tr {
@@ -42,11 +44,11 @@ body {
 }
 
 .sbdocs-content table tr:last-child td {
-    border-bottom: none;
+    border-bottom: none !important;
 }
 
 .sbdocs-content table tr:hover td {
-    background-color: color-mix(in srgb, var(--md-sys-color-on-surface, #1C1B1F) 5%, transparent);
+    background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent) !important;
 }
 
 /* Docs page background */
@@ -83,6 +85,11 @@ body {
 
 [data-theme="dark"] .sbdocs-content code {
     border: none !important;
+}
+
+/* Darker background for specific Storybook documentation code elements in dark theme */
+[data-theme="dark"] .css-ztvjyi {
+    background-color: #222 !important;
 }
 
 .sbdocs-content pre code {

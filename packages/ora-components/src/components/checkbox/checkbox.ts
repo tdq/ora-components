@@ -17,10 +17,37 @@ export class CheckboxBuilder implements ComponentBuilder {
     private className$?: Observable<string>;
     private value$?: Subject<CheckboxValue>;
     private isGlass: boolean = false;
+    private ariaLabel$?: Observable<string>;
 
+    /**
+     * Set the checkbox's label caption.
+     *
+     * This caption is also used as the default aria-label for accessibility.
+     * To override the aria-label, use withAriaLabel().
+     */
     withCaption(caption: Observable<string>): this {
         this.caption$ = caption;
         return this;
+    }
+
+    /**
+     * Set an explicit aria-label, overriding the default (which is derived from caption).
+     *
+     * Use this to provide a custom accessible label different from the checkbox's visible caption.
+     *
+     * @param ariaLabel The aria-label observable. Takes precedence over caption.
+     */
+    withAriaLabel(ariaLabel: Observable<string>): this {
+        this.ariaLabel$ = ariaLabel;
+        return this;
+    }
+
+    /**
+     * By default, aria-label is derived from caption. Set explicitly with withAriaLabel()
+     * to override.
+     */
+    getAriaLabel$(): Observable<string> | undefined {
+        return this.ariaLabel$ ?? this.caption$;
     }
 
     withEnabled(enabled: Observable<boolean>): this {
@@ -54,6 +81,11 @@ export class CheckboxBuilder implements ComponentBuilder {
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.className = 'sr-only peer';
+        // Safari skips native checkboxes in Tab navigation unless the user enables
+        // "Press Tab to highlight each item on a webpage". An explicit tabindex
+        // forces it into the sequential focus order; the `disabled` attribute still
+        // removes it from the tab order when set (see ButtonBuilder.build).
+        input.tabIndex = 0;
 
         const box = document.createElement('div');
         const updateBoxClasses = (isGlass: boolean) => {
@@ -129,6 +161,14 @@ export class CheckboxBuilder implements ComponentBuilder {
             }));
         }
 
+        // Derive aria-label: use explicit ariaLabel$ if provided, otherwise fall back to caption$
+        const ariaLabel$ = this.getAriaLabel$();
+        if (ariaLabel$) {
+            subscriptions.add(ariaLabel$.subscribe(ariaLabel => {
+                input.setAttribute('aria-label', ariaLabel);
+            }));
+        }
+
         if (this.value$) {
             let currentValue: CheckboxValue = false;
             subscriptions.add(this.value$.subscribe(value => {
@@ -141,8 +181,8 @@ export class CheckboxBuilder implements ComponentBuilder {
                 } else {
                     input.checked = value;
                     input.indeterminate = false;
-                    iconContainer.style.transform = value ? 'scale(1)' : 'scale(0)';
-                    indeterminateContainer.style.transform = 'scale(0)';
+                    iconContainer.style.transform = '';
+                    indeterminateContainer.style.transform = '';
                 }
             }));
 

@@ -194,18 +194,17 @@ describe('Spec 3 — Escape closes the popover', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Spec 4: Focus returns to input when popover closes
+// Spec 4: Focus returns to triggering element when popover closes
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('Spec 4 — focus returns to input on popover close', () => {
-    test('popover onClose callback focuses the input element', () => {
+describe('Spec 4 — focus returns to trigger on popover close', () => {
+    test('popover onClose callback focuses the icon button if it was the trigger', () => {
         const { container } = buildDatePicker();
         const iconButton = container.querySelector('button')!;
-        const input = container.querySelector('input')!;
 
-        const focusSpy = jest.spyOn(input, 'focus');
+        const focusSpy = jest.spyOn(iconButton, 'focus');
 
-        fireEvent.click(iconButton); // open
+        fireEvent.click(iconButton); // open via iconButton
 
         // Simulate click outside to trigger PopoverBuilder's onClose → focus callback
         const outside = document.createElement('div');
@@ -215,16 +214,56 @@ describe('Spec 4 — focus returns to input on popover close', () => {
         expect(focusSpy).toHaveBeenCalledTimes(1);
     });
 
-    test('Escape key closes popover and returns focus to input', () => {
+    test('popover onClose callback focuses the input if it was the trigger (Alt+ArrowDown)', () => {
+        const { container } = buildDatePicker();
+        const input = container.querySelector('input')!;
+
+        const focusSpy = jest.spyOn(input, 'focus');
+
+        fireEvent.keyDown(input, { key: 'ArrowDown', altKey: true }); // open via input
+
+        // Simulate click outside
+        const outside = document.createElement('div');
+        document.body.appendChild(outside);
+        outside.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        expect(focusSpy).toHaveBeenCalledTimes(1);
+    });
+
+    test('Escape key closes popover and returns focus to trigger (iconButton)', () => {
         const { container } = buildDatePicker();
         const iconButton = container.querySelector('button')!;
+        const focusSpy = jest.spyOn(iconButton, 'focus');
+
+        fireEvent.click(iconButton);
+        fireEvent.keyDown(iconButton, { key: 'Escape', bubbles: true });
+
+        expect(focusSpy).toHaveBeenCalledTimes(1);
+    });
+
+    test('Escape key closes popover and returns focus to trigger (input)', () => {
+        const { container } = buildDatePicker();
         const input = container.querySelector('input')!;
         const focusSpy = jest.spyOn(input, 'focus');
 
-        fireEvent.click(iconButton);
+        fireEvent.keyDown(input, { key: 'ArrowDown', altKey: true });
         fireEvent.keyDown(input, { key: 'Escape' });
 
-        // focus() is called in the onClose callback registered with PopoverBuilder
+        expect(focusSpy).toHaveBeenCalledTimes(1);
+    });
+
+    test('Escape key on calendar grid returns focus to trigger (iconButton)', () => {
+        const { container } = buildDatePicker();
+        const iconButton = container.querySelector('button')!;
+        const focusSpy = jest.spyOn(iconButton, 'focus');
+
+        fireEvent.click(iconButton);
+        const popoverEl = getPopoverEl()!;
+        const grid = popoverEl.querySelector('[role="grid"]') as HTMLElement;
+        expect(grid).toBeTruthy();
+
+        fireEvent.keyDown(grid, { key: 'Escape', bubbles: true });
+
         expect(focusSpy).toHaveBeenCalledTimes(1);
     });
 });

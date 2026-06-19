@@ -39,11 +39,11 @@ export const tools: ToolDef[] = [
   },
   {
     name: 'get_usage_example',
-    description: 'Get a usage code example for a specific Aura component',
-    zodSchema: { name: z.string().describe('Component name (e.g. "ButtonBuilder" or "button")') },
+    description: 'Get usage code examples for a specific Aura component. Returns the full examples file and an "exports" array listing every available example function. Components with rich examples (chart, grid, layout, button, label, panel, textfield) have multiple named patterns covering all variants and API options.',
+    zodSchema: { name: z.string().describe('Component name (e.g. "ChartBuilder", "chart", "GridBuilder", "grid", "LayoutBuilder", "layout")') },
     jsonSchema: {
       type: 'object',
-      properties: { name: { type: 'string', description: 'Component name (e.g. "ButtonBuilder" or "button")' } },
+      properties: { name: { type: 'string', description: 'Component name (e.g. "ChartBuilder", "chart", "GridBuilder", "grid", "LayoutBuilder", "layout")' } },
       required: ['name'],
     },
     handler: ({ name }) => getUsageExample(String(name)),
@@ -89,11 +89,11 @@ export const tools: ToolDef[] = [
   },
   {
     name: 'get_architecture_guide',
-    description: 'Get an architecture or pattern guide. Topics: architecture, builder-pattern, reactive, theme, glass-effects, icons, component',
-    zodSchema: { topic: z.string().describe('Guide topic: architecture | builder-pattern | reactive | theme | glass-effects | icons | component') },
+    description: 'Get an architecture or pattern guide. Topics: architecture, builder-pattern, reactive, theme, glass-effects, icons, component, layout. Use "layout" for LayoutBuilder patterns — SlotSize, LayoutGap, Alignment, nesting, app-shell, chart sizing, and reactive classes.',
+    zodSchema: { topic: z.string().describe('Guide topic: architecture | builder-pattern | reactive | theme | glass-effects | icons | component | layout') },
     jsonSchema: {
       type: 'object',
-      properties: { topic: { type: 'string', description: 'Guide topic: architecture | builder-pattern | reactive | theme | glass-effects | icons | component' } },
+      properties: { topic: { type: 'string', description: 'Guide topic: architecture | builder-pattern | reactive | theme | glass-effects | icons | component | layout' } },
       required: ['topic'],
     },
     handler: ({ topic }) => getArchitectureGuide(String(topic)),

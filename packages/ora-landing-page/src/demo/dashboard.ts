@@ -11,6 +11,7 @@ import { createLedger } from './dashboard/ledger';
 import { createPL } from './dashboard/pl';
 import { createBalanceSheet } from './dashboard/balance-sheet';
 import { createPayables } from './dashboard/payables';
+import { createTradingTerminal } from './dashboard/trading-terminal';
 
 export function createDashboardDemo(): HTMLElement {
     const layout = new LayoutBuilder()
@@ -45,6 +46,7 @@ export function createDashboardDemo(): HTMLElement {
             case 'pl':            content = createPL(); break;
             case 'balance-sheet': content = createBalanceSheet(); break;
             case 'payables':      content = createPayables(); break;
+            case 'trading':       content = createTradingTerminal(); break;
             default:              content = createOverview(); break;
         }
         contentOutlet.appendChild(content);

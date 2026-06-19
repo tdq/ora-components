@@ -142,6 +142,17 @@ describe('ButtonBuilder', () => {
         expect(button).toHaveClass('elevation-1');
     });
 
+    it('should be keyboard focusable via an explicit tabindex (Safari Tab navigation)', () => {
+        // Safari excludes native <button> from Tab order unless the user enables
+        // "Press Tab to highlight each item on a webpage". An explicit tabindex
+        // forces the button into the sequential focus order regardless.
+        const button = new ButtonBuilder()
+            .withCaption(new BehaviorSubject('Submit'))
+            .build();
+
+        expect(button.getAttribute('tabindex')).toBe('0');
+    });
+
     it('should set aria-label from caption', () => {
         const caption$ = new BehaviorSubject('Submit');
         const button = new ButtonBuilder()

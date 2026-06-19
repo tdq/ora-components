@@ -8,16 +8,19 @@ import { ChartLegend } from './chart-legend';
 import { ChartTooltip } from './chart-tooltip';
 import { HIGHLIGHT_RADIUS } from './constants';
 import { LabelBuilder, LabelSize } from '../label';
-import { registerDestroy } from '@/core/destroyable-element';
-import { map } from 'rxjs';
+import { map, Subscription } from 'rxjs';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { registerDestroy } from '@/core/destroyable-element';
 
 function cn(...inputs: any[]) {
     return twMerge(clsx(inputs));
 }
 
 export class ChartViewport<ITEM> {
+    private static _idCounter = 0;
+    private readonly _clipId: string;
+
     private element: HTMLElement;
     private titleEl: HTMLElement;
     private chartArea: HTMLElement;
@@ -26,7 +29,7 @@ export class ChartViewport<ITEM> {
     private seriesRenderer = new SeriesRenderer();
     private legend = new ChartLegend<ITEM>();
     private tooltip = new ChartTooltip<ITEM>();
-    
+
     private lastState: ChartState<ITEM> | null = null;
     private lastPadding = { top: 20, right: 40, bottom: 40, left: 60 };
     private lastScales: any = null;
@@ -34,6 +37,9 @@ export class ChartViewport<ITEM> {
     private hoverG: SVGGElement | null = null;
 
     constructor(private logic: ChartLogic<ITEM>) {
+        ChartViewport._idCounter++;
+        this._clipId = `chart-plot-${ChartViewport._idCounter}`;
+
         this.element = document.createElement('div');
         this.element.className = ChartStyles.container;
 
@@ -54,10 +60,12 @@ export class ChartViewport<ITEM> {
         this.element.appendChild(this.legend.getElement());
         this.chartArea.appendChild(this.tooltip.getElement());
 
-        const sub = this.logic.state$.subscribe(state => {
+        const sub = new Subscription();
+
+        sub.add(this.logic.state$.subscribe(state => {
             this.lastState = state;
             this.render(state);
-        });
+        }));
 
         const svg = this.svgArea.getElement();
         const handleMouseMove = (e: MouseEvent) => {
@@ -182,17 +190,36 @@ export class ChartViewport<ITEM> {
         this.lastScales = finalScales;
         this.lastViewHeight = finalViewHeight;
 
+        // Define clip region matching the plot area so series lines don't bleed
+        // outside the viewport when withMin/withMax constrain the domain.
+        const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+        clipPath.setAttribute('id', this._clipId);
+        const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        clipRect.setAttribute('x', '0');
+        clipRect.setAttribute('y', '0');
+        clipRect.setAttribute('width', String(finalViewWidth));
+        clipRect.setAttribute('height', String(finalViewHeight));
+        clipPath.appendChild(clipRect);
+        this.svgArea.getDefs().appendChild(clipPath);
+
         const mainG = this.svgArea.getMainG();
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         g.setAttribute('transform', `translate(${finalPadding.left}, ${finalPadding.top})`);
         mainG.appendChild(g);
 
+        // Series rendered in a clipped child group; axes remain in the parent
+        // so tick labels (which sit outside the plot area bounds) are not clipped.
+        const seriesG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        seriesG.setAttribute('clip-path', `url(#${this._clipId})`);
+        g.appendChild(seriesG);
+
         this.axisRenderer.render(g, state, finalScales, finalViewWidth, finalViewHeight);
-        this.seriesRenderer.render(g, state, finalScales);
+        this.seriesRenderer.render(seriesG, state, finalScales);
         this.legend.render(state);
 
         this.hoverG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         this.hoverG.setAttribute('transform', `translate(${finalPadding.left}, ${finalPadding.top})`);
+        this.hoverG.setAttribute('clip-path', `url(#${this._clipId})`);
         this.hoverG.style.pointerEvents = 'none';
         mainG.appendChild(this.hoverG);
     }

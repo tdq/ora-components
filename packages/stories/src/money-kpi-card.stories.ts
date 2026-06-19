@@ -180,19 +180,19 @@ export const Interactive = () => {
     container.appendChild(card);
 
     const trendLabel = document.createElement('div');
-    trendLabel.className = 'text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-70 mt-2';
+    trendLabel.className = 'text-xs font-semibold uppercase tracking-wider text-on-surface-variant mt-2';
     trendLabel.textContent = 'Trend Controls';
     container.appendChild(trendLabel);
     container.appendChild(trendControls);
 
     const formatLabel = document.createElement('div');
-    formatLabel.className = 'text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-70';
+    formatLabel.className = 'text-xs font-semibold uppercase tracking-wider text-on-surface-variant';
     formatLabel.textContent = 'Formatting & Reset';
     container.appendChild(formatLabel);
     container.appendChild(formatControls);
 
     const logLabel = document.createElement('div');
-    logLabel.className = 'text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-70';
+    logLabel.className = 'text-xs font-semibold uppercase tracking-wider text-on-surface-variant';
     logLabel.textContent = 'Activity Log';
     container.appendChild(logLabel);
     container.appendChild(logElement);

@@ -33,6 +33,18 @@ describe('CheckboxBuilder', () => {
         expect(checkbox).toHaveClass('cursor-not-allowed');
     });
 
+    it('should make the input keyboard focusable via an explicit tabindex (Safari Tab navigation)', () => {
+        // Safari excludes native checkboxes from Tab order unless the user enables
+        // "Press Tab to highlight each item on a webpage". An explicit tabindex
+        // forces the checkbox into the sequential focus order regardless.
+        const checkbox = new CheckboxBuilder()
+            .withCaption(new BehaviorSubject('Accept'))
+            .build();
+
+        const input = checkbox.querySelector('input') as HTMLInputElement;
+        expect(input.getAttribute('tabindex')).toBe('0');
+    });
+
     it('should handle value state (two-way binding)', () => {
         const value$ = new BehaviorSubject(false);
         const checkbox = new CheckboxBuilder()

@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { ComponentBuilder } from '../../core/component-builder';
 import { 
     AreaChartBuilder, 
@@ -14,6 +15,7 @@ import { ChartViewport } from './chart-viewport';
 
 export class ChartBuilder<ITEM> implements ComponentBuilder {
     private logic = new ChartLogic<ITEM>();
+    private rawData$?: Observable<ITEM[]>;
     private individualBuilders: { build: () => IndividualChartConfig<ITEM> }[] = [];
     private xAxisBuilder = new AxisBuilderImpl('bottom', 'category');
     private yAxisBuilder = new AxisBuilderImpl('left', 'linear');
@@ -31,7 +33,7 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
     ];
 
     withData(data: Observable<ITEM[]>): this {
-        this.logic.setData(data);
+        this.rawData$ = data;
         return this;
     }
 
@@ -125,6 +127,13 @@ export class ChartBuilder<ITEM> implements ComponentBuilder {
         });
 
         const viewport = new ChartViewport<ITEM>(this.logic);
-        return viewport.getElement();
+        const element = viewport.getElement();
+
+        if (this.rawData$) {
+            const optimized$ = createOptimizedPipeline(element, this.rawData$);
+            this.logic.setData(optimized$);
+        }
+
+        return element;
     }
 }

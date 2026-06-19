@@ -2,6 +2,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import '@testing-library/jest-dom';
 import { MultiSelectListBuilder } from './multi-select-list';
 import { MultiSelectListStyle } from './types';
+import { GatedObserver } from '../../utils/optimized-pipeline';
 
 interface Item {
     id: number;
@@ -13,6 +14,33 @@ const ITEMS: Item[] = [
     { id: 2, name: 'Banana' },
     { id: 3, name: 'Cherry' },
 ];
+
+// ---- IntersectionObserver mock helpers ----
+
+interface IntersectionObserverMockStatic {
+    triggerVisibility(element: Element, isIntersecting: boolean, ratio?: number): void;
+    reset(): void;
+}
+
+interface GlobalWithIOMock {
+    IntersectionObserverMock: IntersectionObserverMockStatic;
+}
+
+function getIOMock(): IntersectionObserverMockStatic {
+    return (globalThis as unknown as GlobalWithIOMock).IntersectionObserverMock;
+}
+
+/**
+ * Trigger IntersectionObserver visibility on the element and advance fake
+ * timers past the pipeline's appearDebounceMs (default 20ms).
+ * Note: the element must already be appended to the DOM before calling this.
+ */
+function triggerVisibleAndWait(el: HTMLElement): void {
+    getIOMock().triggerVisibility(el, true);
+    jest.advanceTimersByTime(50);
+}
+
+// ---- Build helpers ----
 
 function buildDefault(overrides?: {
     items?: Item[];
@@ -29,15 +57,18 @@ function buildDefault(overrides?: {
         .withValue(value$)
         .build();
 
+    document.body.appendChild(el);
+    triggerVisibleAndWait(el);
+
     return { el, value$ };
 }
 
-function getList(el: HTMLElement): HTMLUListElement {
-    return el.querySelector('ul[role="listbox"]') as HTMLUListElement;
+function getList(el: HTMLElement): HTMLDivElement {
+    return el.querySelector('div[role="group"]') as HTMLDivElement;
 }
 
-function getLiElements(el: HTMLElement): HTMLLIElement[] {
-    return Array.from(el.querySelectorAll('li[role="option"]')) as HTMLLIElement[];
+function getLiElements(el: HTMLElement): HTMLDivElement[] {
+    return Array.from(getList(el)?.children ?? []) as HTMLDivElement[];
 }
 
 function getItemInputs(el: HTMLElement): HTMLInputElement[] {
@@ -55,22 +86,164 @@ function toggle(input: HTMLInputElement, checked: boolean) {
 }
 
 describe('MultiSelectListBuilder', () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+        getIOMock().reset();
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+        jest.useRealTimers();
+        getIOMock().reset();
+    });
+
+    // ── Viewport gating ──────────────────────────────────────────────────────
+
+    describe('viewport gating', () => {
+        it('does NOT render item <li> elements before visibility is triggered', () => {
+            const value$ = new BehaviorSubject<Item[]>([]);
+            const el = new MultiSelectListBuilder<Item>()
+                .withItems(of(ITEMS))
+                .withItemIdProvider(item => item.id)
+                .withItemCaptionProvider(item => item.name)
+                .withValue(value$)
+                .build();
+
+            document.body.appendChild(el);
+            // Advance timers without triggering visibility
+            jest.advanceTimersByTime(50);
+
+            const lis = getLiElements(el);
+            expect(lis).toHaveLength(0);
+        });
+
+        it('renders item <li> elements after triggerVisibility(true) + timer advance', () => {
+            const value$ = new BehaviorSubject<Item[]>([]);
+            const el = new MultiSelectListBuilder<Item>()
+                .withItems(of(ITEMS))
+                .withItemIdProvider(item => item.id)
+                .withItemCaptionProvider(item => item.name)
+                .withValue(value$)
+                .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
+            const lis = getLiElements(el);
+            expect(lis).toHaveLength(ITEMS.length);
+        });
+
+        it('selection patch (value$.next) still works after items rendered via visibility', () => {
+            const value$ = new BehaviorSubject<Item[]>([]);
+            const el = new MultiSelectListBuilder<Item>()
+                .withItems(of(ITEMS))
+                .withItemIdProvider(item => item.id)
+                .withItemCaptionProvider(item => item.name)
+                .withValue(value$)
+                .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
+            // Patch selection without triggering a re-render
+            value$.next([ITEMS[0], ITEMS[2]]);
+
+            const inputs = getItemInputs(el);
+            expect(inputs[0].checked).toBe(true);
+            expect(inputs[1].checked).toBe(false);
+            expect(inputs[2].checked).toBe(true);
+        });
+
+        it('select-all works after items rendered via visibility', () => {
+            const value$ = new BehaviorSubject<Item[]>([]);
+            const el = new MultiSelectListBuilder<Item>()
+                .withItems(of(ITEMS))
+                .withItemIdProvider(item => item.id)
+                .withItemCaptionProvider(item => item.name)
+                .withValue(value$)
+                .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
+            const header = getHeaderInput(el);
+            toggle(header, true);
+            expect(value$.getValue()).toHaveLength(ITEMS.length);
+        });
+
+        it('GatedObserver idempotency guard: renders items immediately when source is already a GatedObserver (no triggerVisibility)', () => {
+            // When items$ is already branded as GatedObserver the instanceof check
+            // in multi-select-list bypasses createOptimizedPipeline entirely — no
+            // IntersectionObserver is created and items render synchronously.
+            const value$ = new BehaviorSubject<Item[]>([]);
+            const gatedItems$ = new GatedObserver(of(ITEMS));
+
+            const el = new MultiSelectListBuilder<Item>()
+                .withItems(gatedItems$)
+                .withItemIdProvider(item => item.id)
+                .withItemCaptionProvider(item => item.name)
+                .withValue(value$)
+                .build();
+
+            document.body.appendChild(el);
+            // No triggerVisibility and no timer advance — items must already be rendered
+            // because the GatedObserver path skips the viewport gate.
+            const lis = getLiElements(el);
+            expect(lis).toHaveLength(ITEMS.length);
+            expect(lis[0].textContent).toContain('Apple');
+            expect(lis[1].textContent).toContain('Banana');
+            expect(lis[2].textContent).toContain('Cherry');
+        });
+
+        it('selections set via value$.next() BEFORE visibility are reflected correctly after items render', () => {
+            // This covers the skip(1)/getValue() handoff: value$ is mutated before
+            // the gated items$ emits, so the items-render subscription must read
+            // value$.getValue() (not the skip(1) patch stream) to pick up the
+            // pre-visibility selection.
+            const value$ = new BehaviorSubject<Item[]>([]);
+            const el = new MultiSelectListBuilder<Item>()
+                .withItems(of(ITEMS))
+                .withItemIdProvider(item => item.id)
+                .withItemCaptionProvider(item => item.name)
+                .withValue(value$)
+                .build();
+
+            document.body.appendChild(el);
+            // Emit a selection BEFORE the element becomes visible (items not yet rendered)
+            value$.next([ITEMS[0], ITEMS[2]]);
+
+            // Verify items have not been rendered yet (gate is still closed)
+            expect(getLiElements(el)).toHaveLength(0);
+
+            // Now open the gate — items render; they must pick up the pre-visibility selection
+            triggerVisibleAndWait(el);
+
+            const inputs = getItemInputs(el);
+            expect(inputs[0].checked).toBe(true);   // Apple — was pre-selected
+            expect(inputs[1].checked).toBe(false);  // Banana — not selected
+            expect(inputs[2].checked).toBe(true);   // Cherry — was pre-selected
+
+            // Header should be indeterminate (2 of 3 selected)
+            const header = getHeaderInput(el);
+            expect(header.indeterminate).toBe(true);
+            expect(header.checked).toBe(false);
+        });
+    });
 
     // ── Req 1 & 2: DOM structure ─────────────────────────────────────────────
 
     describe('DOM structure', () => {
-        it('renders a <ul role="listbox" aria-multiselectable="true">', () => {
+        it('renders a <div role="group"> labelled for the checkbox group', () => {
             const { el } = buildDefault();
             const list = getList(el);
             expect(list).not.toBeNull();
-            expect(list.getAttribute('aria-multiselectable')).toBe('true');
+            expect(list.getAttribute('aria-label') || list.getAttribute('aria-labelledby')).toBeTruthy();
         });
 
-        it('renders one <li role="option"> per item', () => {
+        it('renders one item element per item', () => {
             const { el } = buildDefault();
             const lis = getLiElements(el);
             expect(lis).toHaveLength(ITEMS.length);
-            lis.forEach(li => expect(li.getAttribute('role')).toBe('option'));
         });
 
         it('each <li> contains a <label> wrapping an <input type="checkbox">', () => {
@@ -115,6 +288,9 @@ describe('MultiSelectListBuilder', () => {
                 .withItemCaptionProvider(item => item.name)
                 .withValue(value$)
                 .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
 
             const inputs = getItemInputs(el);
             expect(inputs[0].checked).toBe(true);  // id 1 matched
@@ -164,13 +340,13 @@ describe('MultiSelectListBuilder', () => {
             expect(inputs[2].checked).toBe(true);
         });
 
-        it('updates aria-selected on <li>', () => {
+        it('updates checkbox checked state on selection change', () => {
             const { el, value$ } = buildDefault();
-            const lis = getLiElements(el);
+            const inputs = getItemInputs(el);
             value$.next([ITEMS[1]]);
-            expect(lis[0].getAttribute('aria-selected')).toBe('false');
-            expect(lis[1].getAttribute('aria-selected')).toBe('true');
-            expect(lis[2].getAttribute('aria-selected')).toBe('false');
+            expect(inputs[0].checked).toBe(false);
+            expect(inputs[1].checked).toBe(true);
+            expect(inputs[2].checked).toBe(false);
         });
 
         it('does not rebuild the DOM (same <li> references)', () => {
@@ -275,6 +451,9 @@ describe('MultiSelectListBuilder', () => {
                 .withCaption(caption$)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             const span = el.querySelector('span') as HTMLSpanElement;
             expect(span).not.toBeNull();
             expect(span.textContent).toBe('Fruit options');
@@ -288,12 +467,15 @@ describe('MultiSelectListBuilder', () => {
                 .withCaption(caption$)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             const span = el.querySelector('span') as HTMLSpanElement;
             caption$.next('New caption');
             expect(span.textContent).toBe('New caption');
         });
 
-        it('the <ul> has aria-labelledby referencing the caption span id', () => {
+        it('the items group has aria-labelledby referencing the caption span id', () => {
             const caption$ = new BehaviorSubject('Fruits');
             const el = new MultiSelectListBuilder<Item>()
                 .withItems(of(ITEMS))
@@ -301,13 +483,16 @@ describe('MultiSelectListBuilder', () => {
                 .withCaption(caption$)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             const span = el.querySelector('span') as HTMLSpanElement;
             const list = getList(el);
             expect(span.id).toBeTruthy();
             expect(list.getAttribute('aria-labelledby')).toBe(span.id);
         });
 
-        it('the <ul> does NOT have aria-labelledby when no caption is set', () => {
+        it('the items group does NOT have aria-labelledby when no caption is set', () => {
             const { el } = buildDefault();
             const list = getList(el);
             expect(list.getAttribute('aria-labelledby')).toBeNull();
@@ -324,6 +509,9 @@ describe('MultiSelectListBuilder', () => {
                 .withEnabled(enabled$)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             expect(el).toHaveClass('opacity-50');
             expect(el).toHaveClass('pointer-events-none');
         });
@@ -335,6 +523,9 @@ describe('MultiSelectListBuilder', () => {
                 .withEnabled(enabled$)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             expect(el).not.toHaveClass('opacity-50');
             expect(el).not.toHaveClass('pointer-events-none');
         });
@@ -345,6 +536,9 @@ describe('MultiSelectListBuilder', () => {
                 .withItems(of(ITEMS))
                 .withEnabled(enabled$)
                 .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
 
             enabled$.next(false);
             expect(el).toHaveClass('opacity-50');
@@ -364,6 +558,9 @@ describe('MultiSelectListBuilder', () => {
                 .withError(error$)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             const errorDiv = el.querySelector('div.text-error') as HTMLDivElement;
             expect(errorDiv).not.toBeNull();
             expect(errorDiv.textContent).toBe('Required field');
@@ -376,6 +573,9 @@ describe('MultiSelectListBuilder', () => {
                 .withError(error$)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             const panel = el.querySelector('.rounded-large') as HTMLElement;
             expect(panel).toHaveClass('border-error');
         });
@@ -386,6 +586,9 @@ describe('MultiSelectListBuilder', () => {
                 .withItems(of(ITEMS))
                 .withError(error$)
                 .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
 
             const errorDiv = el.querySelector('div.text-error') as HTMLDivElement;
             error$.next('');
@@ -398,6 +601,9 @@ describe('MultiSelectListBuilder', () => {
                 .withItems(of(ITEMS))
                 .withError(error$)
                 .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
 
             const panel = el.querySelector('.rounded-large') as HTMLElement;
             error$.next('');
@@ -428,6 +634,9 @@ describe('MultiSelectListBuilder', () => {
                 .withSelectAll(true)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             const header = getHeaderInput(el);
             expect(header).not.toBeNull();
             expect(header.getAttribute('aria-label')).toBe('Select all');
@@ -444,6 +653,9 @@ describe('MultiSelectListBuilder', () => {
                 .withSelectAll(false)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             const header = el.querySelector('[aria-label="Select all"]');
             expect(header).toBeNull();
         });
@@ -458,6 +670,9 @@ describe('MultiSelectListBuilder', () => {
                 .withValue(value$)
                 .withSelectAll(false)
                 .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
 
             const inputs = getItemInputs(el);
             toggle(inputs[0], true);
@@ -474,6 +689,9 @@ describe('MultiSelectListBuilder', () => {
                 .withValue(value$)
                 .withSelectAll(false)
                 .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
 
             const inputs = getItemInputs(el);
             toggle(inputs[0], false);
@@ -496,6 +714,9 @@ describe('MultiSelectListBuilder', () => {
                 .withValue(value$)
                 .withSelectAll(false)
                 .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
 
             const inputs = getItemInputs(el);
             toggle(inputs[0], true);
@@ -533,6 +754,9 @@ describe('MultiSelectListBuilder', () => {
                 .withSelectAll(false)
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             value$.next([ITEMS[0], ITEMS[2]]);
             const inputs = getItemInputs(el);
             expect(inputs[0].checked).toBe(true);
@@ -555,13 +779,15 @@ describe('MultiSelectListBuilder', () => {
                 .withStyle(of(MultiSelectListStyle.BORDERLESS));
             if (error$) builder.withError(error$);
             const el = builder.build();
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
             return { el, value$ };
         }
 
         function getPanel(el: HTMLElement): HTMLDivElement {
             // The panel is the first direct child div of the container that
-            // holds the <ul role="listbox">
-            return el.querySelector('div:has(ul[role="listbox"])') as HTMLDivElement;
+            // holds the items div[role="group"]
+            return el.querySelector('div:has(> div[role="group"])') as HTMLDivElement;
         }
 
         // Spec 1: no border classes on the panel
@@ -584,6 +810,9 @@ describe('MultiSelectListBuilder', () => {
                 .withStyle(of(MultiSelectListStyle.BORDERLESS))
                 .build();
 
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
+
             const lis = getLiElements(el);
             const selectedLabel = lis[0].querySelector('label') as HTMLLabelElement;
             expect(selectedLabel).toHaveClass('bg-secondary-container');
@@ -599,6 +828,9 @@ describe('MultiSelectListBuilder', () => {
                 .withValue(value$)
                 .withStyle(of(MultiSelectListStyle.BORDERLESS))
                 .build();
+
+            document.body.appendChild(el);
+            triggerVisibleAndWait(el);
 
             const lis = getLiElements(el);
             const unselectedLabel = lis[1].querySelector('label') as HTMLLabelElement;
@@ -636,8 +868,8 @@ describe('MultiSelectListBuilder', () => {
     describe('default style (TONAL) regression', () => {
         it('panel still has rounded-large border border-outline with default TONAL style', () => {
             const { el } = buildDefault();
-            // Locate panel via the ul it contains
-            const panel = el.querySelector('div:has(ul[role="listbox"])') as HTMLDivElement;
+            // Locate panel via the items group it contains
+            const panel = el.querySelector('div:has(> div[role="group"])') as HTMLDivElement;
             expect(panel).toHaveClass('rounded-large');
             expect(panel).toHaveClass('border');
             expect(panel).toHaveClass('border-outline');
@@ -658,6 +890,7 @@ describe('MultiSelectListBuilder', () => {
                 .build();
 
             document.body.appendChild(el);
+            triggerVisibleAndWait(el);
 
             // Confirm reactive binding works while in DOM
             value$.next([ITEMS[0]]);

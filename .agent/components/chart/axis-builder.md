@@ -18,8 +18,8 @@ The `AxisBuilder` is used to configure the appearance and behavior of X and Y ax
 - `withPosition('left' | 'right' | 'top' | 'bottom'): this`: Sets the position of the axis (for multi-axis charts).
 
 ### Scaling & Bounds
-- `withMin(min: number | 'auto'): this`: Sets the minimum value for the scale.
-- `withMax(max: number | 'auto'): this`: Sets the maximum value for the scale.
+- `withMin(min: number | 'auto'): this`: Sets the minimum value for the scale. By default using minimum value from provided set.
+- `withMax(max: number | 'auto'): this`: Sets the maximum value for the scale. By default using maximum value from provided set.
 - `withScaleType('linear' | 'log' | 'time' | 'category'): this`: Sets the mathematical scale type.
 
 ## Implementation Details

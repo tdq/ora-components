@@ -247,7 +247,7 @@ export const ConditionalStyling = () => {
 
     // Demonstrate withClass using item provider
     columns.addMoneyColumn('balance').withHeader('Balance')
-        .withClass(user => user.balance.amount > 50 ? 'text-green-600 font-bold' : 'text-red-600');
+        .withClass(user => user.balance.amount > 50 ? 'text-emerald-700 font-bold' : 'text-red-700');
 
     columns.addPercentageColumn('progress').withHeader('Progress')
         .withClass(user => user.progress > 0.8 ? 'bg-green-50' : (user.progress < 0.2 ? 'bg-red-50' : ''));

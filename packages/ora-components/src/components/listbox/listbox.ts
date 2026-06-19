@@ -4,6 +4,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '../../core/destroyable-element';
+import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { ListBoxStyle } from './types';
 
 function cn(...inputs: ClassValue[]) {
@@ -93,6 +94,7 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
     build(): HTMLElement {
         const focusedIndex$ = new BehaviorSubject<number>(-1);
         let currentItems: ITEM[] = [];
+        const instanceId = `listbox-${Math.random().toString(36).substring(2, 9)}`;
 
         const container = document.createElement('div');
         
@@ -109,6 +111,11 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
                 !enabled && 'opacity-50 pointer-events-none',
                 className
             );
+            if (enabled) {
+                container.removeAttribute('aria-disabled');
+            } else {
+                container.setAttribute('aria-disabled', 'true');
+            }
             if (height) {
                 container.style.height = `${height}px`;
             } else {
@@ -120,6 +127,7 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         // Caption
         if (this.caption$) {
             const label = document.createElement('label');
+            label.id = `${instanceId}-caption`;
             label.className = 'text-label-medium text-on-surface-variant ml-px-16';
             const labelSub = this.caption$.subscribe(caption => {
                 label.textContent = caption;
@@ -153,8 +161,15 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         // List (UL)
         const list = document.createElement('ul');
         list.role = 'listbox';
-        list.tabIndex = -1;
+        // When driven by an external observable (e.g. ComboBox), the trigger input owns
+        // tab focus and points at options via aria-activedescendant, so the list itself
+        // must stay out of the tab order. Standalone ListBox has no such trigger, so it
+        // needs to be tabbable itself for keyboard/scroll access.
+        list.tabIndex = this.externalFocusedIndex$ ? -1 : 0;
         list.className = 'w-full h-full overflow-y-auto py-0';
+        if (this.caption$) {
+            list.setAttribute('aria-labelledby', `${instanceId}-caption`);
+        }
         listContainer.appendChild(list);
 
         if (this.externalFocusedIndex$) {
@@ -197,12 +212,20 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         });
 
         // Items Rendering
-        const currentValue$ = this.value$ 
+        const currentValue$ = this.value$
             ? this.value$.pipe(startWith(null))
             : new BehaviorSubject<ITEM | null>(null);
 
+        // Gate the heavy items source on viewport visibility — items will not
+        // render (and the source will not be subscribed) until container enters
+        // the viewport.  All other streams (keyboard nav, selection, style) are
+        // intentionally left ungated so they remain reactive at all times.
+        // createOptimizedPipeline is idempotent: an already-gated source (e.g. a filtered
+        // view from a parent combobox branded as GatedObserver) is returned as-is.
+        const itemsSource$ = createOptimizedPipeline(container, this.items$);
+
         const itemsState$ = combineLatest([
-            this.items$,
+            itemsSource$,
             currentValue$,
             this.style$,
             focusedIndex$,
@@ -231,17 +254,20 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
                 let itemTextColor: string;
                 let selectedBg: string;
                 let hoverBg: string;
+                let focusBg: string;
 
                 if (this.isGlass) {
                     itemTextColor = '';
                     selectedBg = 'bg-white/40';
                     hoverBg = 'hover:bg-black/5 dark:hover:bg-white/10';
+                    focusBg = 'bg-black/10 dark:bg-white/20';
                 } else {
                     itemTextColor = (isSelected && isOutlined)
                         ? 'text-on-primary-container'
                         : (isTonal ? 'text-on-secondary-container' : 'text-on-surface');
                     selectedBg = isTonal ? 'bg-on-secondary-container/20' : 'bg-primary-container';
                     hoverBg = 'hover:bg-on-surface/8';
+                    focusBg = 'bg-on-surface/12';
                 }
 
                 li.className = cn(
@@ -250,8 +276,15 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
                     isSelected && 'font-bold',
                     isSelected && selectedBg,
                     !isSelected && hoverBg,
-                    isFocused && !isSelected && 'bg-on-surface/12'
+                    isFocused && !isSelected && focusBg
                 );
+
+                // Focus Accent Bar
+                if (isFocused) {
+                    const focusIndicator = document.createElement('div');
+                    focusIndicator.className = 'absolute left-0 top-0 bottom-0 w-[4px] bg-primary z-20';
+                    li.appendChild(focusIndicator);
+                }
 
                 // State Layer (for focus/hover/active visual consistency)
                 const stateLayer = document.createElement('div');
@@ -276,7 +309,10 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
             });
 
             if (focusedIndex >= 0) {
-                (list.children[focusedIndex] as HTMLElement | null)?.scrollIntoView({ block: 'nearest' });
+                const item = list.children[focusedIndex] as HTMLElement | null;
+                if (item && typeof item.scrollIntoView === 'function') {
+                    item.scrollIntoView({ block: 'nearest' });
+                }
             }
         });
         registerDestroy(container, () => itemsSub.unsubscribe());

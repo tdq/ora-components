@@ -5,9 +5,49 @@ import { SortDirection } from './types';
 import { MoneyColumnBuilder } from './columns/money-column';
 import { NumberColumnBuilder } from './columns/number-column';
 import { PercentageColumnBuilder } from './columns/percentage-column';
+import { GatedObserver } from '../../utils/optimized-pipeline';
 
 describe('GridBuilder', () => {
     let container: HTMLElement;
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+
+        class MockIntersectionObserver implements IntersectionObserver {
+            readonly root: Element | Document | null = null;
+            readonly rootMargin: string = '';
+            readonly thresholds: ReadonlyArray<number> = [];
+
+            constructor(private callback: IntersectionObserverCallback) {}
+
+            observe(element: Element) {
+                const entry: IntersectionObserverEntry = {
+                    target: element,
+                    isIntersecting: true,
+                    intersectionRatio: 1,
+                    boundingClientRect: element.getBoundingClientRect(),
+                    intersectionRect: element.getBoundingClientRect(),
+                    rootBounds: null,
+                    time: Date.now(),
+                } as IntersectionObserverEntry;
+
+                this.callback([entry], this);
+                jest.advanceTimersByTime(150);
+            }
+
+            unobserve() {}
+            disconnect() {}
+            takeRecords() { return []; }
+        }
+
+        window.IntersectionObserver = MockIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
 
     interface TestItem {
         id: number;
@@ -263,6 +303,40 @@ describe('GridBuilder', () => {
         expect(container.style.minHeight).toBe('0');
 
         document.body.removeChild(container);
+    });
+
+    it('idempotency guard: GatedObserver items$ skips createOptimizedPipeline (no IntersectionObserver created)', () => {
+        let ioConstructorCalls = 0;
+        const OriginalMock = window.IntersectionObserver;
+        window.IntersectionObserver = new Proxy(OriginalMock, {
+            construct(target, args) {
+                ioConstructorCalls++;
+                return Reflect.construct(target, args);
+            }
+        }) as any;
+
+        try {
+            const gatedItems$ = new GatedObserver(of(items));
+            const grid = new GridBuilder<TestItem>()
+                .withItems(gatedItems$)
+                .withHeight(of(400));
+
+            grid.withColumns().addTextColumn('name').withHeader('Name');
+
+            container = grid.build();
+            document.body.appendChild(container);
+
+            // GatedObserver is used directly — no IntersectionObserver instantiated
+            expect(ioConstructorCalls).toBe(0);
+
+            // Data still flows through and rows are rendered
+            const rows = container.querySelectorAll('.absolute.w-full');
+            expect(rows.length).toBeGreaterThan(0);
+
+            document.body.removeChild(container);
+        } finally {
+            window.IntersectionObserver = OriginalMock;
+        }
     });
 
     describe('column alignment', () => {
@@ -611,7 +685,8 @@ describe('GridBuilder', () => {
             expect(rows.length).toBeGreaterThan(0);
 
             // Verify header cells are present
-            const headerCells = header!.querySelectorAll(':scope > div');
+            const headerElement = header!.children[0] as HTMLElement;
+            const headerCells = headerElement.querySelectorAll(':scope > div');
             expect(headerCells.length).toBeGreaterThanOrEqual(22);
 
             // Check resizability — count all resize handles (12 resizable columns)

@@ -91,6 +91,7 @@ export class DatePickerBuilder implements ComponentBuilder {
         // 2. Internal State
         const isExpanded$ = new BehaviorSubject<boolean>(false);
         const internalValue$ = new BehaviorSubject<Date | null>(null);
+        let lastTrigger: HTMLElement = input;
         const subs: any[] = [];
 
         // 3. Calendar wrapped in a padding div (replaces the p-px-16 that was on the old popup)
@@ -123,7 +124,7 @@ export class DatePickerBuilder implements ComponentBuilder {
             .withContent({ build: () => calendarWrapper })
             .withWidth('320px')
             .withOnClose(() => {
-                input.focus();
+                lastTrigger.focus();
                 isExpanded$.next(false);
             });
 
@@ -152,7 +153,7 @@ export class DatePickerBuilder implements ComponentBuilder {
         this.setupMasking(input);
 
         // 7. Event Handlers
-        this.setupEventHandlers(input, iconButton, isExpanded$);
+        this.setupEventHandlers(input, iconButton, isExpanded$, (el) => lastTrigger = el);
 
         // 8. Cleanup
         registerDestroy(container, () => {
@@ -187,7 +188,7 @@ export class DatePickerBuilder implements ComponentBuilder {
 
         const iconButton = document.createElement('button');
         iconButton.type = 'button';
-        iconButton.className = 'p-px-12 text-on-surface-variant hover:text-primary transition-colors focus:outline-none';
+        iconButton.className = 'p-px-8 text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm mr-px-4';
         const calendarIconWrapper = document.createElement('span');
         calendarIconWrapper.className = 'w-6 h-6 inline-flex items-center justify-center [&_svg]:w-full [&_svg]:h-full [&_svg]:block';
         calendarIconWrapper.innerHTML = Icons.CALENDAR;
@@ -362,7 +363,8 @@ export class DatePickerBuilder implements ComponentBuilder {
     private setupEventHandlers(
         input: HTMLInputElement,
         iconButton: HTMLButtonElement,
-        isExpanded$: BehaviorSubject<boolean>
+        isExpanded$: BehaviorSubject<boolean>,
+        setLastTrigger: (el: HTMLElement) => void
     ) {
         input.oninput = () => {
             const parsed = parseDate(input.value, this.format);
@@ -373,12 +375,20 @@ export class DatePickerBuilder implements ComponentBuilder {
 
         iconButton.onclick = (e) => {
             e.stopPropagation();
+            setLastTrigger(iconButton);
             isExpanded$.next(!isExpanded$.value);
+        };
+
+        iconButton.onkeydown = (e) => {
+            if (e.key === 'Escape') {
+                isExpanded$.next(false);
+            }
         };
 
         input.onkeydown = (e) => {
             if (e.key === 'ArrowDown' && e.altKey) {
                 e.preventDefault();
+                setLastTrigger(input);
                 isExpanded$.next(true);
             } else if (e.key === 'Escape') {
                 isExpanded$.next(false);

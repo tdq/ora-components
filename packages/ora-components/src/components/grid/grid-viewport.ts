@@ -32,7 +32,7 @@ export class GridViewport<ITEM> {
     ) {
         this.element = document.createElement('div');
         this.element.className = GridStyles.viewport;
-        this.element.tabIndex = -1;
+        this.element.tabIndex = 0;
 
         this.contentElement = document.createElement('div');
         this.contentElement.className = GridStyles.content;

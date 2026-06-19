@@ -1,4 +1,4 @@
-import { BehaviorSubject, Subscription, skip } from 'rxjs';
+import { BehaviorSubject, Subscription, skip, of } from 'rxjs';
 import { GridColumn, SortConfig, SortDirection } from './types';
 import { GridStyles, getAlignClass, applyColumnWidth } from './grid-styles';
 import { CheckboxBuilder } from '../checkbox/checkbox';
@@ -80,6 +80,7 @@ export class GridHeader<ITEM> {
             const checkboxEl = new CheckboxBuilder()
                 .asGlass(this.isGlass)
                 .withValue(value$)
+                .withAriaLabel(of('Select all'))
                 .build();
 
             checkCell.appendChild(checkboxEl);
@@ -122,6 +123,15 @@ export class GridHeader<ITEM> {
                 const iconSvg = isCurrent && sort.direction === SortDirection.ASC ? Icons.SORT_UP :
                     isCurrent && sort.direction === SortDirection.DESC ? Icons.SORT_DOWN : Icons.SORT;
 
+                // Make the sortable header keyboard-navigable.
+                // `aria-sort` requires a `columnheader`/`rowheader` role contained in a `row`,
+                // which this grid doesn't model. Convey sort state via `aria-label` instead.
+                const sortStateLabel = isCurrent && sort.direction === SortDirection.ASC ? 'sorted ascending' :
+                    isCurrent && sort.direction === SortDirection.DESC ? 'sorted descending' : 'not sorted';
+                cell.tabIndex = 0;
+                cell.setAttribute('role', 'button');
+                cell.setAttribute('aria-label', `${headerText}, ${sortStateLabel}, activate to sort`);
+
                 if (!iconWrapper) {
                     iconWrapper = document.createElement('span');
                     cell.appendChild(iconWrapper);
@@ -139,15 +149,25 @@ export class GridHeader<ITEM> {
                 }
 
                 if (!reuse) {
-                    cell.addEventListener('click', (e) => {
-                        if ((e.target as HTMLElement).classList.contains('resize-handle')) return;
-
+                    const triggerSort = () => {
                         let nextDirection = SortDirection.ASC;
                         if (this.currentSort?.field === col.field) {
                             if (this.currentSort.direction === SortDirection.ASC) nextDirection = SortDirection.DESC;
                             else if (this.currentSort.direction === SortDirection.DESC) nextDirection = SortDirection.NONE;
                         }
                         this.onSort(col.field as string, nextDirection);
+                    };
+
+                    cell.addEventListener('click', (e) => {
+                        if ((e.target as HTMLElement).classList.contains('resize-handle')) return;
+                        triggerSort();
+                    });
+
+                    cell.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            triggerSort();
+                        }
                     });
                 }
             }
