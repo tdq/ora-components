@@ -139,7 +139,7 @@ export const ScrollSpeed = () => {
         wrapper.className = 'flex flex-col gap-2';
 
         const caption = document.createElement('span');
-        caption.className = 'text-label-small text-on-surface-variant opacity-60 uppercase tracking-wide';
+        caption.className = 'text-label-small text-on-surface-variant uppercase tracking-wide';
         caption.textContent = label;
 
         const ticker = new FxTickerBuilder()
@@ -208,7 +208,7 @@ export const DirectionRight = () => {
         wrapper.className = 'flex flex-col gap-2';
 
         const caption = document.createElement('span');
-        caption.className = 'text-label-small text-on-surface-variant opacity-60 uppercase tracking-wide';
+        caption.className = 'text-label-small text-on-surface-variant uppercase tracking-wide';
         caption.textContent = label;
 
         const ticker = new FxTickerBuilder()
@@ -266,7 +266,7 @@ export const Announcing = () => {
     wrapper.className = 'flex flex-col gap-4';
 
     const note = document.createElement('p');
-    note.className = 'text-label-small text-on-surface-variant opacity-70';
+    note.className = 'text-label-small text-on-surface-variant';
     note.textContent = 'aria-hidden is removed; an aria-live="polite" region announces rate changes.';
 
     const ticker = new FxTickerBuilder()

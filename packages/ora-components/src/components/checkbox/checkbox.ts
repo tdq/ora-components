@@ -17,9 +17,15 @@ export class CheckboxBuilder implements ComponentBuilder {
     private className$?: Observable<string>;
     private value$?: Subject<CheckboxValue>;
     private isGlass: boolean = false;
+    private ariaLabel$?: Observable<string>;
 
     withCaption(caption: Observable<string>): this {
         this.caption$ = caption;
+        return this;
+    }
+
+    withAriaLabel(ariaLabel: Observable<string>): this {
+        this.ariaLabel$ = ariaLabel;
         return this;
     }
 
@@ -131,6 +137,12 @@ export class CheckboxBuilder implements ComponentBuilder {
                     BASE_ROOT_CLASSES,
                     className
                 );
+            }));
+        }
+
+        if (this.ariaLabel$) {
+            subscriptions.add(this.ariaLabel$.subscribe(ariaLabel => {
+                input.setAttribute('aria-label', ariaLabel);
             }));
         }
 

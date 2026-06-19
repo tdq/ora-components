@@ -102,7 +102,8 @@ export class MoneyFieldLogic {
 
                 // Label
                 this.label.textContent = labelMsg;
-                this.input.setAttribute('aria-label', labelMsg);
+                // Fall back to the placeholder for the accessible name when no visible label is set.
+                this.input.setAttribute('aria-label', labelMsg || placeholder);
                 this.label.classList.toggle('hidden', !labelMsg);
                 this.label.classList.toggle('text-error', !!errorMsg);
 
@@ -113,7 +114,6 @@ export class MoneyFieldLogic {
                 else this.input.removeAttribute('aria-valuemin');
                 if (isFinite(max)) this.input.setAttribute('aria-valuemax', max.toString());
                 else this.input.removeAttribute('aria-valuemax');
-                this.input.setAttribute('aria-valuestep', step.toString());
                 this.input.setAttribute('aria-invalid', (!!errorMsg).toString());
 
                 // Error

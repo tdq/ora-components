@@ -5,7 +5,7 @@
 export function createActionLog(): { element: HTMLElement; log: (msg: string) => void } {
     const element = document.createElement('div');
     element.className = 'mt-4 p-3 bg-surface-container-low rounded border border-outline/10 text-xs font-mono max-h-32 overflow-y-auto';
-    element.innerHTML = '<div class="opacity-50 italic font-sans text-sm">Actions appear here...</div>';
+    element.innerHTML = '<div class="text-on-surface-variant italic font-sans text-sm">Actions appear here...</div>';
 
     const log = (msg: string): void => {
         const placeholder = element.querySelector('.italic');

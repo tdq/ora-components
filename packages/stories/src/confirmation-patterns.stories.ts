@@ -312,6 +312,7 @@ export const BulkAction = () => {
 
         const checkbox = new CheckboxBuilder()
             .withValue(subject)
+            .withAriaLabel(of(`Select ${p.name}`))
             .build();
 
         checkboxMap.set(p.id, { subject, element: checkbox });

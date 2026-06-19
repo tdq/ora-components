@@ -94,6 +94,7 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
     build(): HTMLElement {
         const focusedIndex$ = new BehaviorSubject<number>(-1);
         let currentItems: ITEM[] = [];
+        const instanceId = `listbox-${Math.random().toString(36).substring(2, 9)}`;
 
         const container = document.createElement('div');
         
@@ -110,6 +111,11 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
                 !enabled && 'opacity-50 pointer-events-none',
                 className
             );
+            if (enabled) {
+                container.removeAttribute('aria-disabled');
+            } else {
+                container.setAttribute('aria-disabled', 'true');
+            }
             if (height) {
                 container.style.height = `${height}px`;
             } else {
@@ -121,6 +127,7 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         // Caption
         if (this.caption$) {
             const label = document.createElement('label');
+            label.id = `${instanceId}-caption`;
             label.className = 'text-label-medium text-on-surface-variant ml-px-16';
             const labelSub = this.caption$.subscribe(caption => {
                 label.textContent = caption;
@@ -154,8 +161,15 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         // List (UL)
         const list = document.createElement('ul');
         list.role = 'listbox';
-        list.tabIndex = -1;
+        // When driven by an external observable (e.g. ComboBox), the trigger input owns
+        // tab focus and points at options via aria-activedescendant, so the list itself
+        // must stay out of the tab order. Standalone ListBox has no such trigger, so it
+        // needs to be tabbable itself for keyboard/scroll access.
+        list.tabIndex = this.externalFocusedIndex$ ? -1 : 0;
         list.className = 'w-full h-full overflow-y-auto py-0';
+        if (this.caption$) {
+            list.setAttribute('aria-labelledby', `${instanceId}-caption`);
+        }
         listContainer.appendChild(list);
 
         if (this.externalFocusedIndex$) {

@@ -46,7 +46,7 @@ export class MoneyKPICardViewport {
         if (label$) {
             const label = new LabelBuilder()
                 .withCaption(label$)
-                .withClass(of('text-label-medium text-on-surface-variant opacity-70 uppercase tracking-wide'))
+                .withClass(of('text-label-medium text-on-surface-variant uppercase tracking-wide'))
                 .build();
             headerRow.appendChild(label);
         }
@@ -81,7 +81,7 @@ export class MoneyKPICardViewport {
         // ---- Description row ----
         const descRow = document.createElement('div');
         if (description$) {
-            descRow.className = 'mt-px-12 text-label-small text-on-surface-variant opacity-60 mkp-description';
+            descRow.className = 'mt-px-12 text-label-small text-on-surface-variant mkp-description';
         }
 
         // ---- Card body ----

@@ -63,12 +63,12 @@ function buildDefault(overrides?: {
     return { el, value$ };
 }
 
-function getList(el: HTMLElement): HTMLUListElement {
-    return el.querySelector('ul[role="listbox"]') as HTMLUListElement;
+function getList(el: HTMLElement): HTMLDivElement {
+    return el.querySelector('div[role="group"]') as HTMLDivElement;
 }
 
-function getLiElements(el: HTMLElement): HTMLLIElement[] {
-    return Array.from(el.querySelectorAll('li[role="option"]')) as HTMLLIElement[];
+function getLiElements(el: HTMLElement): HTMLDivElement[] {
+    return Array.from(getList(el)?.children ?? []) as HTMLDivElement[];
 }
 
 function getItemInputs(el: HTMLElement): HTMLInputElement[] {
@@ -233,18 +233,17 @@ describe('MultiSelectListBuilder', () => {
     // ── Req 1 & 2: DOM structure ─────────────────────────────────────────────
 
     describe('DOM structure', () => {
-        it('renders a <ul role="listbox" aria-multiselectable="true">', () => {
+        it('renders a <div role="group"> labelled for the checkbox group', () => {
             const { el } = buildDefault();
             const list = getList(el);
             expect(list).not.toBeNull();
-            expect(list.getAttribute('aria-multiselectable')).toBe('true');
+            expect(list.getAttribute('aria-label') || list.getAttribute('aria-labelledby')).toBeTruthy();
         });
 
-        it('renders one <li role="option"> per item', () => {
+        it('renders one item element per item', () => {
             const { el } = buildDefault();
             const lis = getLiElements(el);
             expect(lis).toHaveLength(ITEMS.length);
-            lis.forEach(li => expect(li.getAttribute('role')).toBe('option'));
         });
 
         it('each <li> contains a <label> wrapping an <input type="checkbox">', () => {
@@ -341,13 +340,13 @@ describe('MultiSelectListBuilder', () => {
             expect(inputs[2].checked).toBe(true);
         });
 
-        it('updates aria-selected on <li>', () => {
+        it('updates checkbox checked state on selection change', () => {
             const { el, value$ } = buildDefault();
-            const lis = getLiElements(el);
+            const inputs = getItemInputs(el);
             value$.next([ITEMS[1]]);
-            expect(lis[0].getAttribute('aria-selected')).toBe('false');
-            expect(lis[1].getAttribute('aria-selected')).toBe('true');
-            expect(lis[2].getAttribute('aria-selected')).toBe('false');
+            expect(inputs[0].checked).toBe(false);
+            expect(inputs[1].checked).toBe(true);
+            expect(inputs[2].checked).toBe(false);
         });
 
         it('does not rebuild the DOM (same <li> references)', () => {
@@ -476,7 +475,7 @@ describe('MultiSelectListBuilder', () => {
             expect(span.textContent).toBe('New caption');
         });
 
-        it('the <ul> has aria-labelledby referencing the caption span id', () => {
+        it('the items group has aria-labelledby referencing the caption span id', () => {
             const caption$ = new BehaviorSubject('Fruits');
             const el = new MultiSelectListBuilder<Item>()
                 .withItems(of(ITEMS))
@@ -493,7 +492,7 @@ describe('MultiSelectListBuilder', () => {
             expect(list.getAttribute('aria-labelledby')).toBe(span.id);
         });
 
-        it('the <ul> does NOT have aria-labelledby when no caption is set', () => {
+        it('the items group does NOT have aria-labelledby when no caption is set', () => {
             const { el } = buildDefault();
             const list = getList(el);
             expect(list.getAttribute('aria-labelledby')).toBeNull();
@@ -787,8 +786,8 @@ describe('MultiSelectListBuilder', () => {
 
         function getPanel(el: HTMLElement): HTMLDivElement {
             // The panel is the first direct child div of the container that
-            // holds the <ul role="listbox">
-            return el.querySelector('div:has(ul[role="listbox"])') as HTMLDivElement;
+            // holds the items div[role="group"]
+            return el.querySelector('div:has(> div[role="group"])') as HTMLDivElement;
         }
 
         // Spec 1: no border classes on the panel
@@ -869,8 +868,8 @@ describe('MultiSelectListBuilder', () => {
     describe('default style (TONAL) regression', () => {
         it('panel still has rounded-large border border-outline with default TONAL style', () => {
             const { el } = buildDefault();
-            // Locate panel via the ul it contains
-            const panel = el.querySelector('div:has(ul[role="listbox"])') as HTMLDivElement;
+            // Locate panel via the items group it contains
+            const panel = el.querySelector('div:has(> div[role="group"])') as HTMLDivElement;
             expect(panel).toHaveClass('rounded-large');
             expect(panel).toHaveClass('border');
             expect(panel).toHaveClass('border-outline');

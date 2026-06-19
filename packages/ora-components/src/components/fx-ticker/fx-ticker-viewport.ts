@@ -111,7 +111,6 @@ export class FxTickerViewport {
             'uppercase',
             'tracking-widest',
             'text-on-surface-variant',
-            'opacity-70',
             'border-r',
             'border-outline-alpha-20',
             'px-px-12',

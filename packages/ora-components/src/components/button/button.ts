@@ -33,6 +33,7 @@ export class ButtonBuilder implements ComponentBuilder {
     private clickListener?: ClickListener<void>;
     private style$?: Observable<ButtonStyle>;
     private className$?: Observable<string>;
+    private ariaLabel$?: Observable<string>;
     private isGlass: boolean = false;
 
     asGlass(isGlass: boolean = true): ButtonBuilder {
@@ -67,6 +68,11 @@ export class ButtonBuilder implements ComponentBuilder {
 
     withClass(className: Observable<string>): ButtonBuilder {
         this.className$ = className;
+        return this;
+    }
+
+    withAriaLabel(label: Observable<string>): ButtonBuilder {
+        this.ariaLabel$ = label;
         return this;
     }
 
@@ -117,6 +123,10 @@ export class ButtonBuilder implements ComponentBuilder {
             } else {
                 iconSpan.remove();
             }
+        }) : null;
+
+        const ariaLabelSub = this.ariaLabel$ ? this.ariaLabel$.subscribe(label => {
+            button.setAttribute('aria-label', label);
         }) : null;
 
         const enabledSub = this.enabled$ ? this.enabled$.subscribe(enabled => {
@@ -173,6 +183,7 @@ export class ButtonBuilder implements ComponentBuilder {
         registerDestroy(button, () => {
             captionSub?.unsubscribe();
             iconSub?.unsubscribe();
+            ariaLabelSub?.unsubscribe();
             enabledSub?.unsubscribe();
             styleSub?.unsubscribe();
         });

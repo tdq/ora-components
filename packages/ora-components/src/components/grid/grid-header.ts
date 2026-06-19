@@ -1,4 +1,4 @@
-import { BehaviorSubject, Subscription, skip } from 'rxjs';
+import { BehaviorSubject, Subscription, skip, of } from 'rxjs';
 import { GridColumn, SortConfig, SortDirection } from './types';
 import { GridStyles, getAlignClass, applyColumnWidth } from './grid-styles';
 import { CheckboxBuilder } from '../checkbox/checkbox';
@@ -80,6 +80,7 @@ export class GridHeader<ITEM> {
             const checkboxEl = new CheckboxBuilder()
                 .asGlass(this.isGlass)
                 .withValue(value$)
+                .withAriaLabel(of('Select all'))
                 .build();
 
             checkCell.appendChild(checkboxEl);
@@ -123,11 +124,13 @@ export class GridHeader<ITEM> {
                     isCurrent && sort.direction === SortDirection.DESC ? Icons.SORT_DOWN : Icons.SORT;
 
                 // Make the sortable header keyboard-navigable.
+                // `aria-sort` requires a `columnheader`/`rowheader` role contained in a `row`,
+                // which this grid doesn't model. Convey sort state via `aria-label` instead.
+                const sortStateLabel = isCurrent && sort.direction === SortDirection.ASC ? 'sorted ascending' :
+                    isCurrent && sort.direction === SortDirection.DESC ? 'sorted descending' : 'not sorted';
                 cell.tabIndex = 0;
                 cell.setAttribute('role', 'button');
-                cell.setAttribute('aria-sort',
-                    isCurrent && sort.direction === SortDirection.ASC ? 'ascending' :
-                    isCurrent && sort.direction === SortDirection.DESC ? 'descending' : 'none');
+                cell.setAttribute('aria-label', `${headerText}, ${sortStateLabel}, activate to sort`);
 
                 if (!iconWrapper) {
                     iconWrapper = document.createElement('span');

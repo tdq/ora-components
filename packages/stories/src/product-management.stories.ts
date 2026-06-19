@@ -207,6 +207,7 @@ export const ProductManagement = () => {
         .withItems(of(['', ...CATEGORIES]))
         .withItemCaptionProvider(item => item === '' ? 'All Categories' : item)
         .withValue(filterCategory$)
+        .withPlaceholder('Filter by category')
         .withStyle(of(ComboBoxStyle.OUTLINED));
 
     // Add Button

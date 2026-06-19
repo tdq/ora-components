@@ -15,7 +15,9 @@
   "type": "module",
   "scripts": {
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test-runner": "test-storybook",
+    "test-runner:ci": "test-storybook --url http://localhost:6006"
   },
   "dependencies": {
     "@tdq/ora-components": "*"
@@ -24,9 +26,14 @@
     "@storybook/addon-docs": "^10.3.6",
     "@storybook/addon-links": "^10.3.6",
     "@storybook/html-vite": "^10.3.6",
+    "@storybook/test-runner": "^0.24.4",
+    "axe-playwright": "^2.0.3",
+    "http-server": "^14.1.1",
+    "playwright": "^1.60.0",
     "remark-gfm": "^4.0.1",
     "storybook": "^10.3.6",
     "typescript": "^5.9.3",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "wait-on": "^7.2.0"
   }
 }

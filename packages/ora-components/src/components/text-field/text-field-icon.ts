@@ -23,6 +23,7 @@ export function createPasswordToggle(onToggle: (isVisible: boolean) => void, isV
     const updateIcon = (visible: boolean) => {
         const iconHtml = visible ? Icons.EYE_CLOSED : Icons.EYE_OPEN;
         toggleBtn.innerHTML = iconHtml.replace('<svg', '<svg class="w-5 h-5"');
+        toggleBtn.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
     };
 
     updateIcon(isVisible);

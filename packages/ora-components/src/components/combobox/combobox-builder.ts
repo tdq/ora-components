@@ -100,6 +100,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         container.className = 'flex flex-col gap-px-4 w-full relative';
 
         const captionElement = document.createElement('span');
+        captionElement.id = `${instanceId}-caption`;
         captionElement.className = 'md-label-small text-on-surface-variant px-px-16 hidden';
         container.appendChild(captionElement);
 
@@ -107,6 +108,9 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             placeholder: this.placeholder,
             ariaControls: listboxId
         });
+        if (this.placeholder) {
+            input.setAttribute('aria-label', this.placeholder);
+        }
         container.appendChild(inputContainer);
 
         const error = document.createElement('span');
@@ -148,6 +152,14 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             subs.add(this.caption$.subscribe(text => {
                 captionElement.textContent = text;
                 captionElement.classList.toggle('hidden', !text);
+                // Caption doubles as the accessible name; fall back to placeholder when empty.
+                if (text) {
+                    input.setAttribute('aria-labelledby', captionElement.id);
+                    input.removeAttribute('aria-label');
+                } else {
+                    input.removeAttribute('aria-labelledby');
+                    if (this.placeholder) input.setAttribute('aria-label', this.placeholder);
+                }
             }));
         }
 

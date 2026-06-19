@@ -55,6 +55,15 @@ jobs:
       - name: Verify Storybook output
         run: ls packages/stories/storybook-static/index.html
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Run Browser Tests (Smoke + A11y)
+        run: |
+          npx http-server packages/stories/storybook-static -p 6006 --silent &
+          npx wait-on http://localhost:6006
+          npm run test-runner:ci -w ora-stories
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
