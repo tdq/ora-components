@@ -31,7 +31,16 @@ function isVisible(el: HTMLElement, container: HTMLElement): boolean {
  */
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
     return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-        .filter(el => isVisible(el, container));
+        .filter(el => isVisible(el, container))
+        // A disabled button/input/select/textarea can never actually receive focus —
+        // calling .focus() on it is a silent no-op in real browsers. Filtering this in
+        // JS (rather than adding :not(:disabled) to the selector) is required because
+        // these elements also get an explicit tabindex="0" (for Safari Tab support),
+        // so they'd still match the `[tabindex]` branch of FOCUSABLE_SELECTOR even with
+        // :not(:disabled) on their own branch. Treating them as a stop in the tab
+        // sequence breaks both the wrap-around and the focusin recovery, letting focus
+        // get stuck or escape the container entirely.
+        .filter(el => !(el as HTMLButtonElement | HTMLInputElement).disabled);
 }
 
 /**

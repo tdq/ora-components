@@ -305,6 +305,43 @@ describe('DialogBuilder', () => {
             document.body.removeChild(dialog);
         });
 
+        it('should skip a disabled primary toolbar button when wrapping focus on Tab', () => {
+            // Mirrors a registration/login dialog: the primary "Submit" button is
+            // disabled via withEnabled(false) until the form is valid, and is the
+            // last focusable element in the dialog.
+            const dialogBuilder = new DialogBuilder()
+                .withCaption(of('Registration'))
+                .withContent({
+                    build: () => {
+                        const div = document.createElement('div');
+                        const input1 = document.createElement('input');
+                        input1.id = 'input1';
+                        div.appendChild(input1);
+                        return div;
+                    }
+                });
+
+            dialogBuilder.withToolbar().withPrimaryButton()
+                .withCaption(of('Register'))
+                .withEnabled(new BehaviorSubject(false));
+
+            const dialog = dialogBuilder.build();
+            document.body.appendChild(dialog);
+
+            const input1 = dialog.querySelector('#input1') as HTMLInputElement;
+
+            input1.focus();
+
+            const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true });
+            input1.dispatchEvent(tabEvent);
+
+            // The disabled button can never receive focus, so it must not be treated
+            // as the wrap target; focus should wrap back to the first element instead.
+            expect(document.activeElement).toBe(input1);
+
+            document.body.removeChild(dialog);
+        });
+
         it('should wrap focus from first to last element on Shift+Tab', () => {
             const dialogBuilder = new DialogBuilder()
                 .withCaption(of('Focus Test'))

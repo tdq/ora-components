@@ -9,6 +9,7 @@ It has the following methods:
 - `withClick(click: ClickListener<void>): this` - sets click event of the button.
 - `withStyle(style: Observable<ButtonStyle>): this` - sets style of the button.
 - `withClass(className: Observable<string>): this` - sets class css name of the button.
+- `withAriaLabel(label: Observable<string>): this` - sets an explicit `aria-label`, overriding the default (which is derived from `withCaption`). Required for icon-only buttons (no caption) to remain accessible.
 - `asGlass(): this` - sets special styling option for button as transparent with blur background (glass effect). 
 
 ```typescript
@@ -35,6 +36,9 @@ When `withCaption` is **not called**, the caption `<span>` is never inserted int
 Button caption text has `select-none` — it is not user-selectable to prevent accidental text highlights on click.
 
 ## Accessibility
+
+### aria-label
+The `aria-label` defaults to the caption set via `withCaption`. Call `withAriaLabel` to set an explicit label that takes precedence over the caption — required for icon-only buttons (no caption), since there's no visible text to derive a label from.
 
 ### Keyboard focus (Safari Tab navigation)
 The button is rendered as a native `<button>`, which Safari **excludes** from Tab-key navigation by default (Safari only tabs through text-entry fields unless the user enables *"Press Tab to highlight each item on a webpage"*). To guarantee buttons are reachable by keyboard in every browser, `build()` sets an explicit `tabindex="0"`, which forces the element into the sequential focus order regardless of that setting. The `disabled` attribute still removes a disabled button from the tab order as expected.

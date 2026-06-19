@@ -41,6 +41,12 @@ export class ButtonBuilder implements ComponentBuilder {
         return this;
     }
 
+    /**
+     * Set the button's visible text caption.
+     *
+     * This caption is also used as the default aria-label for accessibility.
+     * To override the aria-label (e.g., for icon-only buttons), use withAriaLabel().
+     */
     withCaption(caption: Observable<string>): ButtonBuilder {
         this.caption$ = caption;
         return this;
@@ -71,9 +77,25 @@ export class ButtonBuilder implements ComponentBuilder {
         return this;
     }
 
+    /**
+     * Set an explicit aria-label, overriding the default (which is derived from caption).
+     *
+     * Use this to provide a custom accessible label different from the button's visible text.
+     * For icon-only buttons (no caption), an explicit aria-label is required for accessibility.
+     *
+     * @param label The aria-label observable. Takes precedence over caption.
+     */
     withAriaLabel(label: Observable<string>): ButtonBuilder {
         this.ariaLabel$ = label;
         return this;
+    }
+
+    /**
+     * By default, aria-label is derived from caption. Set explicitly with withAriaLabel()
+     * to override. When icon-only (no caption), an explicit aria-label is required.
+     */
+    getAriaLabel$(): Observable<string> | undefined {
+        return this.ariaLabel$ ?? this.caption$;
     }
 
     build(): HTMLButtonElement {
@@ -96,7 +118,6 @@ export class ButtonBuilder implements ComponentBuilder {
 
         const captionSub = this.caption$ ? this.caption$.subscribe(caption => {
             captionSpan.textContent = caption;
-            button.setAttribute('aria-label', caption);
             if (!caption) {
                 captionSpan.classList.add('hidden');
                 button.classList.add('aspect-square');
@@ -125,7 +146,9 @@ export class ButtonBuilder implements ComponentBuilder {
             }
         }) : null;
 
-        const ariaLabelSub = this.ariaLabel$ ? this.ariaLabel$.subscribe(label => {
+        // Derive aria-label: use explicit ariaLabel$ if provided, otherwise fall back to caption$
+        const ariaLabel$ = this.ariaLabel$ ?? this.caption$;
+        const ariaLabelSub = ariaLabel$ ? ariaLabel$.subscribe(label => {
             button.setAttribute('aria-label', label);
         }) : null;
 

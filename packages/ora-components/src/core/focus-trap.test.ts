@@ -157,6 +157,53 @@ describe('setupFocusTrap', () => {
         expect(document.activeElement).not.toBe(hiddenBtn);
     });
 
+    it('skips a disabled element when wrapping focus on Tab', () => {
+        const container = document.createElement('div');
+        const first = document.createElement('input');
+        first.id = 'first';
+        const middle = document.createElement('input');
+        middle.id = 'middle';
+        const lastDisabled = document.createElement('button');
+        lastDisabled.id = 'last-disabled';
+        lastDisabled.disabled = true;
+        // Mirrors ButtonBuilder.build(), which sets tabIndex=0 on every button
+        // (including disabled ones) for Safari Tab support.
+        lastDisabled.tabIndex = 0;
+        container.append(first, middle, lastDisabled);
+        document.body.appendChild(container);
+        setupFocusTrap(container);
+
+        middle.focus();
+        middle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+
+        // The disabled button can never actually receive focus, so it must not be
+        // treated as a stop in the tab sequence; focus should wrap to the first element.
+        expect(document.activeElement).toBe(first);
+    });
+
+    it('does not let focus escape via the focusin recovery when the first element is disabled', () => {
+        const container = document.createElement('div');
+        const firstDisabled = document.createElement('button');
+        firstDisabled.id = 'first-disabled';
+        firstDisabled.disabled = true;
+        // Mirrors ButtonBuilder.build(), which sets tabIndex=0 on every button
+        // (including disabled ones) for Safari Tab support.
+        firstDisabled.tabIndex = 0;
+        const second = document.createElement('input');
+        second.id = 'second';
+        container.append(firstDisabled, second);
+        document.body.appendChild(container);
+        setupFocusTrap(container);
+
+        const outside = document.createElement('input');
+        outside.id = 'outside';
+        document.body.appendChild(outside);
+        outside.focus();
+
+        expect(document.activeElement).toBe(second);
+        expect(document.activeElement).not.toBe(outside);
+    });
+
     it('removes its listeners when the container is destroyed', () => {
         const { container, first } = buildContainer();
         setupFocusTrap(container);
