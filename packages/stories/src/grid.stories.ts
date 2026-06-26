@@ -86,6 +86,53 @@ export const MultiSelect = () => {
     return grid.build();
 };
 
+export const RowsSelectedBinding = () => {
+    const items = users.slice(0, 15);
+
+    // Pre-seed the first two users as selected
+    const selection$ = new BehaviorSubject<User[]>([items[0], items[1]]);
+
+    const grid = new GridBuilder<User>()
+        .withItems(of(items))
+        .withHeight(of(400))
+        .asMultiSelect()
+        .withRowsSelected(selection$);
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addTextColumn('email').withHeader('Email');
+    columns.addEnumColumn('role').withHeader('Role');
+
+    // Outbound: label updates whenever grid selection changes
+    const countLabel = new LabelBuilder()
+        .withCaption(selection$.pipe(
+            map(rows => rows.length === 0
+                ? 'No rows selected'
+                : `${rows.length} row${rows.length === 1 ? '' : 's'} selected: ${rows.map(r => r.name).join(', ')}`)
+        ))
+        .withClass(of('text-sm font-medium text-on-surface-variant'))
+        .build();
+
+    // Inbound: buttons push directly into the subject to drive grid selection
+    const selectFirstThreeBtn = createButton('Select First 3', () => {
+        selection$.next([items[0], items[1], items[2]]);
+    }).build();
+
+    const clearBtn = createButton('Clear Selection', () => {
+        selection$.next([]);
+    }).build();
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent({ build: () => createControlStrip([selectFirstThreeBtn, clearBtn]) });
+    container.addSlot().withContent({ build: () => countLabel });
+    container.addSlot().withContent(grid);
+
+    return container.build();
+};
+
 export const EmptyState = () => {
     const grid = new GridBuilder<User>()
         .withItems(of([]))

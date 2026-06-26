@@ -258,12 +258,20 @@ export function createActionsGridExample(): PanelBuilder {
  * Multi-Select Grid
  *
  * `.asMultiSelect()` adds a checkbox column and tracks selected rows internally.
- * Combine with toolbar actions to operate on all selected rows at once.
+ * `.withRowsSelected(subject)` exposes that selection as a two-way binding: the
+ * grid pushes the selected rows into the `Subject` whenever they change, and
+ * pushing an array back into the `Subject` sets the grid's selection (pass a
+ * `BehaviorSubject<T[]>` to pre-seed the initial selection). Combine with toolbar
+ * actions to operate on all selected rows at once.
  */
 export function createMultiSelectGridExample(): PanelBuilder {
+    // Two-way binding: read the current selection here, or push to set it.
+    const selectedOrders$ = new BehaviorSubject<Order[]>([]);
+
     const grid = new GridBuilder<Order>()
         .withItems(of(ORDERS))
-        .asMultiSelect();
+        .asMultiSelect()
+        .withRowsSelected(selectedOrders$);
 
     const toolbar = grid.withToolbar();
     toolbar.addSecondaryButton()

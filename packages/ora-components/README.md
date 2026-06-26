@@ -186,6 +186,7 @@ A highly-optimized table component supporting fast sorting, sizing, custom cell 
 
 ```typescript
 import { GridBuilder } from '@tdq/ora-components';
+import { BehaviorSubject } from 'rxjs';
 
 const productGrid = new GridBuilder<any>();
 const columns = productGrid.withColumns();
@@ -203,6 +204,14 @@ columns.addNumberColumn('price')
   .withWidth('120px');
 
 productGrid.withItems(productListStream$); // Binds directly to dataset Observable
+
+// Two-way selection binding: read the current selection and push to update it.
+const selection$ = new BehaviorSubject<any[]>([]);
+productGrid
+  .asMultiSelect()
+  .withRowsSelected(selection$); // Grid emits selected rows into selection$; pushing rows back sets the selection
+
+selection$.subscribe(selectedRows => console.log('Selected:', selectedRows));
 
 const grid = productGrid.build();
 ```

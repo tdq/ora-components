@@ -1,4 +1,4 @@
-import { BehaviorSubject, map, Observable, combineLatest, of, Subscription } from 'rxjs';
+import { BehaviorSubject, map, Observable, combineLatest, of, Subscription, Subject } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { ColumnsBuilder } from './columns/columns-builder';
 import { ToolbarBuilder } from '../toolbar/toolbar-builder';
@@ -30,6 +30,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
     private logic = new GridLogic<ITEM>();
     private rawItems$?: Observable<ITEM[]>;
+    private selectedRows$?: Subject<ITEM[]>;
 
     withHeight(height: Observable<number>): this {
         this.height$ = height;
@@ -64,6 +65,21 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
     asMultiSelect(): this {
         this.isMultiSelect = true;
+        return this;
+    }
+
+    /**
+     * Two-way binding between the grid's row selection and a consumer-provided Subject.
+     *
+     * Notes:
+     * - For checkbox-driven multi-row selection the grid must also be configured with
+     *   `asMultiSelect()`.
+     * - A `BehaviorSubject<ITEM[]>` may be passed to pre-seed the grid's initial
+     *   selection from the subject's current value; its replayed emission is applied
+     *   before the grid's own selection state is pushed back out.
+     */
+    withRowsSelected(rows: Subject<ITEM[]>): this {
+        this.selectedRows$ = rows;
         return this;
     }
 
@@ -264,6 +280,33 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         const mainSub = new Subscription();
         mainSub.add(sub);
         mainSub.add(visColSub);
+
+        if (this.selectedRows$) {
+            const subject = this.selectedRows$;
+            let suppressInbound = false;
+            let suppressOutbound = false;
+
+            // Inbound first: consumer subject -> grid selection.
+            // Subscribing inbound before outbound means a BehaviorSubject's replayed
+            // initial value seeds the grid before outSub's synchronous fire on subscribe.
+            const inSub = subject.subscribe(rows => {
+                if (suppressInbound) return;
+                suppressOutbound = true;
+                try { this.logic.setSelectedItems(new Set(rows)); } finally { suppressOutbound = false; }
+            });
+
+            // Outbound: grid selection -> consumer subject.
+            // selectedItems$ is a BehaviorSubject so this fires synchronously on subscribe;
+            // suppressInbound prevents the echo back through inSub.
+            const outSub = this.logic.selectedItems$.subscribe(set => {
+                if (suppressOutbound) return;
+                suppressInbound = true;
+                try { subject.next(Array.from(set)); } finally { suppressInbound = false; }
+            });
+
+            mainSub.add(inSub);
+            mainSub.add(outSub);
+        }
 
         registerDestroy(container, () => {
             mainSub.unsubscribe();

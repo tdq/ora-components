@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { of, Subject, BehaviorSubject } from 'rxjs';
 import { GridBuilder } from './grid-builder';
 import { GridRow } from './grid-row';
 import { SortDirection } from './types';
@@ -515,6 +515,139 @@ describe('GridBuilder', () => {
 
             document.body.removeChild(row.getElement());
             row.destroy();
+        });
+    });
+
+    describe('withRowsSelected — two-way selection binding', () => {
+        let selContainer: HTMLElement;
+
+        afterEach(() => {
+            if (selContainer && selContainer.parentNode) {
+                selContainer.parentNode.removeChild(selContainer);
+            }
+        });
+
+        function buildWithSubject(subject: Subject<TestItem[]>): HTMLElement {
+            const grid = new GridBuilder<TestItem>()
+                .withItems(of(items))
+                .withHeight(of(400))
+                .asMultiSelect()
+                .withRowsSelected(subject);
+            grid.withColumns().addTextColumn('name');
+            const el = grid.build();
+            document.body.appendChild(el);
+            return el;
+        }
+
+        it('withRowsSelected returns this (chainable)', () => {
+            const subject = new Subject<TestItem[]>();
+            const grid = new GridBuilder<TestItem>();
+            const result = grid.withRowsSelected(subject);
+            expect(result).toBe(grid);
+        });
+
+        it('outbound: clicking a row checkbox emits that item into the subject', () => {
+            const subject = new Subject<TestItem[]>();
+            const emissions: TestItem[][] = [];
+            subject.subscribe(v => emissions.push(v));
+            selContainer = buildWithSubject(subject);
+
+            // checkboxes[0] = header, checkboxes[1] = first row
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            const baselineCount = emissions.length;
+            (checkboxes[1] as HTMLInputElement).click();
+
+            expect(emissions.length).toBe(baselineCount + 1);
+            expect(emissions[emissions.length - 1]).toEqual([items[0]]);
+        });
+
+        it('outbound: clicking the header "select all" checkbox emits all items', () => {
+            const subject = new Subject<TestItem[]>();
+            const emissions: TestItem[][] = [];
+            subject.subscribe(v => emissions.push(v));
+            selContainer = buildWithSubject(subject);
+
+            const headerCheckbox = selContainer.querySelector('input[type="checkbox"]') as HTMLInputElement;
+            const baselineCount = emissions.length;
+            headerCheckbox.click();
+
+            expect(emissions.length).toBe(baselineCount + 1);
+            expect(emissions[emissions.length - 1]).toEqual(items);
+        });
+
+        it('outbound: deselecting via header checkbox emits []', () => {
+            const subject = new Subject<TestItem[]>();
+            const emissions: TestItem[][] = [];
+            subject.subscribe(v => emissions.push(v));
+            selContainer = buildWithSubject(subject);
+
+            // First click: select all. The header re-renders and replaces the checkbox element.
+            (selContainer.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+            // Re-query after re-render to get the current element, then deselect.
+            (selContainer.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+
+            expect(emissions[emissions.length - 1]).toEqual([]);
+        });
+
+        it('inbound: subject$.next([items[0]]) selects that row in the grid', () => {
+            const subject = new Subject<TestItem[]>();
+            selContainer = buildWithSubject(subject);
+
+            subject.next([items[0]]);
+
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            const firstRowCheckbox = checkboxes[1] as HTMLInputElement;
+            expect(firstRowCheckbox.checked).toBe(true);
+            const firstRow = selContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
+            expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
+        });
+
+        it('pre-seed: BehaviorSubject initial value selects that row on initial render', () => {
+            const subject = new BehaviorSubject<TestItem[]>([items[0]]);
+            const grid = new GridBuilder<TestItem>()
+                .withItems(of(items))
+                .withHeight(of(400))
+                .asMultiSelect()
+                .withRowsSelected(subject);
+            grid.withColumns().addTextColumn('name');
+            selContainer = grid.build();
+            document.body.appendChild(selContainer);
+
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            const firstRowCheckbox = checkboxes[1] as HTMLInputElement;
+            expect(firstRowCheckbox.checked).toBe(true);
+            const firstRow = selContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
+            expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
+        });
+
+        it('no feedback loop: a single checkbox click causes exactly one new outbound emission', () => {
+            const subject = new Subject<TestItem[]>();
+            const emissions: TestItem[][] = [];
+            subject.subscribe(v => emissions.push(v));
+            selContainer = buildWithSubject(subject);
+
+            const baselineCount = emissions.length;
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            (checkboxes[1] as HTMLInputElement).click();
+
+            expect(emissions.length).toBe(baselineCount + 1);
+        });
+
+        it('without withRowsSelected the grid builds and selection works as before', () => {
+            const grid = new GridBuilder<TestItem>()
+                .withItems(of(items))
+                .withHeight(of(400))
+                .asMultiSelect();
+            grid.withColumns().addTextColumn('name');
+            selContainer = grid.build();
+            document.body.appendChild(selContainer);
+
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            expect(checkboxes.length).toBe(4);
+            (checkboxes[1] as HTMLInputElement).click();
+
+            const firstRow = selContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
+            expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
         });
     });
 

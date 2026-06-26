@@ -16,3 +16,5 @@
 [ ] **GridBuilder** Rows bottom border is displayed only for visible columns. It should be displayed for all columns.
 [ ] **GridBuilder** Actions panel rows have even and odd styling. It should be same style for all rows in actions panel.
 [ ] **GridBuilder** Allow columns to fit content.
+[x] **GridBuilder** Add method `withRowsSelect(rows: Subject<ITEM[]>)` which allows to get selected rows. (shipped as `withRowsSelected`)
+[ ] **ListBuilder**, **MultiSelectList** Implement virtual rows 

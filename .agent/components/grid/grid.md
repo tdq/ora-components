@@ -38,6 +38,7 @@ The `GridBuilder<ITEM>` class uses a generic type `ITEM` to ensure type safety a
 - `asGlass(): this`: Enables translucent glass styling with backdrop blur.
 - `asEditable(onCommit: (item: ITEM) => void): this`: Enables inline cell editing mode. Rows get `cursor-text` styling. Columns that have `asEditable()` configured display their editor component when a cell is clicked or activated via keyboard. See [Keyboard Navigation](#keyboard-navigation) below for full key bindings.
 - `asMultiSelect(): this`: Enables row selection via checkboxes and "Select All" functionality in the header.
+- `withRowsSelected(rows: Subject<ITEM[]>): this`: Establishes a **two-way binding** between the grid's selection and the provided RxJS `Subject<ITEM[]>`. Outbound, selection changes emit the selected items into the subject; inbound, items pushed into the subject drive the grid's selection. Pass a `BehaviorSubject<ITEM[]>` to pre-seed the initial selection. Only meaningful together with `asMultiSelect()`. See [Selection](#selection).
 
 ## Column Configuration
 
@@ -81,6 +82,15 @@ When `asMultiSelect()` is enabled:
 - **State**: Tracked via `GridLogic` using `selectedItems` (a `BehaviorSubject<Set<ITEM>>`).
 - **Header**: `GridHeader` renders a checkbox for "Select All" / "Deselect All" logic.
 - **Rows**: `GridRow` renders a checkbox and handles selection toggling. To maintain performance, selection updates are optimized to avoid full row re-renders, using cached element references to toggle classes and attributes.
+
+#### Two-way selection binding (`withRowsSelected`)
+`withRowsSelected(rows: Subject<ITEM[]>)` wires the grid's selection to a consumer-owned RxJS `Subject<ITEM[]>` in both directions:
+- **Outbound**: grid row-selection changes are sourced from `GridLogic.selectedItems$` and emitted into the provided subject as `ITEM[]`.
+- **Inbound**: arrays pushed into the subject by the consumer set the grid's selection via `GridLogic.setSelectedItems`. The pushed items **must be the same object references** passed to `withItems` for them to match.
+- **Pre-seeding**: supplying a `BehaviorSubject<ITEM[]>` applies its current value as the initial selection on build.
+- **Loop guard**: internal flags prevent the outbound emission and inbound application from re-triggering each other.
+- **Cleanup**: both subscriptions are registered via `registerDestroy` and torn down when the grid is destroyed.
+- Only meaningful when `asMultiSelect()` is also enabled.
 
 ### Sticky Panels
 - **Sticky Header**: Managed by `GridHeader`, remains fixed at the top (`sticky top-0`) with a higher z-index (`z-20`). Uses a solid background in non-glass mode; backdrop blur is reserved for glass mode only.

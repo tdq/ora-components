@@ -94,6 +94,9 @@ All builder methods return `this` for chaining unless they return a sub-builder.
 - **`asMultiSelect`** — `() => this`
   Enables row selection via checkboxes with "Select All" in the header.
 
+- **`withRowsSelected`** — `(rows: Subject<ITEM[]>) => this`
+  Two-way binding for the selected rows. The grid emits the current `ITEM[]` into `rows` whenever the selection changes (outbound); pushing an `ITEM[]` into `rows` sets the grid's selection programmatically (inbound). Pass a `BehaviorSubject<ITEM[]>` to pre-seed the initial selection. Only meaningful together with `.asMultiSelect()`.
+
 - **`asEditable`** — `(onCommit: (item: ITEM) => void) => this`
   Enables inline cell editing. Press **Enter** to commit an edit, **Escape** to revert.
 
@@ -250,9 +253,33 @@ This example demonstrates all built-in column types side by side: text, number, 
 
 ## Multi-Select
 
-Enables row-level checkboxes and a "Select All" checkbox in the header. Selected rows can be read via the internal selection state.
+Enables row-level checkboxes and a "Select All" checkbox in the header. Use `.withRowsSelected(subject)` to obtain a two-way binding on the selection:
+
+- **Outbound** — whenever the user changes the selection, the grid emits the current `ITEM[]` into the subject.
+- **Inbound** — push an `ITEM[]` into the subject to set the grid's selection programmatically. Item references must match the objects originally passed to `withItems`.
+- Pass a `BehaviorSubject<ITEM[]>` to pre-seed the initial selection on mount.
+
+```typescript
+const selection$ = new BehaviorSubject<User[]>([items[0]]);
+
+const grid = new GridBuilder<User>()
+  .withItems(of(items))
+  .withHeight(of(400))
+  .asMultiSelect()
+  .withRowsSelected(selection$);
+
+// Outbound: react to selection changes
+selection$.subscribe(rows => console.log('selected', rows));
+
+// Inbound: set selection programmatically (must use same object references)
+selection$.next([items[2], items[3]]);
+```
 
 <Canvas of={GridStories.MultiSelect} />
+
+The story below demonstrates the two-way binding in action: the label updates on every user interaction (outbound), and the buttons drive selection programmatically (inbound).
+
+<Canvas of={GridStories.RowsSelectedBinding} />
 
 ---
 
@@ -418,7 +445,7 @@ See the [Theming guide](../?path=/docs/system-theming--docs) for token reference
 - **Sticky actions column**: `sticky right-0 z-10`. Uses a single uniform background for all non-selected, non-glass rows — no zebra striping in this column. Selected rows use `bg-primary/10`.
 - **Glass effect**: Enabled via `asGlass()`. Only the header receives backdrop blur; rows remain transparent.
 - **Virtual scrolling**: Uses `requestAnimationFrame` for scroll updates, `transform: translateY` for row positioning, and a buffer of 5 extra rows above and below the viewport.
-- **Selection**: Checkbox-based multi-select with header "Select All". Selection updates are optimised to avoid full row re-renders.
+- **Selection**: Checkbox-based multi-select with header "Select All". Use `withRowsSelected(subject)` for a public two-way binding — outbound for change notification, inbound for programmatic control. Selection updates are optimised to avoid full row re-renders.
 - **Viewport-gated data pipeline**: Subscription to the `items$` observable is lazy and occurs only when the grid is visible in the viewport (using `IntersectionObserver` via `createOptimizedPipeline`). Subscriptions are automatically and deterministically torn down when the grid leaves the viewport or is detached from the DOM, managed via `ora-lifecycle-boundary`.
 
 ---
