@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **ListBox & MultiSelectList virtual scrolling**: Both components now virtualize their rows — only the visible window plus a 5-row buffer is rendered to the DOM (`requestAnimationFrame`-driven scroll updates, `transform: translateY` positioning, auto-measured row height), so lists with thousands of items stay fast. Rendered rows carry `aria-setsize` / `aria-posinset` for assistive technologies. Shared via a new internal `VirtualRowsViewport` utility.
+- **ListBox & MultiSelectList virtual scrolling**: Both components now virtualize their rows — only the visible window plus a 5-row buffer is rendered to the DOM (`requestAnimationFrame`-driven scroll updates, `transform: translateY` positioning), so lists with thousands of items stay fast. Row heights are **measured per-row** (variable row heights supported; the configured height is only an estimate for not-yet-measured rows), so items of differing heights position correctly without overlap. Rendered rows carry `aria-setsize` / `aria-posinset` for assistive technologies. Shared via a new internal `VirtualRowsViewport` utility.
 
 ### Changed
 
