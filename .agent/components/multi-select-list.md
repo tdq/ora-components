@@ -10,7 +10,7 @@ It has the following methods:
 - `withEnabled(enabled: Observable<boolean>): this` — enables or disables the entire component.
 - `withStyle(style: Observable<MultiSelectListStyle>): this` — sets the visual style of the panel border.
 - `withClass(className: Observable<string>): this` — sets additional CSS class on the root element.
-- `withItems(items: Observable<ITEM[]>): this` — sets the source list of items to display. The items source is **viewport-gated** via `createOptimizedPipeline`: the list is not subscribed/rendered until the component is visible, and the source is torn down when it scrolls off-screen. Selection state (`withValue`) is *not* gated — it stays reactive at all times. An already-`GatedObserver` source is used as-is (idempotent). See [reactive.md](../reactive.md#gatedobserver-and-idempotency).
+- `withItems(items: Observable<ITEM[]>): this` — sets the source list of items to display. The items source is **viewport-gated** via `createOptimizedPipeline`: the list is not subscribed/rendered until the component is visible, and the source is torn down when it scrolls off-screen. Selection state (`withValue`) is *not* gated — it stays reactive at all times. An already-`GatedObserver` source is used as-is (idempotent). See [reactive.md](../reactive.md#gatedobserver-and-idempotency). Rendering is **virtualized** — only the visible window of rows is in the DOM (see [Virtual Scrolling](#virtual-scrolling)).
 - `withItemCaptionProvider(provider: (item: ITEM) => string): this` — converts an item to its display label. Defaults to `String(item)`.
 - `withItemIdProvider(provider: (item: ITEM) => string | number): this` — produces a unique ID for each item, used for selection comparison. Defaults to `String(item)`.
 - `withValue(value: Subject<ITEM[]>): this` — reactive two-way binding for the selected items array. The component reads initial state from the Subject and emits an updated array on every checkbox toggle.
@@ -49,7 +49,18 @@ Clicking "Select all" when unchecked or indeterminate selects all enabled items.
 
 ### Item rendering
 
-Each item row is a `<label>` containing a native `<input type="checkbox">` and a text `<span>`. Checked state is derived from the current `value$` emission on every `combineLatest` cycle — it is never stored as independent local state per row.
+Each item row is a `<label>` containing a native `<input type="checkbox">` and a text `<span>`. Checked state is derived from the current `value$` emission — when a row is first built it reads the latest selection from `value$.getValue()`, and the selection-patch subscription updates the checked state of currently-rendered rows on subsequent `value$` emissions. Rows are virtualized (see [Virtual Scrolling](#virtual-scrolling)), so a row scrolled out and back in is rebuilt and reflects the current selection on re-entry.
+
+## Virtual Scrolling
+
+Rows are virtualized via the shared `VirtualRowsViewport` utility, so large lists stay fast — only the visible rows are ever in the DOM.
+
+- **Windowing**: only the visible range plus a buffer of 5 rows above and below the viewport is rendered. A spacer element sized to `itemCount × rowHeight` drives the native scrollbar; each rendered row is absolutely positioned with `top: 0` and `transform: translateY(index × rowHeight)`.
+- **Scroll handling**: scroll updates are throttled with `requestAnimationFrame`; a `ResizeObserver` re-renders the window when the viewport size changes.
+- **Row height**: auto-measured from the first rendered row, with a constant fallback for environments without layout (e.g. jsdom).
+- **Bounded height required**: windowing needs a bounded scroll container — set `withHeight(...)` or place the component in a height-constrained parent.
+- **Selection under virtualization**: the selection-patch subscription only touches currently-rendered rows; rows revealed by scrolling read the latest selection as they are built. The internal map of row elements is kept in sync with the live DOM via the viewport's eviction callback, so the patch never references detached nodes.
+- **Select-all stays correct**: the "Select all" tri-state is computed from the full item set and the selected-ids set — never from the rendered DOM — so it is accurate at any scroll position.
 
 ## Style
 
@@ -137,6 +148,7 @@ selectedRoles$.next([roles[0], roles[2]]);
 - Each item `<input type="checkbox">` has an associated `<label>` via wrapping — no explicit `for`/`id` wiring needed.
 - The select-all checkbox carries `aria-label="Select all"`. When `.withSelectAll(false)` is used, this element is not rendered.
 - Indeterminate state is set via the DOM property `input.indeterminate = true` — this is the only way to trigger the browser's native indeterminate visual; it cannot be set via an HTML attribute.
+- Because rendering is virtualized (only a window of rows is in the DOM), each rendered item row carries `aria-setsize` (total item count) and `aria-posinset` (index + 1) so assistive technologies announce correct totals.
 - When the component is disabled, all inputs receive `disabled` and the root gains `opacity-50 pointer-events-none`.
 
 ## File Structure

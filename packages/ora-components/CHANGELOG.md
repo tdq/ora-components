@@ -5,6 +5,16 @@ All notable changes to `@tdq/ora-components` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-06-29
+
+### Added
+
+- **ListBox & MultiSelectList virtual scrolling**: Both components now virtualize their rows — only the visible window plus a 5-row buffer is rendered to the DOM (`requestAnimationFrame`-driven scroll updates, `transform: translateY` positioning, auto-measured row height), so lists with thousands of items stay fast. Rendered rows carry `aria-setsize` / `aria-posinset` for assistive technologies. Shared via a new internal `VirtualRowsViewport` utility.
+
+### Changed
+
+- **ListBox in ComboBox (external-focus) mode** falls back to non-virtualized rendering when driven by `withFocusedIndex`, so a parent's positional `aria-activedescendant` mapping stays intact. Standalone list boxes are always virtualized.
+
 ## [0.1.7] - 2026-06-17
 
 ### Fixed

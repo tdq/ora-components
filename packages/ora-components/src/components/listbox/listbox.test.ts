@@ -4,6 +4,13 @@ import { ListBoxBuilder } from './listbox';
 import { ListBoxStyle } from './types';
 import { GatedObserver } from '../../utils/optimized-pipeline';
 
+beforeAll(() => {
+    global.requestAnimationFrame = ((cb: FrameRequestCallback) => { cb(0); return 0; }) as any;
+    if (typeof global.ResizeObserver === 'undefined') {
+        global.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as any;
+    }
+});
+
 // ---- Mock type helpers ----
 interface IntersectionObserverMockStatic {
     triggerVisibility(element: Element, isIntersecting: boolean, ratio?: number): void;
@@ -28,6 +35,11 @@ function getIOMock(): IntersectionObserverMockStatic {
 function triggerVisibleAndWait(el: HTMLElement): void {
     if (!document.body.contains(el)) {
         document.body.appendChild(el);
+    }
+    const ul = el.querySelector('ul[role="listbox"]') as HTMLElement;
+    if (ul) {
+        Object.defineProperty(ul, 'clientHeight', { value: 1000, configurable: true, writable: true });
+        Object.defineProperty(ul, 'scrollTop', { value: 0, configurable: true, writable: true });
     }
     getIOMock().triggerVisibility(el, true);
     jest.advanceTimersByTime(50);
@@ -310,9 +322,21 @@ describe('ListBoxBuilder', () => {
 
     describe('keyboard navigation', () => {
 
-        // Spec 1: ul[role="listbox"] has tabindex="-1"
-        it('ul[role="listbox"] has tabIndex -1', () => {
+        // Spec 1: standalone listbox is tabbable; externally-driven listbox is removed from tab order
+        it('standalone ul[role="listbox"] is tabbable (tabIndex 0)', () => {
             const { el } = buildDefault();
+            const ul = getUl(el);
+            expect(ul.tabIndex).toBe(0);
+        });
+
+        it('ul[role="listbox"] has tabIndex -1 when driven by withFocusedIndex (ComboBox mode)', () => {
+            const externalIndex$ = new BehaviorSubject<number>(-1);
+            const value$ = new BehaviorSubject<string | null>(null);
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withValue(value$)
+                .withFocusedIndex(externalIndex$)
+                .build();
             const ul = getUl(el);
             expect(ul.tabIndex).toBe(-1);
         });
@@ -625,7 +649,8 @@ describe('ListBoxBuilder', () => {
                 .withFocusedIndex(externalIndex$)
                 .build();
 
-            // scrollIntoView is not implemented in jsdom; patch it so re-renders don't throw.
+            // The direct (ComboBox) rendering path still calls scrollIntoView on the
+            // focused <li>. Stub it so jsdom doesn't throw on the unimplemented method.
             const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
             HTMLElement.prototype.scrollIntoView = jest.fn();
 
@@ -646,6 +671,7 @@ describe('ListBoxBuilder', () => {
                 .withFocusedIndex(externalIndex$)
                 .build();
 
+            // Direct rendering path still calls scrollIntoView — stub for jsdom.
             const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
             HTMLElement.prototype.scrollIntoView = jest.fn();
 
@@ -668,61 +694,252 @@ describe('ListBoxBuilder', () => {
                 .withFocusedIndex(externalIndex$)
                 .build();
 
-            const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
-            HTMLElement.prototype.scrollIntoView = jest.fn();
-
             triggerVisibleAndWait(el);
             externalIndex$.next(-1);
             const lis = getLiElements(el);
             lis.forEach(li => expect(li).not.toHaveClass('bg-on-surface/12'));
-
-            HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
         });
 
-        // Spec 12: focused li is scrolled into view on focus change
-        it('focused item has scrollIntoView called on focus change', () => {
+        // Spec 12: focused item is rendered and highlighted on focus change
+        it('focused item is rendered and highlighted when focus changes via keyboard', () => {
             const { el } = buildDefault();
             triggerVisibleAndWait(el);
             const ul = getUl(el);
-
-            // Patch scrollIntoView on all li elements after navigation triggers a re-render
-            let scrolledEl: Element | null = null;
-            const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
-            HTMLElement.prototype.scrollIntoView = function (this: HTMLElement) {
-                scrolledEl = this;
-            };
 
             fireKey(ul, 'ArrowDown'); // focus index 0
 
-            expect(scrolledEl).not.toBeNull();
-            expect(scrolledEl).toBe(getLiElements(el)[0]);
-
-            HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+            const lis = getLiElements(el);
+            expect(lis[0]).toHaveClass('bg-on-surface/12');
+            expect(lis[0].querySelector('.bg-primary.w-\\[4px\\]')).not.toBeNull();
         });
 
-        it('scrollIntoView is not called when focusedIndex is -1', () => {
+        it('no item is highlighted when focusedIndex resets to -1 via focusout', () => {
             const { el } = buildDefault();
             triggerVisibleAndWait(el);
             const ul = getUl(el);
 
-            let scrollCalled = false;
-            const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
-            HTMLElement.prototype.scrollIntoView = function () {
-                scrollCalled = true;
-            };
-
-            // Dispatch ArrowDown to go to index 0, then reset via focusout
-            fireKey(ul, 'ArrowDown');
-            scrollCalled = false; // reset after first navigation
+            fireKey(ul, 'ArrowDown'); // focus index 0
+            expect(getLiElements(el)[0]).toHaveClass('bg-on-surface/12');
 
             const focusOutEvent = new FocusEvent('focusout', { bubbles: true, relatedTarget: null });
             ul.dispatchEvent(focusOutEvent);
 
-            // After reset to -1, the re-render should NOT call scrollIntoView
-            expect(scrollCalled).toBe(false);
-
-            HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+            getLiElements(el).forEach(li => expect(li).not.toHaveClass('bg-on-surface/12'));
         });
 
+    });
+
+    // ── Virtualization ───────────────────────────────────────────────────────
+
+    it('virtualizes: renders only a window for a large dataset', () => {
+        const items$ = new GatedObserver(of(Array.from({ length: 1000 }, (_, i) => `Item ${i}`)));
+        const el = new ListBoxBuilder<string>().withItems(items$).build();
+        document.body.appendChild(el);
+        const ul = el.querySelector('ul[role="listbox"]') as HTMLElement;
+        Object.defineProperty(ul, 'clientHeight', { value: 200, configurable: true, writable: true });
+        Object.defineProperty(ul, 'scrollTop', { value: 0, configurable: true, writable: true });
+        // Force viewport to recompute the window with the mocked clientHeight.
+        ul.dispatchEvent(new Event('scroll'));
+        const options = el.querySelectorAll('li[role="option"]');
+        expect(options.length).toBeGreaterThan(0);
+        expect(options.length).toBeLessThan(1000);
+        expect(options[0].getAttribute('aria-setsize')).toBe('1000');
+    });
+
+    it('viewport scrolls focused item into view when it is off-screen', () => {
+        const items$ = new GatedObserver(of(Array.from({ length: 20 }, (_, i) => `Item ${i}`)));
+        const el = new ListBoxBuilder<string>().withItems(items$).build();
+        document.body.appendChild(el);
+        const ul = el.querySelector('ul[role="listbox"]') as HTMLElement;
+        // clientHeight = 44 means only one row visible at a time.
+        Object.defineProperty(ul, 'clientHeight', { value: 44, configurable: true, writable: true });
+        Object.defineProperty(ul, 'scrollTop', { value: 0, configurable: true, writable: true });
+        ul.dispatchEvent(new Event('scroll'));
+        // Pressing End should focus the last item (index 19) and trigger scrollToIndex.
+        fireKey(ul as HTMLUListElement, 'End');
+        const posinsets = Array.from(el.querySelectorAll('li[role="option"]'))
+            .map(li => li.getAttribute('aria-posinset'));
+        expect(posinsets).toContain('20'); // last item must be in the rendered window
+    });
+
+    // ── OUTLINED style ───────────────────────────────────────────────────────
+
+    describe('withStyle(OUTLINED)', () => {
+
+        it('selected item uses bg-primary-container (outlined selected background)', () => {
+            const value$ = new BehaviorSubject<string | null>('Apple');
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withValue(value$)
+                .withStyle(of(ListBoxStyle.OUTLINED))
+                .build();
+            triggerVisibleAndWait(el);
+            expect(getLiElements(el)[0]).toHaveClass('bg-primary-container');
+        });
+
+        it('selected item uses text-on-primary-container in outlined style', () => {
+            const value$ = new BehaviorSubject<string | null>('Apple');
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withValue(value$)
+                .withStyle(of(ListBoxStyle.OUTLINED))
+                .build();
+            triggerVisibleAndWait(el);
+            expect(getLiElements(el)[0]).toHaveClass('text-on-primary-container');
+        });
+
+        it('unselected items do NOT have bg-primary-container in outlined style', () => {
+            const value$ = new BehaviorSubject<string | null>('Apple');
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withValue(value$)
+                .withStyle(of(ListBoxStyle.OUTLINED))
+                .build();
+            triggerVisibleAndWait(el);
+            const lis = getLiElements(el);
+            expect(lis[1]).not.toHaveClass('bg-primary-container');
+            expect(lis[2]).not.toHaveClass('bg-primary-container');
+        });
+    });
+
+    // ── withCaption ──────────────────────────────────────────────────────────
+
+    describe('withCaption', () => {
+
+        it('renders a label element with the caption text', () => {
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withCaption(of('Pick a fruit'))
+                .build();
+            document.body.appendChild(el);
+            const label = el.querySelector('label');
+            expect(label).not.toBeNull();
+            expect(label!.textContent).toBe('Pick a fruit');
+        });
+
+        it('listbox ul gets aria-labelledby pointing at the caption label', () => {
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withCaption(of('Pick a fruit'))
+                .build();
+            document.body.appendChild(el);
+            const label = el.querySelector('label') as HTMLLabelElement;
+            const ul = getUl(el);
+            expect(ul.getAttribute('aria-labelledby')).toBe(label.id);
+        });
+
+        it('caption label reacts to observable updates', () => {
+            const caption$ = new BehaviorSubject<string>('Initial');
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withCaption(caption$)
+                .build();
+            document.body.appendChild(el);
+            const label = el.querySelector('label')!;
+            expect(label.textContent).toBe('Initial');
+            caption$.next('Updated');
+            expect(label.textContent).toBe('Updated');
+        });
+    });
+
+    // ── withHeight ───────────────────────────────────────────────────────────
+
+    describe('withHeight', () => {
+
+        it('sets the container inline height style to the emitted pixel value', () => {
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withHeight(of(300))
+                .build();
+            document.body.appendChild(el);
+            expect(el.style.height).toBe('300px');
+        });
+
+        it('clears the container height when the observable emits undefined', () => {
+            const height$ = new BehaviorSubject<number | undefined>(300);
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withHeight(height$ as unknown as import('rxjs').Observable<number>)
+                .build();
+            document.body.appendChild(el);
+            expect(el.style.height).toBe('300px');
+            height$.next(undefined);
+            expect(el.style.height).toBe('');
+        });
+    });
+
+    // ── withEnabled / disabled state ─────────────────────────────────────────
+
+    describe('withEnabled', () => {
+
+        it('withEnabled(false) adds opacity-50 and pointer-events-none to the container', () => {
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withEnabled(of(false))
+                .build();
+            document.body.appendChild(el);
+            expect(el).toHaveClass('opacity-50');
+            expect(el).toHaveClass('pointer-events-none');
+        });
+
+        it('withEnabled(false) sets aria-disabled="true" on the container', () => {
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withEnabled(of(false))
+                .build();
+            document.body.appendChild(el);
+            expect(el.getAttribute('aria-disabled')).toBe('true');
+        });
+
+        it('withEnabled(true) removes aria-disabled from the container', () => {
+            const enabled$ = new BehaviorSubject<boolean>(false);
+            const el = new ListBoxBuilder<string>()
+                .withItems(of(FRUITS))
+                .withEnabled(enabled$)
+                .build();
+            document.body.appendChild(el);
+            expect(el.getAttribute('aria-disabled')).toBe('true');
+            enabled$.next(true);
+            expect(el.getAttribute('aria-disabled')).toBeNull();
+            expect(el).not.toHaveClass('opacity-50');
+        });
+    });
+
+    // ── aria-setsize and aria-posinset correctness ───────────────────────────
+
+    describe('aria-setsize and aria-posinset', () => {
+
+        it('each rendered option has aria-setsize equal to total item count', () => {
+            const items$ = new GatedObserver(of(FRUITS));
+            const el = new ListBoxBuilder<string>().withItems(items$).build();
+            document.body.appendChild(el);
+            getLiElements(el).forEach(li => {
+                expect(li.getAttribute('aria-setsize')).toBe('3');
+            });
+        });
+
+        it('each rendered option has aria-posinset equal to 1-based position', () => {
+            const items$ = new GatedObserver(of(FRUITS));
+            const el = new ListBoxBuilder<string>().withItems(items$).build();
+            document.body.appendChild(el);
+            const lis = getLiElements(el);
+            expect(lis[0].getAttribute('aria-posinset')).toBe('1');
+            expect(lis[1].getAttribute('aria-posinset')).toBe('2');
+            expect(lis[2].getAttribute('aria-posinset')).toBe('3');
+        });
+
+        it('ComboBox mode (withFocusedIndex): options carry aria-setsize and aria-posinset', () => {
+            const externalIndex$ = new BehaviorSubject<number>(-1);
+            const el = new ListBoxBuilder<string>()
+                .withItems(new GatedObserver(of(FRUITS)))
+                .withValue(new BehaviorSubject<string | null>(null))
+                .withFocusedIndex(externalIndex$)
+                .build();
+            document.body.appendChild(el);
+            const lis = getLiElements(el);
+            expect(lis[0].getAttribute('aria-setsize')).toBe('3');
+            expect(lis[0].getAttribute('aria-posinset')).toBe('1');
+            expect(lis[2].getAttribute('aria-posinset')).toBe('3');
+        });
     });
 });

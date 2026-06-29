@@ -7,6 +7,7 @@ import { registerDestroy } from '../../core/destroyable-element';
 import { Icons } from '../../core/icons';
 import { MultiSelectListStyle } from './types';
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
+import { VirtualRowsViewport } from '../../utils/virtual-rows-viewport';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -218,6 +219,10 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
         // Reactive rendering
         let currentItems: ITEM[] = [];
         let currentStyle: MultiSelectListStyle = MultiSelectListStyle.TONAL;
+        // Hoisted so buildRow reads it once per render cycle rather than rebuilding
+        // a new Set per row call (avoids O(n) × visible-window allocation on scroll).
+        // Also updated in selectionSub so scroll-revealed rows see the latest selection.
+        let currentSelectedIds = new Set<string | number>();
         const itemElements = new Map<string | number, { input: HTMLInputElement; li: HTMLDivElement; label: HTMLElement }>();
 
         const updateHeaderState = (selectedIds: Set<string | number>, items: ITEM[]) => {
@@ -241,102 +246,117 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
         // idempotent: an already-gated (GatedObserver) source is returned as-is.
         const gatedItems$ = createOptimizedPipeline(container, this.items$);
 
-        // Full DOM rebuild only when items or style change
-        const itemsRenderSub = combineLatest([gatedItems$, this.style$]).subscribe(([items, style]) => {
-            currentItems = items;
-            currentStyle = style;
-            itemElements.clear();
-            list.innerHTML = '';
+        const buildRow = (index: number, item: ITEM): HTMLElement => {
+            const isTonal = (currentStyle === MultiSelectListStyle.TONAL || currentStyle === MultiSelectListStyle.BORDERLESS) && !this.isGlass;
+            const itemId = this.itemIdProvider(item);
+            const isSelected = currentSelectedIds.has(itemId);
+            const caption = this.itemCaptionProvider(item);
 
-            const isTonal = (style === MultiSelectListStyle.TONAL || style === MultiSelectListStyle.BORDERLESS) && !this.isGlass;
-            // Must read value$.getValue() here to capture selections made before items$ emitted
-            const selectedIds = new Set(this.value$.getValue().map(i => this.itemIdProvider(i)));
+            const li = document.createElement('div');
+            li.setAttribute('aria-setsize', String(currentItems.length));
+            li.setAttribute('aria-posinset', String(index + 1));
 
-            items.forEach(item => {
-                const itemId = this.itemIdProvider(item);
-                const isSelected = selectedIds.has(itemId);
-                const caption = this.itemCaptionProvider(item);
+            const itemLabel = document.createElement('label');
+            itemLabel.className = cn(
+                'flex items-center gap-px-8 px-px-16 py-px-12 cursor-pointer select-none',
+                'transition-colors relative overflow-hidden group',
+                getRowBg(isSelected, isTonal)
+            );
 
-                const li = document.createElement('div');
+            const itemCheckContainer = document.createElement('div');
+            itemCheckContainer.className = 'relative flex items-center justify-center w-[18px] h-[18px] flex-shrink-0';
 
-                const itemLabel = document.createElement('label');
-                itemLabel.className = cn(
-                    'flex items-center gap-px-8 px-px-16 py-px-12 cursor-pointer select-none',
-                    'transition-colors relative overflow-hidden group',
-                    getRowBg(isSelected, isTonal)
-                );
+            const itemInput = document.createElement('input');
+            itemInput.type = 'checkbox';
+            itemInput.className = 'sr-only peer';
+            itemInput.checked = isSelected;
 
-                const itemCheckContainer = document.createElement('div');
-                itemCheckContainer.className = 'relative flex items-center justify-center w-[18px] h-[18px] flex-shrink-0';
+            const itemBox = document.createElement('div');
+            itemBox.className = cn(
+                'w-full h-full rounded-small transition-all relative',
+                'peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
+                'peer-checked:bg-primary peer-checked:border-primary',
+                'peer-disabled:opacity-38 peer-disabled:cursor-not-allowed',
+                this.isGlass ? 'glass-effect' : 'border-2 border-outline'
+            );
 
-                const itemInput = document.createElement('input');
-                itemInput.type = 'checkbox';
-                itemInput.className = 'sr-only peer';
-                itemInput.checked = isSelected;
+            const itemIconContainer = document.createElement('div');
+            itemIconContainer.className = 'absolute inset-0 w-full h-full text-on-primary scale-0 transition-transform peer-checked:scale-100 flex items-center justify-center';
+            itemIconContainer.innerHTML = Icons.CHECKMARK;
 
-                const itemBox = document.createElement('div');
-                itemBox.className = cn(
-                    'w-full h-full rounded-small transition-all relative',
-                    'peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
-                    'peer-checked:bg-primary peer-checked:border-primary',
-                    'peer-disabled:opacity-38 peer-disabled:cursor-not-allowed',
-                    this.isGlass ? 'glass-effect' : 'border-2 border-outline'
-                );
+            const itemStateLayer = document.createElement('div');
+            itemStateLayer.className = cn(
+                'absolute -inset-px-8 rounded-full bg-primary opacity-0',
+                'group-hover:opacity-[var(--md-sys-state-hover-opacity,0.08)]',
+                'peer-active:opacity-[var(--md-sys-state-pressed-opacity,0.12)]'
+            );
 
-                const itemIconContainer = document.createElement('div');
-                itemIconContainer.className = 'absolute inset-0 w-full h-full text-on-primary scale-0 transition-transform peer-checked:scale-100 flex items-center justify-center';
-                itemIconContainer.innerHTML = Icons.CHECKMARK;
+            itemCheckContainer.appendChild(itemInput);
+            itemCheckContainer.appendChild(itemBox);
+            itemCheckContainer.appendChild(itemIconContainer);
+            itemCheckContainer.appendChild(itemStateLayer);
 
-                const itemStateLayer = document.createElement('div');
-                itemStateLayer.className = cn(
-                    'absolute -inset-px-8 rounded-full bg-primary opacity-0',
-                    'group-hover:opacity-[var(--md-sys-state-hover-opacity,0.08)]',
-                    'peer-active:opacity-[var(--md-sys-state-pressed-opacity,0.12)]'
-                );
+            const itemCaption = document.createElement('span');
+            itemCaption.className = cn('md-label-large', !this.isGlass && 'text-on-surface');
+            itemCaption.textContent = caption;
 
-                itemCheckContainer.appendChild(itemInput);
-                itemCheckContainer.appendChild(itemBox);
-                itemCheckContainer.appendChild(itemIconContainer);
-                itemCheckContainer.appendChild(itemStateLayer);
-
-                const itemCaption = document.createElement('span');
-                itemCaption.className = cn(
-                    'md-label-large',
-                    !this.isGlass && 'text-on-surface'
-                );
-                itemCaption.textContent = caption;
-
-                itemInput.addEventListener('change', () => {
-                    const latestSelectedItems = this.value$.getValue();
-                    const latestSelectedIds = new Set(latestSelectedItems.map((i: ITEM) => this.itemIdProvider(i)));
-
-                    if (itemInput.checked) {
-                        latestSelectedIds.add(itemId);
-                    } else {
-                        latestSelectedIds.delete(itemId);
-                    }
-
-                    const newSelection = currentItems.filter(
-                        i => latestSelectedIds.has(this.itemIdProvider(i))
-                    );
-                    this.value$.next(newSelection);
-                });
-
-                itemLabel.appendChild(itemCheckContainer);
-                itemLabel.appendChild(itemCaption);
-                li.appendChild(itemLabel);
-                list.appendChild(li);
-
-                itemElements.set(itemId, { input: itemInput, li, label: itemLabel });
+            itemInput.addEventListener('change', () => {
+                const latestSelectedIds = new Set(this.value$.getValue().map((i: ITEM) => this.itemIdProvider(i)));
+                if (itemInput.checked) {
+                    latestSelectedIds.add(itemId);
+                } else {
+                    latestSelectedIds.delete(itemId);
+                }
+                const newSelection = currentItems.filter(i => latestSelectedIds.has(this.itemIdProvider(i)));
+                this.value$.next(newSelection);
             });
 
-            updateHeaderState(selectedIds, items);
+            itemLabel.appendChild(itemCheckContainer);
+            itemLabel.appendChild(itemCaption);
+            li.appendChild(itemLabel);
+
+            itemElements.set(itemId, { input: itemInput, li: li as HTMLDivElement, label: itemLabel });
+            return li;
+        };
+
+        const viewport = new VirtualRowsViewport<ITEM>({
+            scrollEl: list,
+            rowHeight: 44,
+            renderRow: buildRow,
+            onEvict: (el) => {
+                // Drop the evicted row from itemElements so selection patches skip it.
+                for (const [id, refs] of itemElements.entries()) {
+                    if (refs.li === el) { itemElements.delete(id); break; }
+                }
+            },
+        });
+        registerDestroy(container, () => viewport.destroy());
+
+        const itemsRenderSub = combineLatest([gatedItems$, this.style$]).subscribe(([items, style]) => {
+            const itemsChanged = items !== currentItems;
+            currentItems = items;
+            currentStyle = style;
+            // Compute once before setItems/refresh so buildRow reads it without
+            // rebuilding a Set per row (O(1) lookup instead of O(n) allocation × window).
+            currentSelectedIds = new Set(this.value$.getValue().map(i => this.itemIdProvider(i)));
+            itemElements.clear();
+
+            if (itemsChanged) {
+                viewport.setItems(items);
+            } else {
+                viewport.refresh();
+            }
+
+            updateHeaderState(currentSelectedIds, items);
         });
         registerDestroy(container, () => itemsRenderSub.unsubscribe());
 
         // Selection-only patch — no DOM rebuild
         const selectionSub = this.value$.pipe(skip(1)).subscribe(selectedItems => {
             const selectedIds = new Set(selectedItems.map(i => this.itemIdProvider(i)));
+            // Keep currentSelectedIds in sync so that scroll-revealed rows built by
+            // buildRow reflect the latest selection even after this patch runs.
+            currentSelectedIds = selectedIds;
             const isTonal = (currentStyle === MultiSelectListStyle.TONAL || currentStyle === MultiSelectListStyle.BORDERLESS) && !this.isGlass;
 
             itemElements.forEach(({ input, label }, itemId) => {

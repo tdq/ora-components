@@ -4,6 +4,13 @@ import { MultiSelectListBuilder } from './multi-select-list';
 import { MultiSelectListStyle } from './types';
 import { GatedObserver } from '../../utils/optimized-pipeline';
 
+beforeAll(() => {
+    global.requestAnimationFrame = ((cb: FrameRequestCallback) => { cb(0); return 0; }) as any;
+    if (typeof global.ResizeObserver === 'undefined') {
+        global.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as any;
+    }
+});
+
 interface Item {
     id: number;
     name: string;
@@ -58,6 +65,11 @@ function buildDefault(overrides?: {
         .build();
 
     document.body.appendChild(el);
+
+    const listEl = el.querySelector('div[role="group"]') as HTMLElement;
+    Object.defineProperty(listEl, 'clientHeight', { value: 1000, configurable: true, writable: true });
+    Object.defineProperty(listEl, 'scrollTop', { value: 0, configurable: true, writable: true });
+
     triggerVisibleAndWait(el);
 
     return { el, value$ };
@@ -67,8 +79,16 @@ function getList(el: HTMLElement): HTMLDivElement {
     return el.querySelector('div[role="group"]') as HTMLDivElement;
 }
 
+function getRows(el: HTMLElement): HTMLDivElement[] {
+    const children = Array.from(getList(el)?.children ?? []) as HTMLElement[];
+    // Filter positively on aria-setsize: only actual item rows carry this attribute.
+    // This is clearer than excluding aria-hidden="true" and is future-proof against
+    // other internal elements that might be added to the scroll container.
+    return children.filter(c => c.hasAttribute('aria-setsize')) as HTMLDivElement[];
+}
+
 function getLiElements(el: HTMLElement): HTMLDivElement[] {
-    return Array.from(getList(el)?.children ?? []) as HTMLDivElement[];
+    return getRows(el);
 }
 
 function getItemInputs(el: HTMLElement): HTMLInputElement[] {
@@ -874,6 +894,79 @@ describe('MultiSelectListBuilder', () => {
             expect(panel).toHaveClass('border');
             expect(panel).toHaveClass('border-outline');
         });
+    });
+
+    // ── Virtualization ───────────────────────────────────────────────────────
+
+    it('virtualizes: renders only a window for a large dataset', () => {
+        const items$ = of(Array.from({ length: 1000 }, (_, i) => ({ id: i, name: `Item ${i}` })));
+        const el = new MultiSelectListBuilder<{ id: number; name: string }>()
+            .withItems(items$)
+            .withItemIdProvider(i => i.id)
+            .withItemCaptionProvider(i => i.name)
+            .build();
+        document.body.appendChild(el);
+        const listEl = el.querySelector('div[role="group"]') as HTMLElement;
+        Object.defineProperty(listEl, 'clientHeight', { value: 200, configurable: true, writable: true });
+        Object.defineProperty(listEl, 'scrollTop', { value: 0, configurable: true, writable: true });
+        triggerVisibleAndWait(el);
+
+        // Initial render: only a small window (far fewer than 1000 rows)
+        const rowsBefore = getRows(el);
+        expect(rowsBefore.length).toBeGreaterThan(0);
+        expect(rowsBefore.length).toBeLessThan(1000);
+        expect(rowsBefore[0].getAttribute('aria-setsize')).toBe('1000');
+        expect(rowsBefore[0].getAttribute('aria-posinset')).toBe('1');
+
+        // Scroll down — the viewport window should shift
+        (listEl as any).scrollTop = 440; // 10 × 44 px row heights
+        listEl.dispatchEvent(new Event('scroll'));
+        jest.advanceTimersByTime(17); // fire the pending RAF callback
+
+        const rowsAfter = getRows(el);
+        expect(rowsAfter.length).toBeGreaterThan(0);
+        expect(rowsAfter.length).toBeLessThan(1000);
+        // After scrolling, first rendered row is no longer item 0
+        expect(Number(rowsAfter[0].getAttribute('aria-posinset'))).toBeGreaterThan(1);
+    });
+
+    it('re-rendered rows reflect selection updated while they were evicted', () => {
+        // MINOR 3: exercises buildRow reading currentSelectedIds on re-entry after
+        // a value$.next() that fired while the row was outside the render window.
+        const itemsArray = Array.from({ length: 1000 }, (_, i) => ({ id: i, name: `Item ${i}` }));
+        const value$ = new BehaviorSubject<{ id: number; name: string }[]>([]);
+        const el = new MultiSelectListBuilder<{ id: number; name: string }>()
+            .withItems(of(itemsArray))
+            .withItemIdProvider(i => i.id)
+            .withItemCaptionProvider(i => i.name)
+            .withValue(value$)
+            .build();
+        document.body.appendChild(el);
+        const listEl = el.querySelector('div[role="group"]') as HTMLElement;
+        Object.defineProperty(listEl, 'clientHeight', { value: 200, configurable: true, writable: true });
+        Object.defineProperty(listEl, 'scrollTop', { value: 0, configurable: true, writable: true });
+        triggerVisibleAndWait(el);
+
+        // Row 0 should start unchecked
+        const initialRow0 = getRows(el).find(r => r.getAttribute('aria-posinset') === '1')!;
+        expect(initialRow0.querySelector<HTMLInputElement>('input[type="checkbox"]')!.checked).toBe(false);
+
+        // Scroll far enough to evict row 0
+        (listEl as any).scrollTop = 2000;
+        listEl.dispatchEvent(new Event('scroll'));
+        jest.advanceTimersByTime(17);
+
+        // Select item 0 while its row is evicted from the DOM
+        value$.next([itemsArray[0]]);
+
+        // Scroll back to top — buildRow must re-render row 0 with isSelected = true
+        (listEl as any).scrollTop = 0;
+        listEl.dispatchEvent(new Event('scroll'));
+        jest.advanceTimersByTime(17);
+
+        const row0 = getRows(el).find(r => r.getAttribute('aria-posinset') === '1')!;
+        expect(row0).toBeDefined();
+        expect(row0.querySelector<HTMLInputElement>('input[type="checkbox"]')!.checked).toBe(true);
     });
 
     // ── Req 15: Memory cleanup via registerDestroy ───────────────────────────

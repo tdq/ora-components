@@ -5,6 +5,7 @@ import { twMerge } from 'tailwind-merge';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '../../core/destroyable-element';
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
+import { VirtualRowsViewport } from '../../utils/virtual-rows-viewport';
 import { ListBoxStyle } from './types';
 
 function cn(...inputs: ClassValue[]) {
@@ -231,91 +232,139 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
             focusedIndex$,
         ]);
 
-        const itemsSub = itemsState$.subscribe(([items, selectedItem, style, focusedIndex]) => {
-            currentItems = items;
-            list.innerHTML = '';
+        // Captured latest state read by renderRow.
+        let selectedId: string | number | null = null;
+        let currentStyle = ListBoxStyle.TONAL;
+        let currentFocusedIndex = -1;
 
-            const selectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
+        const buildOption = (index: number, item: ITEM): HTMLElement => {
+            const id = this.itemIdProvider(item);
+            const isSelected = selectedId === id;
+            const isFocused = currentFocusedIndex === index;
+            const caption = this.itemCaptionProvider(item);
+            const style = currentStyle;
 
-            items.forEach((item, index) => {
-                const id = this.itemIdProvider(item);
-                const isSelected = selectedId === id;
-                const isFocused = focusedIndex === index;
-                const caption = this.itemCaptionProvider(item);
+            const li = document.createElement('li');
+            li.role = 'option';
+            li.setAttribute('aria-selected', String(isSelected));
+            li.setAttribute('aria-setsize', String(currentItems.length));
+            li.setAttribute('aria-posinset', String(index + 1));
 
-                const li = document.createElement('li');
-                li.role = 'option';
-                li.setAttribute('aria-selected', String(isSelected));
+            const isTonal = (style === ListBoxStyle.TONAL || style === ListBoxStyle.BORDERLESS) && !this.isGlass;
+            const isOutlined = style === ListBoxStyle.OUTLINED && !this.isGlass;
 
-                // Styling logic mirrored from ComboBox
-                const isTonal = (style === ListBoxStyle.TONAL || style === ListBoxStyle.BORDERLESS) && !this.isGlass;
-                const isOutlined = style === ListBoxStyle.OUTLINED && !this.isGlass;
+            let itemTextColor: string;
+            let selectedBg: string;
+            let hoverBg: string;
+            let focusBg: string;
 
-                let itemTextColor: string;
-                let selectedBg: string;
-                let hoverBg: string;
-                let focusBg: string;
-
-                if (this.isGlass) {
-                    itemTextColor = '';
-                    selectedBg = 'bg-white/40';
-                    hoverBg = 'hover:bg-black/5 dark:hover:bg-white/10';
-                    focusBg = 'bg-black/10 dark:bg-white/20';
-                } else {
-                    itemTextColor = (isSelected && isOutlined)
-                        ? 'text-on-primary-container'
-                        : (isTonal ? 'text-on-secondary-container' : 'text-on-surface');
-                    selectedBg = isTonal ? 'bg-on-secondary-container/20' : 'bg-primary-container';
-                    hoverBg = 'hover:bg-on-surface/8';
-                    focusBg = 'bg-on-surface/12';
-                }
-
-                li.className = cn(
-                    'px-px-16 py-px-12 cursor-pointer body-large transition-colors relative overflow-hidden group',
-                    itemTextColor,
-                    isSelected && 'font-bold',
-                    isSelected && selectedBg,
-                    !isSelected && hoverBg,
-                    isFocused && !isSelected && focusBg
-                );
-
-                // Focus Accent Bar
-                if (isFocused) {
-                    const focusIndicator = document.createElement('div');
-                    focusIndicator.className = 'absolute left-0 top-0 bottom-0 w-[4px] bg-primary z-20';
-                    li.appendChild(focusIndicator);
-                }
-
-                // State Layer (for focus/hover/active visual consistency)
-                const stateLayer = document.createElement('div');
-                stateLayer.className = cn(
-                    'absolute inset-0 pointer-events-none transition-colors',
-                    'active:bg-current active:opacity-15'
-                );
-                li.appendChild(stateLayer);
-
-                const content = document.createElement('span');
-                content.className = 'relative z-10';
-                content.textContent = caption;
-                li.appendChild(content);
-
-                li.onclick = () => {
-                    if (this.value$) {
-                        this.value$.next(item);
-                    }
-                };
-
-                list.appendChild(li);
-            });
-
-            if (focusedIndex >= 0) {
-                const item = list.children[focusedIndex] as HTMLElement | null;
-                if (item && typeof item.scrollIntoView === 'function') {
-                    item.scrollIntoView({ block: 'nearest' });
-                }
+            if (this.isGlass) {
+                itemTextColor = '';
+                selectedBg = 'bg-white/40';
+                hoverBg = 'hover:bg-black/5 dark:hover:bg-white/10';
+                focusBg = 'bg-black/10 dark:bg-white/20';
+            } else {
+                itemTextColor = (isSelected && isOutlined)
+                    ? 'text-on-primary-container'
+                    : (isTonal ? 'text-on-secondary-container' : 'text-on-surface');
+                selectedBg = isTonal ? 'bg-on-secondary-container/20' : 'bg-primary-container';
+                hoverBg = 'hover:bg-on-surface/8';
+                focusBg = 'bg-on-surface/12';
             }
-        });
-        registerDestroy(container, () => itemsSub.unsubscribe());
+
+            // `relative` is kept intentionally: the direct (ComboBox) path needs it so
+            // the focus indicator and state-layer children position against the <li>.
+            // The virtual path overrides position to `absolute` via inline style set by
+            // VirtualRowsViewport, which also satisfies the positioned-ancestor requirement.
+            li.className = cn(
+                'px-px-16 py-px-12 cursor-pointer body-large transition-colors relative overflow-hidden group',
+                itemTextColor,
+                isSelected && 'font-bold',
+                isSelected && selectedBg,
+                !isSelected && hoverBg,
+                isFocused && !isSelected && focusBg
+            );
+
+            if (isFocused) {
+                const focusIndicator = document.createElement('div');
+                focusIndicator.className = 'absolute left-0 top-0 bottom-0 w-[4px] bg-primary z-20';
+                li.appendChild(focusIndicator);
+            }
+
+            const stateLayer = document.createElement('div');
+            stateLayer.className = cn(
+                'absolute inset-0 pointer-events-none transition-colors',
+                'active:bg-current active:opacity-15'
+            );
+            li.appendChild(stateLayer);
+
+            const content = document.createElement('span');
+            content.className = 'relative z-10';
+            content.textContent = caption;
+            li.appendChild(content);
+
+            li.onclick = () => {
+                if (this.value$) {
+                    this.value$.next(item);
+                }
+            };
+
+            return li;
+        };
+
+        // Standalone listboxes use VirtualRowsViewport for efficient windowing.
+        // When driven by an external focus index (ComboBox mode) we fall back to
+        // direct rendering so the caller can safely index into ul.children by
+        // position — the spacer that VirtualRowsViewport prepends would break that.
+        if (!this.externalFocusedIndex$) {
+            const vp = new VirtualRowsViewport<ITEM>({
+                scrollEl: list,
+                rowHeight: 44,
+                renderRow: buildOption,
+            });
+            registerDestroy(container, () => vp.destroy());
+
+            const itemsSub = itemsState$.subscribe(([items, selectedItem, style, focusedIndex]) => {
+                const itemsChanged = items !== currentItems;
+                currentItems = items;
+                selectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
+                currentStyle = style;
+                const focusChanged = focusedIndex !== currentFocusedIndex;
+                currentFocusedIndex = focusedIndex;
+
+                if (itemsChanged) {
+                    vp.setItems(items);
+                } else if (focusChanged) {
+                    // Refresh re-renders the window with the new focus highlight, then
+                    // scrollToIndex adjusts scrollTop if the focused row is off-screen.
+                    vp.refresh();
+                    if (focusedIndex >= 0) vp.scrollToIndex(focusedIndex);
+                } else {
+                    vp.refresh(); // selection / style change
+                }
+            });
+            registerDestroy(container, () => itemsSub.unsubscribe());
+        } else {
+            // Direct rendering path (ComboBox / externalFocusedIndex mode)
+            const itemsSub = itemsState$.subscribe(([items, selectedItem, style, focusedIndex]) => {
+                currentItems = items;
+                selectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
+                currentStyle = style;
+                currentFocusedIndex = focusedIndex;
+
+                list.innerHTML = '';
+                items.forEach((item, index) => {
+                    list.appendChild(buildOption(index, item));
+                });
+                if (focusedIndex >= 0) {
+                    const el = list.children[focusedIndex] as HTMLElement | null;
+                    if (el && typeof el.scrollIntoView === 'function') {
+                        el.scrollIntoView({ block: 'nearest' });
+                    }
+                }
+            });
+            registerDestroy(container, () => itemsSub.unsubscribe());
+        }
 
         // Error message
         if (this.error$) {
