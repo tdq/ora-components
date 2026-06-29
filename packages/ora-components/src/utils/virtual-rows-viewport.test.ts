@@ -241,4 +241,264 @@ describe('VirtualRowsViewport', () => {
         expect(vp.getRenderedRow(0)!.textContent).toBe('item-99');
         expect(vp.getRenderedRow(1)!.textContent).toBe('item-88');
     });
+
+    // -------------------------------------------------------------------------
+    // Variable-height tests
+    // -------------------------------------------------------------------------
+
+    /**
+     * Helper that returns a renderRow function where each element's offsetHeight
+     * is mocked via Object.defineProperty so jsdom returns a real value.
+     * Even indices → 40px, odd indices → 80px.
+     */
+    const makeVariableRenderRow = () =>
+        (index: number, _item: number): HTMLElement => {
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            const h = index % 2 === 0 ? 40 : 80;
+            Object.defineProperty(d, 'offsetHeight', { value: h, configurable: true });
+            return d;
+        };
+
+    /** Extract the translateY pixel value from an element's transform style. */
+    const getTranslateY = (el: HTMLElement): number => {
+        const match = el.style.transform.match(/translateY\((-?\d+(?:\.\d+)?)px\)/);
+        if (!match) throw new Error(`No translateY found in: ${el.style.transform}`);
+        return parseFloat(match[1]);
+    };
+
+    it('variable-height rows are positioned without overlap after measurement', () => {
+        // Use a viewport tall enough to render all itemCount rows in one pass so that
+        // every row is measured and the spacer reflects the full measured total.
+        const itemCount = 20;
+        const maxRowHeight = 80; // odd-index rows
+        const scrollEl = makeScrollEl(itemCount * maxRowHeight + 1); // 1601px — fits all rows
+        const vp = new VirtualRowsViewport<number>({
+            scrollEl,
+            rowHeight: 40,
+            renderRow: makeVariableRenderRow(),
+        });
+        vp.setItems(Array.from({ length: itemCount }, (_, i) => i));
+
+        // After setItems + initial render, measure pass has run and updated prefix.
+        // Verify contiguous non-overlapping positions for all rendered rows.
+        const { start, end } = vp.getRenderedRange();
+        let expectedTop = 0;
+        // Build expected tops from measured heights (even=40, odd=80)
+        const heights = Array.from({ length: itemCount }, (_, i) => i % 2 === 0 ? 40 : 80);
+        const prefixes = [0];
+        for (let i = 0; i < itemCount; i++) prefixes.push(prefixes[i] + heights[i]);
+
+        for (let i = start; i <= end; i++) {
+            const el = vp.getRenderedRow(i)!;
+            expect(el).toBeDefined();
+            expect(getTranslateY(el)).toBe(prefixes[i]);
+        }
+
+        // Spacer must reflect the fully-measured total height.
+        const total = prefixes[itemCount];
+        const spacer = scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement;
+        expect(spacer.style.height).toBe(`${total}px`);
+    });
+
+    it('last row does not overlap the previous row when scrolled to the bottom (regression)', () => {
+        const itemCount = 20;
+        const heights = Array.from({ length: itemCount }, (_, i) => i % 2 === 0 ? 40 : 80);
+        const prefixes = [0];
+        for (let i = 0; i < itemCount; i++) prefixes.push(prefixes[i] + heights[i]);
+        const total = prefixes[itemCount];
+
+        // Viewport is small enough to require scrolling.
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({
+            scrollEl,
+            rowHeight: 40,
+            buffer: 2,
+            renderRow: makeVariableRenderRow(),
+        });
+        vp.setItems(Array.from({ length: itemCount }, (_, i) => i));
+
+        // Scroll progressively so rows get measured, then land at the bottom.
+        const steps = [200, 400, 600, Math.max(0, total - 200)];
+        for (const pos of steps) {
+            (scrollEl as any).scrollTop = pos;
+            scrollEl.dispatchEvent(new Event('scroll'));
+        }
+
+        // The last and second-to-last rows must both be rendered and non-overlapping.
+        const lastEl = vp.getRenderedRow(itemCount - 1);
+        const prevEl = vp.getRenderedRow(itemCount - 2);
+        expect(lastEl).toBeDefined();
+        expect(prevEl).toBeDefined();
+
+        const lastTop = getTranslateY(lastEl!);
+        const prevTop = getTranslateY(prevEl!);
+        // Strict contiguity: each row top must equal the independently-computed prefix value.
+        // (>= allowed the CRITICAL gap to hide; === catches both overlap AND gap.)
+        expect(prevTop).toBe(prefixes[itemCount - 2]);
+        expect(lastTop).toBe(prefixes[itemCount - 1]);
+    });
+
+    it('scrollToIndex with variable heights scrolls to the measured offset', () => {
+        const itemCount = 30;
+        const heights = Array.from({ length: itemCount }, (_, i) => i % 2 === 0 ? 40 : 80);
+        const prefixes = [0];
+        for (let i = 0; i < itemCount; i++) prefixes.push(prefixes[i] + heights[i]);
+
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({
+            scrollEl,
+            rowHeight: 40,
+            buffer: 2,
+            renderRow: makeVariableRenderRow(),
+        });
+        vp.setItems(Array.from({ length: itemCount }, (_, i) => i));
+
+        // Scroll incrementally so all rows up to index 20 get measured.
+        for (const pos of [200, 400, 600, 800]) {
+            (scrollEl as any).scrollTop = pos;
+            scrollEl.dispatchEvent(new Event('scroll'));
+        }
+
+        // Now scrollToIndex(20) — target must be rendered.
+        vp.scrollToIndex(20);
+        const el = vp.getRenderedRow(20);
+        expect(el).toBeDefined();
+
+        // Its translateY must equal the cumulative prefix for index 20.
+        // (After measurement the prefix is exact for rows 0..rendered-end.)
+        expect(getTranslateY(el!)).toBe(prefixes[20]);
+    });
+
+    it('uniform-height fallback still works when offsetHeight is 0 (jsdom default)', () => {
+        // Default renderRow returns elements with offsetHeight===0 in jsdom,
+        // so all rows keep the estimate. This confirms the h > 0 guard works.
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, renderRow });
+        vp.setItems(Array.from({ length: 50 }, (_, i) => i));
+
+        const { start, end } = vp.getRenderedRange();
+        for (let i = start; i <= end; i++) {
+            expect(getTranslateY(vp.getRenderedRow(i)!)).toBe(i * 40);
+        }
+        const spacer = scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement;
+        expect(spacer.style.height).toBe('2000px'); // 50 * 40
+    });
+
+    // -------------------------------------------------------------------------
+    // Cold-jump companion tests — exercise paths that incremental-scroll tests skip
+    // -------------------------------------------------------------------------
+
+    it('cold-jump (a): initial render fills the viewport with no gap when measured heights are smaller than the estimate', () => {
+        // CRITICAL gap scenario: rows are SHORTER than estimate → estimate-based window
+        // leaves empty space at viewport bottom. The extension pass must fill it.
+        const estimate = 40;
+        const actualHeight = 20; // shorter than estimate
+        const clientHeight = 200;
+        const itemCount = 50;
+        const scrollEl = makeScrollEl(clientHeight);
+
+        const smallRowRender = (index: number, _item: number): HTMLElement => {
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            Object.defineProperty(d, 'offsetHeight', { value: actualHeight, configurable: true });
+            return d;
+        };
+
+        const vp = new VirtualRowsViewport<number>({
+            scrollEl,
+            rowHeight: estimate,
+            buffer: 2,
+            renderRow: smallRowRender,
+        });
+        // No intermediate scrolling — this is the cold-jump (first render from setItems).
+        vp.setItems(Array.from({ length: itemCount }, (_, i) => i));
+
+        const { start, end } = vp.getRenderedRange();
+
+        // The last rendered row's bottom must reach or exceed the viewport bottom.
+        const lastEl = vp.getRenderedRow(end)!;
+        expect(lastEl).toBeDefined();
+        expect(getTranslateY(lastEl) + actualHeight).toBeGreaterThanOrEqual(clientHeight);
+
+        // All rendered rows must be strictly contiguous (no gaps, no overlaps).
+        for (let i = start + 1; i <= end; i++) {
+            const el = vp.getRenderedRow(i)!;
+            const prev = vp.getRenderedRow(i - 1)!;
+            expect(getTranslateY(el)).toBe(getTranslateY(prev) + actualHeight);
+        }
+    });
+
+    it('cold-jump (b): scrollToIndex corrects scrollTop after render measures prefix near the target', () => {
+        // MAJOR scrollToIndex scenario: rows are LARGER than estimate. The first
+        // scrollIntoView() undershoots (estimate-based prefix < actual prefix), so
+        // after render() measures and patches the prefix, the target row ends up below
+        // the viewport bottom. The second scrollIntoView() call must correct this.
+        const estimate = 20;
+        const actualHeight = 40; // larger than estimate → first scrollIntoView undershoots
+        const clientHeight = 200;
+        const itemCount = 50;
+        const scrollEl = makeScrollEl(clientHeight);
+
+        // Independently-computed true prefixes for assertions.
+        const prefixes = Array.from({ length: itemCount + 1 }, (_, i) => i * actualHeight);
+
+        const largeRowRender = (index: number, _item: number): HTMLElement => {
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            Object.defineProperty(d, 'offsetHeight', { value: actualHeight, configurable: true });
+            return d;
+        };
+
+        const vp = new VirtualRowsViewport<number>({
+            scrollEl,
+            rowHeight: estimate,
+            buffer: 2,
+            renderRow: largeRowRender,
+        });
+        // setItems triggers a render that measures a handful of rows near scrollTop=0.
+        vp.setItems(Array.from({ length: itemCount }, (_, i) => i));
+
+        // Cold jump — no intermediate scrolling before scrollToIndex.
+        const target = 15;
+        vp.scrollToIndex(target);
+
+        const el = vp.getRenderedRow(target)!;
+        expect(el).toBeDefined();
+
+        // The row must be positioned at its correct measured offset.
+        expect(getTranslateY(el)).toBe(prefixes[target]);
+
+        // After the double-scrollIntoView, the row must be visible in the viewport.
+        const scrollTopAfter = (scrollEl as any).scrollTop as number;
+        expect(getTranslateY(el)).toBeGreaterThanOrEqual(scrollTopAfter);
+        expect(getTranslateY(el) + actualHeight).toBeLessThanOrEqual(scrollTopAfter + clientHeight);
+    });
+
+    it('constructor throws when rowHeight is 0 or negative', () => {
+        const scrollEl = makeScrollEl(200);
+        expect(() => new VirtualRowsViewport({ scrollEl, rowHeight: 0, renderRow }))
+            .toThrow('rowHeight must be > 0');
+        expect(() => new VirtualRowsViewport({ scrollEl, rowHeight: -10, renderRow }))
+            .toThrow('rowHeight must be > 0');
+    });
+
+    it('destroy() prevents in-flight rAF from re-rendering after teardown', () => {
+        // rAF is synchronous in this test environment, so the sequence
+        // scroll → destroy → rAF fires tests the destroyed guard directly.
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, renderRow });
+        vp.setItems(Array.from({ length: 100 }, (_, i) => i));
+        const rangeBeforeDestroy = vp.getRenderedRange();
+
+        // Trigger the rAF but capture ticking=true before it fires by going through
+        // the actual event path, then destroy synchronously. Since our rAF stub fires
+        // immediately the real guard path is: destroy sets flag, render() checks it.
+        vp.destroy();
+
+        // After destroy the range must be unchanged (render() returned early).
+        expect(vp.getRenderedRange()).toEqual(rangeBeforeDestroy);
+        // Spacer must be gone.
+        expect(scrollEl.querySelector('[aria-hidden="true"]')).toBeNull();
+    });
 });

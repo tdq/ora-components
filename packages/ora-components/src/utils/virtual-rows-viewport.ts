@@ -1,7 +1,7 @@
 export interface VirtualRowsConfig<ITEM> {
     /** Scroll container. Will be set position:relative; overflow-y:auto. */
     scrollEl: HTMLElement;
-    /** Fixed row height in px; auto-measured from the first row when possible. */
+    /** Estimated row height in px; used as fallback for rows not yet measured. Must be > 0. */
     rowHeight: number;
     /** Extra rows rendered above/below the viewport. Default 5. */
     buffer?: number;
@@ -17,21 +17,29 @@ export class VirtualRowsViewport<ITEM> {
     private readonly renderRow: (index: number, item: ITEM) => HTMLElement;
     private readonly onEvict?: (el: HTMLElement, index: number) => void;
     private readonly buffer: number;
-    private rowHeight: number;
-    private measured = false;
+    private readonly estimate: number; // rowHeight from config — estimate for unmeasured rows
+    private destroyed = false;
 
     private items: ITEM[] = [];
+    /** Per-row measured heights; slot is undefined until the row has been measured. */
+    private measured: number[] = [];
+    /** Cumulative offsets of length n+1. prefix[0]=0; prefix[i+1]=prefix[i]+heightAt(i).
+     *  prefix[n] is the total content height → spacer height. */
+    private prefix: number[] = [0];
     private rendered = new Map<number, HTMLElement>();
     private range = { start: 0, end: -1 };
     private ticking = false;
     private resizeObserver: ResizeObserver | null = null;
 
     constructor(config: VirtualRowsConfig<ITEM>) {
+        if (config.rowHeight <= 0) {
+            throw new Error('rowHeight must be > 0');
+        }
         this.scrollEl = config.scrollEl;
         this.renderRow = config.renderRow;
         this.onEvict = config.onEvict;
         this.buffer = config.buffer ?? 5;
-        this.rowHeight = config.rowHeight;
+        this.estimate = config.rowHeight;
 
         this.scrollEl.style.position = 'relative';
         this.scrollEl.style.overflowY = 'auto';
@@ -53,16 +61,19 @@ export class VirtualRowsViewport<ITEM> {
 
     setItems(items: ITEM[]): void {
         this.items = items;
-        this.spacer.style.height = `${items.length * this.rowHeight}px`;
-        // Use refresh() so stale rows at overlapping indices are evicted (onEvict
-        // fires) and re-rendered from the new items array.  Calling render() directly
-        // would skip already-rendered indices via the `if (has(i)) continue` guard,
-        // leaving old captions / change-handlers in the DOM.
+        const n = items.length;
+        // Reset all per-row measurements — new items, new heights.
+        this.measured = new Array(n);
+        this.buildPrefix(0);
+        this.spacer.style.height = `${this.prefix[n]}px`;
+        // Use refresh() so stale rows at overlapping indices are evicted (onEvict fires)
+        // and re-rendered from the new items array.
         this.refresh();
     }
 
     refresh(): void {
         // Force a full re-render of the current window (e.g. selection/style change).
+        // Do NOT reset measured — content heights are unchanged on selection/style refresh.
         this.clearRendered();
         this.range = { start: 0, end: -1 };
         this.render();
@@ -70,15 +81,13 @@ export class VirtualRowsViewport<ITEM> {
 
     scrollToIndex(index: number): void {
         if (index < 0 || index >= this.items.length) return;
-        const top = index * this.rowHeight;
-        const viewTop = this.scrollEl.scrollTop;
-        const viewBottom = viewTop + this.scrollEl.clientHeight;
-        if (top < viewTop) {
-            this.scrollEl.scrollTop = top;
-        } else if (top + this.rowHeight > viewBottom) {
-            this.scrollEl.scrollTop = top + this.rowHeight - this.scrollEl.clientHeight;
-        }
+        // First call: use current (possibly estimate-based) prefix to scroll toward the target.
+        this.scrollIntoView(index);
+        // render() measures newly visible rows and patches prefix values around the target.
         this.render();
+        // Second call: corrects scrollTop now that render() has updated the measured prefix.
+        // On the happy path (target was already fully in view, or prefix was exact), this is a no-op.
+        this.scrollIntoView(index);
     }
 
     getRenderedRow(index: number): HTMLElement | undefined {
@@ -90,6 +99,9 @@ export class VirtualRowsViewport<ITEM> {
     }
 
     destroy(): void {
+        // Set the flag first so any in-flight rAF callback that fires after this returns
+        // immediately without touching the now-removed spacer / cleared DOM.
+        this.destroyed = true;
         this.scrollEl.removeEventListener('scroll', this.onScroll);
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
@@ -111,6 +123,77 @@ export class VirtualRowsViewport<ITEM> {
         });
     };
 
+    private heightAt(i: number): number {
+        return this.measured[i] ?? this.estimate;
+    }
+
+    /**
+     * Rebuild prefix[from+1 .. n] using current measured/estimate heights.
+     * prefix[from] must already be correct when from > 0.
+     * Also resizes prefix to n+1 if the item count changed.
+     */
+    private buildPrefix(from: number): void {
+        const n = this.items.length;
+        if (this.prefix.length !== n + 1) {
+            this.prefix = new Array(n + 1);
+            this.prefix[0] = 0;
+            from = 0;
+        }
+        for (let i = from; i < n; i++) {
+            this.prefix[i + 1] = this.prefix[i] + this.heightAt(i);
+        }
+    }
+
+    /**
+     * Binary search: returns the last index idx in [0, n-1] where prefix[idx] <= value.
+     * Returns 0 when all prefix values exceed value (first row is always the best guess).
+     */
+    private searchLeft(value: number): number {
+        const n = this.items.length;
+        let lo = 0, hi = n;
+        while (lo < hi) {
+            const mid = (lo + hi) >>> 1;
+            if (this.prefix[mid] <= value) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+        // lo is now the first index where prefix[lo] > value; lo-1 is what we want.
+        return Math.max(0, lo - 1);
+    }
+
+    /**
+     * Binary search: returns the first index idx in [0, n] where prefix[idx] >= value.
+     * Returns n when no prefix value in [0, n-1] meets the condition.
+     */
+    private searchRight(value: number): number {
+        const n = this.items.length;
+        let lo = 0, hi = n;
+        while (lo < hi) {
+            const mid = (lo + hi) >>> 1;
+            if (this.prefix[mid] < value) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+        return lo;
+    }
+
+    /** Scroll scrollEl so that row at `index` is visible, using the current prefix. */
+    private scrollIntoView(index: number): void {
+        const top = this.prefix[index];
+        const rowH = this.heightAt(index);
+        const scrollTop = this.scrollEl.scrollTop;
+        const clientHeight = this.scrollEl.clientHeight;
+        if (top < scrollTop) {
+            this.scrollEl.scrollTop = top;
+        } else if (top + rowH > scrollTop + clientHeight) {
+            this.scrollEl.scrollTop = top + rowH - clientHeight;
+        }
+    }
+
     private clearRendered(): void {
         for (const [index, el] of this.rendered.entries()) {
             this.onEvict?.(el, index);
@@ -119,22 +202,55 @@ export class VirtualRowsViewport<ITEM> {
         this.rendered.clear();
     }
 
-    private measureRowHeight(): void {
-        if (this.measured) return;
-        const first = this.rendered.values().next().value as HTMLElement | undefined;
-        if (first && first.offsetHeight > 0) {
-            this.rowHeight = first.offsetHeight;
-            this.measured = true;
-            this.spacer.style.height = `${this.items.length * this.rowHeight}px`;
-            // Reposition all currently-rendered rows to use the measured height so
-            // they don't sit at stale offsets until they're individually evicted.
-            for (const [i, el] of this.rendered.entries()) {
-                el.style.transform = `translateY(${i * this.rowHeight}px)`;
+    /** Append a single row element positioned at the current prefix[i]. */
+    private appendRow(i: number): void {
+        const el = this.renderRow(i, this.items[i]);
+        el.style.position = 'absolute';
+        el.style.top = '0';
+        el.style.left = '0';
+        el.style.right = '0';
+        el.style.transform = `translateY(${this.prefix[i]}px)`;
+        this.scrollEl.appendChild(el);
+        this.rendered.set(i, el);
+    }
+
+    /**
+     * Read offsetHeight for rendered rows in index range [lo, hi].
+     * Updates this.measured for any row whose height changed and is > 0.
+     * Returns the smallest changed index (Infinity if nothing changed).
+     * jsdom guard: offsetHeight === 0 → keep the estimate; h > 0 check ensures
+     * existing fixed-height tests pass unchanged.
+     */
+    private measureRange(lo: number, hi: number): number {
+        let minDirty = Infinity;
+        for (let i = lo; i <= hi; i++) {
+            const el = this.rendered.get(i);
+            if (!el) continue;
+            const h = el.offsetHeight;
+            if (h > 0 && h !== this.measured[i]) {
+                this.measured[i] = h;
+                if (i < minDirty) minDirty = i;
             }
+        }
+        return minDirty;
+    }
+
+    /**
+     * Rebuild prefix suffix from minDirty, update spacer, reposition all rendered rows.
+     * Inline patch — does NOT call render() to avoid recursion.
+     */
+    private applyPatch(minDirty: number, count: number): void {
+        this.buildPrefix(minDirty);
+        this.spacer.style.height = `${this.prefix[count]}px`;
+        for (const [i, el] of this.rendered.entries()) {
+            el.style.transform = `translateY(${this.prefix[i]}px)`;
         }
     }
 
     private render(): void {
+        // Guard: destroy() was called before this rAF callback fired.
+        if (this.destroyed) return;
+
         const count = this.items.length;
         if (count === 0) {
             this.clearRendered();
@@ -144,12 +260,16 @@ export class VirtualRowsViewport<ITEM> {
 
         const scrollTop = this.scrollEl.scrollTop;
         const clientHeight = this.scrollEl.clientHeight;
-        const start = Math.max(0, Math.floor(scrollTop / this.rowHeight) - this.buffer);
-        // Use ceil-minus-1 so a row whose top edge lands exactly at (scrollTop + clientHeight)
-        // is NOT counted as visible (e.g. clientHeight=200, rowHeight=40: last visible is index 4,
-        // not 5). Math.floor would return 5 in that case, overshooting by one.
-        const lastVisible = Math.ceil((scrollTop + clientHeight) / this.rowHeight) - 1;
-        const end = Math.min(count - 1, lastVisible + this.buffer);
+
+        // Compute the visible window via binary search over the prefix array.
+        //   firstVisible = last row whose top (prefix[i]) <= scrollTop
+        //   lastVisible  = (first row whose top >= scrollTop + clientHeight) - 1
+        const firstVisible = this.searchLeft(scrollTop);
+        const endIdx = this.searchRight(scrollTop + clientHeight);
+        const lastVisible = endIdx - 1;
+
+        const start = Math.max(0, firstVisible - this.buffer);
+        let end = Math.min(count - 1, lastVisible + this.buffer);
 
         // Evict rows outside the new window.
         for (const [index, el] of this.rendered.entries()) {
@@ -163,17 +283,37 @@ export class VirtualRowsViewport<ITEM> {
         // Render rows inside the window that are not yet present.
         for (let i = start; i <= end; i++) {
             if (this.rendered.has(i)) continue;
-            const el = this.renderRow(i, this.items[i]);
-            el.style.position = 'absolute';
-            el.style.top = '0';
-            el.style.left = '0';
-            el.style.right = '0';
-            el.style.transform = `translateY(${i * this.rowHeight}px)`;
-            this.scrollEl.appendChild(el);
-            this.rendered.set(i, el);
+            this.appendRow(i);
         }
 
         this.range = { start, end };
-        this.measureRowHeight();
+
+        // Measure pass: read offsetHeight for the rendered window.
+        const minDirty = this.measureRange(start, end);
+
+        if (minDirty < Infinity) {
+            // Rebuild the prefix suffix and reposition all rendered rows.
+            this.applyPatch(minDirty, count);
+
+            // CRITICAL gap fix: if measured heights are SMALLER than the estimate, the
+            // corrected prefix may reveal that more rows now fit in the viewport.
+            // Extend the window inline (bounded single pass — no recursive render()).
+            const newEndIdx = this.searchRight(scrollTop + clientHeight);
+            const newEnd = Math.min(count - 1, newEndIdx - 1 + this.buffer);
+
+            if (newEnd > end) {
+                // Append extension rows using the already-patched prefix values.
+                for (let i = end + 1; i <= newEnd; i++) {
+                    this.appendRow(i);
+                }
+                // Measure and patch the extension in the same pass.
+                const extDirty = this.measureRange(end + 1, newEnd);
+                if (extDirty < Infinity) {
+                    this.applyPatch(extDirty, count);
+                }
+                end = newEnd;
+                this.range = { start, end };
+            }
+        }
     }
 }
