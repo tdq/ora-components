@@ -20,6 +20,7 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
     private items$: Observable<ITEM[]> = of([]);
     private itemCaptionProvider: (item: ITEM) => string = (item) => String(item);
     private itemIdProvider: (item: ITEM) => string | number = (item) => String(item);
+    private optionIdProvider?: (item: ITEM) => string;
     private value$: Subject<ITEM | null> = new Subject<ITEM | null>();
     private height$?: Observable<number>;
     private error$?: Observable<string>;
@@ -58,6 +59,16 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
 
     withItemIdProvider(provider: (item: ITEM) => string | number): this {
         this.itemIdProvider = provider;
+        return this;
+    }
+
+    /**
+     * Assign a stable DOM id to each rendered option `<li>`. Lets a parent (e.g. ComboBox)
+     * reference the focused option via aria-activedescendant without indexing into the DOM,
+     * which is essential once rows are virtualized (only a window is present).
+     */
+    withOptionIdProvider(provider: (item: ITEM) => string): this {
+        this.optionIdProvider = provider;
         return this;
     }
 
@@ -246,6 +257,9 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
 
             const li = document.createElement('li');
             li.role = 'option';
+            if (this.optionIdProvider) {
+                li.id = this.optionIdProvider(item);
+            }
             li.setAttribute('aria-selected', String(isSelected));
             li.setAttribute('aria-setsize', String(currentItems.length));
             li.setAttribute('aria-posinset', String(index + 1));
@@ -312,59 +326,37 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
             return li;
         };
 
-        // Standalone listboxes use VirtualRowsViewport for efficient windowing.
-        // When driven by an external focus index (ComboBox mode) we fall back to
-        // direct rendering so the caller can safely index into ul.children by
-        // position — the spacer that VirtualRowsViewport prepends would break that.
-        if (!this.externalFocusedIndex$) {
-            const vp = new VirtualRowsViewport<ITEM>({
-                scrollEl: list,
-                rowHeight: 44,
-                renderRow: buildOption,
-            });
-            registerDestroy(container, () => vp.destroy());
+        // All listboxes use VirtualRowsViewport for efficient windowing — including when
+        // driven by an external focus index (ComboBox mode). External consumers reference
+        // the focused option by its stable id (see withOptionIdProvider) rather than indexing
+        // into ul.children, so the spacer VirtualRowsViewport prepends is not a problem.
+        const vp = new VirtualRowsViewport<ITEM>({
+            scrollEl: list,
+            rowHeight: 44,
+            renderRow: buildOption,
+        });
+        registerDestroy(container, () => vp.destroy());
 
-            const itemsSub = itemsState$.subscribe(([items, selectedItem, style, focusedIndex]) => {
-                const itemsChanged = items !== currentItems;
-                currentItems = items;
-                selectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
-                currentStyle = style;
-                const focusChanged = focusedIndex !== currentFocusedIndex;
-                currentFocusedIndex = focusedIndex;
+        const itemsSub = itemsState$.subscribe(([items, selectedItem, style, focusedIndex]) => {
+            const itemsChanged = items !== currentItems;
+            currentItems = items;
+            selectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
+            currentStyle = style;
+            const focusChanged = focusedIndex !== currentFocusedIndex;
+            currentFocusedIndex = focusedIndex;
 
-                if (itemsChanged) {
-                    vp.setItems(items);
-                } else if (focusChanged) {
-                    // Refresh re-renders the window with the new focus highlight, then
-                    // scrollToIndex adjusts scrollTop if the focused row is off-screen.
-                    vp.refresh();
-                    if (focusedIndex >= 0) vp.scrollToIndex(focusedIndex);
-                } else {
-                    vp.refresh(); // selection / style change
-                }
-            });
-            registerDestroy(container, () => itemsSub.unsubscribe());
-        } else {
-            // Direct rendering path (ComboBox / externalFocusedIndex mode)
-            const itemsSub = itemsState$.subscribe(([items, selectedItem, style, focusedIndex]) => {
-                currentItems = items;
-                selectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
-                currentStyle = style;
-                currentFocusedIndex = focusedIndex;
-
-                list.innerHTML = '';
-                items.forEach((item, index) => {
-                    list.appendChild(buildOption(index, item));
-                });
-                if (focusedIndex >= 0) {
-                    const el = list.children[focusedIndex] as HTMLElement | null;
-                    if (el && typeof el.scrollIntoView === 'function') {
-                        el.scrollIntoView({ block: 'nearest' });
-                    }
-                }
-            });
-            registerDestroy(container, () => itemsSub.unsubscribe());
-        }
+            if (itemsChanged) {
+                vp.setItems(items);
+            } else if (focusChanged) {
+                // Refresh re-renders the window with the new focus highlight, then
+                // scrollToIndex adjusts scrollTop if the focused row is off-screen.
+                vp.refresh();
+                if (focusedIndex >= 0) vp.scrollToIndex(focusedIndex);
+            } else {
+                vp.refresh(); // selection / style change
+            }
+        });
+        registerDestroy(container, () => itemsSub.unsubscribe());
 
         // Error message
         if (this.error$) {

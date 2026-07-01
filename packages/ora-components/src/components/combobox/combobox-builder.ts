@@ -182,6 +182,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             .withFocusedIndex(focusedIndex$)
             .withItemCaptionProvider(this.itemCaptionProvider)
             .withItemIdProvider(this.itemIdProvider)
+            .withOptionIdProvider((item) => `${listboxId}-option-${this.itemIdProvider(item)}`)
             .withStyle(mappedListBoxStyle$)
             .withClass(of('max-h-px-256 overflow-hidden'));
 
@@ -207,22 +208,10 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             currentItems = items;
             // Keep the <ul role="listbox"> visible at all times (needed for aria-controls and
             // accessibility queries). Only toggle the "No results" message.
+            // Option <li> ids are assigned by the ListBox itself (see withOptionIdProvider),
+            // so the combobox no longer needs to reach into ulEl.children — which is required
+            // now that the ListBox virtualizes and only a window of rows is in the DOM.
             noResults.style.display = items.length === 0 ? '' : 'none';
-
-            // Assign IDs to <li> elements so aria-activedescendant and tests work.
-            // ListBox re-renders synchronously via its own combineLatest subscription,
-            // but that subscription fires in the same microtask. Use Promise.resolve()
-            // to run after ListBox's itemsSub has completed.
-            Promise.resolve().then(() => {
-                Array.from(ulEl.children).forEach((li, index) => {
-                    if (!li.id) {
-                        const item = items[index];
-                        if (item !== undefined) {
-                            (li as HTMLElement).id = `${listboxId}-option-${this.itemIdProvider(item)}`;
-                        }
-                    }
-                });
-            });
         }));
 
         // When ListBox emits a selection (user clicked an item), handle it here
@@ -237,25 +226,16 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             }
         }));
 
-        // Authoritative ID assigner for the focused <li>: runs synchronously so aria-activedescendant
-        // is correct at the same tick focusedIndex$ changes. The Promise.resolve() block in the
-        // filteredItems$ subscription covers IDs for non-focused items (deferred until after ListBox renders).
+        // Point aria-activedescendant at the focused option. The id is computed from the item
+        // (matching the ListBox's withOptionIdProvider formula) rather than read off the DOM, so
+        // this works even though the ListBox virtualizes and the focused row may only just have
+        // been rendered. The ListBox subscribes to focusedIndex$ during build() — before this
+        // subscription — so it renders and scrolls the focused row into view first; by the time
+        // this runs the referenced element is present in the DOM.
         subs.add(focusedIndex$.subscribe(idx => {
-            if (idx >= 0) {
-                // Assign ID to the focused li if not already set
-                const li = ulEl.children[idx] as HTMLElement | undefined;
-                if (li) {
-                    if (!li.id) {
-                        const item = currentItems[idx];
-                        if (item !== undefined) {
-                            li.id = `${listboxId}-option-${this.itemIdProvider(item)}`;
-                        }
-                    }
-                    if (li.id) {
-                        input.setAttribute('aria-activedescendant', li.id);
-                    }
-                    li.scrollIntoView?.({ block: 'nearest' });
-                }
+            const item = idx >= 0 ? currentItems[idx] : undefined;
+            if (item !== undefined) {
+                input.setAttribute('aria-activedescendant', `${listboxId}-option-${this.itemIdProvider(item)}`);
             } else {
                 input.removeAttribute('aria-activedescendant');
             }

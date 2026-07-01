@@ -41,8 +41,15 @@ The dropdown is powered by `PopoverBuilder` (from `component-parts`) with a `Lis
 
 When the dropdown opens with an existing selected value, that item is shown with the selection highlight (bold, `bg-on-secondary-container/20`). A "No results" message is shown when the filter produces no matches; the `<ul role="listbox">` remains in the DOM at all times for accessibility.
 
+### Virtualization
+The dropdown is virtualized: the inner `ListBoxBuilder` uses `VirtualRowsViewport`, so only a window of `<li role="option">` rows around the visible/focused area is in the DOM at any time — large option lists no longer materialize every row. This applies even in ComboBox mode (external focus index); there is no separate "render everything" path.
+
+Because rows are sparse, ComboBox must **not** index into `ulEl.children`. Instead it gives the ListBox `withOptionIdProvider((item) => `${listboxId}-option-${itemIdProvider(item)}`)`, so every rendered option carries a stable, item-derived id. ComboBox computes the focused option's id from `currentItems[idx]` with the same formula (never reading the DOM) to set `aria-activedescendant`. Scrolling the focused row into view is handled by the ListBox (`vp.scrollToIndex`), not by ComboBox.
+
+Ordering is safe: the ListBox subscribes to `focusedIndex$` inside its `build()` (before ComboBox's own `focusedIndex$` subscription), so when `focusedIndex$` emits, the ListBox renders and scrolls the focused row into view first — the referenced element is present in the DOM by the time ComboBox sets `aria-activedescendant`.
+
 ### Viewport-gating of items
-The raw `items$` is viewport-gated **once**, at the always-visible ComboBox container, via `createOptimizedPipeline`. The gated stream is wrapped in `shareReplay({ bufferSize: 1, refCount: true })` because it has two consumers — the ComboBox's own bookkeeping subscription (currentItems / "No results" / aria-id assignment) and the inner ListBox — which must share a single `IntersectionObserver`/source subscription. The filtered list handed to the ListBox is branded as `new GatedObserver(filteredItems$)` so the ListBox does **not** re-gate it: gating on the ListBox's own container would never resolve, since the dropdown lives in a `display:none`-when-closed popover that never intersects the viewport. Net effect: `items$` is active only while the ComboBox is on-screen, and the dropdown list renders instantly on open. See [reactive.md](../reactive.md#gatedobserver-and-idempotency).
+The raw `items$` is viewport-gated **once**, at the always-visible ComboBox container, via `createOptimizedPipeline`. The gated stream is wrapped in `shareReplay({ bufferSize: 1, refCount: true })` because it has two consumers — the ComboBox's own bookkeeping subscription (currentItems / "No results" toggle) and the inner ListBox — which must share a single `IntersectionObserver`/source subscription. (Option ids are no longer assigned by ComboBox; the virtualized ListBox stamps them per-row via `withOptionIdProvider`.) The filtered list handed to the ListBox is branded as `new GatedObserver(filteredItems$)` so the ListBox does **not** re-gate it: gating on the ListBox's own container would never resolve, since the dropdown lives in a `display:none`-when-closed popover that never intersects the viewport. Net effect: `items$` is active only while the ComboBox is on-screen, and the dropdown list renders instantly on open. See [reactive.md](../reactive.md#gatedobserver-and-idempotency).
 
 ### Keyboard Navigation (input-driven)
 The input element captures all keyboard events:
@@ -57,7 +64,7 @@ ComboBox implements ARIA patterns for combobox:
 - `role="combobox"` on the input element.
 - `aria-autocomplete="list"`, `aria-expanded`, `aria-haspopup="listbox"`.
 - `aria-controls` links the input to the listbox `<ul>` id.
-- `aria-activedescendant` on the input points to the ID of the currently focused item in the listbox (set synchronously when `focusedIndex$` changes).
+- `aria-activedescendant` on the input points to the ID of the currently focused item in the listbox. The id is computed from the focused item (matching the ListBox's `withOptionIdProvider` formula) when `focusedIndex$` changes, so it stays correct even though the listbox is virtualized and only a window of rows is rendered; the ListBox renders and scrolls the focused row into view first, so the referenced element is present in the DOM.
 - Listbox items have `role="option"` and `aria-selected`.
 
 ## Styling
