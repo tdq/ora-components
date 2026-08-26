@@ -20,20 +20,29 @@ Following the same 3-tier pattern as `FxTickerBuilder`:
 import { Money } from '../../types/money';
 import { Trend } from '../../types/trend';
 
+export type CurrencyDisplay = 'symbol' | 'code';
+
 export interface MoneyKPIData {
     money: Money;
     previousMoney: Money | null;
     direction: 'up' | 'down' | 'flat';
+    precision: number;
     formatted: {
-        symbol: string;      // "€", "$", "£", etc. from CurrencyRegistry
-        whole: string;       // "2,481,902"
-        cents: string;       // "14"
-        full: string;        // "€2,481,902.14"
+        sign: string;             // "−" (U+2212) for negative amounts, "" otherwise
+        symbol: string;           // "€" or "EUR " depending on currencyDisplay
+        whole: string;            // "2.481.902" — grouped per locale
+        decimalSeparator: string; // "," or "." per locale
+        cents: string;            // "14"
+        full: string;             // "€2.481.902,14"
     };
 }
 ```
 
-The logic layer uses **math-based splitting** (not string parsing of `Intl` output) to separate whole and cents: `Math.floor(amount)` and `Math.round((amount - integer) * 100)`. This avoids locale-dependent decimal-separator ambiguities. The `symbol` comes from `CurrencyRegistry.getSymbol(currencyId)`. `CurrencyRegistry.format()` is used for the `full` string only (for aria-label and copy purposes).
+The logic layer uses **math-based splitting** (not string parsing of `Intl` output) to separate whole and cents: `Math.floor(amount)` and math-based rounding at the configured precision. This avoids locale-dependent decimal-separator ambiguities. Only the *separators* come from `Intl` — `Intl.NumberFormat(locale).formatToParts()` is read once per locale (cached) to learn the grouping and decimal characters, which are then applied by a regex pass over the digits. Grouping goes through `toLocaleString('en-US', { useGrouping: false })` rather than `String(n)` so amounts ≥ 1e21 do not fall into exponential notation.
+
+**Sign** is carried explicitly: the amount is formatted from its absolute value and negatives get `sign: '−'` (U+2212 minus, not a hyphen). Previously the sign was dropped entirely, so a negative KPI rendered identically to its positive twin.
+
+The `symbol` comes from `CurrencyRegistry.getSymbol(currencyId)` in `'symbol'` mode, or the ISO code in `'code'` mode. `CurrencyRegistry.format()` is used for the `full` string only (for aria-label and copy purposes) and accepts an optional locale.
 
 ## MoneyKPICardBuilder Methods
 
@@ -43,7 +52,9 @@ The logic layer uses **math-based splitting** (not string parsing of `Intl` outp
 | `withLabel` | `(label$: Observable<string>): this` | — | no | KPI card title displayed above the value (e.g. "Cash on Hand"). |
 | `withTrend` | `(trend$: Observable<Trend>): this` | — | no | Trend indicator chip displayed next to the label. Delegates to `TrendBuilder` internally. |
 | `withDescription` | `(description$: Observable<string>): this` | — | no | Text line displayed below the value (e.g. "live · reconciled to the cent"). Rendered with class `mkp-description` for CSS icon injection. |
-| `withPrecision` | `(precision: number \| Observable<number>): this` | `2` | no | Number of decimal places for the cents display. Passed to `CurrencyRegistry.format()`. |
+| `withPrecision` | `(precision: number \| Observable<number>): this` | `2` | no | Number of decimal places for the cents display. Passed to `CurrencyRegistry.format()`. **Precision `0`** renders neither the decimal separator nor the cents span — no trailing "." artefact. |
+| `withLocale` | `(locale: string \| Observable<string>): this` | `'en-US'` | no | Locale used for grouping and decimal separators. The default stays `'en-US'` rather than `navigator.language` so existing cards keep their output; opt in explicitly for locale-aware formatting. |
+| `withCurrencyDisplay` | `(display: CurrencyDisplay \| Observable<CurrencyDisplay>): this` | `'symbol'` | no | `'symbol'` renders `€1.234,56`; `'code'` renders `EUR 1.234,56`. |
 | `withClass` | `(className$: Observable<string>): this` | — | no | Merges extra Tailwind classes onto the root element via `cn()`. |
 | `asGlass` | `(): this` | off | no | Wraps the card in a glass surface via `PanelBuilder().asGlass()`. |
 | `build` | `(): HTMLElement` | — | yes | Constructs and returns the final element. Must be called last. |
@@ -58,10 +69,11 @@ All `with*` / `as*` methods return `this` for chaining and can be called in any 
   │ <LabelBuilder> label </LabelBuilder>     │  ← withLabel
   │ [ <TrendBuilder> trend chip </> ]        │  ← withTrend (conditional)
   ├──────────────────────────────────────────┤
-  │ <span class="mkp-symbol"> € </span>      │  ← from CurrencyRegistry
+  │ <span class="mkp-sign"> − </span>        │  ← negative amounts only
+  │ <span class="mkp-symbol"> € </span>      │  ← symbol or ISO code
   │ <span class="mkp-whole"> 2,481,902 </span>│  ← flash animation target
-  │ <span class="mkp-sep"> . </span>         │
-  │ <span class="mkp-cents"> 14 </span>      │  ← rolling-digit target
+  │ <span class="mkp-sep"> . </span>         │  ← hidden when precision is 0
+  │ <span class="mkp-cents"> 14 </span>      │  ← rolling-digit target, hidden when precision is 0
   ├──────────────────────────────────────────┤
   │ <span class="mkp-description"> ... </span>│  ← withDescription (conditional)
   └──────────────────────────────────────────┘
@@ -144,7 +156,8 @@ The component does not ship a built-in icon — styling is consumer responsibili
 - **Orchestration**: `MoneyKPICardBuilder.build()` instantiates `MoneyKPICardViewport` and passes the `MoneyKPICardLogic` instance. No DOM work happens inside the builder itself.
 - **Viewport lifecycle**: `MoneyKPICardViewport` subscribes to `logic.state$` and updates the value row on each emission. It uses `registerDestroy()` to unsubscribe when the root element is removed from the DOM.
 - **Delegation**: The header row (label + trend) uses `LabelBuilder` and `TrendBuilder`. The value row uses direct DOM construction — necessary for `data-money-whole` / `data-money-cents` targeting for animations. The panel wrapper uses `PanelBuilder` (with glass support).
-- **Math-based formatting split**: `MoneyKPICardLogic` uses `Math.floor()` and math-based rounding for whole/cents separation, never string parsing of `Intl.NumberFormat` output. This is locale-safe.
+- **Math-based formatting split**: `MoneyKPICardLogic` uses `Math.floor()` and math-based rounding for whole/cents separation, never string parsing of `Intl.NumberFormat` output. `Intl` is consulted only for the locale's separator characters (cached per locale).
+- **Eager first paint, gated updates**: `value$` is passed through `createOptimizedPipeline(body, value$, { eagerFirst: true })`. The first value is painted immediately even when the card is below the fold — a viewport-gated card used to render an empty value row until the user scrolled to it — while *updates* remain viewport-gated, preserving the energy behaviour. The stream is de-duplicated with `distinctUntilChanged` comparing `amount` and `currencyId` (`Money` objects are not reference-stable). Configuration streams (precision, locale, currency display) are combined with `combineLatest` + `startWith` defaults so a card renders without them.
 - **CurrencyRegistry integration**: The logic layer calls `CurrencyRegistry.getSymbol(currencyId)` for the symbol and `CurrencyRegistry.format(money, precision)` for the aria-label `full` string.
 - **No post-build manipulation**: Per `.agent/builder-pattern.md`, no `classList.add`, `style.xxx`, or `appendChild` on the built element from user code. All configuration flows through builder methods. Animation class toggles inside the viewport are internal.
 - **Animations always on**: Unlike the prototype's toggle API, `MoneyKPICardBuilder` always enables both rolling-digit and flash animations. Callers do not need to configure animation behavior.

@@ -3,7 +3,7 @@ import { of, BehaviorSubject } from 'rxjs';
 
 export function createSettings(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    container.className = 'flex-1 overflow-y-auto';
 
     const profileForm = new FormBuilder()
         .withCaption(of('Profile Settings'))

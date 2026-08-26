@@ -6,6 +6,11 @@ export default {
         "../ora-components/src/**/*.{ts,html,css}",
     ],
     darkMode: ['selector', '[data-theme="dark"]'],
+    // No Preflight here: @tdq/ora-components/style.css already ships Tailwind's reset inside
+    // `@layer ora-components`. A second, unlayered copy from this build outranks every layered
+    // rule (unlayered CSS always beats layered), so its `*{border:0 solid}` silently zeroed
+    // every `border:` the library sets — sidebar panel, tooltip, menu — in the demo.
+    corePlugins: { preflight: false },
     theme: {
         extend: {
             colors: {

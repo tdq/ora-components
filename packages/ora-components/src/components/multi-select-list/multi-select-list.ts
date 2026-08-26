@@ -344,6 +344,12 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
             if (itemsChanged) {
                 viewport.setItems(items);
             } else {
+                // buildRow reads currentStyle/currentSelectedIds from the closure, so a
+                // style change can change a row's rendered height (e.g. padding/typography
+                // differs per style variant) — invalidate cached heights first so refresh()
+                // re-measures from the new style instead of reusing heights measured under
+                // the old one.
+                viewport.invalidateMeasurements();
                 viewport.refresh();
             }
 

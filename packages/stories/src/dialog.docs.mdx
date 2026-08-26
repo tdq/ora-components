@@ -80,7 +80,19 @@ All builder methods return `this` for chaining (except `withToolbar` which retur
   Enables vertical scrolling for the content area with a minimum height of 200px.
 
 - **`withHeight`** — `(height: Observable<number>): this`
-  Limits the dialog max height in pixels. When not set, height is determined by content.
+  Limits the dialog max height in pixels (`max-height`, content grows up to it). When not set, height is determined by content.
+
+- **`withMaxWidth`** — `(maxWidth: Observable<string>): this`
+  Overrides the `DialogSize` preset's default max-width (e.g. `'600px'`) independently of the vw-relative width. Useful when you want the size preset's proportional width behaviour but a different cap.
+
+- **`withFixedHeight`** — `(height: Observable<number>): this`
+  Pins the dialog to a fixed pixel height (not just a cap): the content area becomes internally scrollable (`overflow-y-auto min-h-0`) while the header and toolbar stay fixed in place. Also caps the dialog at `max-h-[90vh]` so it never exceeds the viewport. Use this for multi-step wizards or any dialog whose content height varies across steps but whose chrome should stay put.
+
+- **`withBeforeClose`** — `(fn: () => boolean \| Promise<boolean>): this`
+  Registers a guard consulted by `close()` and by the native `cancel` event (Escape key). Returning (or resolving to) `false` vetoes the close and keeps the dialog open. A throwing or rejecting guard is reported via `console.error` and also keeps the dialog open (fails closed). The guard is only consulted while the dialog is actually open; it is never consulted by `forceClose()`.
+
+- **`withDraggable`** — `(draggable: boolean \| Observable<boolean>): this`
+  Toggles header-drag repositioning. Defaults to `true` (draggable). Pass `false` (or an observable emitting `false`) to disable dragging — the header cursor and drag listeners are removed, and any in-progress drag position is cleared.
 
 - **`withToolbar`** — `(): ToolbarBuilder`
   Returns a `ToolbarBuilder` for adding action buttons at the bottom of the dialog. Call once to create the toolbar.
@@ -89,24 +101,31 @@ All builder methods return `this` for chaining (except `withToolbar` which retur
   Enables the glass-effect variant with frosted background and blur on the dialog and its toolbar.
 
 - **`show`** — `(): void`
-  Opens the dialog modally. Appends it to `document.body` and calls `showModal()`. Safe to call multiple times.
+  Opens the dialog modally. Builds the element on first call (if not already built), appends it to `document.body`, and calls `showModal()`. Safe to call multiple times.
 
-- **`close`** — `(): void`
-  Closes the dialog and removes it from `document.body`. Clears inline drag-position styles.
+- **`close`** — `(): Promise<void>`
+  Closes the dialog unless `withBeforeClose` vetoes it — awaits an async guard before deciding. A no-op if the dialog isn't currently open. See [Async Close & Single-Use Lifecycle](#async-close--single-use-lifecycle) below.
+
+- **`forceClose`** — `(): void`
+  Closes the dialog immediately, bypassing `withBeforeClose` entirely. Use this after the guarded action has already run (e.g. inside a "Save" handler, after validation succeeded). A safe no-op once the dialog's element has already been destroyed.
 
 - **`build`** — `(): HTMLElement`
-  Constructs and returns the native `<dialog>` element. Called automatically by `show()` if not already built.
+  Constructs and returns the native `<dialog>` element. Called automatically by `show()` if not already built. Returns the cached element on repeat calls — see the single-use lifecycle note below.
 
 ---
 
 ## DialogSize Enum
 
-| Value | Description |
-|-------|-------------|
-| `DialogSize.SMALL` | 30vw width. Use for quick confirmations or alerts. |
-| `DialogSize.MEDIUM` | 50vw width. The default. Use for standard content. |
-| `DialogSize.LARGE` | 75vw width. Use for forms or tabbed content. |
-| `DialogSize.EXTRA_LARGE` | 90vw width. Use for complex layouts or data tables. |
+| Value | vw Width | Default max-width | Description |
+|-------|----------|--------------------|-------------|
+| `DialogSize.SMALL` | 30vw | 480px | Use for quick confirmations or alerts. |
+| `DialogSize.MEDIUM` | 50vw | 720px | The default. Use for standard content. |
+| `DialogSize.LARGE` | 75vw | 1040px | Use for forms or tabbed content. |
+| `DialogSize.EXTRA_LARGE` | 90vw | 1400px | Use for complex layouts or data tables. |
+
+Each size is `w-<vw> max-w-[<px>]` — the dialog is proportional to the viewport up to its default cap. `withMaxWidth()` overrides that cap independently of the vw-relative width; see `SizesAndMaxWidth` below.
+
+<Canvas of={Stories.SizesAndMaxWidth} />
 
 ---
 
@@ -142,11 +161,44 @@ The `DialogWithForm` story embeds a comprehensive `FormBuilder` inside the dialo
 
 ---
 
+## Confirm Before Close
+
+The `ConfirmBeforeClose` story demonstrates `withBeforeClose()` as a fail-closed guard: it returns `false` until a checkbox is ticked, vetoing both the toolbar's Close button (`close()`) and the native Escape key (`cancel` event) until the user acknowledges.
+
+<Canvas of={Stories.ConfirmBeforeClose} />
+
+---
+
+## Non-Draggable
+
+The `NonDraggable` story demonstrates `withDraggable(false)` — the header no longer shows a move cursor and dragging it does nothing; the dialog stays centered.
+
+<Canvas of={Stories.NonDraggable} />
+
+---
+
+## Fixed-Height Wizard
+
+The `WizardFixedHeight` story uses `withFixedHeight()` to keep a multi-step dialog at a constant pixel height across steps whose content length varies — the content area scrolls internally while the header and toolbar stay fixed.
+
+<Canvas of={Stories.WizardFixedHeight} />
+
+---
+
 ## Glass Effect
 
 The `GlassEffect` story renders a dialog with `asGlass()` applied on top of a gradient background, demonstrating the frosted-glass appearance with translucent surfaces and backdrop blur.
 
 <Canvas of={Stories.GlassEffect} />
+
+---
+
+## Async Close & Single-Use Lifecycle
+
+- **`close()` is asynchronous.** It returns a `Promise<void>` and, when `withBeforeClose()` is set, awaits the guard (sync or async) before deciding whether to actually close. A throwing or rejecting guard is caught, reported via `console.error`, and treated as "keep the dialog open" — the promise never rejects.
+- **The native `cancel` event (Escape) goes through the same guard.** `preventDefault()` is called before invoking it, so a synchronous throw can never fall through to the browser's default close; a `Promise<boolean>` result is awaited the same way `close()` awaits it.
+- **`forceClose()` bypasses the guard entirely** — call it after the guarded action has already completed (e.g. inside a "Save" click handler, once validation has passed).
+- **A `DialogBuilder` is single-use.** Once its built `<dialog>` element is destroyed (disconnected via `close()`, `forceClose()`, or a native close), the builder does not resurrect it — calling `show()` again invokes `build()` fresh, constructing a brand-new element with a freshly armed `withBeforeClose` guard. Do not manually re-parent a built dialog's element; a detached-and-reattached node stays inert.
 
 ---
 

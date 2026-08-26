@@ -14,7 +14,8 @@ The chart is modularized into specialized classes to separate configuration, sta
 - **`ChartLogic<ITEM>`**: Manages data processing, scaling, and reactive state.
 - **`ChartSvgArea`**: Manages the `<svg>` element, `<defs>`, and responsive `viewBox`.
 - **`AxisRenderer`**: Renders X and Y axes, grid lines, and labels.
-- **`SeriesRenderer`**: Renders data series (Line, Bar, Area) and SVG filters.
+- **`SeriesRenderer`**: Renders data series (Line, Bar, Area) and SVG filters. Owns the SMIL animation lifecycle (`begin="indefinite"` + explicit `beginElement()`).
+- **`value-utils.ts`**: `readValue(item, field)` — the single place that decides whether a data point is a number or a gap (`null`).
 - **`ChartLegend`**: Handles the rendering of the series legend.
 - **`ChartTooltip`**: Manages tooltip visibility, content, and positioning.
 - **`LabelBuilder`**: Used for all text elements outside the SVG.
@@ -53,7 +54,8 @@ Each method returns a specialized builder for that series.
 - **Downsampling (Point Density)**: `ChartLogic` MUST downsample data points to ensure the chart remains performant and visually clear. The maximum number of points (`MAX_POINTS`) is calculated as `Math.max(2, Math.floor(viewWidth / (2 * HIGHLIGHT_DIAMETER)))`, where `HIGHLIGHT_DIAMETER` is 12px. This ensures a minimum spacing of 2 diameters (24px) between points.
 - **Text Components**: All text elements outside of the SVG MUST be created using `LabelBuilder`.
 - **SVG Namespace**: All SVG elements MUST be created using `document.createElementNS('http://www.w3.org/2000/svg', ...)`.
-- **Animation Paths**: When `animate` is true, use `<animate>` elements inside SVG paths/rects/circles.
+- **Animation Paths**: When `animate` is true, use `<animate>` elements inside SVG paths/rects/circles. Every `<animate>` MUST carry `begin="indefinite"` and be started explicitly with `beginElement()` once the SVG is connected to the document — SMIL's default `begin="0s"` starts the clock at document load, so a chart built after that point (lazy route, `setTimeout`, viewport-gated data) would render its collapsed "from" state forever. The static attributes MUST hold the **final** values, not the collapsed ones, so a chart whose animation never starts (no SMIL support, `beginElement` unavailable) still shows correct data.
+- **Missing values (gaps)**: `null`, `undefined` and `NaN` are gaps, not zeros. `value-utils.ts` (`readValue`) returns `null` for them; line and area renderers break the path into sub-paths around a gap (`M` restart) instead of drawing through it, bars and markers are skipped, and `ChartLogic` excludes them from the domain calculation.
 - **Rendering Loop**: Use `logic.state$` subscription to trigger re-renders. `ChartViewport` is responsible for clearing the SVG (via `ChartSvgArea.clear()`) and updating filters before renderers are called.
 - **X-Axis Scaling**: Category scales MUST be point-centered with exactly **8px padding** from the Y-axis to the first chart element (e.g., the left edge of the first bar). This is achieved using the formula `xScale(i) = 8 + barWidth / 2 + i * xStep`.
 - **Individual Shadows**: `SeriesRenderer` MUST handle the creation of filters in `<defs>` with ID `shadow-${index}`.

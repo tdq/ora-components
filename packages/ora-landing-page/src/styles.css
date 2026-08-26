@@ -163,6 +163,34 @@
     --kpi-amber-text: #fcd34d;
     --kpi-red-text: #fca5a5;
   }
+
+  /* ----- Demo shell background -----
+     Ported from aura-accounting `body`: a base colour with four soft colour blobs
+     pinned to the corners. Light and dark reuse Aura's values verbatim; pink is
+     a native set tuned to the pink theme's #FFF0F5 surface. */
+  :root:not([data-theme="dark"]):not([data-theme="pink"]) {
+    --demo-bg-base: #f5f3ff;
+    --demo-bg-blob-1: rgba(167, 139, 250, 0.18); /* lavender — top-left */
+    --demo-bg-blob-2: rgba(125, 211, 252, 0.18); /* sky — top-right */
+    --demo-bg-blob-3: rgba(251, 207, 232, 0.18); /* pink — bottom-left */
+    --demo-bg-blob-4: rgba(186, 230, 253, 0.16); /* light cyan — bottom-right */
+  }
+
+  [data-theme="dark"] {
+    --demo-bg-base: #050818;
+    --demo-bg-blob-1: rgba(139, 92, 246, 0.22); /* purple — top-left */
+    --demo-bg-blob-2: rgba(56, 189, 248, 0.18);  /* sky — top-right */
+    --demo-bg-blob-3: rgba(236, 72, 153, 0.10);  /* pink — bottom-left */
+    --demo-bg-blob-4: rgba(45, 212, 191, 0.12);  /* teal — bottom-right */
+  }
+
+  [data-theme="pink"] {
+    --demo-bg-base: #FFF0F5;
+    --demo-bg-blob-1: rgba(244, 114, 182, 0.20); /* rose — top-left */
+    --demo-bg-blob-2: rgba(192, 132, 252, 0.16); /* lilac — top-right */
+    --demo-bg-blob-3: rgba(253, 164, 175, 0.18); /* blush — bottom-left */
+    --demo-bg-blob-4: rgba(251, 191, 36, 0.10);  /* peach — bottom-right */
+  }
 }
 
 .txn-amount-positive {
@@ -179,6 +207,18 @@ body {
 
 button {
   user-select: none;
+}
+
+/* Demo dashboard shell — same four-blob wash as aura-accounting's body, driven by
+   the per-theme --demo-bg-* tokens above so it restyles with [data-theme]. */
+.demo-shell {
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 8%, var(--demo-bg-blob-1), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 88% 12%, var(--demo-bg-blob-2), transparent 65%),
+    radial-gradient(ellipse 70% 50% at 10% 95%, var(--demo-bg-blob-3), transparent 65%),
+    radial-gradient(ellipse 65% 55% at 95% 90%, var(--demo-bg-blob-4), transparent 60%),
+    var(--demo-bg-base);
+  transition: background 0.3s ease;
 }
 
 @layer utilities {

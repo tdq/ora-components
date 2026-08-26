@@ -1,1 +1,1 @@
-export { MoneyKPICardBuilder } from './money-kpi-card-builder';
+export { MoneyKPICardBuilder, type CurrencyDisplay } from './money-kpi-card-builder';

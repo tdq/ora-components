@@ -69,7 +69,18 @@ All builder methods return `this` for chaining unless they return a sub-builder.
   Sets the data source for the grid. Subscription is deferred (lazily subscribed) until the grid is visible in the viewport, and is automatically torn down when the grid leaves the viewport or is removed from the DOM.
 
 - **`withHeight`** — `(height: Observable<number>) => this`
-  Sets the fixed height of the grid container in pixels. If not called, the grid defaults to `height: 100%` of its parent.
+  Sets the fixed height of the grid container in pixels. If not called, the grid defaults to `height: 100%` of its parent. Ignored when `withAutoHeight()` is also set.
+
+- **`withRowHeight`** — `(px: number) => this`
+  Overrides the default per-row height (`GRID_ROW_HEIGHT`, 52px). Rows, `translateY` positioning, and the virtual-scroll window math all follow this value — it's the single source of truth, shared by `GridViewport`, `GridRow`, and `GridGroupRow`.
+
+- **`withAutoHeight`** — `(maxRows: number) => this`
+  Sizes the grid container to fit up to `maxRows` rendered rows: `min(rows.length, maxRows) * rowHeight + GRID_HEADER_HEIGHT` (+ `GRID_TOOLBAR_HEIGHT_ALLOWANCE` when `withToolbar()` is also set), reacting live as the row count changes. Uses the flattened, grouping-aware row count (`rows.length` — includes `GROUP_HEADER` rows, excludes collapsed groups' hidden children), not the raw item count. Once row count exceeds `maxRows`, the container height stays capped and the viewport scrolls internally as usual. Overrides `withHeight`.
+
+  ```typescript
+  // GRID_ROW_HEIGHT = 52, GRID_HEADER_HEIGHT = 52, GRID_TOOLBAR_HEIGHT_ALLOWANCE = 56
+  import { GRID_ROW_HEIGHT, GRID_HEADER_HEIGHT, GRID_TOOLBAR_HEIGHT_ALLOWANCE } from '@tdq/ora-components';
+  ```
 
 - **`withGrouping`** — `(fields$: Observable<(keyof ITEM \| string)[]>) => this`
   Enables multi-level grouping by the provided field names. Toggle groups via the expand/collapse UI.
@@ -167,7 +178,7 @@ All column builders inherit these common methods:
   Enables column resizing via a drag handle in the header. Defaults to `true`.
 
 - **`asEditable`** — `() => this`
-  Marks the column as inline-editable. Only effective when the grid has `asEditable()` called.
+  Marks the column as inline-editable, wiring a full value editor: double-click (or Enter/focus-activation) opens the column type's editor, Enter commits the new value via the grid's `asEditable(onCommit)` callback, Escape reverts. `CustomColumnBuilder.asEditable()` overrides this signature — see [Custom Cell Contract](#custom-cell-contract) below.
 
 - **`withAlign`** — `(align: 'left' \| 'center' \| 'right') => this`
   Sets text and flex alignment for the column header and cells.
@@ -189,6 +200,9 @@ All column builders inherit these common methods:
 - **`EnumColumnBuilder`** — `withItemCaptionProvider(provider: (item: ITEM) => string): this`
   Custom caption display for each row.
 
+  **`withOptions`** — `(options: EnumOption[] | Observable<EnumOption[]>): this`
+  Seeds the select editor's choices and — unless `withItemCaptionProvider()` overrides it — the display caption too, so display and options are derived from the same source and can never drift. Accepts a static array or a reactive `Observable<EnumOption[]>` (`interface EnumOption { value: any; label: string }`). Combined with `.asEditable()`, this opens a **select editor** (internally a `ComboBoxBuilder<EnumOption>` seeded with the current options) instead of the plain display text — clicking an option, or pressing Enter, commits immediately. The options subscription is subscribed once lazily (on first render/edit) and shared across every `GridColumn` the builder produces, so a single `EnumColumnBuilder` reused across pivot regenerations or multiple grids only holds one live subscription — released once every column instance backed by it calls `destroy()` (see [`GridColumn.destroy`](#gridcolumndestroy) below). See [Custom Cell Contract](#custom-cell-contract) below for this story's other editing flavour.
+
 - **`ButtonColumnBuilder`** — `withLabel(label: string): this`
   Sets the button text. `withClick(click: ClickListener<ITEM>): this` — click handler receiving the row item. `withStyle(style: ButtonStyle): this` — button style variant.
 
@@ -196,7 +210,21 @@ All column builders inherit these common methods:
   Returns a CSS class string for the icon. `withTooltipProvider(provider: (item: ITEM) => string): this` — hover tooltip text.
 
 - **`CustomColumnBuilder`** — `withRenderer(renderer: (item: ITEM) => HTMLElement \| string): this`
-  Custom render function returning a DOM element or HTML string.
+  Custom render function returning a DOM element or HTML string. See [Custom Cell Contract](#custom-cell-contract) for its distinct `asEditable()` behaviour.
+
+### Custom Cell Contract
+
+`CustomColumnBuilder.asEditable(focusTarget?: (cellEl: HTMLElement) => HTMLElement | null): this` overrides the base `asEditable()` signature and behaves differently from every other column type: it is **focus-only**, not value-editing.
+
+- A custom column already renders its own interactive content via `withRenderer()`. Calling `.asEditable()` on it just wires that cell into the grid's Tab/Enter/Arrow keyboard chain — activating the cell (click, Enter, or Tab landing on it) focuses the interactive content inside, nothing more.
+- No `renderEditor`/commit flow is ever triggered, no `onCommit` callback fires, and no item field is written — unlike the value-editor flow every other `asEditable()` column type uses.
+- `focusTarget` resolves the focusable element within the rendered cell. It is called **fresh on every activation** — never cache the returned node, since virtualized cell content can be recycled across renders. Defaults to the first element matching a standard focusable-selector (buttons, links, inputs, selects, textareas, and `[tabindex]` other than `-1` — all `:not(:disabled)`).
+
+<Canvas of={GridStories.EditableEnumAndFocusOnlyCustom} />
+
+### GridColumn.destroy
+
+Built columns (the `GridColumn<ITEM>` objects returned by every `ColumnBuilder.build()`) may carry an optional `destroy?(): void` teardown hook for resources the column builder allocated for that specific built instance — currently used by `EnumColumnBuilder` for its long-lived options subscription. `GridBuilder` calls `destroy()` for every column on the grid's own teardown, and for the **outgoing** columns whenever pivot mode regenerates or reverts the column set. Implementations must be idempotent and must not tear down state shared with other built columns from the same builder (a single column builder instance can be built more than once — across pivot regenerations, or reused to serve more than one grid).
 
 ---
 
@@ -353,6 +381,14 @@ When the data observable emits an empty array, the grid renders an empty table w
 When `withHeight()` is not called, the grid fills 100% of its parent container height.
 
 <Canvas of={GridStories.FullHeight} />
+
+---
+
+## Row Height & Auto Height
+
+`withRowHeight(px)` sets the per-row height (rows, `translateY`, and the virtual-window math all follow it), while `withAutoHeight(maxRows)` sizes the grid container to `min(rows.length, maxRows) * rowHeight + header (+ toolbar allowance)` and re-sizes itself live as rows are added or removed. Add rows past `maxRows` and the container stops growing — the viewport scrolls internally instead.
+
+<Canvas of={GridStories.RowHeightAndAutoHeight} />
 
 ---
 

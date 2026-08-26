@@ -50,7 +50,10 @@ packages/
 ```
 npm run build
   └─ vite build               → dist/*.js  (JS bundles + per-component entries)
-  └─ build:css                → dist/ora-components.css
+  └─ build:css                → tailwindcss × 2 (src/index-base.css, src/index-layered.css)
+                                  → wrap-css-layer.mjs composes dist/ora-components.css:
+                                    unlayered design tokens + @layer ora-components { … }
+                                    (see theme.md §10b)
   └─ build:types (tsc)        → dist/components/**/*.d.ts  +  dist/index.d.ts
                                   (index.d.ts references ./components/<name>)
   └─ reorganize-types.mjs     → moves dist/components/<name>/ → dist/<name>/
@@ -101,7 +104,7 @@ Two reusable utilities from the shared library layer are used by multiple compon
 
 ### `createOptimizedPipeline` (`src/utils/optimized-pipeline.ts`)
 
-A visibility-gated, energy-efficient data pipeline. Wraps a source `Observable<T>` with an `IntersectionObserver` that defers subscription until the host element enters the viewport, and tears down instantly on viewport exit. Includes exponential-backoff retry for network resilience.
+A visibility-gated, energy-efficient data pipeline. Wraps a source `Observable<T>` with an `IntersectionObserver` that defers subscription until the host element enters the viewport, and tears down instantly on viewport exit. Includes exponential-backoff retry for network resilience. Falls back to rendering synchronously where `IntersectionObserver` is unavailable (jsdom, older embedders), and supports an opt-in `eagerFirst` first paint — see [reactive.md](reactive.md#viewport-gated-lazy-subscriptions-createoptimizedpipeline).
 
 **Consumers**: `GridBuilder` (wraps `items$`), `ChartBuilder` (wraps `data$`), `MoneyKPICardViewport` (wraps `value$`), `FxTickerViewport` (wraps `data$`).
 
@@ -134,6 +137,10 @@ Both are wired in `build()`: the pipeline gates visibility during the element's 
 ### Legacy alternative: `registerDestroy` (`src/core/destroyable-element.ts`)
 
 Older components use a `MutationObserver`-based `registerDestroy` pattern. Not recommended for new components — prefer `createLifecycleBoundary`.
+
+## Cross-component dependencies
+
+Components are built as independent entry points (`vite.config.ts`) and exposed as subpath exports, but a few deliberately compose others. `form` uses `text-field`, `number-field`, `money-field`, `combobox`, `date-picker`, `checkbox`, `label`; `combobox` uses `listbox` and `component-parts/popover`; **`grid` uses `combobox`** (the enum column's inline select editor). A consumer importing `@tdq/ora-components/grid` therefore also pulls in the combobox bundle. Keep such edges few and record them here — they are the thing that quietly turns a component library into one monolith.
 
 ## MCP server tools
 

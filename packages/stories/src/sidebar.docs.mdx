@@ -1,0 +1,305 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './sidebar.stories';
+
+<Meta of={Stories} />
+
+# SideBar
+
+`SideBarBuilder` is the application navigation rail: a fixed-width column of icons that
+expands to show labels, with router-aware rows, tooltips while collapsed, popover menus and
+an account footer. It is the left edge of an application shell — pair it with
+[Layout](../?path=/docs/components-layout--docs) for the page body and
+[ChatPanel](../?path=/docs/components-chatpanel--docs) for a docked assistant on the right.
+
+Every visual state is driven by RxJS: captions, icons, enabled and visible flags are all
+observables, and the expanded flag is a two-way `Subject` you may own yourself.
+
+The rail is `height: 100%`, so **its parent must be height-constrained** — in a
+`LayoutBuilder` row that is automatic, and in the stories below it is a 560px shell.
+
+<Canvas of={Stories.Default} />
+
+---
+
+## Usage
+
+```typescript
+import { SideBarBuilder } from '@tdq/ora-components';
+import { BehaviorSubject, of } from 'rxjs';
+
+const expanded$ = new BehaviorSubject<boolean>(true);
+
+const sidebar = new SideBarBuilder()
+  .withRouter(router)
+  .withCaption(of('Northwind Books'))
+  .withExpanded(expanded$);
+
+sidebar.addItem()
+  .withIcon(LEDGER_SVG)
+  .withCaption(of('General ledger'))
+  .withHref('/ledger')
+  .withExact();
+
+sidebar.addItem()
+  .withIcon(REPORTS_SVG)
+  .withCaption(of('Year-end reports'))
+  .withEnabled(canCloseYear$)
+  .withTooltip(of('Locked until period 12 is closed'));
+
+sidebar.addDivider();
+
+sidebar.withFooter()
+  .withCaption(of('Northwind Books Ltd'))
+  .withDescription(of('Owner · FY 2026'));
+
+document.body.appendChild(sidebar.build());
+```
+
+---
+
+## Builder API
+
+All methods return `this` for chaining except `addItem()` and `withFooter()`, which return the
+inline builders documented in the next section.
+
+- **`withRouter`** — `(router: RouterBuilder): this`
+  Supplies the router that nav rows navigate through and derive their active state from.
+  Without it, `withHref()` on an item has no effect and the row renders as a `<button>`.
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Brand text shown when the rail is expanded. Its first character is also the default
+  monogram in the collapsed brand mark.
+
+- **`withLogo`** — `(logo: ComponentBuilder): this`
+  Replaces the monogram with a custom brand mark.
+
+- **`withExpanded`** — `(expanded: Subject<boolean>): this`
+  Two-way expanded state. When supplied, the sidebar drives and observes this subject only —
+  it never reads or writes `localStorage`, and the narrow-viewport auto-collapse becomes the
+  caller's business. The subject is never completed by the component.
+
+- **`withStorageKey`** — `(key: string): this`
+  The `localStorage` key used when `withExpanded()` is *not* supplied. Defaults to
+  `'ora-sidebar-expanded'`.
+
+- **`asExpandedByDefault`** — `(): this`
+  Starts the rail expanded on a first visit. Applies only when `withExpanded()` is *not*
+  supplied **and** `localStorage` holds no value for the storage key — a stored preference,
+  including `'false'`, always wins. The narrow-viewport auto-collapse still applies.
+
+- **`addItem`** — `(): SidebarItemBuilder`
+  Appends a nav row. A new builder per call; rows render in call order.
+
+- **`addDivider`** — `(): this`
+  Appends a horizontal rule between rows.
+
+- **`withFooter`** — `(): SidebarFooterBuilder`
+  Returns the footer builder, memoised — calling it twice configures the same footer.
+
+- **`asGlass`** — `(): this`
+  Renders the panel with `.glass-effect` instead of a solid surface, and propagates the glass
+  flag to every popover menu the rail opens.
+
+- **`build`** — `(): HTMLElement`
+  Constructs the rail. Call once per builder.
+
+---
+
+## Inline builders (Item, Footer, Menu)
+
+### `SidebarItemBuilder` — `sidebar.addItem()`
+
+| Method | Signature | Effect |
+|---|---|---|
+| `withIcon` | `(icon: string \| Observable<string>): this` | Inline SVG markup for the row's glyph. A plain string is wrapped in `of()`. |
+| `withCaption` | `(caption: Observable<string>): this` | Row label; also the default tooltip text while collapsed. |
+| `withHref` | `(href: string): this` | Turns the row into a real `<a href>` routed through `withRouter()`'s router. |
+| `withExact` | `(exact?: boolean): this` | Match the whole path instead of the prefix when deciding active state. Defaults to `true` when called with no argument. |
+| `withClick` | `(cb: () => void): this` | Plain click callback. **Ignored when the row also has a menu** — the menu always wins. |
+| `withEnabled` | `(enabled: Observable<boolean>): this` | Disabled rows stay visible but refuse clicks, report `aria-disabled`, drop out of the tab order and — for router rows — **lose their `href`**, so middle-click and the context menu cannot navigate either. |
+| `withVisible` | `(visible: Observable<boolean>): this` | Same semantics as `SlotBuilder.withVisible`: toggles `display`, no rebuild, subscriptions stay live. |
+| `withTooltip` | `(text: Observable<string>): this` | Tooltip shown while collapsed. Defaults to the caption. |
+| `withMenu` | `(): SidebarMenuBuilder` | Clicking the row opens this menu instead of navigating or running `withClick`. Memoised — created once. |
+
+### `SidebarFooterBuilder` — `sidebar.withFooter()`
+
+| Method | Signature | Effect |
+|---|---|---|
+| `withIcon` | `(icon: string \| Observable<string>): this` | Inline SVG in place of an avatar. |
+| `withAvatar` | `(avatar: ComponentBuilder): this` | Custom avatar component. |
+| `withCaption` | `(caption: Observable<string>): this` | Primary line — the organisation or user name. |
+| `withDescription` | `(desc: Observable<string>): this` | Secondary line — role, period, tenant. |
+| `withMenu` | `(): SidebarMenuBuilder` | Account menu opened by clicking the footer row. Memoised. |
+
+An avatar-only footer is still named: the accessible name falls back to the caption, then the
+description, then `'Menu'`.
+
+### `SidebarMenuBuilder` / `SidebarMenuItemBuilder`
+
+| Method | Signature | Effect |
+|---|---|---|
+| `SidebarMenuBuilder.addItem` | `(): SidebarMenuItemBuilder` | Appends a `role="menuitem"` button. |
+| `SidebarMenuBuilder.addDivider` | `(): this` | Appends a `role="separator"`. |
+| `SidebarMenuItemBuilder.withIcon` | `(icon: string \| Observable<string>): this` | Inline SVG for the item. |
+| `SidebarMenuItemBuilder.withCaption` | `(caption: Observable<string>): this` | Item label. |
+| `SidebarMenuItemBuilder.withClick` | `(cb: () => void): this` | Runs on activation, then the menu closes. |
+| `SidebarMenuItemBuilder.withEnabled` | `(enabled: Observable<boolean>): this` | Disabled items are `disabled`, `aria-disabled`, and skipped by arrow-key navigation. |
+
+Menus open as a `PopoverPlacement.RIGHT` popover offset 8px from the rail, capped at 320px
+tall with the list itself scrolling. The anchor carries `aria-haspopup="menu"` and an
+`aria-expanded` that tracks *every* close — including ones the menu did not initiate, such as
+an outside click or another popover taking the single active slot.
+
+<Canvas of={Stories.WithFooterMenu} />
+
+---
+
+## Expanded state & persistence
+
+There are exactly two modes, and they are mutually exclusive.
+
+**Component-owned (default).** No `withExpanded()`: the sidebar keeps the flag itself, seeds it
+from `localStorage[withStorageKey()]` and writes every deliberate toggle back. A collapse
+forced by a narrow viewport is *not* persisted — it is a transient condition, and storing it
+would erase a preference set on a wide screen.
+
+With no stored value the rail starts collapsed, unless `asExpandedByDefault()` asks for the
+opposite. That is a default, not a preference: it is never written to storage, a stored
+`'false'` still wins over it, and a narrow viewport still collapses the rail.
+
+**Caller-owned.** With `withExpanded(subject)` the subject is the single source of truth. The
+sidebar reads it, writes to it on brand/toggle clicks, and never completes it. `localStorage`
+and the auto-collapse are both switched off; if you want them, implement them against your own
+subject.
+
+A `BehaviorSubject` is the natural fit. With a plain `Subject` the rail paints collapsed until
+the first emission — deliberately, so the brand button is interactive and correctly named from
+the first frame.
+
+<Canvas of={Stories.Expanded} />
+
+Router rows derive `.ora-sidebar-item--active` and `aria-current="page"` from
+`router.currentRoute$`, and left-clicks are intercepted and handed to `router.navigate()`.
+Middle-click, Ctrl/Cmd-click and any row with a `target` keep native browser behaviour.
+
+<Canvas of={Stories.WithRouter} />
+
+---
+
+## Responsive behaviour
+
+Below **960px** (`max-width: 959px`) a component-owned sidebar collapses itself: an expanded
+220px rail eats a third of a narrow viewport, so the width goes back to the page content and
+the operator re-expands deliberately. The collapse is not written to storage.
+
+This applies only in component-owned mode. Under `withExpanded()` nothing happens
+automatically — mirror the behaviour with your own `matchMedia` subscription if you want it.
+
+Note that a Storybook docs canvas is often narrower than 960px, so the embedded rails on this
+page may render collapsed even where the story asks for expanded; open a story in its own
+canvas to see it at full viewport width.
+
+---
+
+## Tooltips
+
+Tooltips appear **only while the rail is collapsed** — expanded rows already show their label.
+The text is `withTooltip()` if given, otherwise the row's caption. Rendering is a single
+body-portalled node shared by every row, so a rail with forty items still has one tooltip
+element; it is removed from the document once the last row is torn down.
+
+`withEnabled()` takes a boolean and carries no reason text, so the "why is this locked"
+explanation goes through `withTooltip()`:
+
+```typescript
+sidebar.addItem()
+  .withCaption(of('Year-end reports'))
+  .withEnabled(of(false))
+  .withTooltip(of('Year-end reports — locked until period 12 is closed'));
+```
+
+<Canvas of={Stories.DisabledAndHidden} />
+
+---
+
+## Glass Effect
+
+`asGlass()` swaps `.ora-sidebar-panel--solid` for `.glass-effect` and passes the flag down to
+every popover menu, so the menu matches the rail.
+
+The blur is deliberately suspended while the width animates. During the 0.28s transition the
+wrapper carries `.ora-sidebar--animating`, which forces `backdrop-filter: none` — compositing a
+backdrop filter on an element whose width is changing every frame is the single most expensive
+thing a glass rail can do. The class is dropped on the wrapper's own `transitionend`, with a
+400ms fallback for the case where the transition never runs.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Keyboard
+
+| Key | Context | Action |
+|---|---|---|
+| `Tab` / `Shift+Tab` | Rail | Move through the brand button, the enabled nav rows and the footer. Disabled rows are skipped (`tabindex="-1"`). |
+| `Enter` / `Space` | Brand button (collapsed) | Expand the rail. While expanded the brand is `disabled` — the header chevron collapses instead. |
+| `Enter` / `Space` | Header toggle | Collapse the rail. The toggle is `display: none` while collapsed, so it is out of the tab order too. |
+| `Enter` / `Space` | Nav row | Activate the row: navigate, run `withClick`, or open the row's menu. |
+| `Arrow Down` / `Arrow Up` | Open menu | Move to the next/previous **enabled** item, wrapping at both ends (roving `tabindex`). |
+| `Home` / `End` | Open menu | Jump to the first/last enabled item. |
+| `Escape` | Open menu | Close the menu and return focus to the anchor row. |
+| `Tab` | Open menu | Close the menu and let focus move on naturally — `role="menu"` promises that Tab exits rather than cycles. |
+
+---
+
+## Styling
+
+Geometry is exposed as three custom properties declared on `.ora-sidebar`. Override them on
+the rail, or on any ancestor, to retheme without touching source.
+
+| CSS variable | Default | Role |
+|---|---|---|
+| `--ora-sidebar-width` | `52px` | Collapsed rail width. |
+| `--ora-sidebar-width-expanded` | `220px` | Expanded rail width. |
+| `--ora-sidebar-gutter` | `var(--md-sys-spacing-4)` | Gap on both sides of the panel (viewport edge and content) and inset top and bottom; the wrapper is `width + 2 × gutter` wide. |
+
+Colour, shape and elevation come from the MD3 token set:
+
+| CSS variable | Role |
+|---|---|
+| *(none — literal white/navy alphas)* | Solid panel: translucent card with hairline border and inset highlight, per Aura's `.sidebar-panel`; dark values under `[data-theme="dark"]`. |
+| `--md-sys-color-on-surface-variant` | Idle icon and label colour. |
+| `--md-sys-color-on-surface` | Hovered row colour. |
+| `--md-sys-color-primary` | Active row colour, focus ring, and the first stop of the brand-mark gradient. |
+| `--md-sys-color-tertiary` | Second stop of the brand-mark gradient. |
+| `--md-sys-color-outline` | Panel border and divider, mixed down with `color-mix`. |
+| `--md-sys-shape-extra-large` | Panel corner radius. |
+| `--md-sys-shape-medium` | Row and menu-item corner radius. |
+| *(literal)* | Panel `0 8px 32px` drop shadow; tooltip `0 4px 16px`. |
+
+See the [Theming guide](../?path=/docs/system-theming--docs) for the full token reference.
+
+### Additional notes
+
+- The width transition is gated on `[data-sidebar-initialized]`, stamped one animation frame
+  after mount, so the rail does not animate from zero on first paint.
+- `--md-sys-color-outline-variant` is not yet defined in the palette; the menu border uses it
+  through a `var()` fallback chain and will pick up the real value for free once it exists.
+- There are no `--md-sys-typescale-*` custom properties in this library — the M3 type scale
+  lives in `tailwind.config.mjs` — so the rail's font sizes are literal px values of the
+  matching M3 step.
+
+---
+
+## Related components
+
+- [ChatPanel](../?path=/docs/components-chatpanel--docs) — the docked assistant on the opposite
+  edge of the shell; the `AppShell` story composes both.
+- [Layout](../?path=/docs/components-layout--docs) — the horizontal row that holds the rail
+  (`SlotSize.FIT`) next to the page body (`SlotSize.FULL`).
+- [Panel](../?path=/docs/components-panel--docs) — surface container for the page content
+  beside the rail.
+- [Toolbar](../?path=/docs/components-toolbar--docs) — horizontal action bar for the page
+  header, complementary to the vertical rail.
+
+<Canvas of={Stories.AppShell} />

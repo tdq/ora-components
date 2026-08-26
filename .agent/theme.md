@@ -163,6 +163,36 @@ light theme remains the library default (Sapphire Blue & Slate Gray).
 For details on the theme loading chain and manager UI theme, see
 [Storybook](storybook.md).
 
+## 10a. Class merging (`cn`)
+
+Every component composes its classes through the shared `cn()` helper in `src/utils/cn.ts` (`clsx` + `tailwind-merge`). Because the library defines **custom Tailwind scales**, a stock `twMerge` mis-groups them, so `cn` uses `extendTailwindMerge` to register:
+
+- `spacing` → the `px-*` scale (`p-px-8`, `gap-px-16`, …), so conflicting paddings actually replace each other;
+- `colors` → the M3 token colors;
+- `borderRadius` → `rounded-large` and friends;
+- explicit `font-size` and `shadow` class groups for `text-body-medium` / `shadow-level-*`. These two cannot be resolved through `extend.theme` in tailwind-merge's config, and without them `text-body-medium` is treated as a *color* class and silently drops `text-on-surface` (and `shadow-level-2` collides with `shadow-none`).
+
+Do not construct a local `twMerge`/`cn` inside a component — it will not know these scales.
+
+## 10b. Cascade layers in the built stylesheet
+
+`dist/ora-components.css` is composed from two Tailwind entries:
+
+| Entry | Contents | Layered? |
+|---|---|---|
+| `src/index-base.css` | M3 design tokens: `:root`, `[data-theme]`, base `body` rules | **no** |
+| `src/index-layered.css` | `@tailwind base` (Preflight + the `--tw-*` defaults), `@tailwind components`, `@tailwind utilities`, and the component CSS `@import`s | **yes** — wrapped in `@layer ora-components { … }` |
+
+The post-build step `scripts/wrap-css-layer.mjs` concatenates them (tokens first, then the wrapped bundle) into a single `dist/ora-components.css`; the `./style.css` export is unchanged. Tailwind v3 cannot emit native layers itself, hence the composition step rather than a directive.
+
+Two rules follow from this arrangement, and both were learned the hard way:
+
+1. **A custom property and the utilities that consume it must be in the same layer.** Preflight's `*,::before,::after{--tw-shadow:0 0 #0000;…}` block therefore lives *inside* the layer with `shadow-level-*`. Leaving it outside made every unlayered default win over the layered utility and silently flattened all shadows, rings and transforms. The same trap applies *across* the boundary: a consuming Tailwind app emits its own unlayered defaults block, which beats any `--tw-*` value our layered rules set. So **component classes in `index-layered.css` (e.g. `.glass-effect`) must use literal properties** (`backdrop-filter: blur(24px) saturate(1.5)`, `box-shadow: 0 0 0 1px …`) rather than `@apply backdrop-blur-xl` / `ring-1` / `transform-gpu`, which only work through `var(--tw-…)`. Symptom when this is violated: `backdrop-filter` computes to `none` in the consumer while Storybook (all unlayered) looks fine.
+2. **Consumer CSS wins.** Any unlayered rule in a consuming app outranks everything in `@layer ora-components`, including our Preflight — that is the point of layering, and it is what lets an app override component styling without `!important`. Design tokens stay unlayered so they behave as ordinary defaults.
+3. **A consuming app must not ship a second, unlayered Preflight.** `style.css` already includes Tailwind's reset inside the layer. If the app's own Tailwind build also emits `@tailwind base` unlayered, its `*,::before,::after{border:0 solid #e5e7eb}` outranks every layered `border:` we set (unlayered always beats layered, regardless of specificity) — the symptom is a component whose computed border is `0px solid rgb(229,231,235)` while the stylesheet plainly says `1px solid …`. Set `corePlugins: { preflight: false }` in the app's Tailwind config (the landing page does). Note Vite does not restart on `tailwind.config` edits — restart the dev server after changing it.
+
+The dev/Storybook entry `src/index.css` imports both files **unlayered** — `@layer name { @tailwind utilities; }` is not valid Tailwind v3 input. The divergence is intentional and documented in the file; `wrap-css-layer.mjs` asserts the emitted composition (single layer, `--tw-shadow` and `.shadow-level-2` both inside it, only token rules before it) so a regression cannot hide behind Storybook.
+
 ## 11. Using Theme Colors with Builders
 
 When applying theme colors dynamically via `withClass()`, always use exact

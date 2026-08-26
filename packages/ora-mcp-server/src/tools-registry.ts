@@ -89,11 +89,11 @@ export const tools: ToolDef[] = [
   },
   {
     name: 'get_architecture_guide',
-    description: 'Get an architecture or pattern guide. Topics: architecture, builder-pattern, reactive, theme, glass-effects, icons, component, layout. Use "layout" for LayoutBuilder patterns — SlotSize, LayoutGap, Alignment, nesting, app-shell, chart sizing, and reactive classes.',
-    zodSchema: { topic: z.string().describe('Guide topic: architecture | builder-pattern | reactive | theme | glass-effects | icons | component | layout') },
+    description: 'Get an architecture or pattern guide. Topics: architecture, builder-pattern, reactive, theme, glass-effects, icons, component, layout, app-shell. Use "layout" for LayoutBuilder patterns — SlotSize, LayoutGap, Alignment, nesting, app-shell, chart sizing, and reactive classes. Use "app-shell" for composing SideBar + content + ChatPanel/ChatTrigger into a full screen.',
+    zodSchema: { topic: z.string().describe('Guide topic: architecture | builder-pattern | reactive | theme | glass-effects | icons | component | layout | app-shell') },
     jsonSchema: {
       type: 'object',
-      properties: { topic: { type: 'string', description: 'Guide topic: architecture | builder-pattern | reactive | theme | glass-effects | icons | component | layout' } },
+      properties: { topic: { type: 'string', description: 'Guide topic: architecture | builder-pattern | reactive | theme | glass-effects | icons | component | layout | app-shell' } },
       required: ['topic'],
     },
     handler: ({ topic }) => getArchitectureGuide(String(topic)),

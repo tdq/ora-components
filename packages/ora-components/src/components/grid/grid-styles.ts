@@ -1,5 +1,24 @@
 const cellBorderB = 'border-b border-outline/10 dark:border-stone-50/10';
 
+/** Default per-row height in px. Single source of truth — GridViewport/GridRow/GridGroupRow
+ *  accept it via constructor and GridBuilder.withRowHeight() overrides it. */
+export const GRID_ROW_HEIGHT = 52;
+
+/** Header row height in px. Fixed independently of GRID_ROW_HEIGHT (see GridStyles.header /
+ *  headerWrapper) — used as the header allowance in GridBuilder.withAutoHeight(). */
+export const GRID_HEADER_HEIGHT = 52;
+
+/**
+ * Toolbar height allowance in px, budgeted by GridBuilder.withAutoHeight() when withToolbar()
+ * is also configured. The toolbar's real height is intrinsic (button height + no extra
+ * vertical padding on TOOLBAR_STYLES.container) and cannot be measured at build() time — the
+ * container isn't attached to the document yet, so offsetHeight would read 0 in both jsdom and
+ * real browsers. This constant tracks the button height (`h-[46px]`, see button.ts
+ * BASE_CLASSES) plus a small breathing-room buffer, consistent with GRID_HEADER_HEIGHT being a
+ * fixed constant rather than a live measurement.
+ */
+export const GRID_TOOLBAR_HEIGHT_ALLOWANCE = 56;
+
 export const GridStyles = {
     container: 'flex flex-col w-full text-sm text-foreground bg-background rounded-lg border border-outline/30 dark:border-stone-50/20 overflow-hidden min-h-0',
     glass: 'bg-transparent',

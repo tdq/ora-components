@@ -1,18 +1,13 @@
 import { Observable, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '../../core/destroyable-element';
+import { cn } from '../../utils/cn';
 
 export enum PanelGap {
     SMALL = 'SMALL',
     MEDIUM = 'MEDIUM',
     LARGE = 'LARGE',
     EXTRA_LARGE = 'EXTRA_LARGE'
-}
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
 }
 
 const GAP_MAP: Record<PanelGap, string> = {
@@ -65,7 +60,11 @@ export class PanelBuilder implements ComponentBuilder {
         registerDestroy(panel, () => sub.unsubscribe());
 
         if (this.content) {
-            panel.appendChild(this.content.build());
+            const body = this.content.build();
+            if (!body.dataset.slot) {
+                body.dataset.slot = 'body';
+            }
+            panel.appendChild(body);
         }
 
         return panel;

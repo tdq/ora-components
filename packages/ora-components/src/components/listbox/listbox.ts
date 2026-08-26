@@ -340,20 +340,74 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         const itemsSub = itemsState$.subscribe(([items, selectedItem, style, focusedIndex]) => {
             const itemsChanged = items !== currentItems;
             currentItems = items;
-            selectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
+
+            const newSelectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
+            const prevSelectedId = selectedId;
+            const selectionChanged = newSelectedId !== prevSelectedId;
+            selectedId = newSelectedId;
+
+            const styleChanged = style !== currentStyle;
             currentStyle = style;
-            const focusChanged = focusedIndex !== currentFocusedIndex;
+
+            const prevFocusedIndex = currentFocusedIndex;
+            const focusChanged = focusedIndex !== prevFocusedIndex;
             currentFocusedIndex = focusedIndex;
 
             if (itemsChanged) {
                 vp.setItems(items);
-            } else if (focusChanged) {
-                // Refresh re-renders the window with the new focus highlight, then
-                // scrollToIndex adjusts scrollTop if the focused row is off-screen.
-                vp.refresh();
+                // A focused index outside the initial window (e.g. ComboBox seeding
+                // withFocusedIndex with a value well into a 1000-item list) must still be
+                // rendered — setItems() only lays out the window at the top of the list.
                 if (focusedIndex >= 0) vp.scrollToIndex(focusedIndex);
-            } else {
-                vp.refresh(); // selection / style change
+                return;
+            }
+
+            if (styleChanged) {
+                // Style can change a row's rendered height (e.g. a different style
+                // variant changes font-weight/padding for the selected state) —
+                // invalidate cached heights first so refresh() re-measures from the new
+                // style instead of reusing heights measured under the old one.
+                vp.invalidateMeasurements();
+                // Style affects every rendered row — patch the whole window in place.
+                vp.refresh();
+                if (focusChanged && focusedIndex >= 0) vp.scrollToIndex(focusedIndex);
+                return;
+            }
+
+            // Targeted patch: only the previously/newly focused and previously/newly
+            // selected rows need to be re-rendered — not the whole window. This is what
+            // keeps keyboard navigation from rebuilding every rendered row per keypress.
+            // Each branch batches its indices into a single updateRows() call so the
+            // O(window) render() cost is paid once per branch, not once per row.
+            if (focusChanged) {
+                const focusIndices: number[] = [];
+                if (prevFocusedIndex >= 0) focusIndices.push(prevFocusedIndex);
+                if (focusedIndex >= 0) focusIndices.push(focusedIndex);
+                if (focusIndices.length > 0) vp.updateRows(focusIndices);
+                if (focusedIndex >= 0) {
+                    // scrollToIndex adjusts scrollTop (and renders the target row if it
+                    // was outside the previous window) when the focused row is off-screen.
+                    vp.scrollToIndex(focusedIndex);
+                }
+            }
+
+            if (selectionChanged) {
+                // Patch every RENDERED row whose id matches the old or new selection —
+                // not just the first match. itemIdProvider is not guaranteed injective
+                // (the default provider collapses distinct objects to "[object Object]"),
+                // so multiple rendered rows can legitimately share an id and all of them
+                // must flip their selected styling together. Scanning only the current
+                // window (not the full item array) keeps this off the O(items) path.
+                const { start, end } = vp.getRenderedRange();
+                const selectionIndices: number[] = [];
+                for (let i = start; i <= end; i++) {
+                    if (i < 0 || i >= currentItems.length) continue;
+                    const id = this.itemIdProvider(currentItems[i]);
+                    if (id === prevSelectedId || id === selectedId) {
+                        selectionIndices.push(i);
+                    }
+                }
+                if (selectionIndices.length > 0) vp.updateRows(selectionIndices);
             }
         });
         registerDestroy(container, () => itemsSub.unsubscribe());

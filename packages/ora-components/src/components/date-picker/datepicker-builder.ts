@@ -101,7 +101,7 @@ export class DatePickerBuilder implements ComponentBuilder {
         calendarWrapper.id = calendarId;
         input.setAttribute('aria-controls', calendarId);
 
-        const calendar = renderCalendar({
+        const { element: calendar, subscription: calendarSub } = renderCalendar({
             selectedDate$: internalValue$,
             isExpanded$: isExpanded$,
             minDate$: this.minDate$,
@@ -117,6 +117,7 @@ export class DatePickerBuilder implements ComponentBuilder {
             firstDayOfWeek: this.firstDayOfWeek
         });
         calendarWrapper.appendChild(calendar);
+        subs.push(calendarSub);
 
         // 4. PopoverBuilder replaces the manual popup div
         const popover = new PopoverBuilder()
@@ -158,6 +159,8 @@ export class DatePickerBuilder implements ComponentBuilder {
         // 8. Cleanup
         registerDestroy(container, () => {
             subs.forEach(s => s?.unsubscribe());
+            internalValue$.complete();
+            isExpanded$.complete();
         });
 
         // Expose public API

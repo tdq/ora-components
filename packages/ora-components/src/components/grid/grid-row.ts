@@ -1,6 +1,6 @@
 import { Subscription, BehaviorSubject, skip, of } from 'rxjs';
-import { GridColumn, GridAction, ColumnType } from './types';
-import { GridStyles, getAlignClass, applyColumnWidth } from './grid-styles';
+import { GridColumn, GridAction, ColumnType, CELL_COMMIT_EVENT } from './types';
+import { GridStyles, getAlignClass, applyColumnWidth, GRID_ROW_HEIGHT } from './grid-styles';
 import { CheckboxBuilder } from '../checkbox/checkbox';
 import type { CheckboxValue } from '../checkbox/checkbox';
 import { clsx, type ClassValue } from 'clsx';
@@ -17,7 +17,6 @@ export class GridRow<ITEM> {
     private suppressCheckboxEmit = false;
     private listenerAbort?: AbortController;
     private columnSubscriptions: Subscription[] = [];
-    private readonly rowHeight = 52;
 
     constructor(
         private item: ITEM,
@@ -36,7 +35,8 @@ export class GridRow<ITEM> {
         private onActivateEditor: (row: GridRow<ITEM>, cell: HTMLElement) => void = () => { },
         private onEditorClose: () => void = () => {},
         private onRequestRowAbove: (rowIndex: number, columnIndex: number) => void = () => {},
-        private onRequestRowBelow: (rowIndex: number, columnIndex: number) => void = () => {}
+        private onRequestRowBelow: (rowIndex: number, columnIndex: number) => void = () => {},
+        private readonly rowHeight: number = GRID_ROW_HEIGHT
     ) {
         this.element = this.createRow();
     }
@@ -293,6 +293,14 @@ export class GridRow<ITEM> {
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 e.stopPropagation();
+                // Escape double-duty for editors with their own internal popup (e.g. the enum
+                // ComboBox editor): the editor's own keydown handler runs first (event target
+                // phase, before this bubbled listener) and, if its dropdown is open, the FIRST
+                // Escape only closes that dropdown — it does not stop propagation, so the same
+                // keypress still reaches us here and reverts/exits the cell immediately. A
+                // second, separate Escape to just close the dropdown without leaving the cell
+                // is not currently possible. Acceptable for now; splitting "close dropdown" and
+                // "exit cell" into two distinct Escape presses is a follow-up.
                 revertEdit();
             } else if (e.key === 'Tab') {
                 e.preventDefault();
@@ -329,6 +337,13 @@ export class GridRow<ITEM> {
                     }
                 }
             } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                // Editors that wrap their own interactive widget (e.g. the enum ComboBox) fire
+                // Arrow keys on a DESCENDANT of editor.element, not editor.element itself — the
+                // wrapped widget's own arrow handling (e.g. moving the ComboBox's dropdown
+                // highlight) already ran during the event's target phase and must be the only
+                // handler for it. Plain editors (text/number/date/...) return the <input> itself
+                // as editor.element, so e.target === editor.element there and this still applies.
+                if (e.target !== editor.element) return;
                 e.preventDefault();
                 e.stopPropagation();
                 const editableCells = this.getEditableCells();
@@ -350,6 +365,21 @@ export class GridRow<ITEM> {
                     commitEdit();
                 }, { signal: editorAbort.signal });
             }
+        }
+
+        if (col.type === ColumnType.ENUM) {
+            // Same commit-on-select precedent as BOOLEAN above: a mouse click on an option in
+            // the enum ComboBox's dropdown never fires a 'keydown' on this cell (the dropdown
+            // list is portal'd into document.body, and clicking an option doesn't route through
+            // any key event) — so Enter/Tab's keydown-driven commitEdit() above can't catch it.
+            // EnumColumnBuilder's editor dispatches CELL_COMMIT_EVENT (NOT a plain 'change') on
+            // editor.element whenever the selected value changes (click OR Enter). A plain
+            // 'change' is deliberately avoided: the ComboBox's own search <input> also fires a
+            // native 'change' (e.g. on blur after typing without selecting), which would
+            // otherwise be misread as a commit here.
+            editor.element.addEventListener(CELL_COMMIT_EVENT, () => {
+                commitEdit();
+            }, { signal: editorAbort.signal });
         }
 
         requestAnimationFrame(() => editor.focus());
@@ -394,57 +424,145 @@ export class GridRow<ITEM> {
 
             cell.addEventListener('keydown', (e) => {
                 if (cell.dataset.editing) return;
+                // A commit-on-change editor (e.g. the enum ComboBox) can commit and exit edit
+                // mode SYNCHRONOUSLY while this very keydown is still bubbling — e.g. Enter on
+                // a highlighted ComboBox option: the ComboBox's own handler selects the option
+                // (committing via 'change', which clears cell.dataset.editing) before this
+                // event ever reaches this listener. Without this guard, the check above would
+                // then see "not editing" and misread the SAME already-handled Enter as a fresh
+                // request to open the editor again. The ComboBox's own handler always calls
+                // preventDefault() before committing, so e.defaultPrevented distinguishes an
+                // already-handled bubbled key from a genuine fresh one.
+                if (e.defaultPrevented) return;
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     e.stopPropagation();
                     this.enterEditMode(cell, col, signal);
-                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                } else {
+                    this.handleCellFocusNavigation(e, cell);
+                }
+            }, { signal });
+        } else if (this.isEditable && col.editable && col.focusEditableCell) {
+            // Focus-only cell (e.g. CustomColumnBuilder.asEditable()): wired into the
+            // Tab/Enter/Arrow keyboard chain, but no value editor opens and nothing is ever
+            // committed. col.focusEditableCell is resolved fresh on every activation — never
+            // cached — since the cell's content may be recycled across renders.
+            cell.style.cursor = 'pointer';
+
+            this.renderDisplayContent(cell, col);
+
+            // Avoid a double Tab stop: when the resolved focus target is itself natively
+            // focusable (default tabIndex >= 0 — a <button>, <a href>, etc.), it is ALREADY
+            // reachable by native sequential Tab navigation, so the cell wrapper itself must
+            // NOT also be a stop (tabIndex = -1) — otherwise Tab would land on [cell] then
+            // [target] as two separate stops. tabIndex = -1 keeps the cell programmatically
+            // focusable (cell.focus() below, and our own Tab-chain via cell.click()) without
+            // adding it to the natural Tab order. Falls back to tabIndex = 0 (the cell itself
+            // is the only stop) when no target is resolved yet, or the target opts out via an
+            // explicit tabindex="-1". Re-resolved on every render (content may change).
+            const renderedTarget = col.focusEditableCell!(cell);
+            cell.tabIndex = (renderedTarget && renderedTarget.tabIndex >= 0) ? -1 : 0;
+
+            cell.addEventListener('click', (e) => {
+                // Ignore a click that landed on (and bubbled up from) a DESCENDANT of the cell
+                // — e.g. clicking directly on the nested <button> already focused it natively,
+                // browser-side, with no help from us needed. Only (re)resolve and refocus when
+                // the click targeted the cell wrapper itself (e.g. clicking cell padding, or a
+                // programmatic cell.click() from our own Tab-chain).
+                if (e.target !== cell && cell.contains(e.target as Node)) return;
+                this.focusResolvedTarget(cell, col);
+            }, { signal });
+
+            cell.addEventListener('keydown', (e) => {
+                // Only handle keys typed while the CELL ITSELF has focus. A key bubbling up
+                // from inside the cell's own rendered content (e.g. Arrow keys inside a nested
+                // combobox/input, or Enter inside a nested form control) belongs to that
+                // content, not to grid row/column navigation.
+                if (e.target !== cell) return;
+                if (e.key === 'Enter') {
                     e.preventDefault();
                     e.stopPropagation();
-                    const editableCells = this.getEditableCells();
-                    const idx = editableCells.indexOf(cell);
-                    if (e.key === 'ArrowLeft') {
-                        if (idx > 0) {
-                            editableCells[idx - 1].focus();
-                        } else {
-                            this.onRequestPreviousRow(this.index);
-                        }
-                    } else {
-                        if (idx >= 0 && idx < editableCells.length - 1) {
-                            editableCells[idx + 1].focus();
-                        } else {
-                            this.onRequestNextRow(this.index);
-                        }
-                    }
-                } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const editableCells = this.getEditableCells();
-                    const colIdx = editableCells.indexOf(cell);
-                    if (colIdx < 0) return;
-                    if (e.key === 'ArrowUp') {
-                        this.onRequestRowAbove(this.index, colIdx);
-                    } else {
-                        this.onRequestRowBelow(this.index, colIdx);
-                    }
+                    this.focusResolvedTarget(cell, col);
+                } else {
+                    this.handleCellFocusNavigation(e, cell);
                 }
             }, { signal });
         } else {
-            // Display mode
-            const content = col.render(this.item);
-            const prevContent = (cell as any).__prevContent;
-            
-            if (content !== prevContent) {
-                (cell as any).__prevContent = content;
-                while (cell.firstChild) {
-                    cell.removeChild(cell.firstChild);
-                }
-                if (content instanceof HTMLElement) {
-                    cell.appendChild(content);
+            this.renderDisplayContent(cell, col);
+        }
+    }
+
+    /** Resolves col.focusEditableCell fresh (never cached) and focuses it, falling back to the
+     *  cell itself when nothing is resolved (keeps focus somewhere sane rather than dropping
+     *  it). Shared by the focus-only branch's click and Enter handlers. */
+    private focusResolvedTarget(cell: HTMLElement, col: GridColumn<ITEM>): void {
+        (col.focusEditableCell!(cell) ?? cell).focus();
+    }
+
+    private handleCellFocusNavigation(e: KeyboardEvent, cell: HTMLElement): void {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            e.stopPropagation();
+            const editableCells = this.getEditableCells();
+            const idx = editableCells.indexOf(cell);
+            if (e.key === 'ArrowLeft') {
+                if (idx > 0) {
+                    editableCells[idx - 1].focus();
                 } else {
-                    cell.textContent = content != null ? String(content) : '';
+                    this.onRequestPreviousRow(this.index);
+                }
+            } else {
+                if (idx >= 0 && idx < editableCells.length - 1) {
+                    editableCells[idx + 1].focus();
+                } else {
+                    this.onRequestNextRow(this.index);
                 }
             }
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            e.stopPropagation();
+            const editableCells = this.getEditableCells();
+            const colIdx = editableCells.indexOf(cell);
+            if (colIdx < 0) return;
+            if (e.key === 'ArrowUp') {
+                this.onRequestRowAbove(this.index, colIdx);
+            } else {
+                this.onRequestRowBelow(this.index, colIdx);
+            }
+        }
+    }
+
+    /**
+     * Renders cell display content for non-editing / focus-only cells. Custom columns
+     * (ColumnType.CUSTOM) are keyed by the row's item reference rather than by the rendered
+     * element's identity — the renderer creates a fresh element on every call, so comparing
+     * `content !== prevContent` would always be true and re-mount on every populateCell call
+     * (e.g. on every column resize). Skips the renderer call entirely, and leaves the DOM
+     * untouched, when the item hasn't changed.
+     */
+    private renderDisplayContent(cell: HTMLElement, col: GridColumn<ITEM>): void {
+        if (col.type === ColumnType.CUSTOM) {
+            if ((cell as any).__prevItem === this.item) return;
+            (cell as any).__prevItem = this.item;
+            this.mountCellContent(cell, col.render(this.item));
+            return;
+        }
+
+        const content = col.render(this.item);
+        if (content !== (cell as any).__prevContent) {
+            (cell as any).__prevContent = content;
+            this.mountCellContent(cell, content);
+        }
+    }
+
+    private mountCellContent(cell: HTMLElement, content: HTMLElement | string): void {
+        while (cell.firstChild) {
+            cell.removeChild(cell.firstChild);
+        }
+        if (content instanceof HTMLElement) {
+            cell.appendChild(content);
+        } else {
+            cell.textContent = content != null ? String(content) : '';
         }
     }
 
@@ -452,7 +570,7 @@ export class GridRow<ITEM> {
         const cells: HTMLElement[] = [];
         const startIdx = this.isMultiSelect ? 1 : 0;
         this.columns.forEach((col, i) => {
-            if (col.editable && col.renderEditor) {
+            if (col.editable && (col.renderEditor || col.focusEditableCell)) {
                 const cellEl = this.element.children[startIdx + i] as HTMLElement;
                 if (cellEl) cells.push(cellEl);
             }
@@ -566,6 +684,15 @@ export class GridRow<ITEM> {
         this.columnSubscriptions.forEach(s => s.unsubscribe());
         this.columnSubscriptions = [];
         this.listenerAbort?.abort();
+
+        // Clear each cell's children so any registerDestroy/lifecycle boundary inside
+        // custom-rendered cell content fires (detaching a node from the DOM triggers its
+        // disconnect callback immediately, even before the row element itself is removed).
+        Array.from(this.element.children).forEach(child => {
+            while (child.firstChild) {
+                child.removeChild(child.firstChild);
+            }
+        });
     }
 
     updateColumns(columns: GridColumn<ITEM>[]) {

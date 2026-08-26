@@ -147,7 +147,7 @@ function createOrdersCharts(): HTMLElement {
 
 export function createOrders(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    container.className = 'flex-1 overflow-y-auto';
 
     container.appendChild(createSummaryStats());
     container.appendChild(createOrdersCharts());

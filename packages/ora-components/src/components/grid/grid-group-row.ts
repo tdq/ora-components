@@ -1,5 +1,5 @@
 import { GridGroupHeader } from './types';
-import { GridStyles } from './grid-styles';
+import { GridStyles, GRID_ROW_HEIGHT } from './grid-styles';
 import { Icons } from '@/core/icons';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -10,14 +10,14 @@ function cn(...inputs: ClassValue[]) {
 
 export class GridGroupRow {
     private element: HTMLElement;
-    private readonly rowHeight = 52;
 
     constructor(
         private header: GridGroupHeader,
         private index: number,
         private onToggle: (groupKey: string) => void,
         private isGlass: boolean = false,
-        private contentWidth: number = 0
+        private contentWidth: number = 0,
+        private readonly rowHeight: number = GRID_ROW_HEIGHT
     ) {
         this.element = this.createGroupRow();
     }

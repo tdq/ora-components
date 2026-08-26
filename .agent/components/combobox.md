@@ -12,11 +12,18 @@ It has the following methods:
 - `withItemIdProvider(provider: (item: ITEM) => string | number): this` - sets item ID provider used for generating unique IDs for accessibility and for item comparison. Default is `String(item)`.
 - `withItemCaptionProvider(provider: (item: ITEM) => string): this` - sets caption provider for converting items to display text. Default is `String(item)`.
 - `withVisible(visible: Observable<boolean>): this` - controls visibility of the combobox container.
-- `withValue(value: Subject<ITEM | null>): this` - sets value for dropdown (which item is selected). It is also updated by dropdown itself on item selecting.
+- `withValue(value: Observable<ITEM | null> | Subject<ITEM | null>): this` - sets value for dropdown (which item is selected). When a `Subject` is passed the ComboBox also writes the user's selection back into it; a plain `Observable` is read-only (see [Value binding](#value-binding)).
 - `withError(error: Observable<string>): this` - sets error of the dropdown.
 - `withStyle(style: Observable<ComboBoxStyle>): this` - sets style of the dropdown.
 - `asGlass(isGlass: boolean = true): this` - sets special styling option for combobox and its popup with items as transparent with blur background (glass effect).
+- `withAriaLabel(label: string | Observable<string>): this` - sets the input's accessible name explicitly.
+- `withMaxHeight(maxHeight: number | Observable<number>): this` - preferred dropdown height in px (default 256), clamped to the space available in the viewport.
+- `withFilterDebounce(ms: number): this` - overrides the adaptive filter debounce (see [Filtering](#filtering)). Use e.g. 300 when `withItems` is fed by a server-side search.
 - `asInlineError(): this` - *(not yet implemented)* sets error state displaying as field style change.
+
+`build()` returns a `ComboBoxElement<ITEM>` — the container element plus a small imperative API, mirroring DatePicker's `showPopover`/`hidePopover`/`toggle`:
+- `select(item: ITEM | null): void` - selects an item programmatically (updates the input text, the highlight, and writes back through `withValue` when it is a `Subject`).
+- `open(): void` / `close(): void` - open or close the dropdown.
 
 ComboBox style is an enum with the following values:
 - tonal
@@ -51,10 +58,28 @@ Ordering is safe: the ListBox subscribes to `focusedIndex$` inside its `build()`
 ### Viewport-gating of items
 The raw `items$` is viewport-gated **once**, at the always-visible ComboBox container, via `createOptimizedPipeline`. The gated stream is wrapped in `shareReplay({ bufferSize: 1, refCount: true })` because it has two consumers — the ComboBox's own bookkeeping subscription (currentItems / "No results" toggle) and the inner ListBox — which must share a single `IntersectionObserver`/source subscription. (Option ids are no longer assigned by ComboBox; the virtualized ListBox stamps them per-row via `withOptionIdProvider`.) The filtered list handed to the ListBox is branded as `new GatedObserver(filteredItems$)` so the ListBox does **not** re-gate it: gating on the ListBox's own container would never resolve, since the dropdown lives in a `display:none`-when-closed popover that never intersects the viewport. Net effect: `items$` is active only while the ComboBox is on-screen, and the dropdown list renders instantly on open. See [reactive.md](../reactive.md#gatedobserver-and-idempotency).
 
+### Value binding
+`withValue` accepts either a `Subject` (two-way: the ComboBox writes the user's selection back) or a plain `Observable` (read-only: the source is authoritative, the ComboBox never pushes into it). Emissions from the source are split in two:
+
+- **Selection state** (`currentValue$`, the ListBox highlight, `aria-activedescendant` bookkeeping) always follows the source, including a `null`.
+- **The input's displayed text** follows the source only when the user is *not* mid-search (`isFiltering$` false). While the user is typing, the input is theirs — an external emission updates the highlight but never overwrites the typed term. `isFiltering$` resets when the dropdown closes, so the two halves re-converge on the next emission.
+
+### Filtering
+`filteredItems$` is `shareReplay({ bufferSize: 1, refCount: true })`-ed — it has more than one subscriber, and without sharing the O(n) filter ran once per subscriber per keystroke. Item captions are lower-cased once per `items` emission and cached, rather than per keystroke per item.
+
+The search term is debounced **adaptively**: no debounce below 100 items (small lists stay instant), 150 ms above — long enough to collapse a fast typist's burst into one filter pass, short enough to stay under the ~200 ms perceived-lag threshold. `withFilterDebounce(ms)` overrides it. The debounce is bypassed when the term is cleared, and flushed synchronously on the navigation keys (`Enter`, `ArrowDown`, `ArrowUp`, `Home`, `End`, `PageUp`, `PageDown`) so a fast "type + Enter" can never act on a stale list. The input itself is uncontrolled and echoes keystrokes immediately — only the filter is debounced.
+
+On every filter emission the focused index is clamped to the new list length and `aria-activedescendant` is re-applied, so it cannot point at an option that the filter just removed.
+
+### Dropdown height
+The dropdown no longer uses a static `max-h-px-256`. `withMaxHeight` is plumbed into the `PopoverBuilder`'s `withMaxHeight`, which clamps the preferred height to the space available above/below the anchor and publishes `data-placement`. The resolved height is mirrored onto the ListBox's scroll element by the popover itself (`PopoverBuilder.withScrollElement(ul)` — it writes the clamped `max-height` and nudges the viewport with a `scroll` event), because the virtual viewport needs a bounded `clientHeight` to window against; the popover keeps `overflow-hidden` so only the `<ul>` scrolls.
+
 ### Keyboard Navigation (input-driven)
 The input element captures all keyboard events:
 - `ArrowDown` — opens dropdown if closed; moves focus to the next item (wraps)
 - `ArrowUp` — opens dropdown if closed; moves focus to the previous item (wraps)
+- `Home` / `End` — jumps to the first / last item
+- `PageUp` / `PageDown` — moves focus by a page of items
 - `Enter` — selects the focused item and closes the dropdown
 - `Escape` — closes the dropdown
 - **Space does NOT select** — falls through to allow typing multi-word search terms (e.g., "Ice Cream")
@@ -64,13 +89,14 @@ ComboBox implements ARIA patterns for combobox:
 - `role="combobox"` on the input element.
 - `aria-autocomplete="list"`, `aria-expanded`, `aria-haspopup="listbox"`.
 - `aria-controls` links the input to the listbox `<ul>` id.
+- **Accessible name**, in priority order: `withCaption` (via `aria-labelledby` on the caption element) → `withAriaLabel` → `withPlaceholder` (via `aria-label`). When none of the three is set the builder emits a `console.warn` at configuration time — an unlabelled combobox is an axe violation, and the warning fires where the developer can act on it rather than at first render.
 - `aria-activedescendant` on the input points to the ID of the currently focused item in the listbox. The id is computed from the focused item (matching the ListBox's `withOptionIdProvider` formula) when `focusedIndex$` changes, so it stays correct even though the listbox is virtualized and only a window of rows is rendered; the ListBox renders and scrolls the focused row into view first, so the referenced element is present in the DOM.
 - Listbox items have `role="option"` and `aria-selected`.
 
 ## Styling
 Style according to Material Design 3
 When `asGlass()` is used, `glass-effect` is applied to both the `PopoverBuilder` wrapper and the `ListBoxBuilder` (which uses BORDERLESS style — see ListBox glass+BORDERLESS behavior to avoid double-glass).
-Popup items have no top/bottom padding gap at the container level (`max-h-px-256 overflow-hidden` on the ListBox container). The `<ul>` inside handles scrolling.
+Popup items have no top/bottom padding gap at the container level; the popover is `overflow-hidden` and the `<ul>` inside handles scrolling, with its max-height driven by `withMaxHeight` (see [Dropdown height](#dropdown-height)).
 Popup with items has a max-width of 300px.
 Hovered item in popup is highlighted with `hover:bg-on-surface/8`.
 Focused item (keyboard navigation) is highlighted with `bg-on-surface/12` (not applied when item is also selected).

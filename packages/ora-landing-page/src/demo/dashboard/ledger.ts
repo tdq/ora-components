@@ -124,7 +124,7 @@ function createSummaryStats(): HTMLElement {
 
 export function createLedger(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 flex flex-col p-px-24';
+    container.className = 'flex-1 flex flex-col';
 
     container.appendChild(createSummaryStats());
 

@@ -722,3 +722,131 @@ export const TrendColumnProvider = () => {
 
     return grid.build();
 };
+
+/**
+ * Row sizing: `withRowHeight(px)` sets the per-row height (rows, translateY and the virtual
+ * window math all follow it), while `withAutoHeight(maxRows)` sizes the grid container to
+ * `min(rows.length, maxRows) * rowHeight + header (+ toolbar allowance)` and re-sizes itself
+ * as rows are added/removed. Add rows past maxRows and the container stops growing — the
+ * viewport scrolls internally instead.
+ */
+export const RowHeightAndAutoHeight = () => {
+    const rows$ = new BehaviorSubject<User[]>(users.slice(0, 3));
+
+    const grid = new GridBuilder<User>()
+        .withItems(rows$)
+        .withRowHeight(36)     // compact rows
+        .withAutoHeight(6);    // grow with the data, capped at 6 rows
+
+    grid.withToolbar().addTextButton().withCaption(of('Toolbar (adds a height allowance)'));
+
+    const columns = grid.withColumns();
+    columns.addNumberColumn('id').withHeader('ID').withWidth('60px').withAlign('center');
+    columns.addTextColumn('name').withHeader('Name');
+    columns.addEnumColumn('role').withHeader('Role');
+
+    const addRow = createButton('Add row', () => {
+        const next = users.slice(0, Math.min(rows$.value.length + 1, users.length));
+        rows$.next(next);
+    }).build();
+    const removeRow = createButton('Remove row', () => {
+        rows$.next(rows$.value.slice(0, Math.max(rows$.value.length - 1, 0)));
+    }).build();
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent({ build: () => createControlStrip([addRow, removeRow]) });
+    container.addSlot().withContent(grid);
+
+    return container.build();
+};
+
+/**
+ * Two editing flavours side by side:
+ *  - `addEnumColumn(...).withOptions(...).asEditable()` opens a select (ComboBox) editor.
+ *    Click an option or press Enter to commit; Escape cancels. Options may be a static array
+ *    or a live Observable — both the displayed caption and the editor's choices come from it.
+ *  - `addCustomColumn().asEditable()` is FOCUS-ONLY: the cell joins the Tab/Enter/Arrow chain
+ *    and activating it just focuses the interactive content the renderer produced. Nothing is
+ *    ever committed and no item field is written. Tab across the row to feel the difference.
+ */
+export const EditableEnumAndFocusOnlyCustom = () => {
+    const { element: actionLog, log } = createActionLog();
+    const data = users.slice(0, 8).map(u => ({ ...u }));
+
+    // A live options source: display captions and editor choices stay in sync from one stream.
+    const roleOptions$ = new BehaviorSubject([
+        { value: 'ADMIN', label: 'Administrator' },
+        { value: 'USER', label: 'Standard User' },
+        { value: 'GUEST', label: 'Guest' },
+    ]);
+
+    // Snapshot-diff the two editable columns (name, role) so the log reflects whichever field
+    // actually changed — asEditable()'s onCommit fires for every editable column's commit, not
+    // just the enum one, so a hard-coded "→ role X" message would misreport a Name-only edit.
+    const snapshots = new Map<number, Pick<User, 'name' | 'role'>>();
+    data.forEach(u => snapshots.set(u.id, { name: u.name, role: u.role }));
+
+    const grid = new GridBuilder<User>()
+        .withItems(of(data))
+        .withAutoHeight(8)
+        .asEditable((item: User) => {
+            const snapshot = snapshots.get(item.id);
+            if (snapshot) {
+                if (snapshot.name !== item.name) {
+                    log(`Committed <b>${snapshot.name}</b> → name <b>${item.name}</b>`);
+                }
+                if (snapshot.role !== item.role) {
+                    log(`Committed <b>${item.name}</b> → role <b>${item.role}</b>`);
+                }
+            }
+            snapshots.set(item.id, { name: item.name, role: item.role });
+        });
+
+    const columns = grid.withColumns();
+    columns.addTextColumn('name').withHeader('Name').asEditable();
+    columns.addEnumColumn('role')
+        .withHeader('Role (select editor)')
+        .withOptions(roleOptions$)
+        .asEditable();
+    columns.addCustomColumn()
+        .withHeader('Custom (focus-only)')
+        .withWidth('220px')
+        .withRenderer((user) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex items-center gap-2';
+
+            const icon = document.createElement('span');
+            icon.textContent = '★'; // inert content — never a focus target
+            wrapper.appendChild(icon);
+
+            const button = document.createElement('button');
+            button.className = 'px-2 py-1 rounded border border-outline/40 text-xs';
+            button.textContent = `Notify ${user.name}`;
+            button.addEventListener('click', () => log(`Notified <b>${user.name}</b> (no commit)`));
+            wrapper.appendChild(button);
+
+            return wrapper;
+        })
+        .asEditable(); // focus-only: Tab/Enter land on the button, nothing is committed
+
+    const relabel = createButton('Rename roles (live options)', () => {
+        roleOptions$.next([
+            { value: 'ADMIN', label: 'Admin ✅' },
+            { value: 'USER', label: 'Member' },
+            { value: 'GUEST', label: 'Visitor' },
+        ]);
+    }).build();
+
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE)
+        .withClass(of('p-4'));
+    container.addSlot().withContent({ build: () => createControlStrip([relabel]) });
+    container.addSlot().withContent(grid);
+    container.addSlot().withContent({ build: () => actionLog }).withSize(SlotSize.FULL);
+
+    return container.build();
+};

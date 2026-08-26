@@ -571,7 +571,7 @@ describe('MoneyFieldBuilder', () => {
 
             // offsetWidth = 0 in jsdom → pre-render branch: left = posRect.right = containerRight
             expect(openPopover.style.left).toBe(`${containerRight}px`);
-            expect(openPopover.style.right).toBe('');
+            expect(openPopover.style.right).toBe('auto');
 
             // Must NOT equal the currency-button-based left (595)
             expect(openPopover.style.left).not.toBe('595px');

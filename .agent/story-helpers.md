@@ -179,6 +179,22 @@ offset-based deterministic offsets. No `Math.random()` — stable across renders
 - Color: cycled from `CIRCLE_COLORS` array by index
 - Animation delay/duration: deterministic to avoid all circles pulsing in sync
 
+## app-shell.ts
+
+The shared application-shell scaffold for the `SideBar` and `ChatPanel` stories: both need the
+same rail + content + docked-assistant composition and the same nav icon set, so it lives here
+once instead of being copy-pasted into two story files. Everything is deterministic — fixed
+copy, fixed figures, a per-shell counter for message ids.
+
+| Export | Kind | Purpose |
+|--------|------|---------|
+| `createAppShell()` | `(): HTMLElement` | The full shell: `SideBarBuilder` rail + page content with a `ChatTriggerBuilder` in its header + a docked `ChatPanelBuilder`, composed in one horizontal `LayoutBuilder`. The trigger and the panel share one `BehaviorSubject<boolean>`; the shell completes the subjects it owns in `registerDestroy`. |
+| `createShell(...children)` | `(...children: HTMLElement[]): HTMLElement` | A height-constrained, rounded flex row to drop a rail (and friends) into. `.ora-sidebar` and `.ora-chat-panel-wrapper` are `height: 100%` and would collapse to nothing in an auto-height canvas. |
+| `addNavRows(sidebar, rows?)` | `(sidebar: SideBarBuilder, rows?) => void` | Appends `[icon, caption]` pairs as inert demo rows. Defaults to `NAV_ROWS`. |
+| `NAV_ICONS` | `Record<string, string>` | Inline 24×24 stroke SVGs for the accounting nav (`DASHBOARD`, `LEDGER`, `INVOICES`, `PAYROLL`, `REPORTS`, `SETTINGS`, `SIGN_OUT`). The library's `Icons` covers chrome only, and adding domain glyphs to it is out of scope for a story. |
+| `NAV_ROWS` | `readonly (readonly [icon, caption])[]` | The five nav rows the sidebar and shell stories share. |
+| `SHELL_HEIGHT_PX` | `number` (560) | Shell height — tall enough to show the nav, a divider and the footer. |
+
 ## Usage in LayoutBuilder slots
 
 When adding helper-created elements to LayoutBuilder slots, wrap plain

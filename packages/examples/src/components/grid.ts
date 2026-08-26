@@ -1,5 +1,5 @@
 import {
-    GridBuilder, SortDirection,
+    GridBuilder, SortDirection, EnumOption,
     PanelBuilder, PanelGap,
     LabelBuilder, LayoutBuilder, LayoutGap, SlotSize,
     Money, Icons,
@@ -377,6 +377,48 @@ export function createReactiveGridExample(): PanelBuilder {
         .withItemCaptionProvider(item => item.status);
 
     return gridPanel('Reactive Grid (BehaviorSubject)', grid);
+}
+
+/**
+ * Auto-Height Grid with Select Editor
+ *
+ * `.withAutoHeight(maxRows)` sizes the grid to its content —
+ * `min(rows.length, maxRows) * rowHeight + header` — instead of filling its
+ * parent's height. Use it for a short grid embedded in a form or dialog,
+ * where a `height: 100%` grid would collapse or leave dead space.
+ *
+ * `.addEnumColumn(field).withOptions(options)` drives both the rendered
+ * label and, once the column is `.asEditable()`, the inline select editor —
+ * a ComboBox seeded with the same options — so display text and editable
+ * choices can never drift apart.
+ */
+export function createAutoHeightSelectEditorGridExample(): PanelBuilder {
+    const data$ = new BehaviorSubject<Order[]>(ORDERS.slice(0, 3).map(o => ({ ...o })));
+
+    const statusOptions: EnumOption[] = [
+        { value: 'Pending', label: 'Pending' },
+        { value: 'Completed', label: 'Completed' },
+        { value: 'Cancelled', label: 'Cancelled' },
+    ];
+
+    const grid = new GridBuilder<Order>()
+        .withItems(data$)
+        .withAutoHeight(5)  // sizes to content, up to 5 rows — no dead space in a compact card
+        .asEditable((updated) => {
+            const next = data$.value.map(o => o.id === updated.id ? updated : o);
+            data$.next(next);
+        });
+
+    const cols = grid.withColumns();
+    cols.addTextColumn('customer').withHeader('Customer').withWidth('1fr');
+    cols.addMoneyColumn('amount').withHeader('Amount (€)').withWidth('130px');
+    cols.addEnumColumn('status')
+        .withHeader('Status')
+        .withWidth('140px')
+        .withOptions(statusOptions)  // seeds both the cell label and the select editor
+        .asEditable();
+
+    return gridPanel('Auto-Height Grid — Select Editor', grid);
 }
 
 /**

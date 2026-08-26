@@ -163,6 +163,284 @@ describe('DialogBuilder', () => {
         expect(element.style.top).toBe('');
     });
 
+    it('should bound dialog width with a max-width per size', () => {
+        expect(new DialogBuilder().withSize(DialogSize.SMALL).build()).toHaveClass('w-[30vw]', 'max-w-[480px]');
+        expect(new DialogBuilder().withSize(DialogSize.MEDIUM).build()).toHaveClass('w-[50vw]', 'max-w-[720px]');
+        expect(new DialogBuilder().withSize(DialogSize.LARGE).build()).toHaveClass('w-[75vw]', 'max-w-[1040px]');
+        expect(new DialogBuilder().withSize(DialogSize.EXTRA_LARGE).build()).toHaveClass('w-[90vw]', 'max-w-[1400px]');
+    });
+
+    it('should override max-width reactively via withMaxWidth', () => {
+        const maxWidth$ = new BehaviorSubject('600px');
+        const dialog = new DialogBuilder().withMaxWidth(maxWidth$).build();
+        expect(dialog.style.maxWidth).toBe('600px');
+        maxWidth$.next('90vw');
+        expect(dialog.style.maxWidth).toBe('90vw');
+    });
+
+    it('should block Escape (cancel event) when beforeClose returns false', () => {
+        const builder = new DialogBuilder().withBeforeClose(() => false);
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+        const cancel = new Event('cancel', { cancelable: true });
+        const notPrevented = element.dispatchEvent(cancel);
+        expect(notPrevented).toBe(false);
+        expect(cancel.defaultPrevented).toBe(true);
+        expect(element.open).toBe(true);
+        expect(document.body.contains(element)).toBe(true);
+        builder.withBeforeClose(() => true);
+        builder.close();
+    });
+
+    it('should close (via forceClose) on Escape when beforeClose returns true', () => {
+        const builder = new DialogBuilder().withBeforeClose(() => true);
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+        const cancel = new Event('cancel', { cancelable: true });
+        element.dispatchEvent(cancel);
+        // preventDefault is always called before the guard runs (so a throwing guard can
+        // never fall through to the native close); a true result closes via forceClose.
+        expect(cancel.defaultPrevented).toBe(true);
+        expect(element.open).toBe(false);
+        expect(document.body.contains(element)).toBe(false);
+    });
+
+    it('should keep the dialog open when a synchronous beforeClose throws on Escape', () => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const builder = new DialogBuilder().withBeforeClose(() => { throw new Error('boom'); });
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+        const cancel = new Event('cancel', { cancelable: true });
+        const notPrevented = element.dispatchEvent(cancel);
+        expect(notPrevented).toBe(false);
+        expect(cancel.defaultPrevented).toBe(true);
+        expect(element.open).toBe(true);
+        expect(document.body.contains(element)).toBe(true);
+        expect(consoleError).toHaveBeenCalled();
+        consoleError.mockRestore();
+        builder.forceClose();
+    });
+
+    it('should keep the dialog open and not throw an unhandled rejection when an async beforeClose rejects on Escape', async () => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const builder = new DialogBuilder().withBeforeClose(() => Promise.reject(new Error('nope')));
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+        const cancel = new Event('cancel', { cancelable: true });
+        element.dispatchEvent(cancel);
+        // Let the rejected promise settle.
+        await Promise.resolve().then(() => Promise.resolve());
+        expect(element.open).toBe(true);
+        expect(document.body.contains(element)).toBe(true);
+        expect(consoleError).toHaveBeenCalled();
+        consoleError.mockRestore();
+        builder.forceClose();
+    });
+
+    it('should keep the dialog open and reject nothing when close() guard throws synchronously', async () => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const builder = new DialogBuilder().withBeforeClose(() => { throw new Error('boom'); });
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+        await expect(builder.close()).resolves.toBeUndefined();
+        expect(element.open).toBe(true);
+        expect(consoleError).toHaveBeenCalled();
+        consoleError.mockRestore();
+        builder.forceClose();
+    });
+
+    it('should bypass the beforeClose guard via the public forceClose()', () => {
+        const guard = jest.fn(() => false);
+        const builder = new DialogBuilder().withBeforeClose(guard);
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+        builder.forceClose();
+        expect(guard).not.toHaveBeenCalled();
+        expect(element.open).toBe(false);
+        expect(document.body.contains(element)).toBe(false);
+    });
+
+    it('should block programmatic close() when beforeClose returns false', async () => {
+        const builder = new DialogBuilder().withBeforeClose(() => false);
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+        await builder.close();
+        expect(element.open).toBe(true);
+        expect(document.body.contains(element)).toBe(true);
+        builder.withBeforeClose(() => true);
+        await builder.close();
+        expect(document.body.contains(element)).toBe(false);
+    });
+
+    it('should await an async beforeClose guard in close()', async () => {
+        const builder = new DialogBuilder().withBeforeClose(() => Promise.resolve(false));
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+        await builder.close();
+        expect(element.open).toBe(true);
+        builder.withBeforeClose(() => Promise.resolve(true));
+        await builder.close();
+        expect(element.open).toBe(false);
+    });
+
+    it('should be draggable by default', () => {
+        const dialog = new DialogBuilder().withCaption(of('Drag')).build() as HTMLDialogElement;
+        const header = dialog.querySelector('.flex-none') as HTMLElement;
+        expect(header).toHaveClass('cursor-move', 'select-none');
+        header.dispatchEvent(new MouseEvent('mousedown', { clientX: 10, clientY: 10, bubbles: true }));
+        expect(dialog.style.margin).toBe('0px');
+        document.dispatchEvent(new MouseEvent('mouseup'));
+    });
+
+    it('should not attach drag when withDraggable(false)', () => {
+        const dialog = new DialogBuilder().withCaption(of('Drag')).withDraggable(false).build() as HTMLDialogElement;
+        const header = dialog.querySelector('.flex-none') as HTMLElement;
+        expect(header).not.toHaveClass('cursor-move');
+        expect(header).not.toHaveClass('select-none');
+        header.dispatchEvent(new MouseEvent('mousedown', { clientX: 10, clientY: 10, bubbles: true }));
+        expect(dialog.style.margin).toBe('');
+        expect(dialog.style.left).toBe('');
+    });
+
+    it('should toggle drag reactively and idempotently', () => {
+        const draggable$ = new BehaviorSubject(false);
+        const dialog = new DialogBuilder().withCaption(of('Drag')).withDraggable(draggable$).build() as HTMLDialogElement;
+        const header = dialog.querySelector('.flex-none') as HTMLElement;
+        expect(header).not.toHaveClass('cursor-move');
+
+        draggable$.next(true);
+        draggable$.next(true);
+        expect(header).toHaveClass('cursor-move', 'select-none');
+        header.dispatchEvent(new MouseEvent('mousedown', { clientX: 10, clientY: 10, bubbles: true }));
+        expect(dialog.style.margin).toBe('0px');
+        document.dispatchEvent(new MouseEvent('mouseup'));
+
+        dialog.style.margin = '';
+        draggable$.next(false);
+        expect(header).not.toHaveClass('cursor-move');
+        header.dispatchEvent(new MouseEvent('mousedown', { clientX: 10, clientY: 10, bubbles: true }));
+        expect(dialog.style.margin).toBe('');
+    });
+
+    it('should set a fixed height and make content scrollable', () => {
+        const height$ = new BehaviorSubject(500);
+        const dialog = new DialogBuilder().withFixedHeight(height$).build() as HTMLDialogElement;
+        expect(dialog.style.height).toBe('500px');
+        height$.next(640);
+        expect(dialog.style.height).toBe('640px');
+        const content = dialog.querySelector('.flex-1');
+        expect(content).toHaveClass('overflow-y-auto');
+    });
+
+    it('should clamp fixed height to the viewport and keep footer buttons reachable', () => {
+        const height$ = new BehaviorSubject(2000);
+        const dialog = new DialogBuilder().withFixedHeight(height$).build() as HTMLDialogElement;
+        expect(dialog).toHaveClass('max-h-[90vh]');
+        const content = dialog.querySelector('.flex-1');
+        expect(content).toHaveClass('min-h-0');
+        expect(content).not.toHaveClass('min-h-[200px]');
+    });
+
+    it('should pin the toolbar outside the scrollable area when a fixed height is set', () => {
+        const builder = new DialogBuilder().withFixedHeight(new BehaviorSubject(500));
+        builder.withToolbar().withPrimaryButton().withCaption(of('OK'));
+        const dialog = builder.build() as HTMLDialogElement;
+
+        const toolbarWrapper = dialog.lastElementChild as HTMLElement;
+        expect(toolbarWrapper).toHaveClass('flex-none');
+        expect(toolbarWrapper.querySelector('button')?.textContent).toBe('OK');
+        // The toolbar must be a sibling of the scrollable content, never inside it.
+        const content = dialog.querySelector('.flex-1') as HTMLElement;
+        expect(content.contains(toolbarWrapper)).toBe(false);
+        expect(toolbarWrapper.parentElement).toBe(dialog);
+    });
+
+    it('should reset inline drag positioning when draggable is disabled mid-drag', () => {
+        const draggable$ = new BehaviorSubject(true);
+        const dialog = new DialogBuilder()
+            .withCaption(of('Drag'))
+            .withDraggable(draggable$)
+            .build() as HTMLDialogElement;
+        const header = dialog.querySelector('.flex-none') as HTMLElement;
+
+        header.dispatchEvent(new MouseEvent('mousedown', { clientX: 10, clientY: 10, bubbles: true }));
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 60, clientY: 40 }));
+
+        expect(dialog.style.transform).toBe('none');
+        expect(dialog.style.margin).toBe('0px');
+        expect(dialog.style.left).toBe('50px');
+        expect(dialog.style.top).toBe('30px');
+
+        // Disabling mid-drag must abort the drag and clear the inline overrides.
+        draggable$.next(false);
+
+        expect(dialog.style.transform).toBe('');
+        expect(dialog.style.margin).toBe('');
+        expect(dialog.style.left).toBe('');
+        expect(dialog.style.top).toBe('');
+        expect(header).not.toHaveClass('cursor-move');
+
+        // The drag is really over: further mousemove must not reposition the dialog.
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 200, clientY: 200 }));
+        expect(dialog.style.left).toBe('');
+    });
+
+    it('should keep consulting beforeClose on Escape after the dialog is detached and re-attached', () => {
+        // A Dialog is single-use (Reading A): detaching the built element tears down its
+        // listeners via registerDestroy and marks the builder's element destroyed. A raw
+        // DOM re-attach of that same node does NOT resurrect it — it stays inert, and
+        // forceClose() on it is a safe no-op. `withBeforeClose` gets re-armed only by
+        // calling show() again, which builds a brand new element.
+        const guard = jest.fn(() => false);
+        const builder = new DialogBuilder().withCaption(of('Reattach')).withBeforeClose(guard);
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+
+        // Detach and re-attach the same element (e.g. a host re-parenting its subtree).
+        document.body.removeChild(element);
+        document.body.appendChild(element);
+        element.setAttribute('open', '');
+
+        expect(() => builder.forceClose()).not.toThrow();
+
+        // Re-arm via show(): a fresh element is built, distinct from the dead node above,
+        // and the guard is consulted again on that new element.
+        builder.show();
+        const freshElement = builder.build() as HTMLDialogElement;
+        expect(freshElement).not.toBe(element);
+
+        const cancel = new Event('cancel', { cancelable: true });
+        freshElement.dispatchEvent(cancel);
+
+        expect(guard).toHaveBeenCalled();
+        expect(cancel.defaultPrevented).toBe(true);
+        expect(freshElement.open).toBe(true);
+
+        freshElement.remove();
+        element.remove();
+    });
+
+    it('should stop reacting to maxWidth after the dialog is disconnected', () => {
+        const maxWidth$ = new BehaviorSubject('600px');
+        const builder = new DialogBuilder().withMaxWidth(maxWidth$);
+        builder.show();
+        const element = builder.build() as HTMLDialogElement;
+        expect(element.style.maxWidth).toBe('600px');
+
+        document.body.removeChild(element);
+        maxWidth$.next('900px');
+
+        expect(element.style.maxWidth).toBe('600px');
+    });
+
+    it('should not throw or consult the guard when close()/forceClose() run before show()', async () => {
+        const guard = jest.fn(() => false);
+        const builder = new DialogBuilder().withBeforeClose(guard);
+        await expect(builder.close()).resolves.toBeUndefined();
+        expect(() => builder.forceClose()).not.toThrow();
+        expect(guard).not.toHaveBeenCalled();
+    });
+
     // ── Tests covering the payables dialog refactor patterns ──
 
     it('should accept inline ComponentBuilder content', () => {

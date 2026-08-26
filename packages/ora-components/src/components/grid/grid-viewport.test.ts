@@ -1,5 +1,6 @@
 import { GridViewport } from './grid-viewport';
 import { GridColumn, ColumnType } from './types';
+import { GRID_ROW_HEIGHT } from './grid-styles';
 
 describe('GridViewport', () => {
     interface TestItem {
@@ -124,6 +125,32 @@ it('should update rows on scroll', () => {
         return match ? parseInt(match[1]) : 0;
     }));
     expect(firstRowTop).toBe(15 * 52);
+});
+
+describe('custom rowHeight (GridBuilder.withRowHeight plumbing)', () => {
+    it('defaults to GRID_ROW_HEIGHT when no rowHeight is passed', () => {
+        const vp = new GridViewport<TestItem>(columns, [], false, false, () => {}, () => {});
+        Object.defineProperty(vp.getElement(), 'clientHeight', { value: 200, configurable: true });
+        vp.update(rowData, new Set());
+
+        const rowsContainer = vp.getElement().querySelector('.relative .absolute') as HTMLElement;
+        const firstRow = rowsContainer.querySelector('.absolute') as HTMLElement;
+        expect(firstRow.style.height).toBe(`${GRID_ROW_HEIGHT}px`);
+    });
+
+    it('uses the custom rowHeight for row height and translateY positioning', () => {
+        const customHeight = 36;
+        const vp = new GridViewport<TestItem>(columns, [], false, false, () => {}, () => {}, false, () => {}, customHeight);
+        Object.defineProperty(vp.getElement(), 'clientHeight', { value: 200, configurable: true });
+        vp.update(rowData, new Set());
+
+        const rowsContainer = vp.getElement().querySelector('.relative .absolute') as HTMLElement;
+        const rows = Array.from(rowsContainer.querySelectorAll('.absolute')) as HTMLElement[];
+        expect(rows[0].style.height).toBe(`${customHeight}px`);
+
+        const secondRow = rows.find(r => r.style.transform === `translateY(${customHeight}px)`);
+        expect(secondRow).toBeTruthy();
+    });
 });
 });
 

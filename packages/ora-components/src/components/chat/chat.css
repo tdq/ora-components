@@ -1,0 +1,592 @@
+/* Chat panel + trigger.
+   Port of the aura-accounting chat styles, re-mapped onto Material 3 tokens.
+
+   Local knobs (override on any ancestor):
+     --ora-chat-width          panel width; the builder writes withWidth() here
+     --ora-chat-status-color   header status dot colour
+     --ora-chat-accent         gradient shared by badge/avatar/user bubble/send button
+
+   `--md-sys-color-surface-container-high` and `--md-sys-color-outline-variant` are not
+   part of this library's token set yet, so every use falls back to the closest token
+   that does exist. When the palette gains them the fallbacks simply stop applying. */
+
+.ora-chat-panel-wrapper,
+.ora-chat-trigger-wrapper {
+    --ora-chat-width: 420px;
+    --ora-chat-status-color: var(--md-sys-color-tertiary);
+    --ora-chat-accent: linear-gradient(135deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
+    --ora-chat-surface-high: var(--md-sys-color-surface-container-high, var(--md-sys-color-surface-container-low));
+    --ora-chat-outline-variant: var(--md-sys-color-outline-variant, color-mix(in srgb, var(--md-sys-color-outline) 35%, transparent));
+    --ora-chat-hairline: color-mix(in srgb, var(--md-sys-color-outline) 20%, transparent);
+}
+
+/* ── Panel shell ─────────────────────────────────────────────────────────── */
+
+.ora-chat-panel-wrapper {
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: visible;
+    height: 100%;
+}
+
+.ora-chat-panel-container {
+    height: 100%;
+    padding: var(--md-sys-spacing-4) var(--md-sys-spacing-4) var(--md-sys-spacing-4) var(--md-sys-spacing-1);
+    box-sizing: border-box;
+    transition:
+        width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+        padding 320ms cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 220ms ease,
+        transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ora-chat-panel--open {
+    width: calc(var(--ora-chat-width) + var(--md-sys-spacing-4) + var(--md-sys-spacing-1));
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.ora-chat-panel--closed {
+    width: 0;
+    padding: 0;
+    opacity: 0;
+    transform: translateX(var(--md-sys-spacing-5));
+    pointer-events: none;
+}
+
+.ora-chat-panel-inner {
+    width: var(--ora-chat-width);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--md-sys-shape-extra-large);
+    background: var(--md-sys-color-surface);
+    border: 1px solid var(--ora-chat-hairline);
+    box-shadow: var(--md-sys-elevation-level4);
+    color: var(--md-sys-color-on-surface);
+}
+
+/* .glass-effect brings its own background/ring; keep only the geometry. */
+.ora-chat-panel-inner.glass-effect {
+    background: none;
+    border: none;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.ora-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--md-sys-spacing-3);
+    padding: var(--md-sys-spacing-4);
+    border-bottom: 1px solid var(--ora-chat-hairline);
+}
+
+.ora-chat-header-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.ora-chat-header-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--md-sys-shape-large);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ora-chat-accent);
+    color: var(--md-sys-color-on-primary);
+    flex-shrink: 0;
+}
+
+.ora-chat-header-badge svg {
+    width: 16px;
+    height: 16px;
+}
+
+.ora-chat-header-title-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.ora-chat-header-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--md-sys-color-on-surface);
+    letter-spacing: -0.01em;
+}
+
+.ora-chat-header-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: var(--md-sys-color-on-surface-variant);
+    margin-top: 1px;
+}
+
+.ora-chat-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--ora-chat-status-color);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ora-chat-status-color) 25%, transparent);
+}
+
+.ora-chat-icon-btn {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: var(--md-sys-shape-medium);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.ora-chat-icon-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.ora-chat-icon-btn:hover {
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+    color: var(--md-sys-color-on-surface);
+    border-color: var(--ora-chat-hairline);
+}
+
+.ora-chat-icon-btn:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+/* ── Message list ────────────────────────────────────────────────────────── */
+
+.ora-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--md-sys-spacing-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--md-sys-spacing-3);
+    min-height: 0;
+    scroll-behavior: smooth;
+}
+
+.ora-chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.ora-chat-messages::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--md-sys-color-outline) 40%, transparent);
+    border-radius: 8px;
+}
+
+.ora-chat-messages::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--md-sys-color-outline) 60%, transparent);
+}
+
+.ora-chat-row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--md-sys-spacing-2);
+    max-width: 100%;
+    animation: ora-chat-message-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ora-chat-row--user {
+    justify-content: flex-end;
+}
+
+.ora-chat-row--assistant {
+    justify-content: flex-start;
+}
+
+@keyframes ora-chat-message-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ora-chat-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: var(--md-sys-shape-medium);
+    background: var(--ora-chat-accent);
+    color: var(--md-sys-color-on-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-bottom: 2px;
+}
+
+.ora-chat-avatar svg {
+    width: 14px;
+    height: 14px;
+}
+
+.ora-chat-bubble {
+    max-width: 78%;
+    padding: 9px 13px;
+    border-radius: 14px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.ora-chat-bubble--user {
+    background: var(--ora-chat-accent);
+    color: var(--md-sys-color-on-primary);
+    border-bottom-right-radius: var(--md-sys-shape-small);
+}
+
+.ora-chat-bubble--assistant {
+    background: var(--ora-chat-surface-high);
+    color: var(--md-sys-color-on-surface);
+    border: 1px solid var(--ora-chat-outline-variant);
+    border-bottom-left-radius: var(--md-sys-shape-small);
+}
+
+.ora-chat-bubble--typing {
+    padding: 12px 14px;
+}
+
+.ora-chat-typing {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.ora-chat-typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--md-sys-color-on-surface-variant);
+    animation: ora-chat-typing-bounce 1.2s infinite ease-in-out;
+}
+
+.ora-chat-typing span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.ora-chat-typing span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes ora-chat-typing-bounce {
+
+    0%,
+    60%,
+    100% {
+        opacity: 0.3;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
+
+/* ── Suggestions ─────────────────────────────────────────────────────────── */
+
+/* Quick-reply chips between the log and the composer. The row is app-driven: it carries
+   the `hidden` attribute while the emitted list is empty. */
+.ora-chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--md-sys-spacing-2);
+    padding: 0 var(--md-sys-spacing-4) var(--md-sys-spacing-2);
+    flex-shrink: 0;
+}
+
+.ora-chat-suggestions[hidden] {
+    display: none;
+}
+
+.ora-chat-suggestion {
+    max-width: 100%;
+    padding: 6px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--ora-chat-outline-variant);
+    background: var(--md-sys-color-surface-container-low);
+    color: var(--md-sys-color-on-surface);
+    font-family: inherit;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    animation: ora-chat-suggestion-in 150ms ease;
+    transition: background 180ms ease, border-color 180ms ease, transform 120ms ease;
+}
+
+.ora-chat-suggestion:hover {
+    background: color-mix(in srgb, var(--md-sys-color-primary) 8%, var(--md-sys-color-surface-container-low));
+    border-color: var(--md-sys-color-primary);
+}
+
+.ora-chat-suggestion:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+.ora-chat-suggestion:active {
+    transform: scale(0.99);
+}
+
+/* The glass shell has no opaque surface behind it; the chip provides its own veil,
+   matching .ora-chat-panel-inner.glass-effect. */
+.ora-chat-panel-inner.glass-effect .ora-chat-suggestion {
+    background: color-mix(in srgb, var(--md-sys-color-surface) 45%, transparent);
+    border-color: var(--ora-chat-hairline);
+}
+
+.ora-chat-panel-inner.glass-effect .ora-chat-suggestion:hover {
+    background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+    border-color: var(--md-sys-color-primary);
+}
+
+@keyframes ora-chat-suggestion-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ── Composer ────────────────────────────────────────────────────────────── */
+
+.ora-chat-composer-wrap {
+    padding: var(--md-sys-spacing-3) var(--md-sys-spacing-4) var(--md-sys-spacing-4);
+    border-top: 1px solid var(--ora-chat-hairline);
+}
+
+.ora-chat-composer {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--md-sys-spacing-2);
+    padding: 9px 9px 9px 14px;
+    background: var(--ora-chat-surface-high);
+    border: 1px solid var(--ora-chat-outline-variant);
+    border-radius: 14px;
+    transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+/* Focus lands on the textarea; the ring is drawn on the shell that contains it
+   (see .ora-chat-textarea, whose own outline is suppressed for that reason). */
+.ora-chat-composer:focus-within {
+    border-color: var(--md-sys-color-primary);
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--md-sys-color-primary) 15%, transparent);
+}
+
+.ora-chat-textarea {
+    flex: 1;
+    border: none;
+    outline: none;
+    resize: none;
+    background: transparent;
+    color: var(--md-sys-color-on-surface);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    font-family: inherit;
+    max-height: 160px;
+    padding: 6px 0;
+}
+
+.ora-chat-textarea::placeholder {
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.ora-chat-send-btn {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: var(--md-sys-shape-large);
+    background: var(--ora-chat-accent);
+    color: var(--md-sys-color-on-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--md-sys-elevation-level2);
+    transition: filter 150ms ease, transform 120ms ease, opacity 150ms ease, box-shadow 150ms ease;
+}
+
+.ora-chat-send-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.ora-chat-send-btn:hover:not(:disabled) {
+    filter: brightness(1.1);
+    box-shadow: var(--md-sys-elevation-level3);
+}
+
+.ora-chat-send-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.ora-chat-send-btn:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+.ora-chat-send-btn:disabled {
+    background: var(--md-sys-color-surface-variant);
+    color: var(--md-sys-color-on-surface-variant);
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+.ora-chat-composer-hint {
+    margin-top: 6px;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--md-sys-color-on-surface-variant);
+    letter-spacing: 0.01em;
+}
+
+/* ── Trigger ─────────────────────────────────────────────────────────────── */
+
+.ora-chat-trigger-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.ora-chat-trigger-wrapper--hidden {
+    display: none;
+}
+
+.ora-chat-trigger-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    height: 44px;
+    padding: 0 14px 0 16px;
+    border-radius: 999px;
+    background: var(--md-sys-color-surface);
+    border: 1px solid var(--ora-chat-outline-variant);
+    color: var(--md-sys-color-on-surface);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    box-shadow: var(--md-sys-elevation-level2);
+    transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 140ms ease;
+}
+
+.ora-chat-trigger-btn:hover {
+    background: color-mix(in srgb, var(--md-sys-color-primary) 10%, var(--md-sys-color-surface));
+    border-color: var(--md-sys-color-primary);
+    box-shadow: var(--md-sys-elevation-level3);
+    transform: translateY(-1px);
+}
+
+.ora-chat-trigger-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.ora-chat-trigger-btn:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+.ora-chat-trigger-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--md-sys-shape-medium);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ora-chat-accent);
+    color: var(--md-sys-color-on-primary);
+    flex-shrink: 0;
+    animation: ora-chat-trigger-sparkle 3.4s ease-in-out infinite;
+}
+
+.ora-chat-trigger-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+@keyframes ora-chat-trigger-sparkle {
+
+    0%,
+    100% {
+        transform: rotate(0deg) scale(1);
+    }
+
+    50% {
+        transform: rotate(8deg) scale(1.06);
+    }
+}
+
+.ora-chat-trigger-label {
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .ora-chat-trigger-icon,
+    .ora-chat-row,
+    .ora-chat-suggestion,
+    .ora-chat-typing span {
+        animation: none;
+    }
+
+    .ora-chat-panel-container {
+        transition: none;
+    }
+
+    .ora-chat-messages {
+        scroll-behavior: auto;
+    }
+
+    /* Keep the colour feedback, drop the lift/scale motion. */
+    .ora-chat-send-btn {
+        transition: filter 150ms ease, opacity 150ms ease, box-shadow 150ms ease;
+    }
+
+    .ora-chat-trigger-btn {
+        transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+    }
+
+    .ora-chat-suggestion {
+        transition: background 180ms ease, border-color 180ms ease;
+    }
+
+    .ora-chat-send-btn:hover:not(:disabled),
+    .ora-chat-send-btn:active:not(:disabled),
+    .ora-chat-suggestion:active,
+    .ora-chat-trigger-btn:hover,
+    .ora-chat-trigger-btn:active {
+        transform: none;
+    }
+}

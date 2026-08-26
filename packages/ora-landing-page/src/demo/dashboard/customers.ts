@@ -52,7 +52,7 @@ function createCustomerGrid(data: Customer[]): GridBuilder<Customer> {
 
 export function createCustomers(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    container.className = 'flex-1 overflow-y-auto';
 
     const activeData = ALL_CUSTOMERS.filter(c => c.status === 'Active');
     const inactiveData = ALL_CUSTOMERS.filter(c => c.status === 'Inactive' || c.status === 'Pending');

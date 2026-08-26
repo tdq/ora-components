@@ -69,9 +69,6 @@ All builder methods return `this` for chaining. Pass RxJS observables into react
 - **`withAlignment`** — `(alignment: Observable<Alignment>) => this`
   Sets the default alignment for all child slots that do not have their own alignment override. Only applies to horizontal layouts.
 
-- **`withGlass`** — `() => this`
-  Applies the glass-effect styling (frosted background with blur, padding, and rounded corners) to the layout container.
-
 - **`build`** — `() => HTMLElement`
   Constructs and returns the layout `<div>` element with all configured slots. Call once per builder.
 
@@ -90,6 +87,9 @@ Returned by `addSlot()`. Each slot wraps a single child component.
 
 - **`withAlignment`** — `(alignment: Observable<Alignment>) => SlotBuilder`
   Overrides the layout-level alignment for this specific slot.
+
+- **`withName`** — `(name: string) => SlotBuilder`
+  Sets the slot's `data-slot` attribute value, useful for styling hooks, testing selectors, and debugging layout structure in devtools. When not set, the slot defaults to its zero-based index as a string (`data-slot="0"`, `data-slot="1"`, ...). In dev mode, `LayoutBuilder` warns via `console.warn` if two slots in the same layout resolve to the same effective `data-slot` value (whether both explicit or one explicit colliding with an index) — `data-slot` values should be unique within a layout.
 
 ---
 
@@ -120,8 +120,17 @@ Defines the proportional width of a slot relative to available space.
 | `SlotSize.THREE_QUARTERS` | `basis-3/4` | 3/4 of available space |
 | `SlotSize.FULL` | `basis-full` | Full available width |
 | `SlotSize.FIT` | `flex-none` | Sized to content |
+| `SlotSize.GROW` | `flex-1` (+ `min-h-0`/`min-w-0`) | Fills the remaining space along the layout's main axis and may shrink below its content's intrinsic size to do so |
 
 For horizontal layouts, slots without an explicit size use `flex-1` (equal distribution). For vertical layouts, slots default to content height.
+
+#### `SlotSize.GROW` — needs a definite-height ancestor
+
+`GROW` is the odd one out: it doesn't just set a size class on the slot — as soon as **any** slot in a layout is `GROW`, `LayoutBuilder` also adds `h-full min-h-0` (vertical) or `min-w-0` (horizontal) to the **layout container itself**, so the GROW slot has something concrete to grow against and CAN shrink below its content's natural size instead of overflowing.
+
+`h-full`, however, resolves to nothing if the layout's own ancestor chain doesn't have a **definite height** — a `<div>` with no set height, or one sized only by its content, gives `h-full` `height: 100%` of an undefined value. In that case the GROW slot has no bounded space to fill and collapses to its content size, exactly like `FIT`. Always give the layout (or an ancestor) an explicit height — e.g. `h-screen`, `h-[500px]`, or a flex/grid parent that itself resolves to a definite height — before relying on `GROW` to fill it. See `VerticalGrowSlot` below, which wraps the layout in a `h-[500px]` container specifically for this reason.
+
+<Canvas of={Stories.VerticalGrowSlot} />
 
 ### Alignment
 
@@ -200,8 +209,8 @@ See the [Theming guide](../?path=/docs/system-theming--docs) for token reference
 - **Direction**: `asVertical()` applies `flex-col`; `asHorizontal()` (default) applies `flex-row`.
 - **Gaps** are implemented with Tailwind `gap-*` utility classes based on the `LayoutGap` enum.
 - **Slot sizing**: Horizontal slots without an explicit `SlotSize` receive `flex-1` to distribute space equally. Vertical slots default to content height.
+- **`data-slot` attribute**: every rendered slot wrapper carries a `data-slot` attribute — `withName('scroll-area')` sets it explicitly, otherwise it defaults to the slot's zero-based index. Useful for styling hooks and test selectors. `LayoutBuilder` warns (dev mode only) if two slots in the same layout resolve to the same `data-slot` value.
 - **Visibility**: Toggling slot visibility uses `display: none` via inline styles, driven by the `withVisible` observable. The component handles cleanup on destroy.
-- **Glass effect**: `withGlass()` adds `glass-effect`, `p-4`, and `rounded-large` classes to the layout container for a frosted-glass appearance.
 - **Alignment**: Layout-level alignment applies only to horizontal layouts. Slot-level alignment always applies. When both are set, the slot-level alignment takes precedence.
 
 ---

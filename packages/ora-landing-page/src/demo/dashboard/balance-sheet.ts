@@ -113,7 +113,7 @@ function renderSection(title: string, items: BSLineItem[], grandTotal: number, g
 
 export function createBalanceSheet(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    container.className = 'flex-1 overflow-y-auto';
 
     // Header
     const header = document.createElement('div');

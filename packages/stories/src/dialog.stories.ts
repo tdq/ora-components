@@ -3,7 +3,8 @@ import { of, Subject, BehaviorSubject } from 'rxjs';
 import { ButtonBuilder } from '@tdq/ora-components';
 import { TabsBuilder } from '@tdq/ora-components';
 import { FormBuilder } from '@tdq/ora-components';
-import { createGlassBackdrop, GLASS_GRADIENTS } from './story-helpers';
+import { CheckboxBuilder, CheckboxValue } from '@tdq/ora-components';
+import { createGlassBackdrop, GLASS_GRADIENTS, createActionLog } from './story-helpers';
 
 export default {
     title: 'Components/Dialog',
@@ -336,7 +337,7 @@ export const DialogWithForm = () => {
 export const GlassEffect = () => {
     const container = document.createElement('div');
     container.className = 'flex-1 p-10 w-full relative overflow-hidden flex items-center justify-center';
-    
+
     // Add a colorful glass backdrop
     const backdrop = createGlassBackdrop(GLASS_GRADIENTS.INDIGO_PINK, 8, 'opacity-60');
     container.appendChild(backdrop);
@@ -366,7 +367,7 @@ export const GlassEffect = () => {
         close$.subscribe(() => dialog.close());
 
         const toolbar = dialog.withToolbar();
-        
+
         toolbar.addSecondaryButton()
             .withCaption(of('Close'))
             .withClick(() => close$.next());
@@ -385,7 +386,186 @@ export const GlassEffect = () => {
         .withCaption(of('Open Glass Dialog'))
         .withClick(() => btnClick$.next())
         .build();
-    
+
     container.appendChild(btn);
+    return container;
+};
+
+/** withMaxWidth() overrides each DialogSize's default max-width (see DIALOG_SIZE_MAP) at a wide viewport, useful when a caller wants the vw-relative width but a different cap. */
+export const SizesAndMaxWidth = () => {
+    const container = document.createElement('div');
+    container.className = 'p-4 flex flex-col gap-4';
+
+    const info = document.createElement('p');
+    info.className = 'text-body-medium text-on-surface-variant max-w-2xl';
+    info.textContent = 'Each DialogSize maps to a vw-relative width capped by a default max-width (SMALL: 480px, MEDIUM: 720px, LARGE: 1040px, EXTRA_LARGE: 1400px). withMaxWidth() overrides that cap independently of the size preset — best viewed at a wide viewport (desktop1920 / desktopWide) where vw alone would otherwise make the dialog very wide.';
+    container.appendChild(info);
+
+    const openCustomCap = () => {
+        const dialog = new DialogBuilder()
+            .withCaption(of('LARGE size, custom max-width'))
+            .withDescription(of('withSize(DialogSize.LARGE).withMaxWidth(of(\'600px\'))'))
+            .withSize(DialogSize.LARGE)
+            .withMaxWidth(of('600px'))
+            .withContent({
+                build: () => {
+                    const p = document.createElement('p');
+                    p.className = 'text-body-medium';
+                    p.textContent = 'Without withMaxWidth, LARGE would cap at 1040px. This dialog is capped at 600px instead, while still being 75vw-relative up to that cap.';
+                    return p;
+                }
+            });
+
+        dialog.withToolbar().withPrimaryButton().withCaption(of('Close')).withClick(() => dialog.close());
+        dialog.show();
+    };
+
+    const btn = new ButtonBuilder()
+        .withCaption(of('Open LARGE dialog capped at 600px'))
+        .withClick(openCustomCap)
+        .build();
+    container.appendChild(btn);
+
+    return container;
+};
+
+/** withBeforeClose() vetoes close() and the native `cancel` (Escape) event until a checkbox is ticked — a fail-closed guard. */
+export const ConfirmBeforeClose = () => {
+    const container = document.createElement('div');
+    container.className = 'p-4';
+
+    const { element: actionLog, log } = createActionLog();
+    container.appendChild(actionLog);
+
+    const openDialog = () => {
+        const acknowledged$ = new BehaviorSubject<CheckboxValue>(false);
+
+        const checkbox = new CheckboxBuilder()
+            .withCaption(of('I understand this action is irreversible'))
+            .withValue(acknowledged$)
+            .build();
+
+        const dialog = new DialogBuilder()
+            .withCaption(of('Delete account'))
+            .withDescription(of('withBeforeClose() returns false until the checkbox is ticked — Escape and the toolbar Close button are both vetoed.'))
+            .withSize(DialogSize.SMALL)
+            .withBeforeClose(() => {
+                const allowed = acknowledged$.value === true;
+                log(allowed ? 'beforeClose: allowed (checkbox ticked)' : 'beforeClose: blocked — tick the checkbox first');
+                return allowed;
+            })
+            .withContent({ build: () => checkbox });
+
+        dialog.withToolbar()
+            .withPrimaryButton()
+            .withCaption(of('Close'))
+            .withClick(() => dialog.close());
+
+        dialog.show();
+    };
+
+    const btn = new ButtonBuilder()
+        .withCaption(of('Open Confirm-Before-Close Dialog'))
+        .withClick(openDialog)
+        .build();
+    container.appendChild(btn);
+
+    return container;
+};
+
+/** withDraggable(false) disables header dragging — the header keeps a normal (non-move) cursor and mousedown no longer repositions the dialog. */
+export const NonDraggable = () => {
+    const showDialog = () => {
+        const dialog = new DialogBuilder()
+            .withCaption(of('Not draggable'))
+            .withDescription(of('withDraggable(false) — dragging the header does nothing.'))
+            .withDraggable(false)
+            .withContent({
+                build: () => {
+                    const p = document.createElement('p');
+                    p.className = 'text-body-medium';
+                    p.textContent = 'Try clicking and dragging this dialog by its header — it stays centered.';
+                    return p;
+                }
+            });
+
+        dialog.withToolbar().withPrimaryButton().withCaption(of('Close')).withClick(() => dialog.close());
+        dialog.show();
+    };
+
+    const container = document.createElement('div');
+    container.className = 'p-4';
+
+    const btn = new ButtonBuilder()
+        .withCaption(of('Open Non-Draggable Dialog'))
+        .withClick(showDialog)
+        .build();
+    container.appendChild(btn);
+
+    return container;
+};
+
+/** withFixedHeight() pins the dialog to a fixed pixel height with the toolbar staying put and the content area scrolling internally — a multi-step wizard shell. */
+export const WizardFixedHeight = () => {
+    const TOTAL_STEPS = 3;
+
+    const showDialog = () => {
+        // Scoped to showDialog() so reopening the wizard always restarts at step 1 —
+        // a module/story-scoped BehaviorSubject would persist across opens.
+        const step$ = new BehaviorSubject(1);
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'flex flex-col gap-3';
+
+        const renderStep = () => {
+            contentContainer.innerHTML = '';
+            for (let i = 1; i <= 12; i++) {
+                const p = document.createElement('p');
+                p.className = 'text-body-medium';
+                p.textContent = `Step ${step$.value} of ${TOTAL_STEPS} — field row ${i}: this content area scrolls internally while the header and toolbar stay fixed at a constant dialog height.`;
+                contentContainer.appendChild(p);
+            }
+        };
+        renderStep();
+
+        const dialog = new DialogBuilder()
+            .withCaption(of('Onboarding Wizard'))
+            .withDescription(of('withFixedHeight(of(360)) — constant dialog height across steps'))
+            .withSize(DialogSize.MEDIUM)
+            .withFixedHeight(of(360))
+            .withContent({ build: () => contentContainer });
+
+        const toolbar = dialog.withToolbar();
+        toolbar.addSecondaryButton()
+            .withCaption(of('Back'))
+            .withClick(() => {
+                if (step$.value > 1) {
+                    step$.next(step$.value - 1);
+                    renderStep();
+                }
+            });
+
+        toolbar.withPrimaryButton()
+            .withCaption(of('Next / Finish'))
+            .withClick(() => {
+                if (step$.value < TOTAL_STEPS) {
+                    step$.next(step$.value + 1);
+                    renderStep();
+                } else {
+                    dialog.close();
+                }
+            });
+
+        dialog.show();
+    };
+
+    const container = document.createElement('div');
+    container.className = 'p-4';
+
+    const btn = new ButtonBuilder()
+        .withCaption(of('Open Wizard Dialog'))
+        .withClick(showDialog)
+        .build();
+    container.appendChild(btn);
+
     return container;
 };

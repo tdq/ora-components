@@ -5,7 +5,7 @@ import { themedColor$ } from './theme-tokens';
 
 export function createAnalytics(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    container.className = 'flex-1 overflow-y-auto';
 
     const grid = document.createElement('div');
     grid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24';

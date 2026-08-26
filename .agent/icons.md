@@ -20,13 +20,20 @@ These constants contain literal SVG strings. They should be used with `innerHTML
 - `Icons.CALENDAR`: Calendar icon for date pickers.
 - `Icons.ERROR`: Warning/Error icon for validation messages.
 - `Icons.CHECKMARK`: Checkmark for checkboxes and success states.
+- `Icons.INDETERMINATE`: Horizontal bar for the checkbox's indeterminate (mixed) state.
+- `Icons.EDIT`: Pencil icon for edit actions in grid rows and toolbars.
+- `Icons.DELETE`: Trash-can icon for destructive row and toolbar actions.
+- `Icons.CLOSE`: Diagonal cross for dismissing dialogs, panels and the ChatPanel header.
+- `Icons.MENU`: Three-line hamburger for menu triggers.
+- `Icons.SEND`: Paper-plane for the ChatPanel composer's send button.
+- `Icons.SPARKLE`: Four-point sparkle marking assistant surfaces — the ChatPanel header badge, the assistant avatar and the ChatTrigger pill.
+- `Icons.PANEL_COLLAPSE`: Left-pointing chevron for the SideBar header's collapse toggle.
+- `Icons.PANEL_EXPAND`: Right-pointing chevron shown on the collapsed SideBar brand on hover.
+- `Icons.SORT`: Double chevron for an unsorted, sortable grid column header.
+- `Icons.SORT_UP`: Upward triangle for an ascending-sorted column header.
+- `Icons.SORT_DOWN`: Downward triangle for a descending-sorted column header.
 
-### Icon Classes (Strings)
-These constants contain CSS class names for font-based icon sets (e.g., FontAwesome).
-
-- `Icons.SORT`: Default sort icon class.
-- `Icons.SORT_UP`: Ascending sort icon class.
-- `Icons.SORT_DOWN`: Descending sort icon class.
+Every constant on `Icons` is an inline SVG string — there are no font-icon classes in the registry.
 
 ## Usage Example
 

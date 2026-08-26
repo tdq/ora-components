@@ -24,7 +24,7 @@ function box(label: string, extraClass = ''): PanelBuilder {
 }
 
 // Utility: wraps a layout in a titled section for self-documenting visual output.
-function section(title: string, content: LayoutBuilder): LayoutBuilder {
+function section(title: string, content: ComponentBuilder): LayoutBuilder {
     const wrapper = new LayoutBuilder().asVertical().withGap(LayoutGap.SMALL);
     wrapper.addSlot().withContent(
         new LabelBuilder()
@@ -220,6 +220,53 @@ export function createVisibilityExample(): ComponentBuilder {
             // Clean up the BehaviorSubject when the element leaves the DOM
             registerDestroy(element, () => visible$.complete());
             return element;
+        },
+    };
+}
+
+/**
+ * GROW Slot — fill remaining height
+ *
+ * `.withSize(SlotSize.GROW)` absorbs all leftover space along the layout's
+ * main axis, so a scrollable child (grid, list, chart) fills the remaining
+ * height instead of overflowing the page. In a vertical layout the GROW
+ * slot gets `flex-1 min-h-0` and the container gets `h-full min-h-0` — the
+ * `min-h-0` is what lets the nested scroll container actually scroll instead
+ * of pushing the page taller.
+ *
+ * Use it for the classic "fixed header + scrollable body" shell: a toolbar
+ * slot sized FIT, a GROW slot holding a tall list, and nothing below it.
+ */
+export function createGrowSlotExample(): ComponentBuilder {
+    return {
+        build(): HTMLElement {
+            // rounded/p-2 exist in the shipped stylesheet; the fixed demo height and
+            // border are set as inline styles since packages/examples isn't scanned by
+            // ora-components' Tailwind content globs — a class not already referenced
+            // from ora-components/src or packages/stories won't be in dist/ora-components.css.
+            const shell = new LayoutBuilder()
+                .asVertical()
+                .withGap(LayoutGap.SMALL)
+                .withClass(of('rounded p-2'));
+
+            shell.addSlot().withSize(SlotSize.FIT).withContent(box('Toolbar (FIT — content height)'));
+
+            const scrollArea = new LayoutBuilder()
+                .asVertical()
+                .withGap(LayoutGap.SMALL)
+                .withClass(of('overflow-y-auto'));
+            for (let i = 1; i <= 12; i++) {
+                scrollArea.addSlot().withSize(SlotSize.FIT).withContent(box(`Row ${i}`));
+            }
+            shell.addSlot().withSize(SlotSize.GROW).withContent(scrollArea);
+
+            const shellEl = shell.build();
+            shellEl.style.height = '240px';
+            // `--md-sys-color-outline` is the theme token actually defined in index-base.css
+            // (there is no `-outline-variant` token), so the border follows light/dark theme.
+            shellEl.style.border = '1px dashed var(--md-sys-color-outline)';
+
+            return section('GROW Slot — scrollable body fills remaining height', { build: () => shellEl }).build();
         },
     };
 }

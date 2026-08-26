@@ -233,3 +233,165 @@ export const WithDescription = () => {
         .withDescription(of('live · reconciled to the cent'))
         .build();
 };
+
+// 7. LocaleAndCurrencyDisplay — grouping per locale, ISO code vs symbol,
+//    and the U+2212 sign span for negative amounts.
+export const LocaleAndCurrencyDisplay = () => {
+    const locale$ = new BehaviorSubject<string>('en-US');
+    const display$ = new BehaviorSubject<'symbol' | 'code'>('symbol');
+
+    const card = new MoneyKPICardBuilder()
+        .withValue(of({ amount: 1234567.5, currencyId: 'EUR' } as Money))
+        .withLabel(of('Locale-aware grouping'))
+        .withLocale(locale$)
+        .withCurrencyDisplay(display$)
+        .withDescription(of('separators come from Intl for the selected locale'))
+        .build();
+
+    const localeControls = createControlStrip([
+        createButton('en-US', () => locale$.next('en-US')).build(),
+        createButton('de-DE', () => locale$.next('de-DE')).build(),
+        createButton('fr-FR', () => locale$.next('fr-FR')).build(),
+        createButton('symbol', () => display$.next('symbol'), ButtonStyle.OUTLINED).build(),
+        createButton('code', () => display$.next('code'), ButtonStyle.OUTLINED).build(),
+    ]);
+
+    const negative = new MoneyKPICardBuilder()
+        .withValue(of({ amount: -442000, currencyId: 'EUR' } as Money))
+        .withLabel(of('Negative — leading U+2212, no gap'))
+        .withPrecision(0)
+        .withCurrencyDisplay('code')
+        .build();
+
+    const roundsToZero = new MoneyKPICardBuilder()
+        .withValue(of({ amount: -0.004, currencyId: 'USD' } as Money))
+        .withLabel(of('Rounds to zero — no minus sign'))
+        .build();
+
+    const container = document.createElement('div');
+    container.className = 'p-4 max-w-md flex flex-col gap-4';
+    container.appendChild(card);
+    container.appendChild(localeControls);
+    container.appendChild(negative);
+    container.appendChild(roundsToZero);
+
+    registerDestroy(container, () => {
+        locale$.complete();
+        display$.complete();
+    });
+
+    return container;
+};
+
+// 8. NegativeValue — the U+2212 sign span, and the direction-aware flash triggered by a
+// value CHANGE (a single static `of(...)` value never flashes — there's no previous value
+// to compare direction against — so buttons drive a second emission to make it observable).
+export const NegativeValue = () => {
+    const flowValue$ = new BehaviorSubject<Money>({ amount: 18420.5, currencyId: 'USD' });
+
+    const layout = new LayoutBuilder().asVertical().withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new MoneyKPICardBuilder()
+            .withValue(flowValue$)
+            .withLabel(of('Net Cash Flow'))
+            .withTrend(of(TREND_DOWN))
+            .withDescription(of('leading U+2212 minus sign, no gap before the digits — click below to flip sign and trigger the direction-aware flash'))
+    );
+
+    const flipControls = createControlStrip([
+        createButton('Go Negative (red flash)', () => flowValue$.next({ amount: -18420.5, currencyId: 'USD' })).build(),
+        createButton('Go Positive (green flash)', () => flowValue$.next({ amount: 18420.5, currencyId: 'USD' }), ButtonStyle.OUTLINED).build(),
+    ]);
+    layout.addSlot().withContent({ build: () => flipControls });
+
+    layout.addSlot().withContent(
+        new MoneyKPICardBuilder()
+            .withValue(of({ amount: -0.004, currencyId: 'EUR' } as Money))
+            .withLabel(of('Rounds To Zero'))
+            .withDescription(of('rounds to 0.00 at the configured precision — no minus sign shown'))
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+    return container;
+};
+
+// 9. PrecisionZero — whole-currency KPIs (e.g. JPY) with no fractional digits.
+export const PrecisionZero = () => {
+    const layout = new LayoutBuilder().asVertical().withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new MoneyKPICardBuilder()
+            .withValue(of(JPY_SALES))
+            .withLabel(of('JPY Sales — Precision 0'))
+            .withPrecision(0)
+            .withTrend(of(TREND_BIG_UP))
+            .withDescription(of('withPrecision(0) — no decimal separator or cents rendered'))
+    );
+
+    layout.addSlot().withContent(
+        new MoneyKPICardBuilder()
+            .withValue(of({ amount: -442000, currencyId: 'EUR' } as Money))
+            .withLabel(of('Negative — Precision 0'))
+            .withPrecision(0)
+            .withCurrencyDisplay('code')
+            .withDescription(of('withCurrencyDisplay(\'code\') + withPrecision(0)'))
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+    return container;
+};
+
+// 10. BelowTheFold — a bounded, independently-scrolling box (h-[400px] overflow-auto) with a
+// tall spacer keeps the card off-screen at mount WITHOUT inflating the actual page height —
+// safe both in the standalone story canvas and embedded via <Canvas> in the docs page (a
+// page-level `200vh` spacer would blow up the docs page itself). The FIRST value still paints
+// eagerly (createOptimizedPipeline's `eagerFirst: true`, see money-kpi-card-viewport.ts) even
+// though the card is not yet visible inside the box; only SUBSEQUENT updates are
+// viewport-gated and pause while scrolled out of the box's visible area (IntersectionObserver
+// accounts for clipping by a scrollable ancestor even with the default root).
+export const BelowTheFold = () => {
+    const value$ = new BehaviorSubject<Money>(EUR_CASH);
+
+    const outer = document.createElement('div');
+    outer.className = 'p-4 max-w-md flex flex-col gap-3';
+
+    const banner = document.createElement('p');
+    banner.className = 'text-body-medium text-on-surface-variant';
+    banner.innerHTML = 'Scroll the bounded box below to reach the card. Its first value is already painted at the bottom — <code>eagerFirst: true</code> paints the initial emission immediately, before the card ever enters the box\'s visible area. Once scrolled into view, live ticks resume normally; scroll it back out and updates pause again.';
+    outer.appendChild(banner);
+
+    const box = document.createElement('div');
+    box.className = 'relative h-[400px] overflow-auto rounded-medium border border-outline/30';
+    // A keyboard user must be able to scroll this region without a pointer, so the scroll
+    // container itself is focusable and named (axe: scrollable-region-focusable).
+    box.tabIndex = 0;
+    box.setAttribute('role', 'region');
+    box.setAttribute('aria-label', 'Scrollable area containing the KPI card');
+
+    const spacer = document.createElement('div');
+    spacer.style.height = '700px';
+    box.appendChild(spacer);
+
+    const cardWrap = document.createElement('div');
+    cardWrap.className = 'p-4';
+    const card = new MoneyKPICardBuilder()
+        .withValue(value$)
+        .withLabel(of('Cash on Hand (eager first paint)'))
+        .withDescription(of('painted before scroll — updates pause while off-screen'))
+        .build();
+    cardWrap.appendChild(card);
+    box.appendChild(cardWrap);
+
+    outer.appendChild(box);
+
+    let tick = 0;
+    const intervalSub = interval(2000).subscribe(() => {
+        value$.next(jitterCash(value$.value, tick++));
+    });
+    registerDestroy(outer, () => intervalSub.unsubscribe());
+
+    return outer;
+};

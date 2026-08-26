@@ -7,7 +7,7 @@ import { SortDirection, PivotConfig, ColumnType, GridColumn, GridRowData } from 
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { GridStyles } from './grid-styles';
+import { GridStyles, GRID_ROW_HEIGHT, GRID_HEADER_HEIGHT, GRID_TOOLBAR_HEIGHT_ALLOWANCE } from './grid-styles';
 import { GridLogic } from './grid-logic';
 import { GridViewport } from './grid-viewport';
 import { GridHeader } from './grid-header';
@@ -27,6 +27,9 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     private isEditable: boolean = false;
     private isMultiSelect: boolean = false;
     private _onCommit: (item: ITEM) => void = () => { };
+    private rowHeight: number = GRID_ROW_HEIGHT;
+    private isAutoHeight: boolean = false;
+    private autoHeightMaxRows: number = 0;
 
     private logic = new GridLogic<ITEM>();
     private rawItems$?: Observable<ITEM[]>;
@@ -34,6 +37,27 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
     withHeight(height: Observable<number>): this {
         this.height$ = height;
+        return this;
+    }
+
+    /** Overrides the default GRID_ROW_HEIGHT (52px) per-row height. */
+    withRowHeight(px: number): this {
+        this.rowHeight = px;
+        return this;
+    }
+
+    /**
+     * Sizes the grid's container height to fit up to `maxRows` rendered rows
+     * (min(rows.length, maxRows) * rowHeight + header height [+ toolbar allowance when
+     * withToolbar() is set]), reacting to the row count as it changes. Uses `rows.length`
+     * (the flattened, grouping-aware row list — GROUP_HEADER rows included, collapsed groups'
+     * hidden children excluded), not the raw item count, so grouped/collapsed grids size to
+     * what's actually rendered. Once the row count exceeds maxRows, the container height stays
+     * capped and the viewport scrolls internally as usual. Overrides withHeight.
+     */
+    withAutoHeight(maxRows: number): this {
+        this.isAutoHeight = true;
+        this.autoHeightMaxRows = maxRows;
         return this;
     }
 
@@ -155,7 +179,8 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             (item) => this.logic.toggleSelection(item),
             (groupKey) => this.logic.toggleGroup(groupKey),
             this.isGlass,
-            this._onCommit
+            this._onCommit,
+            this.rowHeight
         );
 
         this.logic.setColumns(columns);
@@ -203,6 +228,16 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         // --- Unified column visibility via derived stream ---
         let visSubs: Subscription[] = [];
 
+        // Releases per-column resources (e.g. EnumColumnBuilder's options subscription — see
+        // GridColumn.destroy in types.ts) for a column SET that is no longer in use: called for
+        // the outgoing columns whenever pivot mode regenerates/reverts the column set, and for
+        // the grid's own final teardown below. Never called for a column set still in use (e.g.
+        // the visibility-filtered `visibleColumns$` subset shares the SAME column instances as
+        // the full set, not a replacement — no destroy needed there).
+        function destroyColumns(cols: GridColumn<ITEM>[]): void {
+            cols.forEach(col => col.destroy?.());
+        }
+
         function wireVisibility(cols: GridColumn<ITEM>[]): void {
             visSubs.forEach(s => s.unsubscribe());
             visSubs = [];
@@ -241,11 +276,18 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             currentItems = state.items;
             lastSelectedItems = state.selectedItems;
             lastRows = state.rows;
-            if (height === null) {
+
+            const resolvedHeight = this.isAutoHeight
+                ? Math.min(state.rows.length, this.autoHeightMaxRows) * this.rowHeight
+                    + GRID_HEADER_HEIGHT
+                    + (this.toolbarBuilder ? GRID_TOOLBAR_HEIGHT_ALLOWANCE : 0)
+                : height;
+
+            if (resolvedHeight === null) {
                 container.style.height = '100%';
                 container.style.minHeight = '0';
             } else {
-                container.style.height = `${height}px`;
+                container.style.height = `${resolvedHeight}px`;
                 container.style.minHeight = '';
             }
 
@@ -260,17 +302,21 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
                 // Merge with base columns (row grouping fields)
                 const baseColumns = this.columnsBuilder ? this.columnsBuilder.build() : [];
+                const outgoingColumns = columns;
                 columns = [...baseColumns, ...pivotColumns];
 
                 columns$.next(columns);
                 wireVisibility(columns);
                 this.logic.setColumns(columns);
+                destroyColumns(outgoingColumns);
             } else if (!state.pivotConfig && lastPivotConfig) {
                 lastPivotConfig = undefined;
+                const outgoingColumns = columns;
                 columns = this.columnsBuilder ? this.columnsBuilder.build() : [];
                 columns$.next(columns);
                 wireVisibility(columns);
                 this.logic.setColumns(columns);
+                destroyColumns(outgoingColumns);
             }
 
             header.render(state.items, state.selectedItems, state.sortConfig);
@@ -313,6 +359,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             visSubs.forEach(s => s.unsubscribe());
             this.logic.destroy();
             viewport.destroy();
+            destroyColumns(columns);
         });
 
         return container;

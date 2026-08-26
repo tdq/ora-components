@@ -1,4 +1,4 @@
-import { BehaviorSubject, combineLatest, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter, merge, of, Subscription, switchMap, take } from 'rxjs';
 import { getDaysInMonth, getFirstDayOfMonth, isSameDay, isValidDate } from './date-utils';
 import { CalendarOptions, DayOfWeek } from './types';
 import { clsx, type ClassValue } from 'clsx';
@@ -9,7 +9,14 @@ function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-export function renderCalendar(options: CalendarOptions): HTMLElement {
+export interface RenderedCalendar {
+    element: HTMLElement;
+    /** Every stream the calendar subscribed to; unsubscribe it when the host is destroyed. */
+    subscription: Subscription;
+}
+
+export function renderCalendar(options: CalendarOptions): RenderedCalendar {
+    const subscription = new Subscription();
     const container = document.createElement('div');
     container.className = 'flex flex-col outline-none';
     container.tabIndex = -1;
@@ -29,17 +36,14 @@ export function renderCalendar(options: CalendarOptions): HTMLElement {
         }
     };
 
-    // Initial sync
-    options.selectedDate$.pipe(take(1)).subscribe(syncView);
-
-    // Sync when calendar expands
-    if (options.isExpanded$) {
-        options.isExpanded$.subscribe(expanded => {
-            if (expanded) {
-                options.selectedDate$.pipe(take(1)).subscribe(syncView);
-            }
-        });
-    }
+    // Initial sync, plus a resync whenever the calendar expands — a single tracked stream
+    // so re-subscriptions on repeated `expanded === true` emissions don't leak.
+    const syncTrigger$ = options.isExpanded$
+        ? merge(of(true), options.isExpanded$.pipe(filter(expanded => expanded)))
+        : of(true);
+    subscription.add(
+        syncTrigger$.pipe(switchMap(() => options.selectedDate$.pipe(take(1)))).subscribe(syncView)
+    );
 
     // Header
     const header = document.createElement('div');
@@ -152,7 +156,7 @@ export function renderCalendar(options: CalendarOptions): HTMLElement {
     const minDate$ = options.minDate$ || new BehaviorSubject<Date>(new Date(1900, 0, 1));
     const maxDate$ = options.maxDate$ || new BehaviorSubject<Date>(new Date(2100, 11, 31));
 
-    combineLatest([viewDate$, options.selectedDate$, focusedDate$, minDate$, maxDate$]).subscribe(([viewDate, selectedDate, focusedDate, minDate, maxDate]) => {
+    subscription.add(combineLatest([viewDate$, options.selectedDate$, focusedDate$, minDate$, maxDate$]).subscribe(([viewDate, selectedDate, focusedDate, minDate, maxDate]) => {
         const year = viewDate.getFullYear();
         const month = viewDate.getMonth();
         
@@ -218,7 +222,11 @@ export function renderCalendar(options: CalendarOptions): HTMLElement {
         }
 
         daysContainer.replaceChildren(fragment);
+    }));
+    subscription.add(() => {
+        viewDate$.complete();
+        focusedDate$.complete();
     });
 
-    return container;
+    return { element: container, subscription };
 }

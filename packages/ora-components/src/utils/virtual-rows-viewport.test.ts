@@ -483,6 +483,293 @@ describe('VirtualRowsViewport', () => {
             .toThrow('rowHeight must be > 0');
     });
 
+    // -------------------------------------------------------------------------
+    // updateRow() / in-place refresh() — targeted patching
+    // -------------------------------------------------------------------------
+
+    it('updateRow re-renders a single row in place without touching the spacer or scrollTop', () => {
+        const scrollEl = makeScrollEl(200);
+        let suffix = 'v1';
+        const dynamicRenderRow = (index: number) => {
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            d.textContent = `row ${index} ${suffix}`;
+            return d;
+        };
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, renderRow: dynamicRenderRow });
+        vp.setItems([0, 1, 2]);
+        (scrollEl as any).scrollTop = 0;
+        const spacerBefore = (scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement).style.height;
+
+        suffix = 'v2';
+        vp.updateRow(1);
+
+        expect(vp.getRenderedRow(0)!.textContent).toBe('row 0 v1'); // untouched
+        expect(vp.getRenderedRow(1)!.textContent).toBe('row 1 v2'); // updated
+        expect(vp.getRenderedRow(2)!.textContent).toBe('row 2 v1'); // untouched
+
+        const spacerAfter = (scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement).style.height;
+        expect(spacerAfter).toBe(spacerBefore);
+        expect((scrollEl as any).scrollTop).toBe(0);
+    });
+
+    it('updateRow on an unrendered index is a no-op', () => {
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, renderRow });
+        vp.setItems(Array.from({ length: 100 }, (_, i) => i));
+        const before = scrollEl.querySelectorAll('[data-index]').length;
+
+        vp.updateRow(50); // far outside the rendered window near the top
+
+        expect(scrollEl.querySelectorAll('[data-index]').length).toBe(before);
+        expect(vp.getRenderedRow(50)).toBeUndefined();
+    });
+
+    it('refresh() does not touch spacer height or scrollTop', () => {
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, renderRow });
+        vp.setItems(Array.from({ length: 100 }, (_, i) => i));
+        (scrollEl as any).scrollTop = 40;
+        const spacerBefore = (scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement).style.height;
+
+        vp.refresh();
+
+        const spacerAfter = (scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement).style.height;
+        expect(spacerAfter).toBe(spacerBefore);
+        expect((scrollEl as any).scrollTop).toBe(40);
+    });
+
+    // -------------------------------------------------------------------------
+    // setItems() measurement preservation
+    // -------------------------------------------------------------------------
+
+    it('setItems preserves measured height for indices whose item reference is unchanged', () => {
+        const scrollEl = makeScrollEl(500); // tall enough to render + measure every row
+        let heightsForRender: number[] = [50, 50, 50, 50];
+        const measuredRenderRow = (index: number) => {
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            Object.defineProperty(d, 'offsetHeight', { value: heightsForRender[index], configurable: true });
+            return d;
+        };
+        const vp = new VirtualRowsViewport<{ id: number }>({ scrollEl, rowHeight: 40, renderRow: measuredRenderRow });
+
+        const items = [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }];
+        vp.setItems(items); // every row measured at 50px -> prefix [0,50,100,150,200]
+        expect(getTranslateY(vp.getRenderedRow(3)!)).toBe(150);
+
+        // Second setItems: index 1 gets a brand new item reference; indices 0,2,3 keep
+        // their previous reference. Simulate offsetHeight being unmeasurable this pass
+        // (0 -> jsdom guard keeps whatever is in `measured`).
+        const newItems = [items[0], { id: 99 }, items[2], items[3]];
+        heightsForRender = [0, 0, 0, 0];
+        vp.setItems(newItems);
+
+        // Index 2 (unchanged reference) keeps its previously measured height (50px):
+        // prefix[2] = height(0)=50 + height(1) -> only height(1) reverts to the 40px
+        // estimate since index 1 got a new item reference.
+        expect(getTranslateY(vp.getRenderedRow(2)!)).toBe(90);
+        // Index 3 (unchanged reference) also keeps its measured height (50px):
+        // prefix[3] = height(0)=50 + height(1)=40(estimate) + height(2)=50(preserved) = 140.
+        expect(getTranslateY(vp.getRenderedRow(3)!)).toBe(140);
+    });
+
+    // -------------------------------------------------------------------------
+    // B11 code-review fixes: updateRow re-measurement, refresh() full recompute,
+    // ascending DOM order after scroll-up
+    // -------------------------------------------------------------------------
+
+    it('updateRow re-measures the patched row and repositions subsequent rows when its height changes', () => {
+        const scrollEl = makeScrollEl(500); // tall enough to render + measure everything
+        let growRow1 = false;
+        const growableRenderRow = (index: number) => {
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            const h = (index === 1 && growRow1) ? 80 : 40;
+            Object.defineProperty(d, 'offsetHeight', { value: h, configurable: true });
+            return d;
+        };
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, renderRow: growableRenderRow });
+        vp.setItems([0, 1, 2, 3]);
+
+        expect(getTranslateY(vp.getRenderedRow(2)!)).toBe(80);  // 40 + 40
+        expect(getTranslateY(vp.getRenderedRow(3)!)).toBe(120); // 40 + 40 + 40
+
+        // Simulate e.g. a selection change adding `font-bold` and growing row 1.
+        growRow1 = true;
+        vp.updateRow(1);
+
+        // Row 1 is now 80px tall — rows below it must shift down, not overlap.
+        expect(getTranslateY(vp.getRenderedRow(2)!)).toBe(120); // 40 + 80
+        expect(getTranslateY(vp.getRenderedRow(3)!)).toBe(160); // 40 + 80 + 40
+        const spacer = scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement;
+        expect(spacer.style.height).toBe('200px'); // 40 + 80 + 40 + 40
+    });
+
+    it('refresh() recomputes the window from current scrollTop/clientHeight (evicts/appends), not just patches existing rows', () => {
+        // Simulates the multi-select-list scenario: the first render happens while the
+        // container still reports 0 height (before layout/ResizeObserver catches up), so
+        // only the buffer-sized narrow window is rendered. A later style/selection change
+        // calls refresh() — by then the container has real height, and refresh() must
+        // widen the window itself rather than only patching the stale narrow set of rows.
+        const scrollEl = makeScrollEl(0);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, buffer: 2, renderRow });
+        vp.setItems(Array.from({ length: 50 }, (_, i) => i));
+        const narrowRange = vp.getRenderedRange();
+        expect(narrowRange.end).toBeLessThan(10);
+
+        (scrollEl as any).clientHeight = 400;
+        vp.refresh();
+
+        const widerRange = vp.getRenderedRange();
+        expect(widerRange.end).toBeGreaterThan(narrowRange.end);
+    });
+
+    it('keeps rendered rows in ascending DOM order after scrolling down then back up', () => {
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, buffer: 2, renderRow });
+        vp.setItems(Array.from({ length: 100 }, (_, i) => i));
+
+        // Scroll down — window shifts forward, higher indices get appended.
+        (scrollEl as any).scrollTop = 2000;
+        scrollEl.dispatchEvent(new Event('scroll'));
+
+        // Scroll back up — window shifts backward, re-adding lower indices that must be
+        // inserted BEFORE the still-rendered higher ones, not appended after them.
+        (scrollEl as any).scrollTop = 0;
+        scrollEl.dispatchEvent(new Event('scroll'));
+
+        const domIndices = Array.from(scrollEl.querySelectorAll('[data-index]'))
+            .map(el => Number((el as HTMLElement).dataset.index));
+        const sorted = [...domIndices].sort((a, b) => a - b);
+        expect(domIndices).toEqual(sorted);
+    });
+
+    it('updateRow does not blindly extend the window when scrollTop drifted without a render (regression: scrollbar drag before rAF)', () => {
+        // Repro: a scrollbar drag can move scrollTop far down without the throttled
+        // scroll-event render() having run yet (rAF hasn't fired). If updateRow() then
+        // patches a row from the OLD window and only extends geometry from a stale
+        // `range.end`, it appends every index between the old window and the new scroll
+        // position instead of re-deriving the window — thousands of rows for a big jump.
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, buffer: 5, renderRow });
+        vp.setItems(Array.from({ length: 10000 }, (_, i) => i));
+        const initialCount = scrollEl.querySelectorAll('[data-index]').length;
+        expect(initialCount).toBeLessThan(20); // sane initial window near the top
+
+        // Scrollbar drag: scrollTop jumps far down with NO 'scroll' event dispatched.
+        (scrollEl as any).scrollTop = 300000;
+
+        vp.updateRow(2); // targets a row from the OLD (pre-jump) window
+
+        const renderedCount = scrollEl.querySelectorAll('[data-index]').length;
+        // Must stay bounded to a sane window size — never balloon toward thousands.
+        expect(renderedCount).toBeLessThanOrEqual(30);
+    });
+
+    it('invalidateMeasurements() heals a height that went stale because renderRow reads external state (regression: row stuck at old height forever)', () => {
+        // Repro: renderRow reads external mutable state (e.g. a captured selection) that
+        // changes a row's height (font-bold growing it to 88px). The row scrolls out
+        // before that state change, so it's never re-measured; a later setItems() with
+        // the SAME item references (per-reference measurement preservation) then keeps
+        // reusing the stale 88px forever, corrupting prefix/spacer for every row after it.
+        const itemCount = 20;
+        let boldIndex: number | null = 5;
+        const scrollEl = makeScrollEl(80); // small window: ~2 rows visible + buffer
+        const externalStateRenderRow = (index: number): HTMLElement => {
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            const h = index === boldIndex ? 88 : 40;
+            Object.defineProperty(d, 'offsetHeight', { value: h, configurable: true });
+            return d;
+        };
+        const vp = new VirtualRowsViewport<number>({
+            scrollEl, rowHeight: 40, buffer: 2, renderRow: externalStateRenderRow,
+        });
+        const items = Array.from({ length: itemCount }, (_, i) => i);
+        vp.setItems(items);
+
+        // Scroll row 5 into view so it gets measured at 88px while "selected".
+        vp.scrollToIndex(5);
+        expect(vp.getRenderedRow(5)!.offsetHeight).toBe(88);
+
+        // Scroll far away — row 5 is evicted and won't be measured again.
+        (scrollEl as any).scrollTop = 2000;
+        scrollEl.dispatchEvent(new Event('scroll'));
+        expect(vp.getRenderedRow(5)).toBeUndefined();
+
+        // External state changes: row 5 is no longer "selected" and would now render at
+        // 40px — but nothing tells the viewport its cached measurement is stale.
+        boldIndex = null;
+
+        // Re-emit the SAME item references (setItems preserves cached heights per-index
+        // when the reference is unchanged) and scroll to the end — row 5's stale 88px
+        // still contributes to the spacer/prefix even though it's off-screen.
+        vp.setItems([...items]);
+        vp.scrollToIndex(itemCount - 1);
+        const spacerStale = (scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement).style.height;
+        expect(spacerStale).toBe(`${(itemCount - 1) * 40 + 88}px`); // 19 rows @ 40px + row 5 stuck @ 88px
+
+        // Fix: invalidate measurements (e.g. right after the external state change) so
+        // every height reverts to the estimate and is re-derived from the current
+        // renderRow output when next measured.
+        vp.invalidateMeasurements();
+        const spacerHealed = (scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement).style.height;
+        expect(spacerHealed).toBe(`${itemCount * 40}px`); // all rows back to the 40px estimate
+    });
+
+    it('updateRows() patches multiple rows with a single window recompute, not one per row', () => {
+        const scrollEl = makeScrollEl(200);
+        const renderCalls: number[] = [];
+        const countingRenderRow = (index: number) => {
+            renderCalls.push(index);
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            return d;
+        };
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, renderRow: countingRenderRow });
+        vp.setItems(Array.from({ length: 100 }, (_, i) => i));
+        renderCalls.length = 0;
+
+        vp.updateRows([1, 2, 3]);
+
+        // Each patched row is rebuilt exactly once (renderRow called once per index) —
+        // a per-row updateRow() loop would additionally re-render every OTHER rendered
+        // row on each of the 3 calls (3 full render() passes instead of 1).
+        expect(renderCalls.filter(i => i === 1).length).toBe(1);
+        expect(renderCalls.filter(i => i === 2).length).toBe(1);
+        expect(renderCalls.filter(i => i === 3).length).toBe(1);
+        expect(vp.getRenderedRow(1)).toBeDefined();
+        expect(vp.getRenderedRow(2)).toBeDefined();
+        expect(vp.getRenderedRow(3)).toBeDefined();
+    });
+
+    it('handles a large backward scroll jump without a pathological forward probe (bounded findNextRenderedElement)', () => {
+        // Regression for the stale-range.end forward-probe bound: a 10k-row backward
+        // jump used to probe up to the OLD (pre-jump) range end for every appended row.
+        // This just needs to complete quickly and land on a sane, correctly-ordered
+        // window — the old bug was a perf/complexity issue, not a correctness crash.
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, buffer: 5, renderRow });
+        vp.setItems(Array.from({ length: 10000 }, (_, i) => i));
+
+        // Scroll deep into the list, then jump all the way back to the top.
+        (scrollEl as any).scrollTop = 9000 * 40;
+        scrollEl.dispatchEvent(new Event('scroll'));
+        (scrollEl as any).scrollTop = 0;
+        const start = Date.now();
+        scrollEl.dispatchEvent(new Event('scroll'));
+        const elapsedMs = Date.now() - start;
+
+        expect(elapsedMs).toBeLessThan(200); // was effectively O(old window size) per row
+        const range = vp.getRenderedRange();
+        expect(range.start).toBe(0);
+
+        const domIndices = Array.from(scrollEl.querySelectorAll('[data-index]'))
+            .map(el => Number((el as HTMLElement).dataset.index));
+        expect(domIndices).toEqual([...domIndices].sort((a, b) => a - b));
+    });
+
     it('destroy() prevents in-flight rAF from re-rendering after teardown', () => {
         // rAF is synchronous in this test environment, so the sequence
         // scroll → destroy → rAF fires tests the destroyed guard directly.
@@ -500,5 +787,119 @@ describe('VirtualRowsViewport', () => {
         expect(vp.getRenderedRange()).toEqual(rangeBeforeDestroy);
         // Spacer must be gone.
         expect(scrollEl.querySelector('[aria-hidden="true"]')).toBeNull();
+    });
+
+    // -------------------------------------------------------------------------
+    // B11 QA: measurement lifecycle + batching edge cases
+    // -------------------------------------------------------------------------
+
+    it('setItems drops measured heights for the stale tail when the new array is shorter', () => {
+        const scrollEl = makeScrollEl(500); // tall enough to render + measure every row
+        let heightsForRender: number[] = [100, 100, 100, 100];
+        const measuredRenderRow = (index: number) => {
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            Object.defineProperty(d, 'offsetHeight', { value: heightsForRender[index] ?? 0, configurable: true });
+            return d;
+        };
+        const vp = new VirtualRowsViewport<{ id: number }>({ scrollEl, rowHeight: 40, renderRow: measuredRenderRow });
+        const spacer = () => (scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement).style.height;
+
+        const items = [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }];
+        vp.setItems(items);
+        expect(spacer()).toBe('400px'); // 4 rows measured @ 100px
+
+        // Shorter array, same references for the surviving prefix. The measurements for
+        // the dropped tail (indices 2,3) must not survive into the new prefix/spacer.
+        heightsForRender = [0, 0]; // unmeasurable this pass -> preserved values are what count
+        vp.setItems([items[0], items[1]]);
+
+        expect(spacer()).toBe('200px'); // 2 preserved rows @ 100px, no tail contribution
+        expect(vp.getRenderedRange().end).toBe(1);
+        expect(vp.getRenderedRow(2)).toBeUndefined();
+        expect(vp.getRenderedRow(3)).toBeUndefined();
+    });
+
+    it('refresh() keeps the rendered count bounded when scrollTop drifted without a scroll event', () => {
+        // Same hazard as the updateRow() scrollbar-drag regression, via refresh(): the
+        // style-change path calls refresh() and must re-derive the window from the current
+        // scrollTop rather than extending from a stale range.
+        const scrollEl = makeScrollEl(200);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, buffer: 5, renderRow });
+        vp.setItems(Array.from({ length: 10000 }, (_, i) => i));
+        expect(scrollEl.querySelectorAll('[data-index]').length).toBeLessThan(20);
+
+        (scrollEl as any).scrollTop = 300000; // no 'scroll' event dispatched
+        vp.refresh();
+
+        expect(scrollEl.querySelectorAll('[data-index]').length).toBeLessThanOrEqual(30);
+        expect(vp.getRenderedRange().start).toBeGreaterThan(7000);
+    });
+
+    it('invalidateMeasurements() rebuilds prefix and spacer immediately, but does NOT reposition already-rendered rows until the next render', () => {
+        const scrollEl = makeScrollEl(500);
+        let heightsForRender: number[] = [100, 100, 100, 100];
+        const measuredRenderRow = (index: number) => {
+            const d = document.createElement('div');
+            d.dataset.index = String(index);
+            Object.defineProperty(d, 'offsetHeight', { value: heightsForRender[index], configurable: true });
+            return d;
+        };
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, renderRow: measuredRenderRow });
+        vp.setItems([0, 1, 2, 3]);
+        const spacer = () => (scrollEl.querySelector('[aria-hidden="true"]') as HTMLElement).style.height;
+        expect(spacer()).toBe('400px');
+        expect(getTranslateY(vp.getRenderedRow(3)!)).toBe(300);
+
+        vp.invalidateMeasurements();
+
+        // Prefix/spacer are rebuilt from the estimate straight away...
+        expect(spacer()).toBe('160px'); // 4 rows @ the 40px estimate
+        // ...but the DOM nodes still carry the transforms computed from the OLD prefix:
+        // the viewport is only fully consistent again after a render/refresh.
+        expect(getTranslateY(vp.getRenderedRow(3)!)).toBe(300);
+
+        heightsForRender = [0, 0, 0, 0]; // unmeasurable -> estimate stands
+        vp.refresh();
+        expect(getTranslateY(vp.getRenderedRow(3)!)).toBe(120); // 3 × 40px estimate
+    });
+
+    it('updateRows([]) recomputes the window without replacing any row element', () => {
+        const scrollEl = makeScrollEl(0);
+        const vp = new VirtualRowsViewport<number>({ scrollEl, rowHeight: 40, buffer: 2, renderRow });
+        vp.setItems(Array.from({ length: 50 }, (_, i) => i));
+        const narrowEnd = vp.getRenderedRange().end;
+        const row0Before = vp.getRenderedRow(0);
+
+        (scrollEl as any).clientHeight = 400;
+        vp.updateRows([]);
+
+        expect(vp.getRenderedRow(0)).toBe(row0Before); // no patch => same element instance
+        expect(vp.getRenderedRange().end).toBeGreaterThan(narrowEnd); // window still recomputed
+    });
+
+    it('refresh() replaces every rendered row element and evicts each old one exactly once', () => {
+        const scrollEl = makeScrollEl(200);
+        const evicted: number[] = [];
+        const vp = new VirtualRowsViewport<number>({
+            scrollEl, rowHeight: 40, buffer: 1, renderRow,
+            onEvict: (_el, index) => { evicted.push(index); },
+        });
+        vp.setItems([0, 1, 2, 3, 4]);
+        const { start, end } = vp.getRenderedRange();
+        const before: Array<[number, HTMLElement]> = [];
+        for (let i = start; i <= end; i++) {
+            before.push([i, vp.getRenderedRow(i)!]);
+        }
+        expect(before.length).toBeGreaterThan(0);
+        evicted.length = 0;
+
+        vp.refresh();
+
+        for (const [i, el] of before) {
+            expect(vp.getRenderedRow(i)).toBeDefined();
+            expect(vp.getRenderedRow(i)).not.toBe(el); // element identity is NOT preserved
+            expect(evicted.filter(e => e === i).length).toBe(1);
+        }
     });
 });

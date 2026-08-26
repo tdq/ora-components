@@ -34,4 +34,14 @@ describe('CurrencyRegistry', () => {
         expect(CurrencyRegistry.format(money)).toContain('K');
         expect(CurrencyRegistry.format(money)).toContain('50.00');
     });
+
+    it('formats with an explicit locale', () => {
+        const money = { amount: 1234.56, currencyId: 'EUR' };
+        const formatted = CurrencyRegistry.format(money, 2, 'de-DE').replace(/\u00a0/g, ' ');
+        expect(formatted).toBe('1.234,56 €');
+    });
+
+    it('defaults to en-US when locale is omitted', () => {
+        expect(CurrencyRegistry.format({ amount: 1234.5, currencyId: 'USD' }, 2)).toBe('$1,234.50');
+    });
 });

@@ -341,3 +341,124 @@ export const Glass = () => {
 
     return container;
 };
+
+/** 1000 virtualized options + adaptive debounce + a clamped popup height. */
+export const LargeListAndTuning = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    const MANY = Array.from({ length: 1000 }, (_, i) => `Item ${i}`);
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('1000 items — virtualized, 150ms adaptive filter debounce (default for >= 100 items)'))
+            .withSize(LabelSize.SMALL)
+    );
+
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(MANY))
+            // No caption: the accessible name comes from withAriaLabel instead.
+            .withAriaLabel(of('Large item list'))
+            .withPlaceholder('Type to filter 1000 items...')
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('withMaxHeight(120) — the <ul> scrolls, the popover wrapper never does'))
+            .withSize(LabelSize.SMALL)
+    );
+
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(MANY))
+            .withCaption(of('Short popup (120px)'))
+            .withMaxHeight(120)
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('withFilterDebounce(0) — filters synchronously on every keystroke'))
+            .withSize(LabelSize.SMALL)
+    );
+
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(MANY))
+            .withCaption(of('No debounce'))
+            .withFilterDebounce(0)
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+/** 10,000 deterministic virtualized options — only a window of `<li>` rows renders in the DOM. */
+export const LargeList10k = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    const HUGE = Array.from({ length: 10000 }, (_, i) => `Account #${String(i + 1).padStart(5, '0')}`);
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('10,000 items — virtualized dropdown, deterministic labels'))
+            .withSize(LabelSize.SMALL)
+    );
+
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(HUGE))
+            .withCaption(of('Search accounts'))
+            .withPlaceholder('Type to filter 10,000 accounts...')
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+/**
+ * PopoverBuilder's flip math (`popover.ts`'s `_position()`) measures space against the REAL
+ * browser viewport (`window.innerHeight` vs. `anchorRect.bottom`), not against any bounding
+ * container the anchor happens to sit inside. So demonstrating the flip requires the anchor to
+ * actually be near the bottom of the browser's visible viewport — a bounded, independently
+ * scrolling box does not trigger it (there's ample room below the anchor in the real viewport,
+ * even though the box itself is short), and a naked `position: fixed` anchor escapes normal
+ * document flow (and any bounding container, including a docs `<Canvas>` iframe) to float
+ * relative to the whole page.
+ *
+ * The fix used here: opt into `layout: 'fullscreen'` (see this story's `.parameters` below) so
+ * the story renders at the full viewport, size the container to `h-screen`, and anchor the
+ * combobox via `position: absolute` near ITS bottom edge — since the container itself spans
+ * the viewport, that also puts the anchor near the viewport's real bottom edge, without ever
+ * using `position: fixed`.
+ */
+export const NearViewportBottom = () => {
+    const container = document.createElement('div');
+    container.className = 'relative h-screen p-8';
+
+    const info = document.createElement('div');
+    info.className = 'text-body-medium text-on-surface-variant max-w-2xl';
+    info.textContent = 'The combobox below is anchored near the bottom of this full-height viewport. There is not enough room below it for the dropdown to open downward, so the popover flips to open above the input and clamps its height to the available space.';
+    container.appendChild(info);
+
+    const anchorWrap = document.createElement('div');
+    anchorWrap.className = 'absolute left-8 right-8 bottom-8 max-w-md';
+    anchorWrap.appendChild(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS.concat(COUNTRIES)))
+            .withCaption(of('Anchored near the bottom of the viewport'))
+            .withMaxHeight(220)
+            .build()
+    );
+    container.appendChild(anchorWrap);
+
+    return container;
+};
+NearViewportBottom.parameters = { layout: 'fullscreen' };

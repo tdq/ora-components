@@ -5,9 +5,24 @@ export interface VirtualRowsConfig<ITEM> {
     rowHeight: number;
     /** Extra rows rendered above/below the viewport. Default 5. */
     buffer?: number;
-    /** Build a row element for an item at an index. */
+    /**
+     * Build a row element for an item at an index. Must be a pure function of
+     * (index, item) — measurement preservation across `setItems()` relies on being able
+     * to reuse a previously measured height for an index whose item reference is
+     * unchanged, which is only valid if the same item always renders to the same height.
+     * If `renderRow` depends on external mutable state (e.g. a captured selection or
+     * style variable read from the closure), call `invalidateMeasurements()` after that
+     * state changes so stale heights aren't reused.
+     */
     renderRow: (index: number, item: ITEM) => HTMLElement;
-    /** Called for each row removed from the DOM (cleanup hook). */
+    /**
+     * Called for each row removed from the DOM (cleanup hook). Fires both when a row
+     * scrolls out of the window AND when a row already in the window is re-rendered in
+     * place (`updateRow()`/`updateRows()`/`refresh()`) — in the latter case the *old*
+     * element is what's passed in, immediately followed by a replacement being rendered
+     * at the same index. Do not remove the element yourself; the viewport owns
+     * removal/replacement.
+     */
     onEvict?: (el: HTMLElement, index: number) => void;
 }
 
@@ -60,23 +75,94 @@ export class VirtualRowsViewport<ITEM> {
     }
 
     setItems(items: ITEM[]): void {
+        const prevItems = this.items;
         this.items = items;
         const n = items.length;
-        // Reset all per-row measurements — new items, new heights.
-        this.measured = new Array(n);
+        // Preserve the measured height for indices whose item reference is unchanged
+        // (e.g. keyboard navigation re-emitting the same array) — only reset the slots
+        // whose content actually changed.
+        const nextMeasured: number[] = new Array(n);
+        const minLen = Math.min(prevItems.length, n);
+        for (let i = 0; i < minLen; i++) {
+            if (prevItems[i] === items[i]) {
+                nextMeasured[i] = this.measured[i];
+            }
+        }
+        this.measured = nextMeasured;
         this.buildPrefix(0);
         this.spacer.style.height = `${this.prefix[n]}px`;
-        // Use refresh() so stale rows at overlapping indices are evicted (onEvict fires)
-        // and re-rendered from the new items array.
-        this.refresh();
-    }
-
-    refresh(): void {
-        // Force a full re-render of the current window (e.g. selection/style change).
-        // Do NOT reset measured — content heights are unchanged on selection/style refresh.
+        // Full rebuild: item identities may have shifted at overlapping indices, so
+        // every rendered row must be evicted (onEvict fires) and re-rendered fresh.
         this.clearRendered();
         this.range = { start: 0, end: -1 };
         this.render();
+    }
+
+    /**
+     * Re-render every currently rendered row in place (e.g. style change affecting all
+     * rows), then re-run the window computation from the current scrollTop/clientHeight
+     * so any drift (rows now stale-positioned, a container that gained real height since
+     * the last render, more/fewer rows now fitting) is corrected — evicting/appending as
+     * needed and re-measuring. This is render()'s full pipeline minus the destructive
+     * clear-and-reset setItems() does. Note element identity is NOT preserved: every
+     * currently rendered row's element is replaced (renderRow is called again and the
+     * old node swapped out via onEvict), same as updateRow()/updateRows() — what carries
+     * over across the call is which *indices* stay in the window, not the DOM nodes.
+     */
+    refresh(): void {
+        this.updateRows(Array.from(this.rendered.keys()));
+    }
+
+    /**
+     * Re-render multiple rows in place (each a no-op if not currently rendered — same
+     * per-row semantics as updateRow()), then run a single window recompute (render())
+     * for the whole batch. Prefer this over calling updateRow() in a loop whenever
+     * several indices need patching together (e.g. the previously- and newly-focused
+     * row, or every rendered row whose id matches an old/new selection): render() is
+     * O(window), so N sequential updateRow() calls cost O(window × N) while a single
+     * updateRows() call costs O(window) once.
+     */
+    updateRows(indices: number[]): void {
+        for (const index of indices) {
+            this.patchRowContent(index);
+        }
+        this.render();
+    }
+
+    /**
+     * Re-render a single row in place, if it is currently rendered (no-op otherwise),
+     * then fall through to a full window recompute (render()) so the row's new height is
+     * measured, prefix/spacer/positions are corrected, and — crucially — the *actual*
+     * window is re-derived from the current scrollTop/clientHeight rather than trusting
+     * `this.range`. `this.range` can be stale relative to scrollTop (e.g. a scrollbar
+     * drag moves scrollTop before the throttled scroll-event render() has run): patching
+     * geometry via an isolated extend-from-`range.end` step in that state would append
+     * every index between the old range and the new scroll position instead of evicting
+     * and re-windowing, so this always goes through the same window-derivation render()
+     * uses. Equivalent to `updateRows([index])` — prefer updateRows() when patching more
+     * than one row so the render() cost is paid once, not once per row.
+     */
+    updateRow(index: number): void {
+        this.updateRows([index]);
+    }
+
+    /**
+     * Discard all measured row heights, reverting every row to the estimate — and
+     * immediately rebuilds the prefix from scratch and resizes the spacer to match, so
+     * prefix and spacer agree with each other on return. Note that already-rendered rows
+     * keep the `translateY` they were given under the OLD prefix: their DOM positions are
+     * only brought back in line by the next `render()`/`refresh()`/`setItems()`, so call
+     * one of those before the next paint. Call this if `renderRow` output can change height for the
+     * same (index, item) pair — e.g. it reads external mutable state such as a captured
+     * selection or style variable — before the next `setItems()`/`refresh()`, so a
+     * `setItems()` call with unchanged item references doesn't reuse a height that was
+     * only valid under the old state (e.g. a row measured at 88px while selected keeping
+     * that height forever after it scrolls out and is deselected).
+     */
+    invalidateMeasurements(): void {
+        this.measured = new Array(this.items.length);
+        this.buildPrefix(0);
+        this.spacer.style.height = `${this.prefix[this.items.length]}px`;
     }
 
     scrollToIndex(index: number): void {
@@ -202,16 +288,70 @@ export class VirtualRowsViewport<ITEM> {
         this.rendered.clear();
     }
 
-    /** Append a single row element positioned at the current prefix[i]. */
-    private appendRow(i: number): void {
+    /** Build a row element for index i, positioned at the current prefix[i]. */
+    private buildRowElement(i: number): HTMLElement {
         const el = this.renderRow(i, this.items[i]);
         el.style.position = 'absolute';
         el.style.top = '0';
         el.style.left = '0';
         el.style.right = '0';
         el.style.transform = `translateY(${this.prefix[i]}px)`;
-        this.scrollEl.appendChild(el);
+        return el;
+    }
+
+    /**
+     * Replace a currently rendered row's element with a freshly built one — content only,
+     * no measurement and no window recompute. No-op if the index isn't rendered. Internal
+     * building block for updateRows(); callers needing correct geometry afterward must
+     * follow up with a render() (updateRows() does this once for the whole batch).
+     */
+    private patchRowContent(index: number): void {
+        const el = this.rendered.get(index);
+        if (!el) return;
+        this.onEvict?.(el, index);
+        const newEl = this.buildRowElement(index);
+        this.scrollEl.replaceChild(newEl, el);
+        this.rendered.set(index, newEl);
+    }
+
+    /**
+     * Append a single row element positioned at the current prefix[i], inserted in
+     * ascending index order among the currently rendered rows. Plain appendChild would
+     * place it after whatever was rendered most recently — correct when filling a window
+     * top-down, but wrong when scrolling *up* re-adds lower indices after higher ones are
+     * already in the DOM (e.g. window 10..20 rendered, scroll up to 5..15: rows 5..9 must
+     * land BEFORE row 10, not after row 15).
+     *
+     * `windowEnd` must be the upper bound of the window currently being filled (passed by
+     * the caller, not read from `this.range.end`): `this.range.end` still holds the
+     * *previous* window's end while render()'s fill loop is running, and after a large
+     * scroll jump that previous end can be far beyond the new window — bounding the
+     * forward probe by it turns every append into an O(old window size) scan instead of
+     * O(gap to the next rendered row).
+     */
+    private appendRow(i: number, windowEnd: number): void {
+        const el = this.buildRowElement(i);
+        const nextEl = this.findNextRenderedElement(i, windowEnd);
+        if (nextEl) {
+            this.scrollEl.insertBefore(el, nextEl);
+        } else {
+            this.scrollEl.appendChild(el);
+        }
         this.rendered.set(i, el);
+    }
+
+    /**
+     * The element of the smallest currently-rendered index strictly greater than i, not
+     * exceeding `windowEnd`. Probes forward index-by-index (O(gap) instead of a full
+     * O(rendered size) map scan per call — the window is contiguous, so the next
+     * rendered index is usually i+1).
+     */
+    private findNextRenderedElement(i: number, windowEnd: number): HTMLElement | undefined {
+        for (let j = i + 1; j <= windowEnd; j++) {
+            const el = this.rendered.get(j);
+            if (el) return el;
+        }
+        return undefined;
     }
 
     /**
@@ -247,6 +387,41 @@ export class VirtualRowsViewport<ITEM> {
         }
     }
 
+    /**
+     * Measure rendered rows in [lo, hi]; if any height actually changed, rebuild the
+     * prefix suffix, resize the spacer, reposition every rendered row, and — if the
+     * measured heights turned out smaller than the estimate — extend the window so no
+     * gap is left at the viewport bottom (the "CRITICAL gap fix"). Only called from
+     * render(), at the end of its window computation — updateRow()/updateRows() no
+     * longer call this directly; they fall through to a full render() instead (see
+     * updateRow()'s doc comment for why an isolated extend-from-`range.end` step is
+     * unsafe there).
+     */
+    private measureAndPatch(lo: number, hi: number): void {
+        const count = this.items.length;
+        const minDirty = this.measureRange(lo, hi);
+        if (minDirty === Infinity) return;
+
+        this.applyPatch(minDirty, count);
+
+        const scrollTop = this.scrollEl.scrollTop;
+        const clientHeight = this.scrollEl.clientHeight;
+        const newEndIdx = this.searchRight(scrollTop + clientHeight);
+        const newEnd = Math.min(count - 1, newEndIdx - 1 + this.buffer);
+
+        if (newEnd > this.range.end) {
+            const prevEnd = this.range.end;
+            for (let i = prevEnd + 1; i <= newEnd; i++) {
+                this.appendRow(i, newEnd);
+            }
+            const extDirty = this.measureRange(prevEnd + 1, newEnd);
+            if (extDirty < Infinity) {
+                this.applyPatch(extDirty, count);
+            }
+            this.range = { start: this.range.start, end: newEnd };
+        }
+    }
+
     private render(): void {
         // Guard: destroy() was called before this rAF callback fired.
         if (this.destroyed) return;
@@ -269,7 +444,7 @@ export class VirtualRowsViewport<ITEM> {
         const lastVisible = endIdx - 1;
 
         const start = Math.max(0, firstVisible - this.buffer);
-        let end = Math.min(count - 1, lastVisible + this.buffer);
+        const end = Math.min(count - 1, lastVisible + this.buffer);
 
         // Evict rows outside the new window.
         for (const [index, el] of this.rendered.entries()) {
@@ -283,37 +458,12 @@ export class VirtualRowsViewport<ITEM> {
         // Render rows inside the window that are not yet present.
         for (let i = start; i <= end; i++) {
             if (this.rendered.has(i)) continue;
-            this.appendRow(i);
+            this.appendRow(i, end);
         }
 
         this.range = { start, end };
 
-        // Measure pass: read offsetHeight for the rendered window.
-        const minDirty = this.measureRange(start, end);
-
-        if (minDirty < Infinity) {
-            // Rebuild the prefix suffix and reposition all rendered rows.
-            this.applyPatch(minDirty, count);
-
-            // CRITICAL gap fix: if measured heights are SMALLER than the estimate, the
-            // corrected prefix may reveal that more rows now fit in the viewport.
-            // Extend the window inline (bounded single pass — no recursive render()).
-            const newEndIdx = this.searchRight(scrollTop + clientHeight);
-            const newEnd = Math.min(count - 1, newEndIdx - 1 + this.buffer);
-
-            if (newEnd > end) {
-                // Append extension rows using the already-patched prefix values.
-                for (let i = end + 1; i <= newEnd; i++) {
-                    this.appendRow(i);
-                }
-                // Measure and patch the extension in the same pass.
-                const extDirty = this.measureRange(end + 1, newEnd);
-                if (extDirty < Infinity) {
-                    this.applyPatch(extDirty, count);
-                }
-                end = newEnd;
-                this.range = { start, end };
-            }
-        }
+        // Measure pass + gap-fix extension for the freshly computed window.
+        this.measureAndPatch(start, end);
     }
 }

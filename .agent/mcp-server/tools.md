@@ -13,7 +13,7 @@ The server exposes **eight tools**, all declared in `src/tools-registry.ts`. Eac
 | `get_router_docs` | — | `{ docs }` — full router markdown | `.agent/router.md` |
 | `get_architecture_guide` | `topic: string` | `{ topic, guide }` | `.agent/{topic}.md` |
 
-Valid topics for `get_architecture_guide`: `architecture | builder-pattern | reactive | theme | glass-effects | icons | component`.
+Valid topics for `get_architecture_guide`: `architecture | builder-pattern | reactive | theme | glass-effects | icons | component | layout | app-shell`.
 
 ---
 

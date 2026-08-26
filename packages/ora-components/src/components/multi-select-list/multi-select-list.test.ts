@@ -1002,4 +1002,53 @@ describe('MultiSelectListBuilder', () => {
             }).not.toThrow();
         });
     });
+
+    // ── B11: style change invalidates cached row measurements ────────────────
+
+    it('a style change re-measures rows instead of reusing heights measured under the old style', () => {
+        // Rows measured under the old style get evicted by scrolling and are never
+        // re-measured. Without viewport.invalidateMeasurements() in the style branch,
+        // their stale heights keep inflating the prefix/spacer after the style (and thus
+        // the rendered row height) changed.
+        let rowHeight = 88;
+        Object.defineProperty(HTMLDivElement.prototype, 'offsetHeight', {
+            configurable: true,
+            get(this: HTMLDivElement) {
+                return this.hasAttribute('aria-setsize') ? rowHeight : 0;
+            },
+        });
+        try {
+            const itemsArray = Array.from({ length: 200 }, (_, i) => ({ id: i, name: `Item ${i}` }));
+            const style$ = new BehaviorSubject<MultiSelectListStyle>(MultiSelectListStyle.TONAL);
+            const el = new MultiSelectListBuilder<{ id: number; name: string }>()
+                .withItems(of(itemsArray))
+                .withItemIdProvider(i => i.id)
+                .withItemCaptionProvider(i => i.name)
+                .withValue(new BehaviorSubject<{ id: number; name: string }[]>([]))
+                .withStyle(style$)
+                .build();
+            document.body.appendChild(el);
+            const listEl = getList(el);
+            Object.defineProperty(listEl, 'clientHeight', { value: 100, configurable: true, writable: true });
+            Object.defineProperty(listEl, 'scrollTop', { value: 0, configurable: true, writable: true });
+            triggerVisibleAndWait(el);
+
+            // Scroll away so the rows measured at 88px are evicted from the window.
+            (listEl as any).scrollTop = 3000;
+            listEl.dispatchEvent(new Event('scroll'));
+            jest.advanceTimersByTime(17);
+
+            const spacer = listEl.querySelector('[aria-hidden="true"]') as HTMLElement;
+            expect(parseFloat(spacer.style.height)).toBeGreaterThan(200 * 44);
+
+            // Under the new style rows render at the 44px estimate height.
+            rowHeight = 44;
+            style$.next(MultiSelectListStyle.BORDERLESS);
+
+            // Heights are re-derived from the new style — no 88px leftovers anywhere.
+            expect(spacer.style.height).toBe(`${200 * 44}px`);
+        } finally {
+            delete (HTMLDivElement.prototype as any).offsetHeight;
+        }
+    });
 });

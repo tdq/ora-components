@@ -53,11 +53,18 @@ const gated$ = createOptimizedPipeline(hostElement, source$);
 // and torn down instantly when it leaves.
 ```
 
+```typescript
+// Paint the first value immediately, keep updates viewport-gated:
+const gated$ = createOptimizedPipeline(hostElement, source$, { eagerFirst: true });
+```
+
 The pipeline wraps the source with an `IntersectionObserver`:
 - **Lazy subscribe**: no subscription until the element is visible.
 - **Instant teardown**: unsubscribes immediately on viewport exit.
 - **Asymmetric debounce**: `appearDebounceMs` (default 20ms) on appear (guards fast scroll-through), instant on disappear.
 - **Self-healing**: exponential-backoff retry (up to 5 attempts) per visibility window.
+- **No `IntersectionObserver`?** Where the API is missing (jsdom, older embedders) the pipeline treats the element as permanently visible and renders synchronously, instead of never emitting.
+- **`eagerFirst` (opt-in, default `false`)**: the source's first value is delivered immediately, before visibility opens, so a below-the-fold component paints real content instead of an empty shell; everything after that stays gated. Implementation: the eager branch is `source$.pipe(take(1))` over a plain non-replaying `share()`, cancelled by the visibility gate opening. Two consequences worth knowing: a value emitted before visibility is delivered **once** and is *not* replayed by the gated branch (gate de-duplication, if you need it, belongs in the consumer — e.g. MoneyKPICard's `distinctUntilChanged` on `amount`/`currencyId`), and the default path is untouched, so a **finite** source that completes inside one visibility window is still re-subscribed on the next one.
 
 #### `GatedObserver` and idempotency
 
@@ -85,3 +92,5 @@ listBoxBuilder.withItems(new GatedObserver(filteredItems$)); // ListBox won't re
 2. Use `of(...)` for static data — it completes immediately, no cleanup needed.
 3. Use `timer(0, interval)` (not `interval()`) for live-updating streams.
 4. Any manual `subscribe()` must be paired with either `createLifecycleBoundary` or `registerDestroy`.
+5. This applies to non-element helpers too. A helper that returns DOM and subscribes must hand its `Subscription` back to whoever owns the element's lifetime — `renderCalendar()` returns `{ element, subscription }` and `DatePickerBuilder` registers it; a `GridColumn` that subscribes exposes `destroy()` and `GridBuilder` calls it on teardown *and* on column replacement. A subscription owned by nobody keeps every long-lived app `Subject` pinned to a component that is already gone.
+6. Global listeners follow the state that needs them, not the element's lifetime. `PopoverBuilder` attaches its document/window listeners in `show()` and detaches them in `close()`; keeping them alive for a merely-closed popover leaked one set per instance.

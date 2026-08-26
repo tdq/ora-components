@@ -25,6 +25,8 @@ export * from './components/grid';
 export * from './components/date-picker';
 export * from './components/listbox';
 export * from './components/multi-select-list';
+export * from './components/sidebar';
+export * from './components/chat';
 export * from './components/component-parts';
 export * from './theme';
 export * from './router';

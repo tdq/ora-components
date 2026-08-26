@@ -19,6 +19,12 @@ Style according to Material Design 3.
 No shadow.
 It should have full width
 
+### Slot addressing
+The panel's content element carries `data-slot="body"`, matching the `data-slot` convention used by `LayoutBuilder`. It is set **non-clobbering**: if the content element already has a `data-slot` (the consumer set it, or it is a Layout slot wrapper), the panel leaves it alone. Panel has no header API, so there is no `data-slot="header"`.
+
+### Class merging
+Panel composes its classes through the shared `cn()` helper (`utils/cn.ts`), which is `twMerge`-based and now knows the library's custom Tailwind scales — see [theme.md](../theme.md#class-merging-cn).
+
 ### Glass styling
 No shadow.
 

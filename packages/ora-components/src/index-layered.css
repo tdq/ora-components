@@ -1,0 +1,166 @@
+/* Component styles below (--fx-delta-*, .trend-*, .money-kpi-card-*, ...) are
+   inlined by Tailwind/postcss and, like the rest of this file, end up inside
+   @layer ora-components in dist/ora-components.css.
+
+   These @import statements must stay ABOVE every other statement in this
+   file (including @tailwind base below): @import is only legal as one of
+   the first statements in a stylesheet, and postcss-import silently drops
+   any @import that follows a non-@import/@charset statement — it does not
+   error, so a misplaced import here fails silently (dist ends up missing
+   fx-ticker/trend/money-kpi-card CSS with no build error). Comments may
+   precede @import; statements may not. */
+@import './components/fx-ticker/fx-ticker.css';
+@import './components/trend/trend.css';
+@import './components/money-kpi-card/money-kpi-card.css';
+@import './components/sidebar/sidebar.css';
+@import './components/chat/chat.css';
+
+@tailwind base;
+
+/* @tailwind base must live in this file, not index-base.css: the Preflight
+   reset (`*,::before,::after{...}`) sets custom properties (--tw-shadow,
+   --tw-ring-*, --tw-translate-*, etc.) that utilities like .shadow-level-2
+   below consume. A custom property and every utility that reads it must be
+   in the same @layer, or the unlayered one silently wins over the layered
+   one and every utility built on it computes to nothing. */
+
+@tailwind components;
+@tailwind utilities;
+
+/* ===================================================== */
+/* Typography — Label Scale */
+/* ===================================================== */
+
+@layer components {
+
+  .md-label-large {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+  }
+
+  .md-label-medium {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  .md-label-small {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  /* Minimum touch target */
+  .md-touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /*
+   * Literal properties, not `@apply backdrop-blur-xl … ring-1 … transform-gpu`.
+   * Those utilities only set `--tw-backdrop-blur` / `--tw-ring-shadow` / `--tw-translate-*`
+   * and read them back through `var()`. Every consuming Tailwind app emits its own
+   * *unlayered* `*,::before,::after{--tw-backdrop-blur: ;--tw-ring-shadow:0 0 #0000;…}`
+   * defaults block, and unlayered beats `@layer ora-components` regardless of
+   * specificity — so the layered `.glass-effect{--tw-backdrop-blur:blur(24px)}` lost,
+   * `backdrop-filter` computed to `none` and the ring to nothing in the landing demo
+   * (theme.md §10, rule 1). Plain values have no such dependency.
+   */
+  .glass-effect {
+    @apply bg-white/70 text-gray-900;
+    @apply dark:bg-white/5 dark:text-white;
+    backdrop-filter: blur(24px) saturate(1.5);      /* backdrop-blur-xl backdrop-saturate-150 */
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);       /* ring-1 ring-black/10 */
+    transform: translateZ(0);                        /* transform-gpu */
+    will-change: backdrop-filter;
+    isolation: isolate;
+  }
+
+  [data-theme="dark"] .glass-effect {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); /* dark:ring-white/20 */
+  }
+
+  .glass-effect-hover {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .glass-effect-hover:hover {
+    @apply bg-white/75;
+    @apply dark:bg-white/10;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);      /* ring-black/15 */
+  }
+
+  [data-theme="dark"] .glass-effect-hover:hover {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3); /* dark:ring-white/30 */
+  }
+
+  .glass-effect .glass-effect:not([popover]) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    
+    will-change: opacity;
+  }
+}
+
+/* ===================================================== */
+/* Elevation Utilities */
+/* ===================================================== */
+
+@layer utilities {
+
+  .elevation-0 {
+    box-shadow: var(--md-sys-elevation-level0);
+  }
+
+  .elevation-1 {
+    box-shadow: var(--md-sys-elevation-level1);
+  }
+
+  .elevation-2 {
+    box-shadow: var(--md-sys-elevation-level2);
+  }
+
+  .elevation-3 {
+    box-shadow: var(--md-sys-elevation-level3);
+  }
+
+  .elevation-4 {
+    box-shadow: var(--md-sys-elevation-level4);
+  }
+
+  .elevation-5 {
+    box-shadow: var(--md-sys-elevation-level5);
+  }
+
+  /* Alpha-blended theme-color utilities used by library components
+     (money-kpi-card, fx-ticker). These names are NOT part of the Tailwind
+     color scale, so without these rules the classes silently resolve to
+     nothing and `border` falls back to Preflight's gray-200 — which reads
+     as a white edge/glow around KPI cards in dark theme. Keep in sync with
+     the class names in money-kpi-card-viewport.ts / fx-ticker-viewport.ts. */
+  .border-outline-alpha-20 {
+    border-color: color-mix(in srgb, var(--md-sys-color-outline) 20%, transparent);
+  }
+
+  .bg-surface-variant-alpha-30 {
+    background-color: color-mix(in srgb, var(--md-sys-color-surface-variant) 30%, transparent);
+  }
+
+}
+
+/* ===================================================== */
+/* Base Layout */
+/* ===================================================== */
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}

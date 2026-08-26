@@ -178,6 +178,7 @@ Quick overview:
 | `data-generators` | `generateUsers()`, `generateProducts()`, `generateGroupedProducts()`, `generateFullCoverageData()` | Deterministic mock data |
 | `demo-controls` | `createButton()`, `createControlStrip()` | Inline button strips for demo controls |
 | `glass-backdrop` | `createGlassBackdrop()`, `GLASS_GRADIENTS` | Gradient background with animated blur circles |
+| `app-shell` | `createAppShell()`, `createShell()`, `addNavRows()`, `NAV_ICONS`, `NAV_ROWS`, `SHELL_HEIGHT_PX` | Rail + content + docked assistant scaffold shared by the SideBar and ChatPanel stories |
 
 ## Theme Configuration (Component Previews)
 

@@ -48,14 +48,17 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 - **`withItems`** — `(items: Observable<ITEM[]>): this`
   Sets the list of items displayed in the dropdown. Items are filtered by caption when the user types.
 
-- **`withValue`** — `(value: Subject<ITEM \| null>): this`
-  Binds a two-way `Subject` for the selected item. The component writes the selection into the subject and reads incoming values to update the input.
+- **`withValue`** — `(value: Observable<ITEM \| null> \| Subject<ITEM \| null>): this`
+  Binds the value driving the dropdown selection/highlight. Passing a `Subject` gives two-way binding — the component writes the selection into it and reads incoming values back. Passing a plain read-only `Observable` only reads: the displayed text and highlight follow the stream, but user selections are **not** written back to it (there's nothing to write to). While the user is actively filtering (typing), an external emission updates selection state but does not overwrite the text they're typing — it resyncs once the popup closes.
 
 - **`withCaption`** — `(caption: Observable<string>): this`
   Sets the label text displayed above the input. Updates reactively when the observable emits.
 
 - **`withPlaceholder`** — `(placeholder: string): this`
   Sets the placeholder text shown inside the input when no value is selected.
+
+- **`withAriaLabel`** — `(label: string \| Observable<string>): this`
+  Sets the accessible name used when no `withCaption` is set. Priority is `caption` (via `aria-labelledby`) > `ariaLabel` (via `aria-label`) > `placeholder` (via `aria-label`). Accepts a plain string or an observable. In dev mode, a console warning fires if none of the three accessible-name sources is configured at build time.
 
 - **`withItemCaptionProvider`** — `(provider: (item: ITEM) => string): this`
   Converts an item to its display string in the dropdown and input. Defaults to `String(item)`.
@@ -84,8 +87,19 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 - **`asGlass`** — `(isGlass?: boolean): this`
   Enables the glass-effect variant with frosted background and blur. Defaults to `true`.
 
-- **`build`** — `(): HTMLElement`
-  Constructs and returns the root element. Subscribe to observables and wire up the DOM. Call once per builder.
+- **`withMaxHeight`** — `(maxHeight: number \| Observable<number>): this`
+  Sets the preferred popup list height in pixels (or a reactive observable), clamped to available viewport space. Default `256`. The list's own `<ul>` scrolls internally at this height — the popover wrapper itself never scrolls.
+
+- **`withFilterDebounce`** — `(ms: number): this`
+  Overrides the default 150ms debounce applied to filtering once the item list reaches 100 items or more (below that threshold, filtering is always synchronous). Pass `0` to disable debouncing entirely, even for large lists. Enter/Arrow keys/Home/End/PageUp/PageDown always flush any pending debounce immediately, so fast "type + Enter" never acts on a stale filtered list.
+
+- **`build`** — `(): ComboBoxElement<ITEM>`
+  Constructs and returns the root element, extended with a small imperative API:
+  - **`select(item: ITEM \| null): void`** — selects an item programmatically: updates the displayed text, highlight, writes the value back (if bound to a `Subject`), and closes the popover.
+  - **`open(): void`** — opens the dropdown.
+  - **`close(): void`** — closes the dropdown.
+
+  Subscribe to observables and wire up the DOM. Call once per builder.
 
 ---
 
@@ -162,13 +176,35 @@ The `Interactive` story demonstrates reactive state: selecting an item from the 
 
 ---
 
+## Virtualization & Tuning
+
+The `LargeListAndTuning` story demonstrates 1,000 virtualized items with the adaptive filter debounce, plus `withMaxHeight` and `withFilterDebounce(0)` overrides. `LargeList10k` pushes this further to 10,000 deterministic items — only a window of `<li role="option">` rows exists in the DOM at any time (see [Virtualization](#virtualization-details) below).
+
+<Canvas of={Stories.LargeListAndTuning} />
+<Canvas of={Stories.LargeList10k} />
+
+---
+
+## Viewport-Aware Positioning
+
+The dropdown popover measures available space against the real browser viewport (not any bounding container the combobox happens to sit inside — see `popover.ts`'s `_position()`), and adapts in two ways when the input is near the bottom of the visible viewport:
+
+- **Flip** — if there isn't enough room to open downward but there's more room above than below, the popover opens **above** the input instead of below it.
+- **Height clamping** — the popover's height (bounded by `withMaxHeight`, default 256px) is clamped to whichever side's available space is smaller, so it never runs off either edge of the viewport — only the list `<ul>` scrolls internally, the popover wrapper itself never does.
+
+Because this is measured against the real viewport, it can't be demonstrated correctly inside a docs page's embedded `<Canvas>` iframe (a bounded/short iframe still leaves plenty of real page below it, so no flip occurs; forcing it with `position: fixed` would instead escape the iframe and float over the whole docs page). See it live in the standalone `NearViewportBottom` story instead: [ComboBox → NearViewportBottom](../?path=/story/components-combobox--near-viewport-bottom).
+
+---
+
 ## Keyboard
 
 | Key | Action |
 |---|---|
 | `Tab` / `Shift+Tab` | Move focus into and out of the combobox |
-| `Arrow Down` | Open the dropdown and navigate to the next item |
-| `Arrow Up` | Navigate to the previous item |
+| `Arrow Down` | Open the dropdown and navigate to the next item (wraps) |
+| `Arrow Up` | Navigate to the previous item (wraps) |
+| `Home` / `End` | Jump to the first / last item while the dropdown is open |
+| `Page Up` / `Page Down` | Move focus 10 items back / forward while the dropdown is open |
 | `Enter` | Select the focused item |
 | `Escape` | Close the dropdown without selecting |
 | `Space` | Falls through to allow typing multi-word search terms |
@@ -198,6 +234,7 @@ See the [Theming guide](../?path=/docs/system-theming--docs) for token reference
 - **Selected item** is highlighted with bold text and `bg-on-secondary-container/20`.
 - **Focused item** (keyboard navigation) is highlighted with `bg-on-surface/12` (not applied when the item is also selected).
 - **"No results"** message appears when the filter produces no matches; the `<ul role="listbox">` remains in the DOM for accessibility.
+- <a id="virtualization-details" /> **Virtualization**: the dropdown's inner `ListBoxBuilder` is always virtualized — including in ComboBox mode — via `VirtualRowsViewport`. Only a window of rendered rows exists in the DOM at any time; each rendered `<li>` still carries a stable, item-derived `id` (via `withOptionIdProvider`), which ComboBox uses to compute `aria-activedescendant` without indexing into the DOM.
 - **Error state** applies a red outline (`outline-error`) around the input container.
 - **Disabled state** applies `opacity-38` and `cursor-not-allowed`.
 - **Accessibility**: The input carries `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`, `aria-controls`, and `aria-activedescendant` for full ARIA combobox pattern compliance.

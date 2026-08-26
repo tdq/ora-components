@@ -113,3 +113,52 @@ export const LayoutAlignmentStory = () => {
 
     return layout.build();
 };
+
+/**
+ * A `SlotSize.GROW` slot fills the remaining vertical space in a vertical layout and clips
+ * its own overflow, letting scrollable content grow within a fixed page area instead of
+ * pushing the footer off-screen. GROW only works because the outer container below is given
+ * a DEFINITE height (`h-[500px]`) — LayoutBuilder adds `h-full min-h-0` to the container
+ * whenever any slot is GROW, but `h-full` resolves to nothing without a bounded ancestor, and
+ * the GROW slot itself would then have no basis to grow against (see layout.ts's `hasGrow`
+ * handling and SlotBuilderImpl's `min-h-0` on the GROW wrapper). Each slot's `data-slot`
+ * (defaulted from its index, or set explicitly via `withName`) is visible in the DOM — inspect
+ * the elements to see `data-slot="header"`, `data-slot="scroll-area"`, `data-slot="footer"`.
+ */
+export const VerticalGrowSlot = () => {
+    const outer = document.createElement('div');
+    outer.className = 'h-[500px] border-2 border-dashed border-primary/40 p-2';
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.SMALL);
+
+    layout.addSlot()
+        .withName('header')
+        .withContent(createPlaceholder('Header (content-fit height)', '#DBEAFE'));
+
+    const scrollSlot = layout.addSlot()
+        .withName('scroll-area')
+        .withSize(SlotSize.GROW);
+
+    const scrollContent = document.createElement('div');
+    scrollContent.className = 'h-full overflow-y-auto flex flex-col gap-2 bg-surface-container-low rounded p-2';
+    // The GROW slot's scroller must be reachable by keyboard alone (axe: scrollable-region-focusable).
+    scrollContent.tabIndex = 0;
+    scrollContent.setAttribute('role', 'region');
+    scrollContent.setAttribute('aria-label', 'Scrollable rows');
+    for (let i = 1; i <= 40; i++) {
+        const row = document.createElement('div');
+        row.className = 'px-3 py-2 rounded bg-surface text-body-medium border border-outline/10';
+        row.textContent = `Scrollable row ${i} — this area fills the remaining height and scrolls internally`;
+        scrollContent.appendChild(row);
+    }
+    scrollSlot.withContent({ build: () => scrollContent });
+
+    layout.addSlot()
+        .withName('footer')
+        .withContent(createPlaceholder('Footer (content-fit height, always visible)', '#E5E7EB'));
+
+    outer.appendChild(layout.build());
+    return outer;
+};

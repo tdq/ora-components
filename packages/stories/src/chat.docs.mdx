@@ -1,0 +1,353 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as Stories from './chat.stories';
+
+<Meta of={Stories} />
+
+# ChatPanel
+
+`ChatPanelBuilder` is a docked assistant panel: header, message list and composer. It is
+**view-only** — it owns no transport and no message store. You give it an
+`Observable<ChatMessage[]>` and it renders exactly that; it gives you back the text the user
+typed. Everything else — the model call, the streaming, the persistence — stays in your
+application.
+
+`ChatTriggerBuilder` is its companion pill button. The two share one `Subject<boolean>`, so
+opening the panel hides the trigger and closing it brings the trigger back.
+
+The panel is `height: 100%`, so **its parent must be height-constrained** — in a
+`LayoutBuilder` row that is automatic, and in the stories below it is a 560px shell.
+
+<Canvas of={Stories.Default} />
+
+---
+
+## Usage
+
+```typescript
+import { ChatPanelBuilder, ChatTriggerBuilder, type ChatMessage } from '@tdq/ora-components';
+import { BehaviorSubject, of } from 'rxjs';
+
+const open$ = new BehaviorSubject<boolean>(false);
+const messages$ = new BehaviorSubject<ChatMessage[]>([]);
+
+function send(text: string): void {
+  messages$.next([...messages$.getValue(), { id: crypto.randomUUID(), role: 'user', content: text }]);
+  askTheModel(text);           // your transport, your problem
+}
+
+const trigger = new ChatTriggerBuilder()
+  .withOpen(open$)
+  .withCaption(of('Ask assistant'));
+
+const panel = new ChatPanelBuilder()
+  .withMessages(messages$)
+  .withOnSend(send)
+  .withOpen(open$)
+  .asClosable()
+  .withCaption(of('Aura Assistant'))
+  .withStatus(of('Online'))
+  .withWidth(of(360));
+
+pageHeader.appendChild(trigger.build());
+shellRow.appendChild(panel.build());
+```
+
+<Canvas of={Stories.WithTrigger} />
+
+---
+
+## Builder API
+
+### `ChatPanelBuilder`
+
+- **`withMessages`** — `(messages: Observable<ChatMessage[]>): this` — **required**
+  The full list on every emission; rows are diffed by `id`. Rows are **appended in emission
+  order**: a message whose `id` is new is added at the end regardless of where it sits in the
+  array. Reordering an existing list, or prepending older history for infinite scroll-back, is
+  not supported — the panel is built for an append-only conversation.
+
+- **`withOnSend`** — `(cb: (text: string) => void): this` — **required**
+  Called with the *trimmed* composer text when the user sends. The panel does not add the
+  message to the list for you; that is your `next()` call.
+
+- **`withOpen`** — `(open: Subject<boolean>): this`
+  Two-way open state. `true` slides the panel in and focuses the composer; `false` collapses it
+  to zero width and marks it `aria-hidden` + `inert`, so the composer leaves the tab order.
+  **Calling this at all makes the panel start closed** — a `BehaviorSubject` is the natural fit,
+  and with a plain `Subject` the panel stays closed until the first emission. When it is never
+  called the panel is permanently open and never enters the closed state.
+
+- **`asClosable`** — `(): this`
+  Renders the header close button. Clicking it emits `false` on the `withOpen()` subject;
+  without `withOpen()` the button renders but has no observable effect.
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Header title, and the accessible name of the panel's `role="region"`. Defaults to
+  `'Assistant'`.
+
+- **`withStatus`** — `(status: Observable<string>): this`
+  Header subtitle beside a status dot, e.g. `'Online'`. Omitted entirely when not set.
+
+- **`withPlaceholder`** — `(placeholder: Observable<string>): this`
+  Composer placeholder. Defaults to `'Message…'`.
+
+- **`withEmptyState`** — `(emptyState: ComponentBuilder): this`
+  Content shown in the message area while the list is empty; see [Empty state](#empty-state). For
+  quick replies that survive the first message, use `withSuggestions()` instead.
+
+- **`withSuggestions`** — `(suggestions: Observable<ChatSuggestion[]>): this`
+  Quick-reply chips rendered between the message log and the composer, in the empty state and
+  mid-conversation alike. Clicking a chip sends that item's `text` through `withOnSend()`
+  without touching the composer. The panel never hides the row on its own — emit `[]` to hide
+  it; see [Suggestions](#suggestions).
+
+- **`withWidth`** — `(width: Observable<number>): this`
+  Panel width in pixels, applied as the `--ora-chat-width` custom property so it stays
+  reactive. Defaults to `420`.
+
+- **`asGlass`** — `(): this`
+  Drops the panel's own background and border and lets `.glass-effect` supply a frosted
+  surface.
+
+- **`build`** — `(): HTMLElement`
+  Constructs the panel. **Throws** if `withMessages()` or `withOnSend()` was not called.
+
+### `ChatTriggerBuilder`
+
+- **`withOpen`** — `(open: Subject<boolean>): this` — **required**
+  The same subject the panel uses. Clicking emits the negation of the latest value. While open,
+  the trigger is `display: none`, `disabled`, `aria-hidden` and `inert`. **Throws** on `build()`
+  if not called.
+
+- **`withCaption`** — `(caption: Observable<string>): this`
+  Button label, also its `aria-label`. Defaults to `'Ask assistant'`.
+
+---
+
+## ChatMessage model
+
+```typescript
+type ChatRole = 'user' | 'assistant';
+
+interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  timestamp?: number;
+}
+```
+
+| Field | Role |
+|---|---|
+| `id` | The reconciliation key. The panel diffs rendered rows by `id`; a row whose `id` disappears from the list is removed, a new `id` is appended. |
+| `role` | Chooses the bubble: `'user'` right-aligned on the accent gradient, `'assistant'` left-aligned on the container surface. |
+| `content` | Rendered as **plain text** via `textContent`. An assistant message with `''` renders the typing indicator. |
+| `timestamp` | Optional; carried for the consumer's benefit. |
+
+### `ChatSuggestion`
+
+```typescript
+interface ChatSuggestion {
+  caption: string;
+  text: string;
+}
+```
+
+| Field | Role |
+|---|---|
+| `caption` | The visible chip label. Rendered with `textContent`, so markup shows verbatim. |
+| `text` | What is sent through `withOnSend()` on click. When it differs from `caption` it also becomes the chip's `title`, so a short label keeps its full prompt reachable on hover. An item whose `text` is blank is dropped before render — a chip with nothing to send would be a dead button. |
+
+---
+
+## Streaming contract (view-only: how to feed deltas)
+
+There is no streaming API. Streaming is a convention expressed entirely through
+`withMessages()`:
+
+1. Append an assistant message with `content: ''`. The panel renders the bouncing-dots typing
+   indicator for it.
+2. On each delta, re-emit the whole list with **the same `id`** and a longer `content`. The
+   panel patches that bubble's text in place — same DOM node, `--typing` class dropped on the
+   first non-empty content — instead of re-rendering the list.
+3. Stop emitting when the response is complete. Nothing needs to be closed or finalised.
+
+```typescript
+const answerId = 'a-42';
+messages$.next([...history, { id: answerId, role: 'assistant', content: '' }]);
+
+let text = '';
+for await (const delta of modelStream) {
+  text += delta;
+  messages$.next([...history, { id: answerId, role: 'assistant', content: text }]);
+}
+```
+
+The list pins itself to the bottom after a patch (in a `requestAnimationFrame`, so the new
+content is laid out first) in exactly two cases: the reader was already within 40px of the
+bottom, or the row that was just appended is the reader's own **user** message — they pressed
+send, so they expect to follow it. An arriving assistant row, and every streaming delta into an
+existing row, leave the scroll position alone: a reader who scrolled up to re-read something is
+never yanked back down.
+
+<Canvas of={Stories.Streaming} />
+
+---
+
+## Empty state
+
+`withEmptyState()` takes a `ComponentBuilder`, not an element, and that is load-bearing: the
+panel calls `build()` **again on every transition back into the empty state**. A cached element
+would have been detached by the previous transition, firing its lifecycle boundary and leaving
+you with a dead subtree on re-entry. A repeated `[]` emission does not rebuild — only an actual
+non-empty → empty transition does.
+
+The panel has no opinion about what the empty state contains. Suggestion chips are ordinary
+`ButtonBuilder`s that call your own send handler, exactly as the composer does.
+
+<Canvas of={Stories.EmptyState} />
+
+---
+
+## Suggestions
+
+`withSuggestions()` is the other half of that story: chips that are **not** tied to the empty
+state. They render in their own `role="group"` row between the message log and the composer, so
+they stay available mid-conversation — the natural place for "Yes, please" / "No, thanks" after
+the assistant asks a question.
+
+The row is entirely **app-driven**. Clicking a chip sends its `text` through `withOnSend()` and
+nothing else happens: the composer text is untouched, the list is not modified, and the chips
+stay exactly as they were. Emitting a new array is the only thing that changes them, and `[]`
+is what hides the row.
+
+```typescript
+const suggestions$ = new BehaviorSubject<ChatSuggestion[]>([
+  { caption: 'Plan for today', text: "What's the plan for today?" },
+]);
+
+function send(text: string): void {
+  suggestions$.next([]);              // the app clears them; the panel never does
+  appendUserMessage(text);
+  askTheModel(text).then(() => {
+    suggestions$.next([
+      { caption: 'Yes, please', text: 'Yes, please' },
+      { caption: 'No', text: 'No, thanks' },
+    ]);
+  });
+}
+
+const panel = new ChatPanelBuilder()
+  .withMessages(messages$)
+  .withOnSend(send)
+  .withSuggestions(suggestions$);
+```
+
+Details worth knowing:
+
+- **Not calling `withSuggestions()` adds no node at all** — the DOM of an existing panel is
+  unchanged.
+- **The row starts hidden** and stays hidden until the first non-empty emission, so a plain
+  `Subject` (no current value) does not reserve height above the composer.
+- **Showing or hiding the row resizes the log**, so the panel re-pins a reader who was at the
+  bottom, in a `requestAnimationFrame`, exactly as it does for an arriving message.
+- **Focus moves to the composer after a click**, because the next emission may remove the very
+  chip the caret is on.
+- Both mechanisms can be used together: `withEmptyState()` for the greeting, `withSuggestions()`
+  for the chips.
+
+<Canvas of={Stories.Suggestions} />
+
+---
+
+## ChatTrigger
+
+The trigger exists so the panel and its affordance never occupy the same corner of the screen.
+Both take the same subject; the trigger mirrors the latest value internally so a plain
+`Subject` (which has no `getValue()`) still toggles correctly.
+
+Put the trigger wherever the page header wants it — the `AppShell` story places it beside the
+page title — and the panel in a `SlotSize.FIT` slot at the end of the shell row.
+
+<Canvas of={Stories.AppShell} />
+
+---
+
+## Keyboard
+
+| Key | Context | Action |
+|---|---|---|
+| `Enter` | Composer | Send the trimmed text and clear the field. Ignored mid-IME-composition, so an Enter that commits a candidate does not send. |
+| `Shift+Enter` | Composer | Insert a newline. The textarea auto-grows to a 160px cap, then scrolls. |
+| `Tab` / `Shift+Tab` | Panel | Move through the close button, the message area (`tabindex="0"`, so the scrollable log can be scrolled by keyboard) and the composer. While closed the whole panel is `inert`, so Tab skips it entirely. |
+| `Enter` / `Space` | Suggestion chip | Send that chip's `text`, then move focus to the composer. Chips are ordinary buttons in an `aria-label="Suggestions"` group, so Tab reaches them between the log and the composer. |
+| `Enter` / `Space` | Header close button | Emit `false` on the `withOpen()` subject. |
+| `Enter` / `Space` | Trigger | Emit the negation of the current open value. |
+
+The panel is a docked side panel, not a modal, so it deliberately does **not** trap focus.
+
+Message content sits in a `role="log"` / `aria-live="polite"` region, so a screen reader
+announces arriving messages without stealing focus, and the panel itself is a `role="region"`
+named from `withCaption()`. The typing indicator is a `role="status"` element labelled
+"Assistant is typing".
+
+---
+
+## Styling
+
+| CSS variable | Default | Role |
+|---|---|---|
+| `--ora-chat-width` | `420px` | Panel width. Set it through `withWidth()` rather than by hand — the builder writes this property. |
+| `--ora-chat-status-color` | `var(--md-sys-color-tertiary)` | Status dot and its halo. |
+| `--ora-chat-accent` | `linear-gradient(135deg, primary, tertiary)` | Header badge, avatar, user bubble, send button and trigger icon. |
+| `--ora-chat-surface-high` | `var(--md-sys-color-surface-container-high, …)` | Assistant bubble background. |
+| `--ora-chat-outline-variant` | `var(--md-sys-color-outline-variant, …)` | Assistant bubble border. |
+| `--ora-chat-hairline` | `color-mix(… outline 20% …)` | Panel border, header and composer rules. |
+
+Underneath, the panel reads the MD3 token set:
+
+| CSS variable | Role |
+|---|---|
+| `--md-sys-color-surface` | Panel background (non-glass). |
+| `--md-sys-color-on-surface` | Message and composer text. |
+| `--md-sys-color-primary` / `--md-sys-color-tertiary` | The two stops of the accent gradient; primary is also the focus ring. |
+| `--md-sys-color-on-primary` | Text on the accent gradient. |
+| `--md-sys-color-surface-container-low` | Suggestion chip background (a translucent veil of `--md-sys-color-surface` under `asGlass()`); the hover tint is a `color-mix()` of it with primary. |
+| `--md-sys-shape-extra-large` | Panel corner radius. |
+| `--md-sys-elevation-level4` | Panel shadow. |
+
+`--md-sys-color-surface-container-high` and `--md-sys-color-outline-variant` are not yet defined
+in the palette; the panel uses them through `var()` fallback chains and will pick up the real
+values for free once they exist.
+
+`prefers-reduced-motion` disables the sparkle animation, the message-in transition, the typing
+indicator's bounce, the suggestion chips' fade-in and the slide-in.
+
+<Canvas of={Stories.Glass} />
+
+---
+
+## Non-goals
+
+These are deliberate omissions, not gaps to be filled by a future flag:
+
+- **Markdown and HTML rendering.** `content` goes through `textContent`, never `innerHTML`.
+  A panel that renders model output as markup is a panel that renders model output as script;
+  if you need rich text, sanitise and render it in your own message component.
+- **Transport.** No fetch, no WebSocket, no retry, no cancellation. `withOnSend()` hands you a
+  string; what happens next is the application's.
+- **Persistence.** No storage, no history loading, no scroll-back paging. The list is whatever
+  `withMessages()` last emitted, and the panel appends in emission order.
+- **Focus trapping.** It is a docked panel, not a dialog. Use
+  [Dialog](../?path=/docs/components-dialog--docs) when the interaction must be modal.
+
+---
+
+## Related components
+
+- [SideBar](../?path=/docs/components-sidebar--docs) — the navigation rail on the opposite edge
+  of the same shell.
+- [Layout](../?path=/docs/components-layout--docs) — the horizontal row that docks the panel at
+  `SlotSize.FIT`.
+- [Dialog](../?path=/docs/components-dialog--docs) — for a modal conversation instead of a
+  docked one.

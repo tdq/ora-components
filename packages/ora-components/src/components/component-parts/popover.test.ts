@@ -1,5 +1,5 @@
 import { BehaviorSubject } from 'rxjs';
-import { PopoverBuilder } from './popover';
+import { PopoverBuilder, PopoverPlacement } from './popover';
 import { ComponentBuilder } from '../../core/component-builder';
 
 // Helper: minimal ComponentBuilder returning a simple div
@@ -652,18 +652,24 @@ describe('PopoverBuilder', () => {
     // ────────────────────────────────────────────────
 
     describe('window resize', () => {
-        test('window resize closes and fires callback', () => {
+        test('window resize repositions the open popover instead of closing it', () => {
             const cb = jest.fn();
-            const anchor = makeAnchor();
+            let currentRect = { top: 100, bottom: 120, left: 50, right: 200, width: 150, height: 20, x: 50, y: 100, toJSON: () => {} } as DOMRect;
+            const anchor = document.createElement('button');
+            anchor.getBoundingClientRect = () => currentRect;
+            document.body.appendChild(anchor);
             const builder = new PopoverBuilder()
                 .withAnchor(anchor)
                 .withContent(makeContent())
                 .withOnClose(cb);
             builder.show();
 
+            currentRect = { ...currentRect, top: 300, bottom: 320 } as DOMRect;
             window.dispatchEvent(new Event('resize'));
 
-            expect(cb).toHaveBeenCalledTimes(1);
+            expect(cb).not.toHaveBeenCalled();
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.style.top).toBe('324px');
         });
 
         test('window resize when already closed is a no-op', () => {
@@ -677,52 +683,342 @@ describe('PopoverBuilder', () => {
             builder.close();
             cb.mockClear();
 
-            window.dispatchEvent(new Event('resize'));
-
+            expect(() => window.dispatchEvent(new Event('resize'))).not.toThrow();
             expect(cb).not.toHaveBeenCalled();
         });
+    });
 
-        test('window resize does not close popover when focus is inside it', () => {
-            const cb = jest.fn();
-            const anchor = makeAnchor();
-            const content = makeContent();
-            const builder = new PopoverBuilder()
-                .withAnchor(anchor)
-                .withContent(content)
-                .withOnClose(cb);
+    // ────────────────────────────────────────────────
+    // Global listener lifecycle (#26)
+    // ────────────────────────────────────────────────
+
+    describe('global listener lifecycle', () => {
+        function attachedCount(spyAdd: jest.SpyInstance, spyRemove: jest.SpyInstance, type: string): number {
+            const adds = spyAdd.mock.calls.filter(c => c[0] === type).length;
+            const removes = spyRemove.mock.calls.filter(c => c[0] === type).length;
+            return adds - removes;
+        }
+
+        test('close() removes document click, capture scroll and window resize listeners', () => {
+            const docAdd = jest.spyOn(document, 'addEventListener');
+            const docRemove = jest.spyOn(document, 'removeEventListener');
+            const winAdd = jest.spyOn(window, 'addEventListener');
+            const winRemove = jest.spyOn(window, 'removeEventListener');
+
+            const builder = new PopoverBuilder().withAnchor(makeAnchor()).withContent(makeContent());
+            builder.show();
+            expect(attachedCount(docAdd, docRemove, 'click')).toBe(1);
+            expect(attachedCount(docAdd, docRemove, 'scroll')).toBe(1);
+            expect(attachedCount(winAdd, winRemove, 'resize')).toBe(1);
+
+            builder.close();
+            expect(attachedCount(docAdd, docRemove, 'click')).toBe(0);
+            expect(attachedCount(docAdd, docRemove, 'scroll')).toBe(0);
+            expect(attachedCount(winAdd, winRemove, 'resize')).toBe(0);
+
+            const scrollRemove = docRemove.mock.calls.find(c => c[0] === 'scroll')!;
+            expect(scrollRemove[2]).toBe(true); // capture phase, matching the add
+        });
+
+        test('build() does not attach global listeners; show() attaches them', () => {
+            const docAdd = jest.spyOn(document, 'addEventListener');
+            const winAdd = jest.spyOn(window, 'addEventListener');
+
+            const builder = new PopoverBuilder().withAnchor(makeAnchor()).withContent(makeContent());
+            builder.build();
+            expect(docAdd.mock.calls.filter(c => c[0] === 'click').length).toBe(0);
+            expect(winAdd.mock.calls.filter(c => c[0] === 'resize').length).toBe(0);
+
+            builder.show();
+            expect(docAdd.mock.calls.filter(c => c[0] === 'click').length).toBe(1);
+            expect(winAdd.mock.calls.filter(c => c[0] === 'resize').length).toBe(1);
+        });
+
+        test('show() twice does not double-register listeners', () => {
+            const docAdd = jest.spyOn(document, 'addEventListener');
+            const winAdd = jest.spyOn(window, 'addEventListener');
+
+            const builder = new PopoverBuilder().withAnchor(makeAnchor()).withContent(makeContent());
+            builder.show();
             builder.show();
 
-            // Simulate focus inside the popover
-            const focusedEl = document.createElement('input');
-            document.body.appendChild(focusedEl);
-            // Place the focused element inside the popover element
-            const popoverEl = document.body.querySelector('[popover]') as HTMLElement;
-            popoverEl.appendChild(focusedEl);
-            Object.defineProperty(document, 'activeElement', { value: focusedEl, configurable: true });
-
-            window.dispatchEvent(new Event('resize'));
-
-            expect(cb).not.toHaveBeenCalled();
-
-            // Restore
-            Object.defineProperty(document, 'activeElement', { value: document.body, configurable: true });
+            expect(docAdd.mock.calls.filter(c => c[0] === 'click').length).toBe(1);
+            expect(docAdd.mock.calls.filter(c => c[0] === 'scroll').length).toBe(1);
+            expect(winAdd.mock.calls.filter(c => c[0] === 'resize').length).toBe(1);
         });
 
-        test('window resize closes popover when focus is outside it', () => {
+        test('show → close → show re-attaches listeners exactly once', () => {
+            const docAdd = jest.spyOn(document, 'addEventListener');
+            const docRemove = jest.spyOn(document, 'removeEventListener');
             const cb = jest.fn();
+
+            const builder = new PopoverBuilder().withAnchor(makeAnchor()).withContent(makeContent()).withOnClose(cb);
+            builder.show();
+            builder.close();
+            builder.show();
+            expect(attachedCount(docAdd, docRemove, 'click')).toBe(1);
+
+            // listener is live again: outside click closes
+            const outside = document.createElement('div');
+            document.body.appendChild(outside);
+            outside.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            expect(cb).toHaveBeenCalledTimes(2);
+        });
+
+        test('anchor destroy after close() does not remove listeners twice and still removes the element', () => {
+            const builder = new PopoverBuilder().withAnchor(makeAnchor()).withContent(makeContent());
+            builder.show();
+            builder.close();
+            const docRemove = jest.spyOn(document, 'removeEventListener');
+            // cleanup after close must not try to remove again (already removed)
+            const anchorEl = document.body.querySelector('button')!;
+            anchorEl.remove();
+            return new Promise<void>(resolve => setTimeout(resolve, 0)).then(() => {
+                expect(docRemove.mock.calls.filter(c => c[0] === 'click').length).toBe(0);
+                expect(document.body.querySelector('[popover]')).toBeNull();
+            });
+        });
+
+        test('anchor destroy while open removes listeners and the body element', () => {
+            const docAdd = jest.spyOn(document, 'addEventListener');
+            const docRemove = jest.spyOn(document, 'removeEventListener');
+            const winAdd = jest.spyOn(window, 'addEventListener');
+            const winRemove = jest.spyOn(window, 'removeEventListener');
             const anchor = makeAnchor();
+            new PopoverBuilder().withAnchor(anchor).withContent(makeContent()).show();
+
+            anchor.remove();
+            return new Promise<void>(resolve => setTimeout(resolve, 0)).then(() => {
+                expect(attachedCount(docAdd, docRemove, 'click')).toBe(0);
+                expect(attachedCount(docAdd, docRemove, 'scroll')).toBe(0);
+                expect(attachedCount(winAdd, winRemove, 'resize')).toBe(0);
+                expect(document.body.querySelector('[popover]')).toBeNull();
+            });
+        });
+    });
+
+    // ────────────────────────────────────────────────
+    // Popover API fallback (#11)
+    // ────────────────────────────────────────────────
+
+    describe('Popover API fallback', () => {
+        let savedShow: any;
+        let savedHide: any;
+        beforeEach(() => {
+            savedShow = HTMLElement.prototype.showPopover;
+            savedHide = HTMLElement.prototype.hidePopover;
+            delete (HTMLElement.prototype as any).showPopover;
+            delete (HTMLElement.prototype as any).hidePopover;
+        });
+        afterEach(() => {
+            HTMLElement.prototype.showPopover = savedShow;
+            HTMLElement.prototype.hidePopover = savedHide;
+        });
+
+        test('show() without showPopover toggles display and positions', () => {
+            const cb = jest.fn();
+            const builder = new PopoverBuilder().withAnchor(makeAnchor()).withContent(makeContent()).withOnClose(cb);
+            expect(() => builder.show()).not.toThrow();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.style.display).toBe('block');
+            expect(popover.style.top).toBe('124px');
+            expect(popover.style.left).toBe('50px');
+
+            builder.close();
+            expect(popover.style.display).toBe('none');
+            expect(cb).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    // ────────────────────────────────────────────────
+    // Fit-to-viewport (maxHeight / data-placement)
+    // ────────────────────────────────────────────────
+
+    describe('fit to viewport', () => {
+        const savedInnerHeight = window.innerHeight;
+        afterEach(() => {
+            Object.defineProperty(window, 'innerHeight', { value: savedInnerHeight, configurable: true });
+        });
+
+        test('withMaxHeight returns this (fluent)', () => {
+            const builder = new PopoverBuilder();
+            expect(builder.withMaxHeight(300)).toBe(builder);
+        });
+
+        test('default: no maxHeight clamp — content renders at natural height, no scrollbar (e.g. DatePicker calendar)', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true });
+            new PopoverBuilder().withAnchor(makeAnchor({ top: 100, bottom: 120 })).withContent(makeContent()).show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.style.maxHeight).toBe('');
+            expect(popover.className).toContain('overflow-hidden');
+            expect(popover.className).not.toContain('overflow-y-auto');
+            expect(popover.getAttribute('data-placement')).toBe('bottom');
+        });
+
+        test('withScrollElement receives the clamped max-height and a scroll nudge', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true });
+            const scroller = document.createElement('ul');
+            const scrollSpy = jest.fn();
+            scroller.addEventListener('scroll', scrollSpy);
+            new PopoverBuilder()
+                .withAnchor(makeAnchor({ top: 100, bottom: 120 }))
+                .withContent(makeContent())
+                .withMaxHeight(256)
+                .withScrollElement(scroller)
+                .show();
+
+            expect(scroller.style.maxHeight).toBe('256px');
+            expect(scrollSpy).toHaveBeenCalled();
+        });
+
+        test('withMaxHeight(number) is used as the preferred max', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true });
+            new PopoverBuilder().withAnchor(makeAnchor({ top: 100, bottom: 120 })).withContent(makeContent()).withMaxHeight(400).show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.style.maxHeight).toBe('400px');
+        });
+
+        test('withMaxHeight(Observable) updates maxHeight reactively while open', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true });
+            const max$ = new BehaviorSubject<number>(200);
+            new PopoverBuilder().withAnchor(makeAnchor({ top: 100, bottom: 120 })).withContent(makeContent()).withMaxHeight(max$).show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.style.maxHeight).toBe('200px');
+            max$.next(320);
+            expect(popover.style.maxHeight).toBe('320px');
+        });
+
+        test('clamps maxHeight to the space below (minus margin) when it does not fit below but there is even less above', () => {
+            // innerHeight 600, anchor bottom 500: spaceBelow = 600 - 500 - 12 = 88; spaceAbove = 40 - 12 = 28
+            Object.defineProperty(window, 'innerHeight', { value: 600, configurable: true });
+            jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(200);
+            new PopoverBuilder().withAnchor(makeAnchor({ top: 40, bottom: 500 })).withContent(makeContent()).withMaxHeight(256).show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.getAttribute('data-placement')).toBe('bottom');
+            expect(popover.style.maxHeight).toBe('88px');
+        });
+
+        test('flips above and clamps maxHeight to the space above when near the viewport bottom', () => {
+            // innerHeight 768, anchor top 600 / bottom 620: spaceBelow = 768 - 620 - 12 = 136 (< 200 measured)
+            // spaceAbove = 600 - 12 = 588 → placement top, maxHeight = min(256, 588) = 256
+            Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true });
+            jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(200);
+            new PopoverBuilder().withAnchor(makeAnchor({ top: 600, bottom: 620 })).withContent(makeContent()).withMaxHeight(256).show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.getAttribute('data-placement')).toBe('top');
+            expect(popover.style.top).toBe('auto');
+            expect(popover.style.bottom).toBe('172px');
+            expect(popover.style.maxHeight).toBe('256px');
+        });
+
+        test('does not get stuck at maxHeight 0 when spaceBelow <= 0 on the unmeasured first pass (A7)', () => {
+            // Real browsers report offsetHeight 0 while display:none (pass 1, before showPopover)
+            // and the actual rendered height once visible (pass 2). Mimic that alternation instead
+            // of a constant mock so pass 1 hits the popoverHeight===0 branch.
+            Object.defineProperty(window, 'innerHeight', { value: 600, configurable: true });
+            let calls = 0;
+            jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: any) {
+                calls++;
+                return calls === 1 ? 0 : 200;
+            });
+
+            new PopoverBuilder().withAnchor(makeAnchor({ top: 580, bottom: 598 })).withContent(makeContent()).show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.getAttribute('data-placement')).toBe('top');
+            expect(popover.style.maxHeight).not.toBe('0px');
+        });
+
+        test('flipped above with little room: maxHeight clamped to spaceAbove', () => {
+            // innerHeight 400, anchor top 180 / bottom 380: spaceBelow = 400-380-12 = 8; spaceAbove = 180-12 = 168
+            Object.defineProperty(window, 'innerHeight', { value: 400, configurable: true });
+            jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(200);
+            new PopoverBuilder().withAnchor(makeAnchor({ top: 180, bottom: 380 })).withContent(makeContent()).withMaxHeight(256).show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.getAttribute('data-placement')).toBe('top');
+            expect(popover.style.maxHeight).toBe('168px');
+        });
+
+        test('margin includes the configured offset', () => {
+            // offset 10 → margin 18; innerHeight 600, bottom 500 → spaceBelow = 82.
+            // Mock a measured height that fits within spaceBelow so the clamp (only applied
+            // once the popover has a real, non-zero offsetHeight) is exercised.
+            Object.defineProperty(window, 'innerHeight', { value: 600, configurable: true });
+            jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(50);
+            new PopoverBuilder().withAnchor(makeAnchor({ top: 40, bottom: 500 })).withContent(makeContent()).withOffset(10).withMaxHeight(256).show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.style.maxHeight).toBe('82px');
+        });
+
+        test('Observable withMaxHeight emission while open is re-clamped to the available space', () => {
+            // innerHeight 600, anchor bottom 500 → spaceBelow = 600 - 500 - 12 = 88, spaceAbove = 28
+            // → stays below; maxHeight = min(preferred, 88).
+            Object.defineProperty(window, 'innerHeight', { value: 600, configurable: true });
+            jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(60);
+            const max$ = new BehaviorSubject<number>(40);
+            new PopoverBuilder()
+                .withAnchor(makeAnchor({ top: 40, bottom: 500 }))
+                .withContent(makeContent())
+                .withMaxHeight(max$)
+                .show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.getAttribute('data-placement')).toBe('bottom');
+            expect(popover.style.maxHeight).toBe('40px'); // preferred < available
+
+            max$.next(400); // preferred now exceeds available → clamped to spaceBelow
+            expect(popover.style.maxHeight).toBe('88px');
+
+            max$.next(20); // back under the available space
+            expect(popover.style.maxHeight).toBe('20px');
+        });
+
+        test('Observable withMaxHeight emission while CLOSED does not reposition', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true });
+            const max$ = new BehaviorSubject<number>(200);
             const builder = new PopoverBuilder()
+                .withAnchor(makeAnchor({ top: 100, bottom: 120 }))
+                .withContent(makeContent())
+                .withMaxHeight(max$);
+            builder.show();
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.style.maxHeight).toBe('200px');
+
+            builder.close();
+            max$.next(500);
+            expect(popover.style.maxHeight).toBe('200px'); // untouched while closed
+
+            builder.show(); // re-open picks up the latest value
+            expect(popover.style.maxHeight).toBe('500px');
+        });
+
+        test('maxHeight subscription is released on anchor destroy', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true });
+            const max$ = new BehaviorSubject<number>(200);
+            const anchor = makeAnchor({ top: 100, bottom: 120 });
+            new PopoverBuilder()
                 .withAnchor(anchor)
                 .withContent(makeContent())
-                .withOnClose(cb);
-            builder.show();
+                .withMaxHeight(max$)
+                .show();
 
-            // activeElement is outside the popover (default: document.body)
-            Object.defineProperty(document, 'activeElement', { value: document.body, configurable: true });
+            expect(max$.observed).toBe(true);
 
-            window.dispatchEvent(new Event('resize'));
-
-            expect(cb).toHaveBeenCalledTimes(1);
+            anchor.remove();
+            return new Promise<void>(resolve => setTimeout(resolve, 0)).then(() => {
+                expect(max$.observed).toBe(false);
+                // Emitting after destroy must not throw (no dangling _position on a removed element)
+                expect(() => max$.next(999)).not.toThrow();
+                expect(document.body.querySelector('[popover]')).toBeNull();
+            });
         });
     });
 
@@ -957,7 +1253,7 @@ describe('PopoverBuilder', () => {
 
             const popover = document.body.querySelector('[popover]') as HTMLElement;
             expect(popover.style.left).toBe('50px');
-            expect(popover.style.right).toBe('');
+            expect(popover.style.right).toBe('auto');
         });
 
         test('alignment "end" uses left (not right) after show()', () => {
@@ -970,7 +1266,7 @@ describe('PopoverBuilder', () => {
 
             const popover = document.body.querySelector('[popover]') as HTMLElement;
             // New behaviour: always uses CSS left, never right
-            expect(popover.style.right).toBe('');
+            expect(popover.style.right).toBe('auto');
             expect(popover.style.left).not.toBe('');
         });
 
@@ -988,7 +1284,7 @@ describe('PopoverBuilder', () => {
             const popover = document.body.querySelector('[popover]') as HTMLElement;
             // offsetWidth = 0 in jsdom => pre-render branch: left = posRect.right = 200
             expect(popover.style.left).toBe('200px');
-            expect(popover.style.right).toBe('');
+            expect(popover.style.right).toBe('auto');
         });
 
         test('alignment "end" post-render pass (offsetWidth>0): left = posRect.right - offsetWidth', () => {
@@ -1007,7 +1303,7 @@ describe('PopoverBuilder', () => {
 
             // post-render: left = Math.max(0, posRect.right - offsetWidth) = Math.max(0, 200 - 80) = 120
             expect(popoverEl.style.left).toBe('120px');
-            expect(popoverEl.style.right).toBe('');
+            expect(popoverEl.style.right).toBe('auto');
         });
 
         test('alignment "end" post-render pass clamps left to 0 when popover wider than posRect.right', () => {
@@ -1048,7 +1344,7 @@ describe('PopoverBuilder', () => {
 
             // Math.min(1024-80, Math.max(0, 1100-80)) = Math.min(944, 1020) = 944
             expect(popoverEl.style.left).toBe('944px');
-            expect(popoverEl.style.right).toBe('');
+            expect(popoverEl.style.right).toBe('auto');
 
             Object.defineProperty(window, 'innerWidth', { value: savedInnerWidth, configurable: true });
         });
@@ -1104,7 +1400,7 @@ describe('PopoverBuilder', () => {
 
             const popover = document.body.querySelector('[popover]') as HTMLElement;
             expect(popover.style.left).toBe('75px');
-            expect(popover.style.right).toBe('');
+            expect(popover.style.right).toBe('auto');
         });
     });
 
@@ -1138,7 +1434,7 @@ describe('PopoverBuilder', () => {
             const popover = document.body.querySelector('[popover]') as HTMLElement;
             // offsetWidth = 0 in jsdom => pre-render branch: left = posRef.right = 350
             expect(popover.style.left).toBe('350px');
-            expect(popover.style.right).toBe('');
+            expect(popover.style.right).toBe('auto');
         });
 
         test('when positionReference is set, "end" alignment left does NOT use anchor.getBoundingClientRect().right', () => {
@@ -1232,7 +1528,7 @@ describe('PopoverBuilder', () => {
             const popover = document.body.querySelector('[popover]') as HTMLElement;
             // offsetWidth = 0 in jsdom => pre-render: left = anchor.right = 200
             expect(popover.style.left).toBe('200px');
-            expect(popover.style.right).toBe('');
+            expect(popover.style.right).toBe('auto');
         });
     });
 
@@ -1325,6 +1621,59 @@ describe('PopoverBuilder', () => {
 
             expect(cb).toHaveBeenCalledTimes(1); // no double-fire
         });
+
+        test('toggle dismissal detaches the document click listener (count back to 0)', () => {
+            const docAdd = jest.spyOn(document, 'addEventListener');
+            const docRemove = jest.spyOn(document, 'removeEventListener');
+
+            const builder = new PopoverBuilder()
+                .withAnchor(makeAnchor())
+                .withContent(makeContent());
+            builder.show();
+
+            const live = (type: string) =>
+                docAdd.mock.calls.filter(c => c[0] === type).length -
+                docRemove.mock.calls.filter(c => c[0] === type).length;
+
+            expect(live('click')).toBe(1);
+
+            const popover = document.body.querySelector('[popover]')!;
+            const event = new Event('toggle') as any;
+            event.newState = 'closed';
+            popover.dispatchEvent(event);
+
+            expect(live('click')).toBe(0);
+            expect(live('scroll')).toBe(0);
+        });
+
+        test('toggle dismissal releases the active-popover slot so a second builder can show()', () => {
+            const firstClose = jest.fn();
+            const first = new PopoverBuilder()
+                .withAnchor(makeAnchor())
+                .withContent(makeContent('first'))
+                .withOnClose(firstClose);
+            first.show();
+
+            const popover = document.body.querySelector('[popover]')!;
+            const event = new Event('toggle') as any;
+            event.newState = 'closed';
+            popover.dispatchEvent(event);
+            expect(firstClose).toHaveBeenCalledTimes(1);
+
+            // Second builder opens normally — the stale active popover must not be re-closed.
+            const { showSpy } = spyOnPopoverMethods();
+            const second = new PopoverBuilder()
+                .withAnchor(makeAnchor())
+                .withContent(makeContent('second'));
+            second.show();
+
+            expect(showSpy).toHaveBeenCalledTimes(1);
+            const els = document.body.querySelectorAll('[popover]');
+            expect(els.length).toBe(2);
+            expect((els[1] as HTMLElement).style.display).not.toBe('none');
+            // Closing the first again is a no-op: it is already closed.
+            expect(firstClose).toHaveBeenCalledTimes(1);
+        });
     });
 
     // ────────────────────────────────────────────────
@@ -1370,6 +1719,321 @@ describe('PopoverBuilder', () => {
             builder.close();
 
             expect(focusSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    // ────────────────────────────────────────────────
+    // withPlacement (BOTTOM | RIGHT)
+    // ────────────────────────────────────────────────
+
+    describe('withPlacement', () => {
+        const savedInnerWidth = window.innerWidth;
+        const savedInnerHeight = window.innerHeight;
+
+        afterEach(() => {
+            Object.defineProperty(window, 'innerWidth', { value: savedInnerWidth, configurable: true });
+            Object.defineProperty(window, 'innerHeight', { value: savedInnerHeight, configurable: true });
+        });
+
+        // Builds without showing so the popover element can be given a measured size,
+        // then shows it: both _position() passes then see the mocked dimensions.
+        function showSized(
+            builder: PopoverBuilder,
+            size: { width?: number; height?: number } = {}
+        ): HTMLElement {
+            builder.build();
+            const el = document.body.querySelector('[popover]') as HTMLElement;
+            if (size.width !== undefined) {
+                Object.defineProperty(el, 'offsetWidth', { value: size.width, configurable: true });
+            }
+            if (size.height !== undefined) {
+                Object.defineProperty(el, 'offsetHeight', { value: size.height, configurable: true });
+            }
+            builder.show();
+            return el;
+        }
+
+        test('withPlacement returns this (fluent)', () => {
+            const builder = new PopoverBuilder();
+            expect(builder.withPlacement(PopoverPlacement.RIGHT)).toBe(builder);
+        });
+
+        test('BOTTOM is the default and is unchanged by the placement switch', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 120, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder().withAnchor(anchor).withContent(makeContent());
+            const el = showSized(builder, { width: 80, height: 60 });
+
+            // below the anchor, left-aligned to it, width matching the anchor
+            expect(el.style.top).toBe('124px');
+            expect(el.style.bottom).toBe('auto');
+            expect(el.style.left).toBe('50px');
+            expect(el.style.width).toBe('150px');
+            expect(el.getAttribute('data-placement')).toBe('bottom');
+        });
+
+        test('explicit BOTTOM behaves exactly like the default', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 120, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.BOTTOM);
+            const el = showSized(builder, { width: 80, height: 60 });
+
+            expect(el.style.top).toBe('124px');
+            expect(el.style.left).toBe('50px');
+            expect(el.style.width).toBe('150px');
+            expect(el.getAttribute('data-placement')).toBe('bottom');
+        });
+
+        test('RIGHT sets left = anchor.right + offset', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 120, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 200, height: 60 });
+
+            // default offset 4 → 200 + 4
+            expect(el.style.left).toBe('204px');
+            expect(el.style.right).toBe('auto');
+            expect(el.getAttribute('data-placement')).toBe('right');
+        });
+
+        test('RIGHT honours withOffset', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 120, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT)
+                .withOffset(12);
+            const el = showSized(builder, { width: 200, height: 60 });
+
+            expect(el.style.left).toBe('212px');
+        });
+
+        test('RIGHT aligns the popover bottom edge with the anchor bottom edge by default', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 300, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 200, height: 120 });
+
+            // top = anchor.bottom - popoverHeight = 300 - 120
+            expect(el.style.top).toBe('180px');
+            expect(el.style.bottom).toBe('auto');
+        });
+
+        test('RIGHT flips to the left of the anchor when it would overflow the viewport', () => {
+            Object.defineProperty(window, 'innerWidth', { value: 600, configurable: true });
+            const anchor = makeAnchor({ top: 100, bottom: 300, left: 350, right: 500, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 200, height: 120 });
+
+            // 500 + 4 + 200 = 704 > 600 - 4 → flip: 350 - 4 - 200
+            expect(el.style.left).toBe('146px');
+            expect(el.getAttribute('data-placement')).toBe('left');
+        });
+
+        test('RIGHT flip clamps left to the 4px viewport inset when there is no room either side', () => {
+            Object.defineProperty(window, 'innerWidth', { value: 400, configurable: true });
+            const anchor = makeAnchor({ top: 100, bottom: 300, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 300, height: 120 });
+
+            // 200 + 4 + 300 = 504 > 396 → flip: max(4, 50 - 4 - 300) = 4
+            expect(el.style.left).toBe('4px');
+            expect(el.getAttribute('data-placement')).toBe('left');
+        });
+
+        test('RIGHT clamps top to the 4px inset when the popover is taller than the space above', () => {
+            const anchor = makeAnchor({ top: 0, bottom: 40, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 200, height: 200 });
+
+            // desired top = 40 - 200 = -160 → clamped to 4
+            expect(el.style.top).toBe('4px');
+        });
+
+        test('RIGHT clamps top so the popover bottom stays 4px inside the viewport', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 300, configurable: true });
+            const anchor = makeAnchor({ top: 200, bottom: 299, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 200, height: 100 });
+
+            // desired top = 199, maxTop = 300 - 100 - 4 = 196
+            expect(el.style.top).toBe('196px');
+        });
+
+        test('RIGHT with alignment "start" top-aligns to the anchor', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 300, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT)
+                .withAlignment('start');
+            const el = showSized(builder, { width: 200, height: 120 });
+
+            expect(el.style.top).toBe('100px');
+        });
+
+        test('RIGHT with alignment "start" still clamps the top into the viewport', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 300, configurable: true });
+            const anchor = makeAnchor({ top: 280, bottom: 299, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT)
+                .withAlignment('start');
+            const el = showSized(builder, { width: 200, height: 100 });
+
+            // desired top = 280, maxTop = 196
+            expect(el.style.top).toBe('196px');
+        });
+
+        test('RIGHT with an explicit alignment "end" is bottom-aligned (the default)', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 300, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT)
+                .withAlignment('end');
+            const el = showSized(builder, { width: 200, height: 120 });
+
+            expect(el.style.top).toBe('180px');
+        });
+
+        test('RIGHT takes its natural width instead of matching the anchor', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 300, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 200, height: 120 });
+
+            expect(el.style.width).toBe('auto');
+            expect(el.style.minWidth).toBe('');
+        });
+
+        test('RIGHT still honours an explicitly requested width', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 300, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT)
+                .withWidth('match-anchor');
+            const el = showSized(builder, { width: 200, height: 120 });
+
+            expect(el.style.width).toBe('150px');
+        });
+
+        test('RIGHT honours an explicit fixed width', () => {
+            const anchor = makeAnchor({ top: 100, bottom: 300, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT)
+                .withWidth('220px');
+            const el = showSized(builder, { width: 220, height: 120 });
+
+            expect(el.style.width).toBe('220px');
+        });
+
+        test('RIGHT repositions on window resize', () => {
+            Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true });
+            const anchor = makeAnchor({ top: 100, bottom: 300, left: 350, right: 500, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 200, height: 120 });
+
+            expect(el.style.left).toBe('504px');
+
+            // Viewport shrinks below the popover's right edge → next reposition flips it
+            Object.defineProperty(window, 'innerWidth', { value: 600, configurable: true });
+            window.dispatchEvent(new Event('resize'));
+
+            expect(el.style.left).toBe('146px');
+            expect(el.getAttribute('data-placement')).toBe('left');
+        });
+
+        test('RIGHT clamps a configured max-height to the viewport', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 300, configurable: true });
+            const anchor = makeAnchor({ top: 100, bottom: 200, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT)
+                .withMaxHeight(400);
+            const el = showSized(builder, { width: 200, height: 120 });
+
+            // 400 preferred, viewport allows 300 - 4 - 4
+            expect(el.style.maxHeight).toBe('292px');
+        });
+
+        test('RIGHT caps max-height to the viewport even when none is configured', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true });
+            const anchor = makeAnchor({ top: 100, bottom: 200, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 200, height: 120 });
+
+            expect(el.style.maxHeight).toBe('760px');
+        });
+
+        test('RIGHT taller than the viewport is capped and keeps a reachable top', () => {
+            // Without the default cap the clamp would yield top = 600 - 700 - 4 = -104px, and
+            // the overflow-hidden wrapper never flips vertically, so the first menu items
+            // would be permanently off-screen.
+            Object.defineProperty(window, 'innerHeight', { value: 600, configurable: true });
+            const anchor = makeAnchor({ top: 400, bottom: 500, left: 50, right: 200, width: 150 });
+            const builder = new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT);
+            const el = showSized(builder, { width: 200, height: 700 });
+
+            expect(el.style.maxHeight).toBe('592px');
+            expect(parseFloat(el.style.top)).toBeGreaterThanOrEqual(4);
+        });
+
+        test('RIGHT pre-render pass (offsetHeight 0) is corrected by the second pass', () => {
+            // Real browsers report offsetHeight 0 while display:none (pass 1, before showPopover)
+            // and the rendered height once visible (pass 2). Mimic that alternation so the
+            // unmeasured branch of _positionRight is exercised.
+            Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true });
+            let calls = 0;
+            jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: any) {
+                calls++;
+                return calls === 1 ? 0 : 120;
+            });
+
+            new PopoverBuilder()
+                .withAnchor(makeAnchor({ top: 100, bottom: 300, left: 50, right: 200, width: 150 }))
+                .withContent(makeContent())
+                .withPlacement(PopoverPlacement.RIGHT)
+                .show();
+
+            const el = document.body.querySelector('[popover]') as HTMLElement;
+            // Pass 1 (height 0) would put the bottom-aligned top at rect.bottom = 300px;
+            // pass 2 measures 120 and corrects it to 300 - 120.
+            expect(el.style.top).toBe('180px');
+            expect(el.getAttribute('data-placement')).toBe('right');
         });
     });
 });

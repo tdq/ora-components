@@ -1,13 +1,46 @@
 import { ChartState, LineChartConfig, BarChartConfig, AreaChartConfig, ChartScales } from './types';
+import { readValue } from './value-utils';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const ANIM_DEFAULTS: Record<string, string> = {
+    dur: '0.5s',
+    fill: 'freeze',
+    calcMode: 'spline',
+    keySplines: '0.4 0 0.2 1',
+    // SMIL timelines start at document time 0; a chart mounted later would
+    // otherwise see its animation already finished (or never start in a
+    // fresh subtree). We start every animate explicitly once connected.
+    begin: 'indefinite'
+};
+
+// Bound the rAF retry chain used to wait for the series group to be
+// connected before calling beginElement() — a detached/never-mounted chart
+// must not schedule frames forever.
+const MAX_ANIM_RETRIES = 10;
 
 export class SeriesRenderer {
+    private _pendingAnimFrame: number | null = null;
+    private _animRetries = 0;
+    // Sentinel so the very first render() (data reference necessarily
+    // differs from `undefined`) is always treated as a data change.
+    private _lastData: any = undefined;
+
     render(
-        g: SVGGElement, 
-        state: ChartState<any>, 
+        g: SVGGElement,
+        state: ChartState<any>,
         scales: ChartScales
     ) {
+        // Any render (including a resize-triggered re-render on the *same*
+        // data) rebuilds the SVG subtree from scratch, so a chain scheduled
+        // against the previous subtree must never fire against this one.
+        this.cancelPendingAnimation();
+
+        // Only a genuine data change re-triggers the entrance animation;
+        // a resize (which re-renders the same `state.data` reference) must
+        // redraw with final values and no <animate> elements.
+        const shouldAnimate = state.animate && state.data !== this._lastData;
+        this._lastData = state.data;
+
         const { xScale, yScale, secondaryYScale } = scales;
         const renderOrder: string[] = ['area', 'bar', 'line'];
 
@@ -17,20 +50,22 @@ export class SeriesRenderer {
 
                 const scale = chart.useSecondaryAxis && secondaryYScale ? secondaryYScale : yScale;
                 const filterId = `shadow-${i}`;
-                
+
                 switch (chart.type) {
                     case 'line':
-                        this.renderLine(g, state, scales, chart as LineChartConfig<any>, xScale, scale, filterId);
+                        this.renderLine(g, shouldAnimate, scales, chart as LineChartConfig<any>, xScale, scale, filterId);
                         break;
                     case 'bar':
-                        this.renderBars(g, state, scales, chart as BarChartConfig<any>, xScale, scale, filterId);
+                        this.renderBars(g, shouldAnimate, scales, chart as BarChartConfig<any>, xScale, scale, filterId);
                         break;
                     case 'area':
-                        this.renderArea(g, state, scales, chart as AreaChartConfig<any>, xScale, scale, filterId);
+                        this.renderArea(g, shouldAnimate, scales, chart as AreaChartConfig<any>, xScale, scale, filterId);
                         break;
                 }
             });
         });
+
+        if (shouldAnimate) this.startAnimations(g);
     }
 
     updateFilters(defs: SVGDefsElement, state: ChartState<any>) {
@@ -43,7 +78,7 @@ export class SeriesRenderer {
                 width: '140%',
                 height: '140%'
             });
-            
+
             const dropShadow = this.createSvgElement('feDropShadow', {
                 dx: '0',
                 dy: '2',
@@ -51,31 +86,92 @@ export class SeriesRenderer {
                 'flood-opacity': '0.3',
                 'flood-color': 'black'
             });
-            
+
             filter.appendChild(dropShadow);
             defs.appendChild(filter);
         });
     }
 
-    private renderLine(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: LineChartConfig<any>, xScale: any, yScale: any, filterId: string) {
+    /** Cancel any pending "wait for connect" rAF chain and reset the retry count. */
+    private cancelPendingAnimation() {
+        if (this._pendingAnimFrame !== null && typeof cancelAnimationFrame === 'function') {
+            cancelAnimationFrame(this._pendingAnimFrame);
+        }
+        this._pendingAnimFrame = null;
+        this._animRetries = 0;
+    }
+
+    /** Tear down any pending animation scheduling — call from the component's destroy callback. */
+    destroy() {
+        this.cancelPendingAnimation();
+    }
+
+    /**
+     * Kick off every `<animate begin="indefinite">` under `g`. When the group
+     * is not yet in the document, retry on the next animation frame (a chart
+     * may be built detached and appended later), bounded so a chart that is
+     * never mounted does not schedule frames forever.
+     */
+    private startAnimations(g: SVGGElement) {
+        if (!g.isConnected) {
+            if (this._animRetries < MAX_ANIM_RETRIES && typeof requestAnimationFrame === 'function') {
+                this._animRetries++;
+                this._pendingAnimFrame = requestAnimationFrame(() => {
+                    this._pendingAnimFrame = null;
+                    this.startAnimations(g);
+                });
+            }
+            return;
+        }
+        this._pendingAnimFrame = null;
+        this._animRetries = 0;
+        g.querySelectorAll('animate').forEach((anim: any) => {
+            if (typeof anim.beginElement === 'function') {
+                try { anim.beginElement(); } catch { /* jsdom / unsupported SMIL */ }
+            }
+        });
+    }
+
+    private animate(target: Element, attributeName: string, from: string, to: string) {
+        target.appendChild(this.createSvgElement('animate', { ...ANIM_DEFAULTS, attributeName, from, to }));
+    }
+
+    /** Polyline `d` with a fresh `M` after every gap. */
+    private linePath(data: any[], field: string, xScale: any, yOf: (v: number) => number): string {
+        let restart = true;
+        return data.map((d, i) => {
+            const v = readValue(d, field);
+            if (v === null) { restart = true; return ''; }
+            const cmd = restart ? 'M' : 'L';
+            restart = false;
+            return `${cmd} ${xScale(i)},${yOf(v)}`;
+        }).filter(Boolean).join(' ');
+    }
+
+    /** Indices whose value is present but both neighbors are gaps (or the series boundary) — invisible as a line segment. */
+    private isolatedIndices(data: any[], field: string): number[] {
+        const isolated: number[] = [];
+        for (let i = 0; i < data.length; i++) {
+            if (readValue(data[i], field) === null) continue;
+            const prevGap = i === 0 || readValue(data[i - 1], field) === null;
+            const nextGap = i === data.length - 1 || readValue(data[i + 1], field) === null;
+            if (prevGap && nextGap) isolated.push(i);
+        }
+        return isolated;
+    }
+
+    private renderLine(g: SVGGElement, shouldAnimate: boolean, scales: ChartScales, config: LineChartConfig<any>, xScale: any, yScale: any, filterId: string) {
         const data = scales.displayData;
         const relevantDomain = config.useSecondaryAxis && scales.secondaryYDomain
             ? scales.secondaryYDomain
             : scales.yDomain;
         const baselineY = yScale(Math.max(relevantDomain[0], Math.min(relevantDomain[1], 0)));
-        const points = data.map((d, i) => {
-            const x = xScale(i);
-            const y = yScale(Number(d[config.field]) || 0);
-            return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
-        }).join(' ');
-
-        const zeroPoints = data.map((_: any, i: number) => {
-            const x = xScale(i);
-            return `${i === 0 ? 'M' : 'L'} ${x},${baselineY}`;
-        }).join(' ');
+        const field = String(config.field);
+        const points = this.linePath(data, field, xScale, yScale);
+        const zeroPoints = this.linePath(data, field, xScale, () => baselineY);
 
         const pathAttrs: Record<string, string> = {
-            d: state.animate ? zeroPoints : points,
+            d: points,
             fill: 'none',
             stroke: config.color || 'currentColor',
             'stroke-width': String(config.width || 2),
@@ -84,101 +180,100 @@ export class SeriesRenderer {
         if (config.isDashed) pathAttrs['stroke-dasharray'] = '5,5';
 
         const path = this.createSvgElement('path', pathAttrs);
-        if (state.animate) {
-            const anim = this.createSvgElement('animate', {
-                attributeName: 'd',
-                from: zeroPoints,
-                to: points,
-                dur: '0.5s',
-                fill: 'freeze',
-                calcMode: 'spline',
-                keySplines: '0.4 0 0.2 1'
-            });
-            path.appendChild(anim);
-        }
+        if (shouldAnimate) this.animate(path, 'd', zeroPoints, points);
         g.appendChild(path);
 
         if (config.showMarkers) {
             data.forEach((d: any, i: number) => {
-                const x = xScale(i);
-                const y = yScale(Number(d[config.field]) || 0);
+                const v = readValue(d, field);
+                if (v === null) return;
+                const y = yScale(v);
                 const circle = this.createSvgElement('circle', {
-                    cx: String(x),
-                    cy: String(state.animate ? baselineY : y),
+                    cx: String(xScale(i)),
+                    cy: String(y),
                     r: '4',
                     fill: config.color || 'currentColor',
                     filter: `url(#${filterId})`
                 });
-
-                if (state.animate) {
-                    const anim = this.createSvgElement('animate', {
-                        attributeName: 'cy',
-                        from: String(baselineY),
-                        to: String(y),
-                        dur: '0.5s',
-                        fill: 'freeze',
-                        calcMode: 'spline',
-                        keySplines: '0.4 0 0.2 1'
-                    });
-                    circle.appendChild(anim);
-                }
+                if (shouldAnimate) this.animate(circle, 'cy', String(baselineY), String(y));
                 g.appendChild(circle);
+            });
+        } else {
+            // Without markers, a point whose neighbors are both gaps would
+            // otherwise never be drawn (a lone `M` produces no visible segment).
+            this.isolatedIndices(data, field).forEach(i => {
+                const v = readValue(data[i], field)!;
+                const y = yScale(v);
+                const dot = this.createSvgElement('circle', {
+                    cx: String(xScale(i)),
+                    cy: String(y),
+                    r: '2',
+                    fill: config.color || 'currentColor'
+                });
+                if (shouldAnimate) this.animate(dot, 'cy', String(baselineY), String(y));
+                g.appendChild(dot);
             });
         }
     }
 
-    private renderBars(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: BarChartConfig<any>, xScale: any, yScale: any, filterId: string) {
+    private renderBars(g: SVGGElement, shouldAnimate: boolean, scales: ChartScales, config: BarChartConfig<any>, xScale: any, yScale: any, filterId: string) {
         const data = scales.displayData;
         const barWidth = scales.barWidth || 32;
         const relevantDomain = config.useSecondaryAxis && scales.secondaryYDomain
             ? scales.secondaryYDomain
             : scales.yDomain;
         const baselineY = yScale(Math.max(relevantDomain[0], Math.min(relevantDomain[1], 0)));
+        const field = String(config.field);
 
         data.forEach((d: any, i: number) => {
-            const val = Number(d[config.field]) || 0;
+            const val = readValue(d, field);
+            if (val === null) return;
             const valY = yScale(val);
             const y = Math.min(baselineY, valY);
             const height = Math.max(0.5, Math.abs(baselineY - valY));
 
             const rect = this.createSvgElement('rect', {
                 x: String(xScale(i) - barWidth / 2),
-                y: String(state.animate ? baselineY : y),
+                y: String(y),
                 width: String(barWidth),
-                height: String(state.animate ? 0 : height),
+                height: String(height),
                 fill: config.color || 'currentColor',
                 rx: '2',
                 filter: `url(#${filterId})`
             });
 
-            if (state.animate) {
-                const animY = this.createSvgElement('animate', {
-                    attributeName: 'y',
-                    from: String(baselineY),
-                    to: String(y),
-                    dur: '0.5s',
-                    fill: 'freeze',
-                    calcMode: 'spline',
-                    keySplines: '0.4 0 0.2 1'
-                });
-                const animHeight = this.createSvgElement('animate', {
-                    attributeName: 'height',
-                    from: '0',
-                    to: String(height),
-                    dur: '0.5s',
-                    fill: 'freeze',
-                    calcMode: 'spline',
-                    keySplines: '0.4 0 0.2 1'
-                });
-                rect.appendChild(animY);
-                rect.appendChild(animHeight);
+            if (shouldAnimate) {
+                this.animate(rect, 'y', String(baselineY), String(y));
+                this.animate(rect, 'height', '0', String(height));
             }
 
             g.appendChild(rect);
         });
     }
 
-    private renderArea(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: AreaChartConfig<any>, xScale: any, yScale: any, filterId: string) {
+    /** Area `d`: one closed sub-path per contiguous run of non-gap points. */
+    private areaPath(data: any[], field: string, xScale: any, yOf: (v: number) => number, baselineY: number): string {
+        const parts: string[] = [];
+        let run: string[] = [];
+        let runStart = -1;
+        let runEnd = -1;
+        const flush = () => {
+            if (run.length === 0) return;
+            parts.push(`${run.join(' ')} L ${xScale(runEnd)},${baselineY} L ${xScale(runStart)},${baselineY} Z`);
+            run = [];
+        };
+        data.forEach((d, i) => {
+            const v = readValue(d, field);
+            if (v === null) { flush(); return; }
+            if (run.length === 0) runStart = i;
+            runEnd = i;
+            run.push(`${run.length === 0 ? 'M' : 'L'} ${xScale(i)},${yOf(v)}`);
+        });
+        flush();
+        return parts.join(' ');
+    }
+
+    private renderArea(g: SVGGElement, shouldAnimate: boolean, scales: ChartScales, config: AreaChartConfig<any>, xScale: any, yScale: any, filterId: string) {
         const data = scales.displayData;
         if (data.length === 0) return;
 
@@ -186,67 +281,45 @@ export class SeriesRenderer {
             ? scales.secondaryYDomain
             : scales.yDomain;
         const baselineY = yScale(relevantDomain[0]);
-        const linePoints = data.map((d: any, i: number) => {
-            const x = xScale(i);
-            const y = yScale(Number(d[config.field]) || 0);
-            return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
-        }).join(' ');
+        const field = String(config.field);
+        const linePoints = this.linePath(data, field, xScale, yScale);
+        const zeroLinePoints = this.linePath(data, field, xScale, () => baselineY);
+        const areaPathData = this.areaPath(data, field, xScale, yScale, baselineY);
+        const zeroAreaPathData = this.areaPath(data, field, xScale, () => baselineY, baselineY);
 
-        const zeroLinePoints = data.map((_: any, i: number) => {
-            const x = xScale(i);
-            return `${i === 0 ? 'M' : 'L'} ${x},${baselineY}`;
-        }).join(' ');
-
-        const lastX = xScale(data.length - 1);
-        const firstX = xScale(0);
-        const areaPathData = `${linePoints} L ${lastX},${baselineY} L ${firstX},${baselineY} Z`;
-        const zeroAreaPathData = `${zeroLinePoints} L ${lastX},${baselineY} L ${firstX},${baselineY} Z`;
-        
-        const areaAttrs: Record<string, string> = {
-            d: state.animate ? zeroAreaPathData : areaPathData,
+        const area = this.createSvgElement('path', {
+            d: areaPathData,
             fill: config.color || 'currentColor',
             'fill-opacity': String(config.opacity || 0.3),
             filter: `url(#${filterId})`
-        };
-
-        const area = this.createSvgElement('path', areaAttrs);
-        if (state.animate) {
-            const anim = this.createSvgElement('animate', {
-                attributeName: 'd',
-                from: zeroAreaPathData,
-                to: areaPathData,
-                dur: '0.5s',
-                fill: 'freeze',
-                calcMode: 'spline',
-                keySplines: '0.4 0 0.2 1'
-            });
-            area.appendChild(anim);
-        }
+        });
+        if (shouldAnimate) this.animate(area, 'd', zeroAreaPathData, areaPathData);
         g.appendChild(area);
 
-        const lineAttrs: Record<string, string> = {
-            d: state.animate ? zeroLinePoints : linePoints,
+        // No filter on the top line: it would double-shadow with the area's own filter.
+        const line = this.createSvgElement('path', {
+            d: linePoints,
             fill: 'none',
             stroke: config.color || 'currentColor',
             'stroke-width': '2'
-            // We omit filter here for the top line of the area chart 
-            // to avoid double-shadowing with the area's own filter.
-        };
-
-        const line = this.createSvgElement('path', lineAttrs);
-        if (state.animate) {
-            const anim = this.createSvgElement('animate', {
-                attributeName: 'd',
-                from: zeroLinePoints,
-                to: linePoints,
-                dur: '0.5s',
-                fill: 'freeze',
-                calcMode: 'spline',
-                keySplines: '0.4 0 0.2 1'
-            });
-            line.appendChild(anim);
-        }
+        });
+        if (shouldAnimate) this.animate(line, 'd', zeroLinePoints, linePoints);
         g.appendChild(line);
+
+        // The area's own top line has no marker option — an isolated point
+        // between two gaps still needs a visible dot.
+        this.isolatedIndices(data, field).forEach(i => {
+            const v = readValue(data[i], field)!;
+            const y = yScale(v);
+            const dot = this.createSvgElement('circle', {
+                cx: String(xScale(i)),
+                cy: String(y),
+                r: '2',
+                fill: config.color || 'currentColor'
+            });
+            if (shouldAnimate) this.animate(dot, 'cy', String(baselineY), String(y));
+            g.appendChild(dot);
+        });
     }
 
     private createSvgElement<K extends keyof SVGElementTagNameMap>(tagName: K, attributes: Record<string, string> = {}): SVGElementTagNameMap[K] {

@@ -20,6 +20,8 @@ The `GridBuilder<ITEM>` class uses a generic type `ITEM` to ensure type safety a
 
 ### Data & Dimensions
 - `withHeight(height: Observable<number>): this`: Sets the fixed height of the grid container in pixels. If not called, the grid defaults to `height: 100%` of its parent container.
+- `withRowHeight(px: number): this`: Overrides the row height (default `GRID_ROW_HEIGHT` = 52). Plumbed into `GridViewport`, `GridRow` and `GridGroupRow` — the three used to hard-code `52` independently, so any override had to be applied in three places or virtualization maths drifted from the rendered rows.
+- `withAutoHeight(maxRows: number): this`: Sizes the grid to its content — `min(state.rows.length, maxRows) * rowHeight + GRID_HEADER_HEIGHT` (plus `GRID_TOOLBAR_HEIGHT_ALLOWANCE` when a toolbar is present) — instead of filling its parent. Use it for short grids embedded in a form or dialog, where a `height: 100%` grid would collapse or leave dead space.
 - `withItems(items: Observable<ITEM[]>): this`: Sets the data source for the grid. Subscription is deferred until the grid element enters the viewport (via `createOptimizedPipeline`).
 - `withGrouping(fields$: Observable<(keyof ITEM | string)[]>): this`: Enables multi-level grouping by the provided fields.
 - `withSort(field: keyof ITEM | string, direction: SortDirection): this`: Sets the initial sort configuration.
@@ -62,7 +64,7 @@ All column builders inherit these common methods:
 - `withWidth(width: string)`: Sets CSS width (e.g., `'100px'`, `'2fr'`, `'15%'`).
 - `asSortable()`: Enables the sorting UI for the column.
 - `asResizable()`: Enables column resizing via a handle in the header.
-- `asEditable()`: Marks the column as inline-editable. When the parent grid has `asEditable()` called, cells for this column render their editor component on activation. See [Keyboard Navigation](#keyboard-navigation) for the full key-binding table.
+- `asEditable()`: Marks the column as inline-editable. When the parent grid has `asEditable()` called, cells for this column render their editor component on activation. See [Keyboard Navigation](#keyboard-navigation) for the full key-binding table. `CustomColumnBuilder` overrides this with a focus-only variant — see [Custom Column](custom-column.md).
 - `withAlign(align: 'left' | 'center' | 'right')`: Sets the text and flex alignment for the column header and cells. Default is `'left'`.
 - `withClass(classProvider: (item: ITEM) => string)`: Adds custom CSS classes to all cells in this column via a provider function. Useful for conditional styling based on item data.
 
@@ -76,6 +78,17 @@ The grid implements a custom virtualization engine to maintain 60fps even with t
 - **Row Positioning**: Visible rows are managed as `GridRow` instances and absolutely positioned within the content container based on their index. Row components cache key interactive elements (checkboxes, action panels) to minimize DOM traversals during state updates.
 - **Buffering**: Extra rows (default: 5) are rendered above and below the visible viewport to prevent flickering during fast scrolls.
 - **Resize Awareness**: The `GridViewport` utilizes `ResizeObserver` to recalculate visible rows when the grid container's size changes.
+
+### Editable cells: two kinds
+`GridRow.getEditableCells()` includes a column when `col.editable && (col.renderEditor || col.focusEditableCell)`. The two are different contracts:
+
+- **Value editors** (`renderEditor`) open a `CellEditor`, commit `item[field] = editor.getValue()` and fire the grid's `onCommit`.
+- **Focus targets** (`focusEditableCell`) only place focus inside the already-rendered cell content. No commit, no field write. Custom columns use this: they have a synthetic `field` of `'custom'`, so routing them through the value-editor path would write a bogus `item.custom` and fire a spurious `onCommit` on every Tab or Enter that merely passed through the cell.
+
+Editors that need to signal a commit from inside their own widget (the enum column's ComboBox, for example) dispatch the namespaced `CELL_COMMIT_EVENT` (`'ora-cell-commit'`) from the editor root; the row listens for it rather than guessing from focus or change events.
+
+### Column teardown
+`GridColumn` has an optional `destroy?(): void`. Column builders that subscribe to an `Observable` (the enum column's `withOptions`, for instance) expose it, and `GridBuilder` calls it for every column both on container teardown and whenever the column set is **replaced** (pivot swaps, `updateColumns`) — otherwise the leak simply moves from teardown to re-render. Implementations are refcounted/idempotent, because one builder instance may legitimately feed two grids. `destroy()` is internal lifecycle on the built `GridColumn`, not public builder surface, so the `with*`/`as*` naming rules in [builder-pattern.md](../../builder-pattern.md) still hold.
 
 ### Selection
 When `asMultiSelect()` is enabled:

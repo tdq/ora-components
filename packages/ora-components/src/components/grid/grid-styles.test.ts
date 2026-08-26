@@ -5,7 +5,30 @@
  * specification requirements, particularly around opacity and backdrop-filter
  * usage.
  */
-import { GridStyles } from './grid-styles';
+import { GridStyles, GRID_ROW_HEIGHT, GRID_HEADER_HEIGHT, GRID_TOOLBAR_HEIGHT_ALLOWANCE } from './grid-styles';
+import * as gridPublicApi from './index';
+
+describe('GRID_ROW_HEIGHT / GRID_HEADER_HEIGHT / GRID_TOOLBAR_HEIGHT_ALLOWANCE', () => {
+    it('GRID_ROW_HEIGHT is exported as the single source of truth (52px default)', () => {
+        expect(GRID_ROW_HEIGHT).toBe(52);
+    });
+
+    it('GRID_HEADER_HEIGHT is exported and independent of the row height', () => {
+        expect(GRID_HEADER_HEIGHT).toBe(52);
+    });
+
+    it('GRID_TOOLBAR_HEIGHT_ALLOWANCE is exported (button height 46px + breathing room)', () => {
+        expect(GRID_TOOLBAR_HEIGHT_ALLOWANCE).toBe(56);
+    });
+
+    it('all three sizing constants are re-exported from the grid public entry point', () => {
+        // Consumers computing their own layout around withAutoHeight() need these from the
+        // package surface, not from the internal grid-styles module.
+        expect(gridPublicApi.GRID_ROW_HEIGHT).toBe(GRID_ROW_HEIGHT);
+        expect(gridPublicApi.GRID_HEADER_HEIGHT).toBe(GRID_HEADER_HEIGHT);
+        expect(gridPublicApi.GRID_TOOLBAR_HEIGHT_ALLOWANCE).toBe(GRID_TOOLBAR_HEIGHT_ALLOWANCE);
+    });
+});
 
 describe('GridStyles', () => {
     // ─── header ────────────────────────────────────────────────────────────

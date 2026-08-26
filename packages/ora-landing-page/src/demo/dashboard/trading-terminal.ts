@@ -150,7 +150,7 @@ export function createTradingTerminal(): HTMLElement {
     const container = new LayoutBuilder()
         .asVertical()
         .withGap(LayoutGap.LARGE)
-        .withClass(of('flex-1 p-px-24'));
+        .withClass(of('flex-1'));
 
     const masterSub = new Subscription();
 

@@ -15,7 +15,7 @@
  *  11.  No popup.addEventListener('toggle', ...) on container
  */
 
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { DatePickerBuilder } from './datepicker-builder';
 import { fireEvent } from '@testing-library/dom';
 
@@ -560,5 +560,158 @@ describe('Calendar wrapper structure', () => {
 
         const gridInPopover = getPopoverEl()!.querySelector('[role="grid"]');
         expect(gridInPopover).not.toBeNull();
+    });
+});
+
+// ─── Memory safety: calendar subscriptions are torn down on destroy ──────────
+
+describe('DatePickerBuilder — calendar subscription cleanup', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    test('withMinDate/withMaxDate observers are released when the element is removed', async () => {
+        const value$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 15));
+        const min$ = new BehaviorSubject<Date>(new Date(2023, 0, 1));
+        const max$ = new BehaviorSubject<Date>(new Date(2023, 11, 31));
+
+        const container = new DatePickerBuilder()
+            .withValue(value$)
+            .withMinDate(min$)
+            .withMaxDate(max$)
+            .build();
+        document.body.appendChild(container);
+
+        expect(min$.observers.length).toBeGreaterThan(0);
+        expect(max$.observers.length).toBeGreaterThan(0);
+
+        container.remove();
+        // disconnectedCallback runs synchronously; the microtask flush below just lets
+        // any pending RxJS teardown queued on it settle before we assert.
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(min$.observers.length).toBe(0);
+        expect(max$.observers.length).toBe(0);
+    });
+
+    test('a selectedDate$ Subject that never emits is released after opening the picker twice and removing it', async () => {
+        const selectedDate$ = new Subject<Date | null>();
+
+        const container = new DatePickerBuilder()
+            .withValue(selectedDate$)
+            .build() as HTMLElement & { showPopover(): void; hidePopover(): void };
+        document.body.appendChild(container);
+
+        container.showPopover();
+        container.hidePopover();
+        container.showPopover();
+        container.hidePopover();
+
+        container.remove();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(selectedDate$.observers.length).toBe(0);
+    });
+});
+
+describe('A3: DatePicker lifecycle — connect, open, disconnect', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    test('A3-6: observers are released even when the element is removed while the calendar is open', async () => {
+        const value$ = new BehaviorSubject<Date | null>(new Date(2023, 5, 10));
+        const min$ = new BehaviorSubject<Date>(new Date(2023, 0, 1));
+        const max$ = new BehaviorSubject<Date>(new Date(2023, 11, 31));
+
+        const container = new DatePickerBuilder()
+            .withValue(value$)
+            .withMinDate(min$)
+            .withMaxDate(max$)
+            .build() as HTMLElement & { showPopover(): void };
+        document.body.appendChild(container);
+
+        container.showPopover();
+        expect(min$.observers.length).toBeGreaterThan(0);
+
+        container.remove();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(min$.observers.length).toBe(0);
+        expect(max$.observers.length).toBe(0);
+        expect(value$.observers.length).toBe(0);
+
+        value$.complete();
+        min$.complete();
+        max$.complete();
+    });
+
+    test('A3-7: after removal the internal expansion state is closed — showPopover() is an inert no-op', async () => {
+        const value$ = new BehaviorSubject<Date | null>(new Date(2023, 5, 10));
+
+        const container = new DatePickerBuilder()
+            .withValue(value$)
+            .build() as HTMLElement & { showPopover(): void; hidePopover(): void; toggle(): void };
+        document.body.appendChild(container);
+
+        const input = container.querySelector('input') as HTMLInputElement;
+        container.showPopover();
+        expect(input.getAttribute('aria-expanded')).toBe('true');
+        container.hidePopover();
+
+        container.remove();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        // isExpanded$ was completed by registerDestroy: pushing into it is a no-op
+        // and nothing re-renders or throws.
+        expect(() => {
+            container.showPopover();
+            container.toggle();
+        }).not.toThrow();
+        expect(input.getAttribute('aria-expanded')).toBe('false');
+        expect(document.body.querySelector('[popover]')).toBeNull();
+
+        value$.complete();
+    });
+
+    test('A3-8: two pickers sharing one min$ each release exactly their own observer', async () => {
+        const min$ = new BehaviorSubject<Date>(new Date(2023, 0, 1));
+
+        const a = new DatePickerBuilder().withMinDate(min$).build();
+        const b = new DatePickerBuilder().withMinDate(min$).build();
+        document.body.appendChild(a);
+        document.body.appendChild(b);
+
+        expect(min$.observers.length).toBe(2);
+
+        a.remove();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(min$.observers.length).toBe(1);
+
+        b.remove();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(min$.observers.length).toBe(0);
+
+        min$.complete();
+    });
+});
+
+describe('DatePicker calendar popover sizing (no scrollbar regression)', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    test('the calendar popover has no max-height clamp and never scrolls itself', () => {
+        const el = new DatePickerBuilder().withValue(new BehaviorSubject<Date | null>(new Date(2026, 0, 15))).build();
+        document.body.appendChild(el);
+        (el as any).showPopover();
+
+        const popover = document.body.querySelector('[popover]') as HTMLElement;
+        expect(popover).not.toBeNull();
+        // No maxHeight is configured for the calendar, so the popover must take its
+        // natural content height (a clamped popover put a scrollbar on the calendar).
+        expect(popover.style.maxHeight).toBe('');
+        expect(popover.className).toContain('overflow-hidden');
+        expect(popover.className).not.toContain('overflow-y-auto');
     });
 });

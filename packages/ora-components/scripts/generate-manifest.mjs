@@ -231,18 +231,28 @@ function loadAgentDoc(componentName) {
   const methodDescriptions = new Map();
 
   for (const line of lines) {
-    // Must be a bullet that starts with a method name (word chars followed by `(`)
-    const bulletMatch = line.match(/^- (\w+)\(/);
+    // Must be a bullet that starts with a method name (word chars followed by `(`).
+    // The signature is usually wrapped in backticks: `- \`withFoo(x): this\` - does foo.`
+    const bulletMatch = line.match(/^- (`?)(\w+)\(/);
     if (!bulletMatch) continue;
 
-    const methodName = bulletMatch[1];
-    // Find the last " - " in the line and take everything after it as the description
-    const lastDashIdx = line.lastIndexOf(' - ');
-    if (lastDashIdx !== -1) {
-      const desc = line.slice(lastDashIdx + 3).trim();
-      if (desc.length > 0 && !methodDescriptions.has(methodName)) {
-        methodDescriptions.set(methodName, desc);
-      }
+    const [, tick, methodName] = bulletMatch;
+
+    // With a backticked signature the description starts after the closing backtick;
+    // without one, fall back to the last " - " in the line.
+    let desc;
+    if (tick) {
+      const closingTick = line.indexOf('`', 3);
+      if (closingTick === -1) continue;
+      desc = line.slice(closingTick + 1).replace(/^\s*[-–—:]\s*/, '').trim();
+    } else {
+      const lastDashIdx = line.lastIndexOf(' - ');
+      if (lastDashIdx === -1) continue;
+      desc = line.slice(lastDashIdx + 3).trim();
+    }
+
+    if (desc.length > 0 && !methodDescriptions.has(methodName)) {
+      methodDescriptions.set(methodName, desc);
     }
   }
 

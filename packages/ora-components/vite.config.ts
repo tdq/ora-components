@@ -13,6 +13,7 @@ export default defineConfig({
                 index: resolve(__dirname, 'src/index.ts'),
                 button: resolve(__dirname, 'src/components/button/index.ts'),
                 chart: resolve(__dirname, 'src/components/chart/index.ts'),
+                chat: resolve(__dirname, 'src/components/chat/index.ts'),
                 checkbox: resolve(__dirname, 'src/components/checkbox/index.ts'),
                 combobox: resolve(__dirname, 'src/components/combobox/index.ts'),
                 datepicker: resolve(__dirname, 'src/components/date-picker/index.ts'),
@@ -24,6 +25,7 @@ export default defineConfig({
                 listbox: resolve(__dirname, 'src/components/listbox/index.ts'),
                 numberfield: resolve(__dirname, 'src/components/number-field/index.ts'),
                 panel: resolve(__dirname, 'src/components/panel/index.ts'),
+                sidebar: resolve(__dirname, 'src/components/sidebar/index.ts'),
                 tabs: resolve(__dirname, 'src/components/tabs/index.ts'),
                 textfield: resolve(__dirname, 'src/components/text-field/index.ts'),
                 toolbar: resolve(__dirname, 'src/components/toolbar/index.ts')

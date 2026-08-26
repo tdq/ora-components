@@ -206,7 +206,7 @@ function buildPeriodContent(period: PeriodData): HTMLElement {
 
 export function createPL(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 flex flex-col p-px-24';
+    container.className = 'flex-1 flex flex-col';
 
     const tabs = new TabsBuilder();
     PERIODS.forEach(period => {

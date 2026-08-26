@@ -1,6 +1,6 @@
 {
   "name": "@tdq/ora-components",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Ora web components library",
   "license": "MIT",
   "repository": {
@@ -42,6 +42,10 @@
     "./chart": {
       "import": "./dist/chart/index.js",
       "types": "./dist/chart/index.d.ts"
+    },
+    "./chat": {
+      "import": "./dist/chat/index.js",
+      "types": "./dist/chat/index.d.ts"
     },
     "./checkbox": {
       "import": "./dist/checkbox/index.js",
@@ -87,6 +91,10 @@
       "import": "./dist/panel/index.js",
       "types": "./dist/panel/index.d.ts"
     },
+    "./sidebar": {
+      "import": "./dist/sidebar/index.js",
+      "types": "./dist/sidebar/index.d.ts"
+    },
     "./tabs": {
       "import": "./dist/tabs/index.js",
       "types": "./dist/tabs/index.d.ts"
@@ -117,7 +125,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && npm run build:css && npm run build:types && node scripts/reorganize-types.mjs && node scripts/generate-manifest.mjs",
-    "build:css": "tailwindcss -i ./src/index.css -o ./dist/ora-components.css --minify",
+    "build:css": "tailwindcss -i ./src/index-base.css -o ./dist/ora-components-base.css --minify && tailwindcss -i ./src/index-layered.css -o ./dist/ora-components-layered.css --minify && node scripts/wrap-css-layer.mjs compose ./dist/ora-components-base.css ./dist/ora-components-layered.css ./dist/ora-components.css",
     "build:types": "tsc -p tsconfig.build.json",
     "test": "jest",
     "pack:local": "npm run build && npm pack"

@@ -57,7 +57,13 @@ All methods on the `MoneyKPICardBuilder` return `this` for easy chaining, with t
   Configures an optional footnote or detail caption stream (e.g., "live · reconciled") aligned below the main currency and number display.
 
 - **`withPrecision`** — `(precision: number | Observable<number>): this`
-  Controls the count of decimal points rendered. Accepts a static number or an observable stream. Defaults to `2`.
+  Controls the count of decimal points rendered. Accepts a static number or an observable stream. Defaults to `2`. At `0`, no decimal separator or cents are rendered at all — the digit-rolling cents animation has nothing to animate.
+
+- **`withLocale`** — `(locale: string | Observable<string>): this`
+  Sets the BCP 47 locale used to derive grouping and decimal separators (e.g. `1.234.567,89` for `de-DE` vs `1,234,567.89` for `en-US`), resolved via `Intl.NumberFormat`. Accepts a static string or an observable stream. Defaults to `'en-US'`. An invalid/unsupported locale silently falls back to `en-US` separators.
+
+- **`withCurrencyDisplay`** — `(display: CurrencyDisplay | Observable<CurrencyDisplay>): this`
+  Controls how the currency is rendered: `'symbol'` (default) renders the currency symbol directly against the digits, e.g. `€442,000`; `'code'` renders the ISO 4217 code followed by a space, e.g. `EUR 442,000`. Accepts a static value or an observable stream.
 
 - **`withClass`** — `(className$: Observable<string>): this`
   Appends an observable-driven class list to the root card container element for specialized sizing, margins, or positioning overrides.
@@ -148,6 +154,30 @@ Using the `.asGlass()` modifier switches the card body container to a frosted tr
 Renders a complete KPI card layout incorporating a header label, trend indicator, formatted monetary amount, and a detailed description footnote.
 
 <Canvas of={Stories.WithDescription} />
+
+---
+
+## Locale, Currency Display & Negative Values
+
+The `LocaleAndCurrencyDisplay` story demonstrates `withLocale` switching grouping/decimal separators live (`en-US`, `de-DE`, `fr-FR`) alongside `withCurrencyDisplay` toggling `'symbol'` vs `'code'`, plus negative-amount formatting (a leading U+2212 minus sign, no gap before the digits) and the zero-rounding case (`-0.004` at default precision rounds to `0.00` and shows no sign).
+
+<Canvas of={Stories.LocaleAndCurrencyDisplay} />
+
+The `NegativeValue` story isolates negative-amount formatting: a meaningfully negative balance (U+2212 sign) next to a value that rounds to zero at the configured precision (no sign shown). The direction-aware flash only triggers on a value *change* — a single static value never flashes, since there's no previous value to compare direction against — so use the "Go Negative" / "Go Positive" buttons to flip the sign and see the red/green flash fire.
+
+<Canvas of={Stories.NegativeValue} />
+
+The `PrecisionZero` story shows `withPrecision(0)` for whole-currency KPIs (e.g. JPY) where no fractional digits are meaningful, including the negative + `'code'` display combination.
+
+<Canvas of={Stories.PrecisionZero} />
+
+---
+
+## Viewport-Gated Updates & Eager First Paint
+
+The `BelowTheFold` story places the card at the bottom of a bounded, independently-scrolling box (rather than pushing the actual page down with a `vh`-relative spacer, which would blow up the height of this docs page). The **first** value is still painted immediately at build time — `withValue`'s pipeline uses an eager-first strategy so a cached/precomputed initial value is never lost just because the card hasn't scrolled into view yet — but all **subsequent** updates are viewport-gated and pause while the card is scrolled out of the box's visible area, resuming once it's scrolled back into view.
+
+<Canvas of={Stories.BelowTheFold} />
 
 ---
 
