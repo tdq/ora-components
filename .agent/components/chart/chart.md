@@ -15,6 +15,7 @@ The chart is modularized into specialized classes to separate configuration, sta
 - **`ChartSvgArea`**: Manages the `<svg>` element, `<defs>`, and responsive `viewBox`.
 - **`AxisRenderer`**: Renders X and Y axes, grid lines, and labels.
 - **`SeriesRenderer`**: Renders data series (Line, Bar, Area) and SVG filters.
+- **`value-utils.ts`**: `readValue(item, field)` — the single place that decides whether a data point is a number or a gap (`null`).
 - **`ChartLegend`**: Handles the rendering of the series legend.
 - **`ChartTooltip`**: Manages tooltip visibility, content, and positioning.
 - **`LabelBuilder`**: Used for all text elements outside the SVG.
@@ -54,6 +55,7 @@ Each method returns a specialized builder for that series.
 - **Text Components**: All text elements outside of the SVG MUST be created using `LabelBuilder`.
 - **SVG Namespace**: All SVG elements MUST be created using `document.createElementNS('http://www.w3.org/2000/svg', ...)`.
 - **Animation Paths**: When `animate` is true, use `<animate>` elements inside SVG paths/rects/circles.
+- **Missing values (gaps)**: `null`, `undefined` and `NaN` are gaps, not zeros. `value-utils.ts` (`readValue`) returns `null` for them; line and area renderers break the path into sub-paths around a gap (`M` restart) instead of drawing through it, bars and markers are skipped, and `ChartLogic` excludes them from the domain calculation.
 - **Rendering Loop**: Use `logic.state$` subscription to trigger re-renders. `ChartViewport` is responsible for clearing the SVG (via `ChartSvgArea.clear()`) and updating filters before renderers are called.
 - **X-Axis Scaling**: Category scales MUST be point-centered with exactly **8px padding** from the Y-axis to the first chart element (e.g., the left edge of the first bar). This is achieved using the formula `xScale(i) = 8 + barWidth / 2 + i * xStep`.
 - **Individual Shadows**: `SeriesRenderer` MUST handle the creation of filters in `<defs>` with ID `shadow-${index}`.

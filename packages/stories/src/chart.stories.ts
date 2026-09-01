@@ -474,3 +474,110 @@ export const AxisAutoVsFixed = () => {
 
     return container;
 };
+
+interface GapItem {
+    month: string;
+    sales: number | null;
+    profit: any;
+    orders: number | null;
+}
+
+// Deliberately messy data: null, undefined, NaN, empty string and a boolean all
+// read as *gaps* rather than coercing to 0. Each series should break its line,
+// skip its marker/bar, and leave the Y domain untouched by the missing points.
+const gapData: GapItem[] = [
+    { month: 'Jan', sales: 4000, profit: 2400, orders: 400 },
+    { month: 'Feb', sales: null, profit: 1398, orders: 300 },
+    { month: 'Mar', sales: 2000, profit: NaN, orders: null },
+    { month: 'Apr', sales: 2780, profit: '', orders: 278 },
+    { month: 'May', sales: null, profit: 4800, orders: null },
+    { month: 'Jun', sales: 2390, profit: undefined, orders: 239 },
+    { month: 'Jul', sales: 3490, profit: true as any, orders: 349 },
+];
+
+export const MissingValues = () => {
+    const container = document.createElement('div');
+    container.className = 'flex flex-col gap-4';
+
+    const info = document.createElement('div');
+    info.className = 'text-body-medium text-on-surface-variant';
+    info.innerHTML = `
+        <p><strong>Gaps, not zeros.</strong> <code>null</code>, <code>undefined</code>, <code>NaN</code>,
+        empty strings and non-numeric values (booleans, arrays) are treated as missing data:
+        the line restarts with a fresh <code>M</code> after each gap, no marker or bar is drawn for it,
+        and the Y domain is computed from the present values only. A value whose neighbours are both
+        gaps is drawn as a small dot so it stays visible.</p>
+    `;
+    container.appendChild(info);
+
+    const builder = new ChartBuilder<GapItem>()
+        .withData(of(gapData))
+        .withCategoryField('month')
+        .withTitle(of('Series with missing values'))
+        .withHeight(400);
+
+    builder.addBarChart('orders')
+        .withLabel('Orders (bar — gap = no bar)')
+        .withColor('var(--md-sys-color-tertiary)');
+
+    builder.addLineChart('sales')
+        .withLabel('Sales (line — gap = broken line)')
+        .withColor('var(--md-sys-color-primary)')
+        .withMarkers(true);
+
+    builder.addAreaChart('profit')
+        .withLabel('Profit (area — gap = separate closed run)')
+        .withColor('var(--md-sys-color-secondary)')
+        .withOpacity(0.25);
+
+    container.appendChild(builder.build());
+
+    return container;
+};
+
+/**
+ * SMIL `<animate begin="indefinite">` timelines are only started once the chart's `<svg>`
+ * subtree is actually connected to the document (see series-renderer.ts's connected-check
+ * before beginElement()) — a chart built while detached would otherwise never animate. This
+ * story defers `builder.build()` and the DOM append until 1500ms after the story itself
+ * mounts, simulating a chart created lazily (e.g. inside a tab panel or a dialog opened
+ * later). The entry animation still plays correctly once it lands in the document.
+ */
+
+export const IsolatedPoints = () => {
+    const container = document.createElement('div');
+    container.className = 'flex flex-col gap-4';
+
+    const info = document.createElement('div');
+    info.className = 'text-body-medium text-on-surface-variant';
+    info.innerHTML = `
+        <p><strong>Isolated points.</strong> A value surrounded by gaps produces no line segment,
+        so it would be invisible. The renderer emits a small <code>r=2</code> dot for it on both
+        line and area series.</p>
+    `;
+    container.appendChild(info);
+
+    const sparse: any[] = [
+        { month: 'Jan', sales: null },
+        { month: 'Feb', sales: 3200 },
+        { month: 'Mar', sales: null },
+        { month: 'Apr', sales: null },
+        { month: 'May', sales: 1500 },
+        { month: 'Jun', sales: 1800 },
+        { month: 'Jul', sales: null },
+    ];
+
+    const builder = new ChartBuilder<any>()
+        .withData(of(sparse))
+        .withCategoryField('month')
+        .withTitle(of('Isolated points get a dot'))
+        .withHeight(400);
+
+    builder.addLineChart('sales')
+        .withLabel('Sales')
+        .withColor('var(--md-sys-color-primary)');
+
+    container.appendChild(builder.build());
+
+    return container;
+};

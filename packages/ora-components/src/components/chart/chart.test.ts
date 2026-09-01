@@ -857,3 +857,585 @@ describe('ChartLogic.calculateScales — Y domain defaults (ST-4)', () => {
         expect(scales.yDomain[1]).toBe(40);
     });
 });
+
+// ---------------------------------------------------------------------------
+// Null/NaN gap support (ported from the 9aca03c rewrite — functional part only;
+// the animation model here remains the 0.1.7 one)
+// ---------------------------------------------------------------------------
+
+class GapTestIntersectionObserver implements IntersectionObserver {
+    readonly root = null; readonly rootMargin = ''; readonly thresholds: ReadonlyArray<number> = [];
+    constructor(private callback: IntersectionObserverCallback) {}
+    observe(element: Element) {
+        this.callback([{ target: element, isIntersecting: true, intersectionRatio: 1 } as IntersectionObserverEntry], this);
+        jest.advanceTimersByTime(150);
+    }
+    unobserve() {} disconnect() {} takeRecords() { return []; }
+}
+
+describe('Chart null/NaN gaps (finding #2)', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        window.IntersectionObserver = GapTestIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
+    const gapData: any[] = [
+        { category: 'Jan', value: 10 },
+        { category: 'Feb', value: null },
+        { category: 'Mar', value: 12 },
+        { category: 'Apr', value: NaN },
+        { category: 'May', value: 15 }
+    ];
+
+    it('excludes gaps from the Y domain (no pull to 0)', () => {
+        const logic = new ChartLogic<any>();
+        const s = makeState(gapData as any);
+        s.charts = [{ type: 'line', field: 'value', label: 'v' }];
+        expect(logic.calculateScales(s, 400, 300).yDomain).toEqual([10, 15]);
+        // Stacked: same domain as the gap-free series (stacks always include 0)
+        s.charts = [{ type: 'bar', field: 'value', label: 'v', isStacked: true }];
+        const noGaps = makeState(gapData.filter(d => Number.isFinite(d.value)) as any);
+        noGaps.charts = s.charts;
+        expect(logic.calculateScales(s, 400, 300).yDomain).toEqual(logic.calculateScales(noGaps, 400, 300).yDomain);
+        logic.destroy();
+    });
+
+    it('line path restarts with M after a gap and draws no marker for it', () => {
+        const b = new ChartBuilder<any>().withData(of(gapData)).withCategoryField('category').withAnimation(false);
+        b.addLineChart('value').withMarkers(true);
+        const chart = b.build();
+        const d = chart.querySelector('path[stroke]')!.getAttribute('d')!;
+        expect((d.match(/M/g) || []).length).toBe(3);
+        expect(chart.querySelectorAll('circle').length).toBe(3);
+    });
+
+    it('draws no bar for a gap', () => {
+        const b = new ChartBuilder<any>().withData(of(gapData)).withCategoryField('category').withAnimation(false);
+        b.addBarChart('value');
+        const chart = b.build();
+        const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
+        expect(rects.length).toBe(3);
+    });
+
+    it('area path restarts with M after a gap', () => {
+        const b = new ChartBuilder<any>().withData(of(gapData)).withCategoryField('category').withAnimation(false);
+        b.addAreaChart('value');
+        const chart = b.build();
+        const area = chart.querySelector('path[fill-opacity]')!.getAttribute('d')!;
+        expect((area.match(/M/g) || []).length).toBe(3);
+        expect((area.match(/Z/g) || []).length).toBe(3);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Regression: A1 code-review findings on the finding #1/#2 fix
+// ---------------------------------------------------------------------------
+
+describe('ChartLogic.calculateScales — all-gap series with an axis override (A1 blocking)', () => {
+    let logic: ChartLogic<TestItem>;
+
+    beforeEach(() => { logic = new ChartLogic<TestItem>(); });
+    afterEach(() => { logic.destroy(); });
+
+    function allGapState(min?: number | 'auto', max?: number | 'auto'): ChartState<TestItem> {
+        const s = makeState([
+            { category: 'A', value: NaN as any },
+            { category: 'B', value: null as any },
+        ]);
+        s.charts = [{ type: 'line', field: 'value', label: 'v' }];
+        if (min !== undefined) s.yAxis.min = min;
+        if (max !== undefined) s.yAxis.max = max;
+        return s;
+    }
+
+    it('withMin(0) alone on an all-gap series yields a finite, non-NaN domain', () => {
+        const scales = logic.calculateScales(allGapState(0), 400, 300);
+        expect(scales.yDomain[0]).toBe(0);
+        expect(Number.isFinite(scales.yDomain[1])).toBe(true);
+        expect(Number.isNaN(scales.yDomain[1])).toBe(false);
+    });
+
+    it('withMax(500) alone on an all-gap series keeps the user max instead of discarding it', () => {
+        const scales = logic.calculateScales(allGapState(undefined, 500), 400, 300);
+        expect(scales.yDomain[1]).toBe(500);
+        expect(Number.isFinite(scales.yDomain[0])).toBe(true);
+    });
+
+    it('no override on an all-gap series still yields a finite domain', () => {
+        const scales = logic.calculateScales(allGapState(), 400, 300);
+        expect(scales.yDomain.every(Number.isFinite)).toBe(true);
+    });
+});
+
+describe('SeriesRenderer isolated points (A1 nit)', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        window.IntersectionObserver = GapTestIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
+    const isolatedData: any[] = [
+        { category: 'A', value: null },
+        { category: 'B', value: 5 },
+        { category: 'C', value: null },
+    ];
+
+    it('renders a small (r=2) circle for an isolated line point with no markers enabled', () => {
+        const b = new ChartBuilder<any>().withData(of(isolatedData)).withCategoryField('category').withAnimation(false);
+        b.addLineChart('value'); // showMarkers defaults to false
+        const chart = b.build();
+        const circles = Array.from(chart.querySelectorAll('circle'));
+        expect(circles.length).toBe(1);
+        expect(circles[0].getAttribute('r')).toBe('2');
+    });
+
+    it('renders a small (r=2) circle for an isolated area point', () => {
+        const b = new ChartBuilder<any>().withData(of(isolatedData)).withCategoryField('category').withAnimation(false);
+        b.addAreaChart('value');
+        const chart = b.build();
+        const circles = Array.from(chart.querySelectorAll('circle'));
+        expect(circles.length).toBe(1);
+        expect(circles[0].getAttribute('r')).toBe('2');
+    });
+});
+
+describe('ChartViewport hover effects skip gaps (A1 nit)', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        window.IntersectionObserver = GapTestIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
+    it('does not draw a ring/dot for a gapped series on hover', () => {
+        const data: any[] = [
+            { category: 'Jan', a: 10, b: null },
+            { category: 'Feb', a: 15, b: 20 },
+        ];
+        const b = new ChartBuilder<any>().withData(of(data)).withCategoryField('category').withTooltip(true);
+        b.addLineChart('a').withColor('red');
+        b.addLineChart('b').withColor('blue');
+        const chart = b.build();
+        document.body.appendChild(chart);
+
+        const svg = chart.querySelector('svg');
+        if (!svg) throw new Error('SVG not found');
+        svg.getBoundingClientRect = () => ({
+            width: 500, height: 300, left: 0, top: 0, right: 500, bottom: 300, x: 0, y: 0, toJSON: () => {}
+        } as DOMRect);
+
+        // Hover over the first category (index 0), where series `b` is a gap.
+        const moveEvent = new MouseEvent('mousemove', { clientX: 61, clientY: 150, bubbles: true });
+        svg.dispatchEvent(moveEvent);
+
+        const mainG = svg.querySelector('g');
+        const hoverG = mainG?.lastElementChild;
+        // 1 vertical guide line + (ring, point) for series `a` only = 3 elements.
+        expect(hoverG?.children.length).toBe(3);
+
+        document.body.removeChild(chart);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// A1 QA: coverage gaps left by the A1 fix + its code review
+// ---------------------------------------------------------------------------
+
+describe('A1 QA — gap rendering per series type', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        window.IntersectionObserver = GapTestIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
+    // jsdom has no layout: ChartSvgArea.getViewBox falls back to 600x400, and
+    // ChartViewport subtracts padding {left:60,right:40,top:20,bottom:40}.
+    const VIEW_W = 500;
+    const VIEW_H = 340;
+
+    const gapData: any[] = [
+        { category: 'Jan', value: 10 },
+        { category: 'Feb', value: null },
+        { category: 'Mar', value: 12 },
+        { category: 'Apr', value: NaN },
+        { category: 'May', value: 15 }
+    ];
+
+    function scalesFor(data: any[], charts: any[]) {
+        const logic = new ChartLogic<any>();
+        const s = makeState(data);
+        s.charts = charts;
+        const scales = logic.calculateScales(s, VIEW_W, VIEW_H);
+        logic.destroy();
+        return scales;
+    }
+
+    it('bar: the rect for the gap index is absent, not zero-height or shifted', () => {
+        const b = new ChartBuilder<any>().withData(of(gapData)).withCategoryField('category').withAnimation(false);
+        b.addBarChart('value');
+        const chart = b.build();
+
+        const scales = scalesFor(gapData, [{ type: 'bar', field: 'value', label: 'v' }]);
+        const barWidth = scales.barWidth || 32;
+        const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
+
+        // Only the three non-gap indices (0, 2, 4) produced a rect...
+        const xs = rects.map(r => parseFloat(r.getAttribute('x')!)).sort((a, b2) => a - b2);
+        expect(xs.map(x => Math.round(x))).toEqual(
+            [0, 2, 4].map(i => Math.round(scales.xScale(i) - barWidth / 2))
+        );
+
+        // ...and no rect sits at the gap indices 1 or 3.
+        [1, 3].forEach(i => {
+            const gapX = scales.xScale(i) - barWidth / 2;
+            expect(xs.some(x => Math.abs(x - gapX) < 0.5)).toBe(false);
+        });
+
+        // Exactly three bars, each with a real (non-NaN) height. Note the bar at
+        // the domain minimum legitimately collapses to the 0.5px floor.
+        expect(rects.length).toBe(3);
+        rects.forEach(r => {
+            const h = parseFloat(r.getAttribute('height')!);
+            expect(Number.isFinite(h)).toBe(true);
+            expect(h).toBeGreaterThanOrEqual(0.5);
+        });
+        expect(rects.some(r => parseFloat(r.getAttribute('height')!) > 0.5)).toBe(true);
+    });
+
+    it('area: each contiguous run is its own closed sub-path and no vertex sits at a gap index', () => {
+        const b = new ChartBuilder<any>().withData(of(gapData)).withCategoryField('category').withAnimation(false);
+        b.addAreaChart('value');
+        const chart = b.build();
+
+        const scales = scalesFor(gapData, [{ type: 'area', field: 'value', label: 'v' }]);
+        const d = chart.querySelector('path[fill-opacity]')!.getAttribute('d')!;
+
+        // 3 runs -> 3 `M ... Z` sub-paths.
+        expect((d.match(/M/g) || []).length).toBe(3);
+        expect((d.match(/Z/g) || []).length).toBe(3);
+        expect(d).not.toContain('NaN');
+
+        // Every x coordinate in the path belongs to a non-gap index.
+        const xsInPath = Array.from(d.matchAll(/-?\d+(?:\.\d+)?(?=,)/g)).map(m => parseFloat(m[0]));
+        const allowed = [0, 2, 4].map(i => scales.xScale(i));
+        xsInPath.forEach(x => {
+            expect(allowed.some(a => Math.abs(a - x) < 0.5)).toBe(true);
+        });
+    });
+
+    it('area: a single-run series with leading and trailing gaps closes exactly once', () => {
+        const data: any[] = [
+            { category: 'A', value: null },
+            { category: 'B', value: 4 },
+            { category: 'C', value: 6 },
+            { category: 'D', value: undefined },
+        ];
+        const b = new ChartBuilder<any>().withData(of(data)).withCategoryField('category').withAnimation(false);
+        b.addAreaChart('value');
+        const chart = b.build();
+        const d = chart.querySelector('path[fill-opacity]')!.getAttribute('d')!;
+        expect((d.match(/M/g) || []).length).toBe(1);
+        expect((d.match(/Z/g) || []).length).toBe(1);
+    });
+
+    it('non-numeric junk (boolean, array, object, blank string) renders as a gap end to end', () => {
+        const junk: any[] = [
+            { category: 'A', value: 10 },
+            { category: 'B', value: true },
+            { category: 'C', value: [] },
+            { category: 'D', value: '   ' },
+            { category: 'E', value: { n: 5 } },
+            { category: 'F', value: 20 },
+        ];
+        const b = new ChartBuilder<any>().withData(of(junk)).withCategoryField('category').withAnimation(false);
+        b.addBarChart('value');
+        b.addLineChart('value').withMarkers(true);
+        const chart = b.build();
+
+        const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
+        expect(rects.length).toBe(2);                     // A and F only
+        expect(chart.querySelectorAll('circle').length).toBe(2);
+
+        const d = chart.querySelector('path[stroke]')!.getAttribute('d')!;
+        expect((d.match(/M/g) || []).length).toBe(2);     // two isolated runs
+        expect(d).not.toContain('NaN');
+
+        // Domain from the two real values only — booleans never coerced to 0/1.
+        const scales = scalesFor(junk, [{ type: 'line', field: 'value', label: 'v' }]);
+        expect(scales.yDomain).toEqual([10, 20]);
+    });
+
+    it('a fully empty (all-gap) series renders an empty path instead of throwing', () => {
+        const allGap: any[] = [
+            { category: 'A', value: null },
+            { category: 'B', value: NaN },
+        ];
+        const b = new ChartBuilder<any>().withData(of(allGap)).withCategoryField('category').withAnimation(false);
+        b.addLineChart('value');
+        b.addAreaChart('value');
+        b.addBarChart('value');
+        let chart!: HTMLElement;
+        expect(() => { chart = b.build(); }).not.toThrow();
+        const paths = Array.from(chart.querySelectorAll('path'));
+        paths.forEach(p => expect(p.getAttribute('d')).toBe(''));
+        expect(Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath')).length).toBe(0);
+        expect(chart.querySelectorAll('circle').length).toBe(0);
+    });
+});
+
+describe('A1 QA — secondary axis and stacking with gaps', () => {
+    let logic: ChartLogic<any>;
+
+    beforeEach(() => { logic = new ChartLogic<any>(); });
+    afterEach(() => { logic.destroy(); });
+
+    function secondaryState(data: any[], charts: any[], secMin?: number, secMax?: number): ChartState<any> {
+        const s = makeState(data);
+        s.charts = charts;
+        s.secondaryYAxis = {
+            visible: true, showGridLines: false, showMinorGridLines: false,
+            position: 'right', scaleType: 'linear', ticks: 5,
+            ...(secMin !== undefined ? { min: secMin } : {}),
+            ...(secMax !== undefined ? { max: secMax } : {}),
+        };
+        return s;
+    }
+
+    it('the secondary domain excludes gaps in the secondary series', () => {
+        const data: any[] = [
+            { category: 'A', primary: 1, secondary: 100 },
+            { category: 'B', primary: 2, secondary: null },
+            { category: 'C', primary: 3, secondary: NaN },
+            { category: 'D', primary: 4, secondary: 300 },
+        ];
+        const scales = logic.calculateScales(secondaryState(data, [
+            { type: 'line', field: 'primary', label: 'p' },
+            { type: 'line', field: 'secondary', label: 's', useSecondaryAxis: true },
+        ]), 400, 300);
+
+        expect(scales.yDomain).toEqual([1, 4]);            // primary untouched by the gaps
+        expect(scales.secondaryYDomain).toEqual([100, 300]);
+        expect(scales.secondaryYDomain!.every(Number.isFinite)).toBe(true);
+    });
+
+    it('a gap on the secondary axis does not leak into the primary domain', () => {
+        const data: any[] = [
+            { category: 'A', primary: 10, secondary: null },
+            { category: 'B', primary: 20, secondary: null },
+        ];
+        const scales = logic.calculateScales(secondaryState(data, [
+            { type: 'line', field: 'primary', label: 'p' },
+            { type: 'line', field: 'secondary', label: 's', useSecondaryAxis: true },
+        ]), 400, 300);
+        expect(scales.yDomain).toEqual([10, 20]);
+    });
+
+    it('an all-gap secondary series yields a finite default domain', () => {
+        const data: any[] = [
+            { category: 'A', primary: 10, secondary: null },
+            { category: 'B', primary: 20, secondary: NaN },
+        ];
+        const scales = logic.calculateScales(secondaryState(data, [
+            { type: 'line', field: 'primary', label: 'p' },
+            { type: 'line', field: 'secondary', label: 's', useSecondaryAxis: true },
+        ]), 400, 300);
+        expect(scales.secondaryYDomain!.every(Number.isFinite)).toBe(true);
+        expect(scales.secondaryYDomain).toEqual([0, 100]);
+        expect(scales.secondaryYScale!(50)).not.toBeNaN();
+    });
+
+    it('an all-gap secondary series with only withMin(0) still gets a finite max', () => {
+        const data: any[] = [{ category: 'A', primary: 10, secondary: null }];
+        const scales = logic.calculateScales(secondaryState(data, [
+            { type: 'line', field: 'primary', label: 'p' },
+            { type: 'line', field: 'secondary', label: 's', useSecondaryAxis: true },
+        ], 0), 400, 300);
+        expect(scales.secondaryYDomain![0]).toBe(0);
+        expect(Number.isFinite(scales.secondaryYDomain![1])).toBe(true);
+        expect(scales.secondaryYScale!(0)).not.toBeNaN();
+    });
+
+    it('an all-gap secondary series with only withMax(500) keeps the user max', () => {
+        const data: any[] = [{ category: 'A', primary: 10, secondary: null }];
+        const scales = logic.calculateScales(secondaryState(data, [
+            { type: 'line', field: 'primary', label: 'p' },
+            { type: 'line', field: 's_missing', label: 's', useSecondaryAxis: true },
+        ], undefined, 500), 400, 300);
+        expect(scales.secondaryYDomain![1]).toBe(500);
+        expect(Number.isFinite(scales.secondaryYDomain![0])).toBe(true);
+    });
+
+    it('a stacked pair with a gap in one member stacks only the present values', () => {
+        const data: any[] = [
+            { category: 'A', a: 10, b: 5 },
+            { category: 'B', a: null, b: 5 },
+            { category: 'C', a: 10, b: null },
+            { category: 'D', a: null, b: null },
+        ];
+        const s = makeState(data);
+        s.charts = [
+            { type: 'bar', field: 'a', label: 'a', isStacked: true },
+            { type: 'bar', field: 'b', label: 'b', isStacked: true },
+        ] as any;
+        const scales = logic.calculateScales(s, 400, 300);
+        // Max stack = row A (10+5); rows with a single value contribute 10 and 5;
+        // the all-gap row contributes nothing at all (not a 0 that pins the min).
+        expect(scales.yDomain).toEqual([0, 15]);
+    });
+
+    it('a stacked pair of negatives with a gap keeps a finite negative min', () => {
+        const data: any[] = [
+            { category: 'A', a: -10, b: -5 },
+            { category: 'B', a: null, b: null },
+        ];
+        const s = makeState(data);
+        s.charts = [
+            { type: 'bar', field: 'a', label: 'a', isStacked: true },
+            { type: 'bar', field: 'b', label: 'b', isStacked: true },
+        ] as any;
+        const scales = logic.calculateScales(s, 400, 300);
+        expect(scales.yDomain[0]).toBe(-15);
+        expect(scales.yDomain.every(Number.isFinite)).toBe(true);
+    });
+});
+
+describe('A1 QA — stacked series with a gap renders without crashing', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        window.IntersectionObserver = GapTestIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
+    const stackedData: any[] = [
+        { category: 'A', a: 10, b: 5 },
+        { category: 'B', a: null, b: 5 },
+        { category: 'C', a: 10, b: NaN },
+        { category: 'D', a: null, b: null },
+    ];
+
+    it('stacked bars: one rect per present value, none for the gaps', () => {
+        const b = new ChartBuilder<any>().withData(of(stackedData)).withCategoryField('category').withAnimation(false);
+        b.addBarChart('a').asStacked();
+        b.addBarChart('b').asStacked();
+        let chart!: HTMLElement;
+        expect(() => { chart = b.build(); }).not.toThrow();
+
+        const rects = Array.from(chart.querySelectorAll('rect')).filter(el => !el.closest('clipPath'));
+        // present values: (A,a)(A,b)(B,b)(C,a) = 4
+        expect(rects.length).toBe(4);
+        rects.forEach(r => {
+            expect(r.getAttribute('y')).not.toContain('NaN');
+            expect(r.getAttribute('height')).not.toContain('NaN');
+        });
+    });
+
+    it('stacked areas with a gap produce finite path data and animate cleanly', () => {
+        const b = new ChartBuilder<any>().withData(of(stackedData)).withCategoryField('category').withAnimation(true);
+        b.addAreaChart('a').asStacked();
+        b.addAreaChart('b').asStacked();
+        let chart!: HTMLElement;
+        expect(() => { chart = b.build(); }).not.toThrow();
+
+        Array.from(chart.querySelectorAll('path')).forEach(p => {
+            expect(p.getAttribute('d')).not.toContain('NaN');
+        });
+        Array.from(chart.querySelectorAll('animate')).forEach(a => {
+            expect(a.getAttribute('from')).not.toContain('NaN');
+            expect(a.getAttribute('to')).not.toContain('NaN');
+        });
+    });
+});
+
+describe('A1 QA — tooltip content for a gapped series [NIT]', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        window.IntersectionObserver = GapTestIntersectionObserver as any;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        window.IntersectionObserver = originalIntersectionObserver;
+    });
+
+    function hoverFirstCategory() {
+        const data: any[] = [
+            { category: 'Jan', a: 10, b: null },
+            { category: 'Feb', a: 15, b: 20 },
+        ];
+        const b = new ChartBuilder<any>().withData(of(data)).withCategoryField('category').withTooltip(true);
+        b.addLineChart('a').withLabel('Alpha').withColor('red');
+        b.addLineChart('b').withLabel('Beta').withColor('blue');
+        const chart = b.build();
+        document.body.appendChild(chart);
+
+        const svg = chart.querySelector('svg')!;
+        svg.getBoundingClientRect = () => ({
+            width: 500, height: 300, left: 0, top: 0, right: 500, bottom: 300, x: 0, y: 0, toJSON: () => {}
+        } as DOMRect);
+        svg.dispatchEvent(new MouseEvent('mousemove', { clientX: 61, clientY: 150, bubbles: true }));
+
+        const tooltip = chart.querySelector('.z-50') as HTMLElement;
+        return { chart, tooltip };
+    }
+
+    // CURRENT BEHAVIOUR, pinned deliberately.
+    // chart-viewport.ts:263 comments "gap: no ring/dot, tooltip already omits
+    // this series", but ChartTooltip.show renders a row for EVERY configured
+    // chart, so the gap series shows up as "Beta: null". Reported as a [NIT] —
+    // the SVG highlight and the tooltip disagree about the gap.
+    it('renders a row for the gapped series showing the raw value (contradicting the viewport comment)', () => {
+        const { chart, tooltip } = hoverFirstCategory();
+        expect(tooltip).toBeTruthy();
+        const text = tooltip.textContent || '';
+        expect(text).toContain('Jan');
+        expect(text).toContain('Alpha: 10');
+        expect(text).toContain('Beta: null');       // <- the NIT: not omitted
+        document.body.removeChild(chart);
+    });
+
+    it('the tooltip row count includes the gapped series while the hover highlight excludes it', () => {
+        const { chart, tooltip } = hoverFirstCategory();
+        // header + one row per configured chart (2), gap included
+        expect(tooltip.children.length).toBe(3);
+
+        const svg = chart.querySelector('svg')!;
+        const hoverG = svg.querySelector('g')!.lastElementChild!;
+        // guide line + (ring, point) for the non-gap series only
+        expect(hoverG.children.length).toBe(3);
+
+        document.body.removeChild(chart);
+    });
+});
+

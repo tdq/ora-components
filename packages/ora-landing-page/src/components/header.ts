@@ -5,7 +5,23 @@ import { isMobileViewport } from '../utils/viewport';
 
 export function createHeader(): HTMLElement {
     const header = document.createElement('header');
-    header.className = 'sticky top-0 z-50 px-px-24 py-px-16 flex flex-wrap items-center justify-between bg-[var(--header-bg)] border-b border-[rgba(121,116,126,0.12)]';
+    header.className = 'site-header fixed top-0 left-0 right-0 z-50 px-px-24 py-px-16 flex flex-wrap items-center justify-between';
+
+    // Glass state: transparent while resting on the hero, frosted once the page scrolls.
+    // Scrolling happens on the window for the landing route, so a passive listener is enough.
+    const SCROLL_THRESHOLD = 8;
+    let ticking = false;
+    const syncScrolled = () => {
+        header.classList.toggle('is-scrolled', window.scrollY > SCROLL_THRESHOLD);
+        ticking = false;
+    };
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(syncScrolled);
+        }
+    }, { passive: true });
+    syncScrolled(); // page may load scrolled to an anchor or a restored position
 
     // Logo
     const logo = createLogo({ text: 'Ora Components', onClick: () => router.navigate('/') });
@@ -65,7 +81,7 @@ export function createHeader(): HTMLElement {
 
     // Mobile menu drawer
     const mobileMenu = document.createElement('div');
-    mobileMenu.className = 'absolute top-full left-0 right-0 md:hidden overflow-hidden bg-surface border-b border-[rgba(121,116,126,0.12)] max-h-0 transition-[max-height] duration-300 ease';
+    mobileMenu.className = 'site-header-drawer absolute top-full left-0 right-0 md:hidden overflow-hidden max-h-0 transition-[max-height] duration-300 ease';
 
     const mobileNav = document.createElement('nav');
     mobileNav.className = 'flex flex-col px-px-16 py-px-8';

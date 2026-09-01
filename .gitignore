@@ -13,3 +13,5 @@ packages/ora-mcp-server/.turbo/*
 tasks/*
 plans/*
 .idea/*
+# team-lead run markers (plan gate)
+.claude/run/

@@ -281,6 +281,21 @@ When datasets contain thousands of points, the chart automatically downsamples t
 
 ---
 
+## Missing Values & Gaps
+
+`null`, `undefined`, `NaN`, empty strings, and any other non-numeric value (booleans, arrays, ...) in a series field are treated as **gaps**, never coerced to `0`:
+
+- **Line series** — the path breaks at the gap and restarts with a fresh `M` command on the other side; no marker is drawn for the missing point.
+- **Bar series** — no bar is drawn for the gap.
+- **Area series** — the fill splits into separate closed runs around each gap.
+- **Y-axis domain** — computed from present values only; gaps never pull the domain toward zero.
+- **Isolated points** — a value whose immediate neighbours are both gaps would produce no visible line segment on its own, so the renderer emits a small `r=2` dot for it instead (line and area series).
+
+<Canvas of={Stories.MissingValues} />
+<Canvas of={Stories.IsolatedPoints} />
+
+---
+
 ## Keyboard
 
 | Key | Action |

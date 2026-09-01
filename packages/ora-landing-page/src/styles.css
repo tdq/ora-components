@@ -440,11 +440,66 @@ button {
     box-shadow: var(--cta-hover-shadow);
     transform: scale(1.05);
   }
+
+  /* Landing topbar — transparent at rest on the hero, frosted glass once scrolled.
+     `.is-scrolled` is toggled from header.ts via a passive window scroll listener. */
+  .site-header {
+    /* Fixed (not sticky) so the hero runs underneath the transparent bar and the
+       compact-on-scroll padding change never shifts page content. */
+    background-color: transparent;
+    border-bottom: 1px solid transparent;
+    box-shadow: none;
+    transition-property: background-color, border-color, box-shadow, padding;
+    transition-duration: 300ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .site-header.is-scrolled {
+    background-color: var(--header-glass-bg);
+    border-bottom-color: var(--header-border);
+    box-shadow: var(--header-shine), var(--header-shadow);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    backdrop-filter: blur(18px) saturate(1.6);
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  /* Mobile drawer reads as an extension of the glass bar */
+  .site-header-drawer {
+    background-color: var(--header-glass-bg);
+    border-bottom: 1px solid var(--header-border);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    backdrop-filter: blur(18px) saturate(1.6);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header.is-scrolled,
+    .site-header-drawer {
+      background-color: var(--header-glass-bg-fallback);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-header {
+      transition: none;
+    }
+  }
 }
 
-/* Theme-based CSS variables for header */
-:root[data-theme='light'] {
-    --header-bg: rgba(255, 255, 255, 0.92);
+/* Anchor jumps (#features, #playground, …) land below the fixed topbar */
+html {
+  scroll-padding-top: 72px;
+}
+
+/* Theme-based CSS variables for header.
+   Light values live on bare :root so the prerendered / pre-JS paint has tokens before
+   ThemeManager writes data-theme. */
+:root {
+    --header-glass-bg: color-mix(in srgb, var(--md-sys-color-surface) 62%, transparent);
+    --header-glass-bg-fallback: color-mix(in srgb, var(--md-sys-color-surface) 94%, transparent);
+    --header-border: color-mix(in srgb, var(--md-sys-color-outline) 14%, transparent);
+    --header-shine: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    --header-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.18);
     --cta-bg: linear-gradient(135deg, #4f46e5, #6366f1);
     --cta-shadow: 0 2px 12px rgba(79,70,229,0.3);
     --cta-hover-shadow: 0 4px 20px rgba(79,70,229,0.45);
@@ -457,7 +512,8 @@ button {
 }
 
 :root[data-theme='dark'] {
-    --header-bg: rgba(30, 27, 38, 0.92);
+    --header-shine: inset 0 1px 0 rgba(208, 188, 255, 0.08);
+    --header-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.45);
     --cta-bg: linear-gradient(135deg, #4F378B, #633B48);
     --cta-shadow: 0 2px 12px rgba(99,59,72,0.3);
     --cta-hover-shadow: 0 4px 20px rgba(99,59,72,0.45);
@@ -470,7 +526,7 @@ button {
 }
 
 :root[data-theme='pink'] {
-    --header-bg: rgba(255, 250, 251, 0.92);
+    --header-shadow: 0 8px 24px -12px rgba(125, 41, 80, 0.18);
     --cta-bg: linear-gradient(135deg, #7D2950, #db2777);
     --cta-shadow: 0 2px 12px rgba(219,39,119,0.3);
     --cta-hover-shadow: 0 4px 20px rgba(219,39,119,0.45);
