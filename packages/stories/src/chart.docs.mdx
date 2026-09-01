@@ -281,33 +281,6 @@ When datasets contain thousands of points, the chart automatically downsamples t
 
 ---
 
-## Missing Values & Gaps
-
-`null`, `undefined`, `NaN`, empty strings, and any other non-numeric value (booleans, arrays, ...) in a series field are treated as **gaps**, never coerced to `0`:
-
-- **Line series** — the path breaks at the gap and restarts with a fresh `M` command on the other side; no marker is drawn for the missing point.
-- **Bar series** — no bar is drawn for the gap.
-- **Area series** — the fill splits into separate closed runs around each gap.
-- **Y-axis domain** — computed from present values only; gaps never pull the domain toward zero.
-- **Isolated points** — a value whose immediate neighbours are both gaps would produce no visible line segment on its own, so the renderer emits a small `r=2` dot for it instead (line and area series).
-
-<Canvas of={Stories.MissingValues} />
-<Canvas of={Stories.IsolatedPoints} />
-
----
-
-## Animation Lifecycle
-
-Entry animations use SVG SMIL (`<animate begin="indefinite">`) rather than CSS transitions, because SMIL timelines start at document time `0` — a chart mounted well after page load would otherwise animate as if it had been running since load (or not animate the visible portion at all). To avoid that, the chart only starts each series' animation once the chart's SVG is actually attached to the document — building a chart that is never mounted never schedules animation frames, and mounting it later (not at build time) still plays the entry animation correctly once it lands in the DOM.
-
-The `MountedLate` story defers both `builder.build()` and the DOM append until 1.5s after the story itself loads, simulating a chart created lazily (e.g. inside a tab panel opened later, or a dialog shown on demand) — the entry animation still plays correctly once it lands in the document.
-
-<Canvas of={Stories.MountedLate} />
-
-Animations replay only when the data source changes after the first render — not on every unrelated re-render — and are skipped entirely when `withAnimation(false)` is set. See [Builder API](#builder-api) above.
-
----
-
 ## Keyboard
 
 | Key | Action |

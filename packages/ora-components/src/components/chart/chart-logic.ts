@@ -1,7 +1,6 @@
 import { BehaviorSubject, Observable, Subscription, combineLatest, map } from 'rxjs';
 import { ChartState, IndividualChartConfig, AxisConfig, ChartScales } from './types';
 import { HIGHLIGHT_DIAMETER } from './constants';
-import { readValue } from './value-utils';
 
 export class ChartLogic<ITEM> {
     private _data$ = new BehaviorSubject<ITEM[]>([]);
@@ -190,35 +189,24 @@ export class ChartLogic<ITEM> {
             state.data.forEach(item => {
                 let stackPos = 0;
                 let stackNeg = 0;
-                let hasStackedValue = false;
 
                 stackedCharts.forEach(c => {
-                    const val = readValue(item, c.field);
-                    if (val === null) return;
-                    hasStackedValue = true;
+                    const val = Number(item[c.field as keyof ITEM]) || 0;
                     if (val >= 0) stackPos += val;
                     else stackNeg += val;
                 });
 
-                if (hasStackedValue) {
+                if (stackedCharts.length > 0) {
                     min = Math.min(min, stackNeg);
                     max = Math.max(max, stackPos);
                 }
 
                 nonStackedCharts.forEach(c => {
-                    const val = readValue(item, c.field);
-                    if (val === null) return;
+                    const val = Number(item[c.field as keyof ITEM]) || 0;
                     min = Math.min(min, val);
                     max = Math.max(max, val);
                 });
             });
-
-            // Guard against an all-gap series *before* applying axis overrides,
-            // so withMin(0) alone (max still -Infinity) or withMax(500) alone
-            // (min still Infinity) each get a sane default for the side the
-            // user did not pin, instead of a NaN scale or a discarded override.
-            if (min === Infinity) min = 0;
-            if (max === -Infinity) max = 100;
 
             const axis = useSecondary ? state.secondaryYAxis : state.yAxis;
             if (axis?.min !== undefined && axis.min !== 'auto') min = axis.min;

@@ -4,7 +4,6 @@ import { ChartStyles } from './styles';
 import { ChartSvgArea } from './chart-svg-area';
 import { AxisRenderer } from './axis-renderer';
 import { SeriesRenderer } from './series-renderer';
-import { readValue } from './value-utils';
 import { ChartLegend } from './chart-legend';
 import { ChartTooltip } from './chart-tooltip';
 import { HIGHLIGHT_RADIUS } from './constants';
@@ -93,7 +92,6 @@ export class ChartViewport<ITEM> {
             sub.unsubscribe();
             this.logic.destroy();
             this.svgArea.destroy();
-            this.seriesRenderer.destroy();
             svg.removeEventListener('mousemove', handleMouseMove);
             svg.removeEventListener('mouseleave', handleMouseLeave);
         });
@@ -259,10 +257,8 @@ export class ChartViewport<ITEM> {
         this.lastState.charts.forEach(chart => {
             if (chart.type === 'bar') return;
 
-            const val = readValue(item, chart.field);
-            if (val === null) return; // gap: no ring/dot, tooltip already omits this series
-
             const scale = chart.useSecondaryAxis && secondaryYScale ? secondaryYScale : yScale;
+            const val = Number(item[chart.field as keyof ITEM]) || 0;
             const y = scale(val);
 
             // Ring highlight
