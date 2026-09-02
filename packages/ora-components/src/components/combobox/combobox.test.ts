@@ -1635,3 +1635,163 @@ describe('ComboBoxBuilder', () => {
         });
     });
 });
+
+describe('ComboBoxBuilder disabled state', () => {
+    const items = ['Apple', 'Banana', 'Cherry'];
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        getIOMock().reset();
+        document.body.innerHTML = '';
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+        jest.useRealTimers();
+        getIOMock().reset();
+    });
+
+    /** The dropdown chevron: the clickable icon wrapper that is a direct child of the input container. */
+    function chevron(container: HTMLElement): HTMLElement {
+        const input = container.querySelector('input[role="combobox"]') as HTMLElement;
+        return input.parentElement!.querySelector(':scope > div.cursor-pointer') as HTMLElement;
+    }
+
+    test('clicking the chevron of a disabled combobox does not open the list', () => {
+        const value$ = new BehaviorSubject<string | null>(null);
+        const container = new ComboBoxBuilder<string>()
+            .withItems(of(items))
+            .withValue(value$)
+            .withEnabled(of(false))
+            .build();
+        triggerContainerVisibleAndWait(container);
+
+        const input = screen.getByRole('combobox') as HTMLInputElement;
+        expect(input.disabled).toBe(true);
+        expect(chevron(container)).toHaveAttribute('aria-disabled', 'true');
+
+        fireEvent.click(chevron(container));
+        jest.advanceTimersByTime(50);
+
+        expect(input).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryAllByRole('option')).toHaveLength(0);
+        expect(value$.getValue()).toBeNull();
+    });
+
+    test('the programmatic open() API is ignored while disabled', () => {
+        const container = new ComboBoxBuilder<string>()
+            .withItems(of(items))
+            .withEnabled(of(false))
+            .build();
+        triggerContainerVisibleAndWait(container);
+
+        container.open();
+        jest.advanceTimersByTime(50);
+
+        expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    test('an open list closes when the combobox becomes disabled', () => {
+        const enabled$ = new BehaviorSubject(true);
+        const container = new ComboBoxBuilder<string>()
+            .withItems(of(items))
+            .withEnabled(enabled$)
+            .build();
+        triggerContainerVisibleAndWait(container);
+
+        fireEvent.click(chevron(container));
+        jest.advanceTimersByTime(50);
+        expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'true');
+
+        enabled$.next(false);
+        jest.advanceTimersByTime(50);
+        expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'false');
+
+        enabled$.next(true);
+        fireEvent.click(chevron(container));
+        jest.advanceTimersByTime(50);
+        expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'true');
+    });
+});
+
+describe('ComboBoxBuilder asInlineError', () => {
+    const items = ['Apple', 'Banana', 'Cherry'];
+
+    beforeEach(() => {
+        getIOMock().reset();
+        document.body.innerHTML = '';
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+        getIOMock().reset();
+    });
+
+    function buildWithError(error$: BehaviorSubject<string>, inline: boolean): HTMLElement {
+        const builder = new ComboBoxBuilder<string>()
+            .withItems(of(items))
+            .withCaption(of('Account'))
+            .withError(error$);
+        if (inline) builder.asInlineError();
+        const container = builder.build();
+        document.body.appendChild(container);
+        return container;
+    }
+
+    test('default mode shows the error as support text below the field', () => {
+        const error$ = new BehaviorSubject('This field is required');
+        const container = buildWithError(error$, false);
+
+        const supportText = container.querySelector('span.text-error') as HTMLElement;
+        expect(supportText.textContent).toBe('This field is required');
+        expect(supportText).not.toHaveClass('hidden');
+        expect(container.querySelector('button[aria-label^="Error:"]')).toBeNull();
+    });
+
+    test('inline mode hides the support text and renders an error icon with a popover', () => {
+        const error$ = new BehaviorSubject('This field is required');
+        const container = buildWithError(error$, true);
+        const input = screen.getByRole('combobox');
+
+        const supportText = container.querySelector('span.text-error') as HTMLElement;
+        expect(supportText.textContent).toBe('');
+        expect(supportText).toHaveClass('hidden');
+
+        const trigger = container.querySelector('button[aria-label^="Error:"]') as HTMLElement;
+        expect(trigger).not.toBeNull();
+        expect(trigger.getAttribute('aria-label')).toBe('Error: This field is required');
+        expect(input.parentElement).toContainElement(trigger);
+        expect(input.parentElement).toHaveClass('outline-error');
+        expect(input).toHaveAttribute('aria-invalid', 'true');
+
+        const popover = document.body.querySelector('.error-popover') as HTMLElement;
+        expect(popover.textContent).toBe('This field is required');
+    });
+
+    test('inline mode clears the icon, outline and popover when the error goes away', () => {
+        const error$ = new BehaviorSubject('This field is required');
+        const container = buildWithError(error$, true);
+        const input = screen.getByRole('combobox');
+
+        error$.next('');
+
+        expect(container.querySelector('button[aria-label^="Error:"]')).toBeNull();
+        expect(input.parentElement).not.toHaveClass('outline-error');
+        expect(input).toHaveAttribute('aria-invalid', 'false');
+        expect(document.body.querySelector('.error-popover')).toBeNull();
+    });
+
+    test('inline mode replaces the popover text when the error message changes', () => {
+        const error$ = new BehaviorSubject('Too short');
+        const container = buildWithError(error$, true);
+
+        error$.next('Still too short');
+
+        const triggers = container.querySelectorAll('button[aria-label^="Error:"]');
+        expect(triggers).toHaveLength(1);
+        expect(triggers[0].getAttribute('aria-label')).toBe('Error: Still too short');
+        const popovers = document.body.querySelectorAll('.error-popover');
+        expect(popovers).toHaveLength(1);
+        expect(popovers[0].textContent).toBe('Still too short');
+    });
+});

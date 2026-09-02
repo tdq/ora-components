@@ -14,7 +14,7 @@ It has the following methods:
 - `withMaxWidth(maxWidth: Observable<string>): this` - overrides the size's default max-width with any CSS width string.
 - `withBeforeClose(fn: () => boolean | Promise<boolean>): this` - guard consulted before the dialog closes. Returning `false` (or a promise resolving to `false`) cancels the close. It is **fail-closed**: a throwing or rejecting guard cancels the close rather than losing the user's work.
 - `withDraggable(draggable: boolean | Observable<boolean>): this` - enables/disables header dragging (default: enabled).
-- `withToolbar(): ToolbarBuilder` - defines toolbar in the dialog.
+- `withToolbar(): ToolbarBuilder` - defines bottom toolbar in the dialog.
 - `asGlass(): this` - sets special styling option for dialog and its content as transparent with blur background (glass effect).
 - `show(): void` - opens the dialog modally (appends to `document.body`, calls `showModal()`). Must be called after builder configuration is complete.
 - `close(): Promise<void>` - consults `withBeforeClose` (hence async) and, if allowed, closes the dialog and removes it from `document.body`. Clears inline positioning styles so the dialog re-centers on next `show()`.

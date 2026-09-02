@@ -17,6 +17,7 @@ import { ComboBoxStyle } from './types';
 import { cn, STYLE_MAP } from './styles';
 import { renderComboBoxInput } from './combobox-input';
 import { PopoverBuilder } from '../component-parts/popover';
+import { ErrorPopoverBuilder } from '../component-parts/error-popover';
 import { ListBoxBuilder } from '../listbox/listbox';
 import { ListBoxStyle } from '../listbox/types';
 import { createOptimizedPipeline, GatedObserver } from '../../utils/optimized-pipeline';
@@ -56,6 +57,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
     private maxHeight$: Observable<number> = of(256);
     private filterDebounceMs?: number;
     private isGlass: boolean = false;
+    private isInlineError: boolean = false;
 
     withItems(items: Observable<ITEM[]>): ComboBoxBuilder<ITEM> {
         this.items$ = items;
@@ -115,6 +117,16 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         return this;
     }
 
+    /**
+     * Displays errors inline — as a red outline on the input plus an error icon whose
+     * popover shows the message — instead of as support text below the field.
+     * Same behaviour as `TextFieldBuilder.asInlineError()`.
+     */
+    asInlineError(): ComboBoxBuilder<ITEM> {
+        this.isInlineError = true;
+        return this;
+    }
+
     withEnabled(enabled: Observable<boolean>): ComboBoxBuilder<ITEM> {
         this.enabled$ = enabled;
         return this;
@@ -164,6 +176,12 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             ariaControls: listboxId
         });
         container.appendChild(inputContainer);
+
+        // Inline-error slot: sits between the text input and the chevron; holds the
+        // ErrorPopover trigger while an error is present (asInlineError only).
+        const errorIconContainer = document.createElement('div');
+        errorIconContainer.className = 'flex items-center justify-center pr-px-4 z-10 hidden';
+        inputContainer.insertBefore(errorIconContainer, iconContainer);
 
         const error = document.createElement('span');
         error.className = 'md-label-small text-error px-px-16 hidden';
@@ -461,9 +479,20 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
         if (this.error$) {
             subs.add(this.error$.subscribe(text => {
-                error.textContent = text;
-                error.classList.toggle('hidden', !text);
                 const hasError = !!text;
+                error.textContent = this.isInlineError ? '' : text;
+                error.classList.toggle('hidden', this.isInlineError || !hasError);
+                input.setAttribute('aria-invalid', hasError ? 'true' : 'false');
+                if (this.isInlineError) {
+                    // Replacing the trigger removes its popover via registerDestroy.
+                    errorIconContainer.replaceChildren();
+                    errorIconContainer.classList.toggle('hidden', !hasError);
+                    if (hasError) {
+                        errorIconContainer.appendChild(
+                            new ErrorPopoverBuilder().withError(text).build()
+                        );
+                    }
+                }
                 inputContainer.classList.toggle('outline', hasError);
                 inputContainer.classList.toggle('outline-1', hasError);
                 inputContainer.classList.toggle('-outline-offset-1', hasError);
@@ -479,6 +508,12 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
                 input.disabled = !enabled;
                 inputContainer.classList.toggle('opacity-38', !enabled);
                 inputContainer.classList.toggle('cursor-not-allowed', !enabled);
+                iconContainer.classList.toggle('pointer-events-none', !enabled);
+                iconContainer.setAttribute('aria-disabled', String(!enabled));
+                // A list that is open when the field becomes disabled must not stay selectable.
+                if (!enabled && isExpanded$.value) {
+                    isExpanded$.next(false);
+                }
             }));
         }
 
@@ -561,6 +596,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
         iconContainer.onclick = (e) => {
             e.stopPropagation();
+            if (input.disabled) return;
             isExpanded$.next(!isExpanded$.value);
             input.focus();
         };
@@ -638,7 +674,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
         const element = container as unknown as ComboBoxElement<ITEM>;
         element.select = (item: ITEM | null) => selectItem(item);
-        element.open = () => isExpanded$.next(true);
+        element.open = () => { if (!input.disabled) isExpanded$.next(true); };
         element.close = () => isExpanded$.next(false);
 
         return element;

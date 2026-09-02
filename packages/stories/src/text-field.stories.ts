@@ -164,6 +164,145 @@ export const InlineValidation = () => {
     return container;
 };
 
+/**
+ * Every state of `asInlineError()` side by side: no error, static error in both
+ * styles, a live length validation, a manual toggle, and disabled-with-error.
+ * Click the error icon to open the message popover.
+ */
+export const InlineErrorStates = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.EXTRA_LARGE);
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('No error — renders like a plain TextField (no footer space reserved)'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Name'))
+            .withPlaceholder(of('Type anything...'))
+            .withError(of(''))
+            .asInlineError()
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Static error — TONAL and OUTLINED'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Email (tonal)'))
+            .withValue(new BehaviorSubject('not-an-email'))
+            .withError(of('Enter a valid email address'))
+            .asInlineError()
+            .withStyle(of(TextFieldStyle.TONAL))
+    );
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Email (outlined)'))
+            .withValue(new BehaviorSubject('not-an-email'))
+            .withError(of('Enter a valid email address'))
+            .asInlineError()
+            .withStyle(of(TextFieldStyle.OUTLINED))
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Live validation — required, at least 3 characters'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    const live$ = new BehaviorSubject('');
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Username'))
+            .withPlaceholder(of('Start typing...'))
+            .withValue(live$)
+            .withError(live$.pipe(map(v => (!v ? 'Required' : v.length < 3 ? 'Too short' : ''))))
+            .asInlineError()
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Manual toggle'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    const toggled$ = new BehaviorSubject<string>('');
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Reference'))
+            .withError(toggled$)
+            .asInlineError()
+    );
+    layout.addSlot().withContent(
+        new ButtonBuilder()
+            .withCaption(toggled$.pipe(map(e => (e ? 'Clear error' : 'Show error'))))
+            .withStyle(of(ButtonStyle.OUTLINED))
+            .withClick(() => toggled$.next(toggled$.getValue() ? '' : 'Reference already exists'))
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Disabled with error'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Locked'))
+            .withValue(new BehaviorSubject('read only'))
+            .withEnabled(of(false))
+            .withError(of('Cannot be changed'))
+            .asInlineError()
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+export const InlineErrorGlass = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.EXTRA_LARGE);
+
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Glass, no error'))
+            .withPlaceholder(of('Type anything...'))
+            .withError(of(''))
+            .asInlineError()
+            .asGlass()
+    );
+
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Glass, inline error (tonal)'))
+            .withValue(new BehaviorSubject('not-an-email'))
+            .withError(of('Enter a valid email address'))
+            .asInlineError()
+            .asGlass()
+            .withStyle(of(TextFieldStyle.TONAL))
+    );
+
+    layout.addSlot().withContent(
+        new TextFieldBuilder()
+            .withLabel(of('Glass, inline error (outlined)'))
+            .withValue(new BehaviorSubject('not-an-email'))
+            .withError(of('Enter a valid email address'))
+            .asInlineError()
+            .asGlass()
+            .withStyle(of(TextFieldStyle.OUTLINED))
+    );
+
+    const container = layout.build();
+    container.classList.add('flex-1', 'p-8', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
+
+    return container;
+};
+
 export const DocumentedFeatures = () => {
     const layout = new LayoutBuilder()
         .asVertical()

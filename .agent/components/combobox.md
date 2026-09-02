@@ -19,7 +19,7 @@ It has the following methods:
 - `withAriaLabel(label: string | Observable<string>): this` - sets the input's accessible name explicitly.
 - `withMaxHeight(maxHeight: number | Observable<number>): this` - preferred dropdown height in px (default 256), clamped to the space available in the viewport.
 - `withFilterDebounce(ms: number): this` - overrides the adaptive filter debounce (see [Filtering](#filtering)). Use e.g. 300 when `withItems` is fed by a server-side search.
-- `asInlineError(): this` - *(not yet implemented)* sets error state displaying as field style change.
+- `asInlineError(): this` - displays errors as a red outline plus an `ErrorPopoverBuilder` icon inside the input (between the text and the chevron) instead of support text below the field; `aria-invalid` is set on the input either way. Same contract as `TextFieldBuilder.asInlineError()`.
 
 `build()` returns a `ComboBoxElement<ITEM>` — the container element plus a small imperative API, mirroring DatePicker's `showPopover`/`hidePopover`/`toggle`:
 - `select(item: ITEM | null): void` - selects an item programmatically (updates the input text, the highlight, and writes back through `withValue` when it is a `Subject`).

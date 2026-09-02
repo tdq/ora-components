@@ -3,6 +3,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
 import { LabelBuilder, LabelSize } from '@tdq/ora-components';
+import { ButtonBuilder, ButtonStyle } from '@tdq/ora-components';
 import { createActionLog, createButton, createControlStrip } from './story-helpers';
 
 export default {
@@ -120,6 +121,136 @@ export const States = () => {
 
     const container = layout.build();
     container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+/**
+ * `asInlineError()` — the error is shown as a red outline plus an error icon
+ * (click it for the message) instead of support text under the field.
+ * Covers: no error, static error in both styles, a live "required" validation,
+ * a manual toggle, and the glass variant.
+ */
+export const InlineErrorStates = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.EXTRA_LARGE);
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('No error — the field renders exactly like a plain ComboBox'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withCaption(of('Fruit'))
+            .withError(of(''))
+            .asInlineError()
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Static error — TONAL and OUTLINED'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withCaption(of('Fruit (tonal)'))
+            .withError(of('This field is required'))
+            .asInlineError()
+            .withStyle(of(ComboBoxStyle.TONAL))
+    );
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withCaption(of('Fruit (outlined)'))
+            .withError(of('This field is required'))
+            .asInlineError()
+            .withStyle(of(ComboBoxStyle.OUTLINED))
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Live validation — required until a value is picked'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    const required$ = new BehaviorSubject<string | null>(null);
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withCaption(of('Fruit (required)'))
+            .withValue(required$)
+            .withError(required$.pipe(map(v => (v ? '' : 'Pick a fruit'))))
+            .asInlineError()
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Manual toggle'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    const toggled$ = new BehaviorSubject<string>('');
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withCaption(of('Fruit (toggle)'))
+            .withError(toggled$)
+            .asInlineError()
+    );
+    layout.addSlot().withContent(
+        new ButtonBuilder()
+            .withCaption(toggled$.pipe(map(e => (e ? 'Clear error' : 'Show error'))))
+            .withStyle(of(ButtonStyle.OUTLINED))
+            .withClick(() => toggled$.next(toggled$.getValue() ? '' : 'Something went wrong'))
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(of('Disabled with error'))
+            .withSize(LabelSize.MEDIUM)
+    );
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withCaption(of('Fruit (disabled)'))
+            .withEnabled(of(false))
+            .withError(of('Cannot be changed'))
+            .asInlineError()
+    );
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};
+
+export const InlineErrorGlass = () => {
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withCaption(of('Glass, no error'))
+            .withError(of(''))
+            .asInlineError()
+            .asGlass()
+    );
+
+    layout.addSlot().withContent(
+        new ComboBoxBuilder<string>()
+            .withItems(of(FRUITS))
+            .withCaption(of('Glass, inline error'))
+            .withError(of('This field is required'))
+            .asInlineError()
+            .asGlass()
+    );
+
+    const container = layout.build();
+    container.classList.add('flex-1', 'p-12', 'bg-gradient-to-br', 'from-indigo-500', 'via-purple-500', 'to-pink-500');
 
     return container;
 };

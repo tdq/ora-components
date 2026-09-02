@@ -76,6 +76,7 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
   Controls the interactive state. When `false` the input is disabled with reduced opacity.
 
 - **`withError`** — `(error: Observable<string>): this`
+- **`asInlineError`** — `(): this` — show errors as an outline + icon popover instead of support text
   Sets the validation error message shown below the input. An empty string clears the error.
 
 - **`withClass`** — `(className: Observable<string>): this`
@@ -141,6 +142,16 @@ The `InitialValue` story shows how to pre-select an item using `withValue` with 
 The `States` story demonstrates the disabled and error states side by side. The disabled combobox has reduced opacity and no pointer events. The error combobox shows a validation message with a red outline.
 
 <Canvas of={Stories.States} />
+
+## Inline Errors
+
+`asInlineError()` switches error display from support text below the field to a red outline plus an error icon inside the input; clicking the icon opens a popover with the message. This mirrors `TextFieldBuilder.asInlineError()` and keeps the field height stable in forms. The `InlineErrorStates` story covers: no error, a static error in both styles, a live "required" validation, a manual toggle, and disabled-with-error.
+
+<Canvas of={Stories.InlineErrorStates} />
+
+`InlineErrorGlass` shows the same mode on the glass variant.
+
+<Canvas of={Stories.InlineErrorGlass} />
 
 ---
 
