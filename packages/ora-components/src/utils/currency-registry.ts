@@ -27,8 +27,9 @@ export class CurrencyRegistry {
     /**
      * Formats a Money object into a localized string.
      * @param precision Optional number of decimal places. When omitted, uses the currency's default (typically 2).
+     * @param locale Optional BCP 47 locale. Defaults to 'en-US'.
      */
-    static format(money: Money, precision?: number): string {
+    static format(money: Money, precision?: number, locale: string = 'en-US'): string {
         if (!money || typeof money.amount !== 'number') return '';
 
         const fractionOptions: Intl.NumberFormatOptions = precision !== undefined
@@ -36,7 +37,7 @@ export class CurrencyRegistry {
             : {};
 
         try {
-            return new Intl.NumberFormat('en-US', {
+            return new Intl.NumberFormat(locale, {
                 style: 'currency',
                 currency: money.currencyId.toUpperCase(),
                 currencyDisplay: 'symbol',

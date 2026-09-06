@@ -394,26 +394,17 @@ describe('createCurrencyDropdown', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Spec 8 — window resize closes the popover
-    // Note: PopoverBuilder skips close on resize when focus is inside the popover
-    // (mobile virtual keyboard guard). After opening, the <ul> has focus (via
-    // openDropdown's ul.focus() call). We blur it first so resize closes normally.
+    // Spec 8 — window resize keeps the popover open and repositions it
+    // (PopoverBuilder re-fits to the viewport on resize; only outside scroll / click close it)
     // ──────────────────────────────────────────────────────────────────────────
-    describe('Spec 8: window resize closes the popover', () => {
-        test('window resize event closes the open popover when focus is outside it', () => {
-            const { clickButton, isOpen, getListbox } = makeSetup();
+    describe('Spec 8: window resize repositions the popover', () => {
+        test('window resize event keeps the popover open', () => {
+            const { clickButton, isOpen } = makeSetup();
             clickButton();
             expect(isOpen()).toBe(true);
 
-            // Blur the focused <ul> so the resize handler's focus-inside guard doesn't block close
-            const ul = getListbox();
-            ul?.blur();
-            (document.activeElement as HTMLElement)?.blur?.();
-            // jsdom may not update document.activeElement via blur(); assign to body directly
-            Object.defineProperty(document, 'activeElement', { value: document.body, configurable: true });
-
             window.dispatchEvent(new Event('resize'));
-            expect(isOpen()).toBe(false);
+            expect(isOpen()).toBe(true);
         });
     });
 
@@ -546,7 +537,7 @@ describe('createCurrencyDropdown', () => {
             const popover = getPopover()!;
             // New behaviour: end alignment uses CSS left (not right)
             expect(popover.style.left).not.toBe('');
-            expect(popover.style.right).toBe('');
+            expect(popover.style.right).toBe('auto');
         });
 
         test('popover left style equals button rect.right (pre-render, offsetWidth=0 in jsdom)', () => {
@@ -600,7 +591,7 @@ describe('createCurrencyDropdown', () => {
 
             // end alignment, offsetWidth=0 (jsdom) → pre-render: left = posRef.right = 500
             expect(popover.style.left).toBe(`${posRefRight}px`);
-            expect(popover.style.right).toBe('');
+            expect(popover.style.right).toBe('auto');
 
             // Must NOT equal the button-based left (450)
             expect(popover.style.left).not.toBe('450px');
@@ -619,7 +610,7 @@ describe('createCurrencyDropdown', () => {
             const popover = getPopover()!;
             // offsetWidth=0 (jsdom) → pre-render: left = button.right = 300
             expect(popover.style.left).toBe(`${mockRight}px`);
-            expect(popover.style.right).toBe('');
+            expect(popover.style.right).toBe('auto');
         });
     });
 
@@ -716,5 +707,29 @@ describe('createCurrencyDropdown', () => {
             const span = container.querySelector('span');
             expect(span?.textContent).toBe('€');
         });
+    });
+});
+
+describe('currency list scrolling (popover never scrolls itself)', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    test('the listbox <ul> receives the clamped max-height; the popover wrapper stays overflow-hidden', () => {
+        const currency$ = new BehaviorSubject<string | null>('USD');
+        const element = createCurrencyDropdown(['USD', 'EUR', 'GBP', 'JPY', 'CHF'], currency$, new BehaviorSubject(true), false);
+        document.body.appendChild(element);
+
+        const button = element.querySelector('button') as HTMLButtonElement;
+        button.click();
+
+        const popover = document.body.querySelector('[popover]') as HTMLElement;
+        expect(popover.className).toContain('overflow-hidden');
+        expect(popover.className).not.toContain('overflow-y-auto');
+
+        const ul = popover.querySelector('ul[role="listbox"]') as HTMLElement;
+        // jsdom reports zero anchor rects, so the clamp resolves against the preferred
+        // 256px max; the important part is that the <ul>, not the popover, is bounded.
+        expect(ul.style.maxHeight).not.toBe('');
     });
 });

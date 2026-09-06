@@ -13,6 +13,7 @@ It has the following methods:
 - `withMinDate(min: Observable<Date>): this` - Sets minimum selectable date.
 - `withMaxDate(max: Observable<Date>): this` - Sets maximum selectable date.
 - `withFormat(format: string): this` - sets date format (default: 'DD-MM-YYYY')
+- `withTestId(id: string): this` - sets `data-testid` on the rendered `<input>`. See [Test ids](../builder-pattern.md#test-ids).
 
 ## Requirements
 - DatePicker should not allow to type not in defined format. For example, if format is DD/MM/YYYY it should not allow to set anything like "asbasbds".
@@ -21,6 +22,8 @@ It has the following methods:
 ### Calendar
 It should open by calling `showPopover()` method.
 It should close on any event outside of the calendar.
+
+**Subscription ownership.** `renderCalendar()` returns `{ element, subscription }` rather than a bare element: the calendar subscribes to `selectedDate$`, `isExpanded$`, `minDate$` and `maxDate$`, and those subscriptions must be owned by the DatePicker, not left dangling. `DatePickerBuilder.build()` adds the returned `subscription` to its `subs` list, which `registerDestroy(container, ...)` tears down; it also completes the internal `internalValue$` / `isExpanded$` subjects on destroy. Without this a long-lived `minDate$`/`maxDate$` `BehaviorSubject` (a common app-level pattern) keeps every DatePicker that ever rendered alive.
 
 ## State Management
 
@@ -71,3 +74,7 @@ Key rules:
   - Arrow keys to navigate calendar grid.
   - `Enter` to select, `Esc` to close.
   - When the calendar closes, focus returns to the element that triggered it (input or calendar button).
+
+## Calendar popover sizing
+
+The calendar popover configures **no** `withMaxHeight`, so the popover renders at the calendar's natural height with no clamp and no scrollbar (`PopoverBuilder`'s max-height is opt-in; the wrapper is `overflow-hidden`, never a scroll container). If the calendar doesn't fit below the input, the popover flips above it.

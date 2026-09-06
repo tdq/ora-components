@@ -54,6 +54,9 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 - **`asGlass`** — `(isGlass?: boolean): this`
   Enables the glass-effect variant with frosted background and blur. Overrides the default style colours with translucent surfaces. Defaults to `true`.
 
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the rendered `<button>` element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`build`** — `(): HTMLButtonElement`
   Constructs and returns the native `<button>` element. Subscribe to observables and wire up the DOM. Call once per builder.
 

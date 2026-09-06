@@ -159,4 +159,24 @@ describe('CheckboxBuilder', () => {
         });
     });
 
+
+    it('should set data-testid on the input', () => {
+        const el = new CheckboxBuilder().withTestId('my-checkbox').build();
+        expect(el.querySelector('input')?.dataset.testid).toBe('my-checkbox');
+    });
+
+    it('should put data-testid on the element that receives focus', () => {
+        const el = new CheckboxBuilder().withTestId('my-checkbox').build();
+        document.body.appendChild(el);
+
+        const tagged = el.querySelector('[data-testid="my-checkbox"]') as HTMLElement;
+        expect(tagged.tagName).toBe('INPUT');
+        expect((tagged as HTMLInputElement).type).toBe('checkbox');
+        expect(el.querySelectorAll('input').length).toBe(1);
+
+        tagged.focus();
+        expect(document.activeElement).toBe(tagged);
+
+        document.body.removeChild(el);
+    });
 });

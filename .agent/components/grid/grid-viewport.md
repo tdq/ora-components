@@ -4,7 +4,7 @@
 The `GridViewport` class handles the virtualization and scroll management for the grid, ensuring only visible rows are rendered to maintain performance.
 
 ## Virtualization Logic
-- **Row Height**: Fixed at `52px` (as defined in `GridStyles`).
+- **Row Height**: `GRID_ROW_HEIGHT` (52px, exported from `GridStyles`) by default, overridable per grid via `GridBuilder.withRowHeight(px)`. The viewport, `GridRow` and `GridGroupRow` all read the same value — it must never be re-declared locally, or the scroll maths and the rendered rows drift apart. `GRID_HEADER_HEIGHT` and `GRID_TOOLBAR_HEIGHT_ALLOWANCE` are exported alongside it and are what `withAutoHeight(maxRows)` adds to the row total.
 - **Buffer**: Extra rows (default: `5`) are rendered above and below the visible viewport to prevent flickering during scrolls.
 - **Rendering Loop**: `renderVisibleRows()` calculates the visible range based on `scrollTop` and `clientHeight` of the viewport element.
 - **Dynamic Resizing**: Uses a `ResizeObserver` to automatically trigger `renderVisibleRows()` whenever the viewport's dimensions change. This ensures the correct number of rows is displayed even if the grid's initial size is zero or changes after initialization.

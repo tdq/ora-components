@@ -294,7 +294,7 @@ function createNewInvoiceButton(invoices$: BehaviorSubject<Invoice[]>): HTMLElem
 
 export function createPayables(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'flex-1 flex flex-col p-px-24';
+    container.className = 'flex-1 flex flex-col';
 
     const invoices$ = new BehaviorSubject<Invoice[]>(ALL_INVOICES);
 

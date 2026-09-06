@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { getAgentDir } from '../data-paths.js';
 
-const VALID_TOPICS = ['architecture', 'builder-pattern', 'reactive', 'theme', 'glass-effects', 'icons', 'component', 'layout'];
+const VALID_TOPICS = ['architecture', 'builder-pattern', 'reactive', 'theme', 'glass-effects', 'icons', 'component', 'layout', 'app-shell'];
 
 export function getArchitectureGuide(topic: string) {
   const normalized = topic.toLowerCase().trim();

@@ -8,6 +8,7 @@ It has the following methods:
 - `asGlass(): this` - sets special styling option for tabs and its contents as transparent with blur background (glass effect).
 - `addTab(): TabBuilder` - adds new tab to the tabs. It can have one child component.
 - `withClass(className: Observable<string>): this` - sets class css name of the tabs.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 
 TabBuilder has the following methods:
 - `withCaption(caption: Observable<string>): this` - sets label of the tab.

@@ -9,12 +9,12 @@ The `AxisBuilder` is used to configure the appearance and behavior of X and Y ax
 ### Axis Labeling
 - `withLabel(label: string): this`: Sets the axis title.
 - `withVisible(visible: boolean): this`: Toggles the axis line and labels visibility.
-- `withFormat(format: string | ((value: any) => string)): this`: Sets the tick labels format (e.g., 'currency', 'percentage', or a custom function).
+- `withFormat(format: ValueFormat): this`: Sets the value format shared by this axis's tick labels **and** the tooltip values of every series bound to it (primary or secondary), unless a series overrides it with its own `withFormat`. Accepts a preset string or a `(value: number) => string` function. Presets: `'number'` (grouped, no rounding — the default when `withFormat` is not called), `'money'` (grouped, 2 decimals), `'integer'` (grouped, 0 decimals), `'compact'` (`1.2K` / `3.4M`), `'percentage'` (value is a fraction: `0.153` → `15.3%`), `'currency'` (Intl currency using the id set via the chart's `withCurrency` method — see `chart.md` — default `'EUR'`), and `` `currency:${string}` `` (e.g. `'currency:USD'`). An unrecognized preset string `console.warn`s once and falls back to `'number'` with the axis's default tick precision (the precision it would use with no `withFormat` at all). Category (X) axes ignore `withFormat` — dates/labels pass through unformatted.
 - `withTicks(amount: number): this`: Sets the approximate number of ticks on the axis.
 
 ### Grid & Layout
-- `withGridLines(visible: boolean): this`: Toggles the display of major grid lines.
-- `withMinorGridLines(visible: boolean): this`: Toggles the display of minor grid lines.
+- `withGridLines(visible: boolean): this`: Toggles the display of major grid lines. Off by default — grid lines are opt-in on both the X and Y axis. When enabled they are painted behind the series, never across them. A secondary Y axis never draws grid lines, so a dual-axis chart cannot end up with two overlapping horizontal grids.
+- `withMinorGridLines(visible: boolean): this`: Toggles the display of minor grid lines. Off by default.
 - `withPosition('left' | 'right' | 'top' | 'bottom'): this`: Sets the position of the axis (for multi-axis charts).
 
 ### Scaling & Bounds

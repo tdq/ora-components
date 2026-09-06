@@ -75,6 +75,9 @@ All builder methods return `this` for chaining. Feed RxJS observables into the r
 - **`asAnnouncing`** — `(): this`
   Configures the ticker for screen-readers. Removes the `aria-hidden="true"` attribute from cloned marquee tracks and introduces an `aria-live="polite"` region that announces rate fluctuations.
 
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the ticker's root host element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`build`** — `(): HTMLElement`
   Assembles and returns the native HTMLElement. Requires `withData` to have been called.
 

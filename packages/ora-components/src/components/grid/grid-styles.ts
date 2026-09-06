@@ -1,11 +1,54 @@
-const cellBorderB = 'border-b border-outline/10 dark:border-stone-50/10';
+const cellBorderB = 'border-b border-[var(--ora-grid-border)]';
+
+/** Default per-row height in px. Single source of truth — GridViewport/GridRow/GridGroupRow
+ *  accept it via constructor and GridBuilder.withRowHeight() overrides it. */
+export const GRID_ROW_HEIGHT = 52;
+
+/** Header row height in px. Fixed independently of GRID_ROW_HEIGHT (see GridStyles.header /
+ *  headerWrapper) — used as the header allowance in GridBuilder.withAutoHeight(). */
+export const GRID_HEADER_HEIGHT = 52;
+
+/**
+ * Toolbar height allowance in px, budgeted by GridBuilder.withAutoHeight() when withToolbar()
+ * is also configured. The toolbar's real height is intrinsic (button height + no extra
+ * vertical padding on TOOLBAR_STYLES.container) and cannot be measured at build() time — the
+ * container isn't attached to the document yet, so offsetHeight would read 0 in both jsdom and
+ * real browsers. This constant tracks the button height (`h-[46px]`, see button.ts
+ * BASE_CLASSES) plus a small breathing-room buffer, consistent with GRID_HEADER_HEIGHT being a
+ * fixed constant rather than a live measurement.
+ */
+export const GRID_TOOLBAR_HEIGHT_ALLOWANCE = 56;
+
+/**
+ * ARIA grid row-numbering convention, single source of truth for GridHeader/GridRow/
+ * GridBuilder: the header is always row 1 (`GRID_HEADER_ARIA_ROWINDEX`), so a data row's
+ * 1-based `aria-rowindex` is its position in the flattened rows array (GROUP_HEADER rows
+ * included) plus 2, and `aria-rowcount` is that same flattened row count plus 1 for the header.
+ */
+export const GRID_HEADER_ARIA_ROWINDEX = 1;
+
+export function toAriaRowIndex(flattenedRowIndex: number): number {
+    return flattenedRowIndex + GRID_HEADER_ARIA_ROWINDEX + 1;
+}
+
+export function toAriaRowCount(flattenedRowCount: number): number {
+    return flattenedRowCount + GRID_HEADER_ARIA_ROWINDEX;
+}
 
 export const GridStyles = {
     container: 'flex flex-col w-full text-sm text-foreground bg-background rounded-lg border border-outline/30 dark:border-stone-50/20 overflow-hidden min-h-0',
     glass: 'bg-transparent',
 
-    header: 'flex flex-row items-stretch font-semibold h-[52px] text-on-surface-variant text-[11px] uppercase tracking-wider',
-    headerWrapper: 'flex-none sticky top-0 z-30 w-full bg-[color-mix(in_srgb,var(--md-sys-color-surface-container-low)_30%,transparent)] overflow-hidden',
+    // Wraps the header rowgroup + body rowgroup ONLY (role="grid" lives here, not on
+    // `container`) — the toolbar is a sibling of this element inside `container`, since a
+    // toolbar button is not a valid owned child of role="grid" (axe: aria-required-children).
+    // Flex-col so header stacks above the scrolling viewport, flex-1/min-h-0 so it fills
+    // whatever height `container` has left after the toolbar and still lets the viewport's
+    // own overflow-auto do the scrolling.
+    gridBody: 'flex flex-col flex-1 min-h-0 w-full',
+
+    header: 'flex flex-row items-stretch font-semibold h-[52px] text-[var(--ora-grid-header-fg)] text-[11px] uppercase tracking-wider',
+    headerWrapper: 'flex-none sticky top-0 z-30 w-full bg-[var(--ora-grid-header-bg)] overflow-hidden',
     headerGlass: '!bg-transparent',
 
     viewport: 'flex-1 overflow-auto relative outline-none',
@@ -28,9 +71,9 @@ export const GridStyles = {
     actionHeaderCell: 'flex-none sticky right-0 bg-surface-container-low border-l border-outline/10 dark:border-stone-50/10 border-b border-outline/20 dark:border-stone-50/20 z-20 ml-auto',
     actionHeaderCellGlass: 'glass-effect !bg-white/20',
 
-    row: 'absolute w-full flex items-stretch transition-colors duration-200 group border-l-2 border-l-transparent hover:bg-surface-variant/20 hover:border-l-primary dark:hover:bg-slate-800/60 [will-change:transform] pointer-events-auto',
+    row: 'absolute w-full flex items-stretch transition-colors duration-200 group border-l-2 border-l-transparent hover:bg-[var(--ora-grid-row-hover-bg)] hover:border-l-primary [will-change:transform] pointer-events-auto',
     rowOdd: 'bg-surface-container-low/20',
-    rowSelected: 'bg-primary/10 border-l-primary',
+    rowSelected: 'bg-[var(--ora-grid-row-selected-bg)] border-l-primary',
     rowEditable: 'cursor-text',
     rowGlass: 'hover:bg-white/10 dark:hover:bg-white/5',
     actionCellGlass: 'glass-effect !bg-white/10',

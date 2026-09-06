@@ -84,6 +84,9 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 - **`withMaxValue`** — `(max: Observable<number>) => this`
   Sets the maximum allowed amount. Values above this are clamped on blur.
 
+- **`withTestId`** — `(id: string) => this`
+  Sets `data-testid` on the `<input>` element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`withStep`** — `(step: Observable<number>) => this`
   Sets the step increment for keyboard arrow navigation. Defaults to `1`.
 

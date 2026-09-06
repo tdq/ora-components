@@ -1,6 +1,6 @@
 {
   "name": "@tdq/ora-components",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Ora web components library",
   "license": "MIT",
   "repository": {
@@ -28,80 +28,88 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./style.css": {
       "import": "./dist/ora-components.css",
       "default": "./dist/ora-components.css"
     },
     "./button": {
-      "import": "./dist/button/index.js",
-      "types": "./dist/button/index.d.ts"
+      "types": "./dist/button/index.d.ts",
+      "import": "./dist/button/index.js"
     },
     "./chart": {
-      "import": "./dist/chart/index.js",
-      "types": "./dist/chart/index.d.ts"
+      "types": "./dist/chart/index.d.ts",
+      "import": "./dist/chart/index.js"
+    },
+    "./chat": {
+      "types": "./dist/chat/index.d.ts",
+      "import": "./dist/chat/index.js"
     },
     "./checkbox": {
-      "import": "./dist/checkbox/index.js",
-      "types": "./dist/checkbox/index.d.ts"
+      "types": "./dist/checkbox/index.d.ts",
+      "import": "./dist/checkbox/index.js"
     },
     "./combobox": {
-      "import": "./dist/combobox/index.js",
-      "types": "./dist/combobox/index.d.ts"
+      "types": "./dist/combobox/index.d.ts",
+      "import": "./dist/combobox/index.js"
     },
     "./datepicker": {
-      "import": "./dist/datepicker/index.js",
-      "types": "./dist/datepicker/index.d.ts"
+      "types": "./dist/datepicker/index.d.ts",
+      "import": "./dist/datepicker/index.js"
     },
     "./dialog": {
-      "import": "./dist/dialog/index.js",
-      "types": "./dist/dialog/index.d.ts"
+      "types": "./dist/dialog/index.d.ts",
+      "import": "./dist/dialog/index.js"
     },
     "./form": {
-      "import": "./dist/form/index.js",
-      "types": "./dist/form/index.d.ts"
+      "types": "./dist/form/index.d.ts",
+      "import": "./dist/form/index.js"
     },
     "./grid": {
-      "import": "./dist/grid/index.js",
-      "types": "./dist/grid/index.d.ts"
+      "types": "./dist/grid/index.d.ts",
+      "import": "./dist/grid/index.js"
     },
     "./label": {
-      "import": "./dist/label/index.js",
-      "types": "./dist/label/index.d.ts"
+      "types": "./dist/label/index.d.ts",
+      "import": "./dist/label/index.js"
     },
     "./layout": {
-      "import": "./dist/layout/index.js",
-      "types": "./dist/layout/index.d.ts"
+      "types": "./dist/layout/index.d.ts",
+      "import": "./dist/layout/index.js"
     },
     "./listbox": {
-      "import": "./dist/listbox/index.js",
-      "types": "./dist/listbox/index.d.ts"
+      "types": "./dist/listbox/index.d.ts",
+      "import": "./dist/listbox/index.js"
     },
     "./numberfield": {
-      "import": "./dist/numberfield/index.js",
-      "types": "./dist/numberfield/index.d.ts"
+      "types": "./dist/numberfield/index.d.ts",
+      "import": "./dist/numberfield/index.js"
     },
     "./panel": {
-      "import": "./dist/panel/index.js",
-      "types": "./dist/panel/index.d.ts"
+      "types": "./dist/panel/index.d.ts",
+      "import": "./dist/panel/index.js"
+    },
+    "./sidebar": {
+      "types": "./dist/sidebar/index.d.ts",
+      "import": "./dist/sidebar/index.js"
     },
     "./tabs": {
-      "import": "./dist/tabs/index.js",
-      "types": "./dist/tabs/index.d.ts"
+      "types": "./dist/tabs/index.d.ts",
+      "import": "./dist/tabs/index.js"
     },
     "./textfield": {
-      "import": "./dist/textfield/index.js",
-      "types": "./dist/textfield/index.d.ts"
+      "types": "./dist/textfield/index.d.ts",
+      "import": "./dist/textfield/index.js"
     },
     "./toolbar": {
-      "import": "./dist/toolbar/index.js",
-      "types": "./dist/toolbar/index.d.ts"
+      "types": "./dist/toolbar/index.d.ts",
+      "import": "./dist/toolbar/index.js"
     },
     "./router": {
-      "import": "./dist/router/index.js",
-      "types": "./dist/router/index.d.ts"
+      "types": "./dist/router/index.d.ts",
+      "import": "./dist/router/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -109,17 +117,20 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "QUICKSTART.md"
   ],
   "sideEffects": [
     "**/*.css"
   ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run build:css && npm run build:types && node scripts/reorganize-types.mjs && node scripts/generate-manifest.mjs",
-    "build:css": "tailwindcss -i ./src/index.css -o ./dist/ora-components.css --minify",
+    "build": "vite build && npm run build:css && npm run build:types && node scripts/reorganize-types.mjs && node scripts/generate-manifest.mjs && node scripts/add-nodenext-extensions.mjs",
+    "build:css": "tailwindcss -i ./src/index-base.css -o ./dist/ora-components-base.css --minify && tailwindcss -i ./src/index-layered.css -o ./dist/ora-components-layered.css --minify && node scripts/wrap-css-layer.mjs compose ./dist/ora-components-base.css ./dist/ora-components-layered.css ./dist/ora-components.css",
     "build:types": "tsc -p tsconfig.build.json",
     "test": "jest",
+    "preverify": "npm run build:css",
+    "verify": "node scripts/check-css-globals.mjs && node scripts/check-theme-tokens.mjs && node scripts/check-docs-vs-manifest.mjs && node scripts/check-quickstart.mjs",
     "pack:local": "npm run build && npm pack"
   },
   "peerDependencies": {

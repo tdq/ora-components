@@ -3,7 +3,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { FieldStyle } from '../../theme';
 import { Money } from '../../types/money';
-import { clamp, roundToStep, formatNumber, getPrecision } from '@/utils/number';
+import { clamp, roundToStep, formatNumber, getPrecision, getLocaleSeparators, normalizeLocaleNumberString, escapeRegExp, WHITESPACE_GROUP_CLASS_CONTENT, MINUS_SIGN_CLASS_CONTENT } from '@/utils/number';
 import { CurrencyRegistry } from '@/utils/currency-registry';
 import { createCurrencyDropdown } from './currency-dropdown';
 import { createMoneyFieldErrorIcon } from './money-field-error';
@@ -49,19 +49,67 @@ export class MoneyFieldLogic {
         private state: MoneyFieldState
     ) { }
 
-    private getSeparators(locale?: string): { decimal: string; grouping: string } {
-        // Default for English-style locales
-        let decimal = '.';
-        let grouping = ',';
-        if (locale) {
-            const lower = locale.toLowerCase();
-            // European-style locales where comma is decimal separator
-            if (lower.startsWith('de') || lower.startsWith('fr') || lower.startsWith('es') || lower.startsWith('it') || lower.startsWith('pt')) {
-                decimal = ',';
-                grouping = '.';
-            }
+    /**
+     * Locale grouping/decimal/minus separators, derived from `Intl`
+     * (`utils/number.getLocaleSeparators`) rather than a hardcoded region heuristic — several
+     * locales (`fr-FR`, `pt-PT`, ...) group with a narrow no-break space, `de-CH` groups with a
+     * right single quotation mark, and `sv-SE`/`nb-NO`/`fi-FI` use U+2212 as their minus sign —
+     * none of which a `'.'/','/'-'` heuristic can represent.
+     */
+    private getSeparators(locale?: string): { decimal: string; grouping: string; minus: string } {
+        const seps = getLocaleSeparators(locale);
+        return { decimal: seps.decimal, grouping: seps.group, minus: seps.minus };
+    }
+
+    /**
+     * Filters a raw (unedited) input string down to what's allowed while typing: digits, the
+     * locale's decimal separator, its grouping separator (kept, not stripped — grouping is only
+     * (re)applied on blur/external value push via `syncInputValue`; stripping it here would
+     * rewrite e.g. "1,234.50" to "1234.50" on every keystroke and, since assigning
+     * `target.value` always moves the caret to the end, reset the caret on every edit of a value
+     * >= 1000), and a minus sign — ASCII `-`, the locale's own minus glyph (`sv-SE`/`nb-NO`/
+     * `fi-FI` use U+2212), or U+2212 itself regardless of locale, all normalized to ASCII `-` so
+     * downstream logic (leading-minus dedup, `normalizeLocaleNumberString`, `parseFloat`) only
+     * ever sees one minus character.
+     *
+     * Pure function of its arguments — called twice per keystroke (once for the full value, once
+     * for the pre-caret prefix) so the caller can compute how many characters were stripped
+     * ahead of the caret and adjust it accordingly.
+     */
+    private filterMoneyInputChars(raw: string, allowDecimal: boolean, locale: string | undefined): string {
+        const { decimal, grouping, minus } = this.getSeparators(locale);
+
+        const decimalClass = escapeRegExp(decimal);
+        const groupingClass = /^\s$/.test(grouping) ? WHITESPACE_GROUP_CLASS_CONTENT : escapeRegExp(grouping);
+        const minusClass = (minus === '-' ? '' : escapeRegExp(minus)) + MINUS_SIGN_CLASS_CONTENT;
+        // The trailing '-' is the one position a hyphen is unambiguously literal in every regex
+        // flavor (avoids relying on escape-collapsing quirks mid-class).
+        let filtered = raw.replace(new RegExp(`[^0-9${decimalClass}${groupingClass}${minusClass}-]`, 'g'), '');
+
+        // Normalize every minus variant to ASCII '-' before the leading-minus logic below, so it
+        // only has to reason about one character regardless of locale.
+        filtered = filtered.replace(new RegExp(`[${minusClass}]`, 'g'), '-');
+
+        const hasMinusAtStart = filtered.startsWith('-');
+        filtered = (hasMinusAtStart ? '-' : '') + filtered.replace(/-/g, '');
+
+        if (allowDecimal) {
+            // Only one decimal separator is meaningful; keep the first occurrence and drop any
+            // extras (grouping-separator occurrences, which may share the same character as the
+            // decimal in some locale/grouping combinations, are left untouched here — `decimal`
+            // and `grouping` are always distinct characters per Intl).
+            let seenDecimal = false;
+            filtered = Array.from(filtered).filter(ch => {
+                if (ch !== decimal) return true;
+                if (seenDecimal) return false;
+                seenDecimal = true;
+                return true;
+            }).join('');
+        } else {
+            filtered = filtered.replace(new RegExp(decimalClass, 'g'), '');
         }
-        return { decimal, grouping };
+
+        return filtered;
     }
 
     init() {
@@ -245,31 +293,25 @@ export class MoneyFieldLogic {
 
         this.input.oninput = (e) => {
             const target = e.target as HTMLInputElement;
-            let val = target.value;
+            const val = target.value;
             const allowDecimal = latestFormat !== 'integer';
-            const { decimal, grouping } = this.getSeparators(latestLocale);
 
-            let filtered = val.replace(/[^0-9.,-]/g, '');
-            // Remove grouping separators
-            const groupingEscaped = grouping === '.' ? '\\.' : grouping;
-            filtered = filtered.replace(new RegExp(groupingEscaped, 'g'), '');
-            const hasMinusAtStart = filtered.startsWith('-');
-            filtered = (hasMinusAtStart ? '-' : '') + filtered.replace(/-/g, '');
+            const filtered = this.filterMoneyInputChars(val, allowDecimal, latestLocale);
 
-            if (allowDecimal) {
-                const parts = filtered.split(/[.,]/);
-                if (parts.length > 2) {
-                    const firstSepIndex = filtered.search(/[.,]/);
-                    const sep = filtered[firstSepIndex];
-                    filtered = parts[0] + sep + parts.slice(1).join('');
-                }
-            } else {
-                filtered = filtered.replace(/[.,]/g, '');
+            if (val !== filtered) {
+                // selectionStart indexes into `val` (the raw, pre-filter string); re-filtering
+                // just the prefix up to the caret tells us how many characters ahead of it were
+                // stripped, so the caret lands where the surviving character actually is instead
+                // of drifting right by one per stripped character.
+                const rawCaret = target.selectionStart;
+                const newCaret = rawCaret === null
+                    ? filtered.length
+                    : this.filterMoneyInputChars(val.slice(0, rawCaret), allowDecimal, latestLocale).length;
+                target.value = filtered;
+                target.setSelectionRange(newCaret, newCaret);
             }
 
-            if (val !== filtered) target.value = filtered;
-
-            const normalized = filtered.replace(decimal, '.');
+            const normalized = normalizeLocaleNumberString(filtered, latestLocale);
             const parsed = parseFloat(normalized);
             if (!isNaN(parsed)) {
                 const currencyId = this.currentValue?.currencyId || this.currentCurrency || (this.state.currencies.length > 0 ? this.state.currencies[0] : 'USD');
@@ -417,7 +459,9 @@ export class MoneyFieldLogic {
     }
 
     private syncInputValue(val: Money | null, format: string, precision: number | undefined, step: number, locale: string | undefined, force: boolean = false) {
-        const formatted = formatNumber(val?.amount ?? null, { format, precision, step, locale });
+        // Display value is always grouped (matches MoneyColumn / MoneyKPICard); parsing stays
+        // symmetric because normalizeNumberString strips the locale's grouping separator.
+        const formatted = formatNumber(val?.amount ?? null, { format, precision, step, locale, useGrouping: true });
         const currentParsed = this.parseValue(this.input.value, locale);
         if (force || currentParsed !== (val?.amount ?? null) || this.input.value === '' && val !== null) {
             this.input.value = formatted;
@@ -426,25 +470,12 @@ export class MoneyFieldLogic {
 
     private parseValue(val: string, locale?: string): number | null {
         if (!val.trim()) return null;
-        const normalized = this.normalizeNumberString(val, locale);
+        // Delegates to utils/number.normalizeLocaleNumberString, which strips the locale's real
+        // grouping separator (including whitespace variants like fr-FR/pt-PT's narrow no-break
+        // space) instead of a hardcoded '.'/',' heuristic.
+        const normalized = normalizeLocaleNumberString(val, locale);
         const parsed = parseFloat(normalized);
         return isNaN(parsed) ? null : parsed;
-    }
-
-    private normalizeNumberString(val: string, locale?: string): string {
-        const { decimal, grouping } = this.getSeparators(locale);
-        // Remove grouping separators
-        const groupingEscaped = grouping === '.' ? '\\.' : grouping;
-        let cleaned = val.replace(new RegExp(groupingEscaped, 'g'), '');
-        // Replace decimal separator with '.' for parseFloat
-        cleaned = cleaned.replace(decimal, '.');
-        // Ensure only one decimal point
-        const parts = cleaned.split('.');
-        if (parts.length > 2) {
-            // If multiple decimal separators, keep only first
-            cleaned = parts[0] + '.' + parts.slice(1).join('');
-        }
-        return cleaned;
     }
 
     destroy() {

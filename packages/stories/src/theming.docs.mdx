@@ -180,64 +180,43 @@ Typography is provided through utility classes rather than custom properties:
 
 ---
 
-## Custom theme
+## Consumer Theming
 
-Creating a custom theme is as simple as defining a new `data-theme` selector with your token overrides. You can switch to it by calling `themeManager.setTheme('your-theme-name')`.
+All theming goes through CSS custom properties only — there is no JavaScript theme API beyond `ThemeManager` for reading the current theme state.
 
-### Global custom theme (amber brand)
+### Global rebrand
+
+To rebrand all components, override `--md-sys-color-*` and `--ora-*` tokens on `:root` and `[data-theme="dark"]` in your **unlayered** application CSS. Because ora-components uses `@layer ora-components`, any unlayered rule in your app automatically wins without needing `!important`.
 
 ```css
-[data-theme="amber"] {
-  --md-sys-color-primary: #D97706;
-  --md-sys-color-on-primary: #FFFFFF;
-  --md-sys-color-primary-container: #FEF3C7;
-  --md-sys-color-on-primary-container: #451A03;
-
-  --md-sys-color-secondary: #92400E;
-  --md-sys-color-on-secondary: #FFFFFF;
-  --md-sys-color-secondary-container: #FFFBEB;
-  --md-sys-color-on-secondary-container: #292524;
-
-  --md-sys-color-background: #FFFBEB;
-  --md-sys-color-on-background: #292524;
-  --md-sys-color-surface: #FFFCF0;
-  --md-sys-color-on-surface: #292524;
-  --md-sys-color-surface-variant: #FDE68A;
-  --md-sys-color-on-surface-variant: #451A03;
-
-  --md-sys-color-outline: #D4A373;
-  --md-sys-color-error: #DC2626;
-  --md-sys-color-on-error: #FFFFFF;
+/* app.css (unlayered) */
+:root {
+  --md-sys-color-primary: #0F766E;
+  --ora-font-family: "IBM Plex Sans", system-ui, sans-serif;
+  --ora-grid-header-bg: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+}
+[data-theme="dark"] {
+  --md-sys-color-primary: #5EEAD4;
 }
 ```
 
+### Per-instance theming
+
+To theme a single component instance, use `withClass()` with scoped token overrides:
+
 ```typescript
-import { themeManager } from '@tdq/ora-components';
-
-themeManager.setTheme('amber');
+const grid = new GridBuilder<Row>()
+  .withItems(rows$)
+  .withClass(of('ledger-grid'))
+  .build();
 ```
-
-The `data-theme` attribute on `<html>` will be set to `amber`, and all components will immediately reflect the new palette.
-
-### Scoped theming with class selector
-
-You can also scope a custom theme to a specific element by using a class selector instead of `data-theme`:
 
 ```css
-.my-custom-section {
-  --md-sys-color-primary: #7C3AED;
-  --md-sys-color-on-primary: #FFFFFF;
-  --md-sys-color-primary-container: #EDE9FE;
-  --md-sys-color-on-primary-container: #3B0764;
+.ledger-grid {
+  --ora-grid-header-bg: color-mix(in srgb, var(--md-sys-color-tertiary) 12%, transparent);
+  --ora-grid-row-hover-bg: color-mix(in srgb, var(--md-sys-color-tertiary) 4%, transparent);
 }
 ```
-
-```typescript
-const section = document.querySelector('.my-custom-section');
-section.classList.add('my-custom-section');
-```
-
-All Aura components inside `.my-custom-section` will inherit the overridden colours, while components outside remain unaffected.
 
 ---
 

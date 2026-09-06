@@ -83,6 +83,9 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 - **`asEmail`** — `(): this`
   Sets `type="email"` for native email validation.
 
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the `<input>` element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`asInlineError`** — `(): this`
   Displays validation errors as a coloured ring and error icon next to the input instead of support text below.
 
@@ -139,6 +142,16 @@ The `LabelsAndErrors` story demonstrates labelling and validation. Each field ha
 The `InlineValidation` story shows the `asInlineError` mode. When enabled, errors appear as a coloured ring on the input wrapper with an error icon tooltip, rather than support text below the field.
 
 <Canvas of={Stories.InlineValidation} />
+
+### Inline error states
+
+The `InlineErrorStates` story lays out every state the inline mode can be in: no error (no footer space is reserved, unlike the default mode), a static error in both styles, a live validation stream, a manual toggle, and a disabled field carrying an error. Click the error icon to open the message popover.
+
+<Canvas of={Stories.InlineErrorStates} />
+
+`InlineErrorGlass` shows the same mode on top of the glass effect.
+
+<Canvas of={Stories.InlineErrorGlass} />
 
 ---
 

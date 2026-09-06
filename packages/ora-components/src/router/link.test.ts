@@ -287,4 +287,63 @@ describe('LinkBuilder', () => {
         expect(router.navigate).not.toHaveBeenCalled();
         expect(event.defaultPrevented).toBe(false);
     });
+
+    it('withTestId sets data-testid on the <a> element', () => {
+        const link = new LinkBuilder(makeRouter()).withHref('/home').withTestId('home-link').build();
+        expect(link.getAttribute('data-testid')).toBe('home-link');
+    });
+
+    it('should apply custom classes reactively and replace on new emission', () => {
+        const { BehaviorSubject } = require('rxjs');
+        const class$ = new BehaviorSubject('custom-class-1');
+        const link = new LinkBuilder(makeRouter())
+            .withHref('/home')
+            .withCaption('Home')
+            .withClass(class$)
+            .build();
+
+        expect(link.classList.contains('custom-class-1')).toBe(true);
+
+        class$.next('custom-class-2');
+        expect(link.classList.contains('custom-class-1')).toBe(false);
+        expect(link.classList.contains('custom-class-2')).toBe(true);
+    });
+
+    it('should handle multiple space-separated classes in withClass', () => {
+        const { BehaviorSubject } = require('rxjs');
+        const class$ = new BehaviorSubject('class-1 class-2');
+        const link = new LinkBuilder(makeRouter())
+            .withHref('/home')
+            .withCaption('Home')
+            .withClass(class$)
+            .build();
+
+        expect(link.classList.contains('class-1')).toBe(true);
+        expect(link.classList.contains('class-2')).toBe(true);
+
+        class$.next('class-3');
+        expect(link.classList.contains('class-1')).toBe(false);
+        expect(link.classList.contains('class-2')).toBe(false);
+        expect(link.classList.contains('class-3')).toBe(true);
+    });
+
+    it('should handle className$ emissions without losing active class state', () => {
+        const { BehaviorSubject } = require('rxjs');
+        const class$ = new BehaviorSubject('custom-1');
+        const link = new LinkBuilder(makeRouter())
+            .withHref('/test')
+            .withCaption('Test')
+            .withClass(class$)
+            .build();
+
+        // Emit a new custom class
+        class$.next('custom-2');
+        expect(link.classList.contains('custom-2')).toBe(true);
+
+        // Emit another custom class
+        class$.next('custom-3');
+        expect(link.classList.contains('custom-3')).toBe(true);
+        expect(link.classList.contains('custom-1')).toBe(false);
+        expect(link.classList.contains('custom-2')).toBe(false);
+    });
 });

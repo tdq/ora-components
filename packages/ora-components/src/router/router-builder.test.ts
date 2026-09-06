@@ -1,10 +1,14 @@
 import { RouterBuilder } from './router-builder';
 import { ComponentBuilder } from '../core/component-builder';
+import { Subject } from 'rxjs';
 import '@testing-library/jest-dom';
+import { registerDestroy } from '../core/destroyable-element';
 
 jest.mock('../core/destroyable-element', () => ({
     registerDestroy: jest.fn(),
 }));
+
+const mockedRegisterDestroy = registerDestroy as jest.Mock;
 
 const mockBuilder = (el?: HTMLElement): ComponentBuilder => ({
     build: () => el ?? document.createElement('div'),
@@ -448,5 +452,82 @@ describe('RouterBuilder', () => {
         expect(paths[paths.length - 1]).toBe('/b');
         
         consoleErrorSpy.mockRestore();
+    });
+
+    it('withTestId sets data-testid on the outlet element', () => {
+        const outlet = new RouterBuilder().withTestId('app-outlet').build();
+        expect(outlet.getAttribute('data-testid')).toBe('app-outlet');
+    });
+
+    it('keeps data-testid on the outlet across a route change that re-renders its content', async () => {
+        const home = document.createElement('div');
+        home.id = 'home';
+        const about = document.createElement('div');
+        about.id = 'about';
+
+        const router = new RouterBuilder().withTestId('app-outlet');
+        router.addRoute().withPattern('/').withContent(() => mockBuilder(home));
+        router.addRoute().withPattern('/about').withContent(() => mockBuilder(about));
+
+        const outlet = router.build();
+        await Promise.resolve();
+        expect(outlet.contains(home)).toBe(true);
+
+        router.navigate('/about');
+        await Promise.resolve();
+        await Promise.resolve();
+
+        // The outlet content really swapped, and the outlet attribute survived it.
+        expect(outlet.contains(about)).toBe(true);
+        expect(outlet.contains(home)).toBe(false);
+        expect(outlet.getAttribute('data-testid')).toBe('app-outlet');
+    });
+
+    it('withClass merges an emission with the base classes on the outlet', () => {
+        const class$ = new Subject<string>();
+        const outlet = new RouterBuilder().withClass(class$).build();
+
+        expect(outlet.className).toContain('w-full');
+        expect(outlet.className).toContain('h-full');
+
+        class$.next('my-outlet');
+
+        expect(outlet.className).toContain('w-full');
+        expect(outlet.className).toContain('h-full');
+        expect(outlet.className).toContain('my-outlet');
+    });
+
+    it('withClass replaces the previous extra class instead of accumulating', () => {
+        const class$ = new Subject<string>();
+        const outlet = new RouterBuilder().withClass(class$).build();
+
+        class$.next('first-class');
+        expect(outlet.className).toContain('first-class');
+
+        class$.next('second-class');
+        expect(outlet.className).toContain('second-class');
+        expect(outlet.className).not.toContain('first-class');
+        expect(outlet.className).toContain('w-full');
+        expect(outlet.className).toContain('h-full');
+    });
+
+    it('unsubscribes the withClass subscription on destroy', () => {
+        mockedRegisterDestroy.mockClear();
+
+        const class$ = new Subject<string>();
+        const outlet = new RouterBuilder().withClass(class$).build();
+
+        // registerDestroy is mocked, so invoke the teardown callback it was given directly.
+        expect(mockedRegisterDestroy).toHaveBeenCalledWith(outlet, expect.any(Function));
+        const destroyCallback = mockedRegisterDestroy.mock.calls[0][1] as () => void;
+        destroyCallback();
+
+        const classNameBeforeFurtherEmission = outlet.className;
+        class$.next('after-destroy');
+
+        // A further emission after teardown must not change the outlet's class —
+        // proof that the withClass subscription was actually unsubscribed.
+        expect(outlet.className).toBe(classNameBeforeFurtherEmission);
+        expect(outlet.className).not.toContain('after-destroy');
     });
 });

@@ -18,6 +18,7 @@ It uses the builder pattern (implements ComponentBuilder) and follows Material D
 - `asPassword(): this` - sets input type="password" with a visibility toggle icon.
 - `asEmail(): this` - sets input type="email" and enables native email validation.
 - `asInlineError(): this` - displays errors as field style change instead of support text below.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered `<input>`. See [Test ids](../builder-pattern.md#test-ids).
 
 ### FieldStyle enum (from `@/theme`)
 - `TONAL` - filled background style with bottom active indicator

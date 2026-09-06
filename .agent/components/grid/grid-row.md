@@ -38,11 +38,14 @@ Tooltips render in the browser top layer, which means they escape all overflow c
 ### Memory Management
 All event listeners (checkbox `change`, action button `mouseenter`/`mouseleave`/`click`) are registered with an `AbortController` via `{ signal }`. On `update()`, `listenerAbort.abort()` bulk-cancels every listener before `innerHTML` is cleared. This prevents listener leaks in the virtualized row pool where rows are recycled across data changes.
 
+### Custom cell identity & teardown
+Custom columns are re-rendered only when the cell's cached item reference (`__prevItem`) changes, not when the renderer's *output* differs. Comparing output meant a renderer that builds a fresh element per call rebuilt the cell on every update and destroyed focus, text selection and open dropdowns inside it. On `destroy()` and on row recycling the row clears custom cell content so `registerDestroy` / lifecycle-boundary callbacks inside the cell actually fire.
+
 ### Ghost Tooltip Cleanup
 `update()` queries all `[popover]` elements inside the row and calls `hidePopover()` on any that match `:popover-open` before clearing the DOM. This prevents tooltips stranded in the top layer after a row is recycled.
 
 ### Inline Cell Editing
-When both the grid has `asEditable()` enabled and a column has `col.editable && col.renderEditor` configured (via `asEditable()` on the column builder), the cell is made focusable (`tabIndex=0`, `cursor-text`) and renders a display value at rest. Clicking the cell (or pressing **Enter** while it is focused) calls `enterEditMode`.
+When both the grid has `asEditable()` enabled and a column has `col.editable && (col.renderEditor || col.focusEditableCell)` configured (via `asEditable()` on the column builder), the cell is made focusable (`tabIndex=0`, `cursor-text`) and renders a display value at rest. Columns with only `focusEditableCell` (custom columns) join the keyboard chain but never enter editor mode — activation just focuses the resolved target, with no commit and no field write. See [Editable cells: two kinds](grid.md#editable-cells-two-kinds). Clicking the cell (or pressing **Enter** while it is focused) calls `enterEditMode`.
 
 **`enterEditMode` lifecycle:**
 1. Calls `onActivateEditor(row, cell)` on the viewport — this commits any previously open editor.

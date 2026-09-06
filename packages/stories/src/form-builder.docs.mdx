@@ -84,6 +84,11 @@ All builder methods return `this` for chaining. Pass RxJS observables into react
 - **`withToolbar`** — `() => ToolbarBuilder`
   Creates and returns a `ToolbarBuilder` for adding action buttons at the bottom of the form.
 
+- **`withTestId`** — `(id: string) => this`
+  Sets `data-testid` on the form's root host element for end-to-end tests, by delegating to the
+  underlying `LayoutBuilder.withTestId()`. A static string — call once; it never changes at
+  runtime.
+
 - **`build`** — `() => HTMLElement`
   Constructs and returns the form element with all configured fields, toolbar, and header. Call once per builder.
 

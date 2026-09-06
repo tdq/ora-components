@@ -1,6 +1,7 @@
 import { ChartState, ChartScales } from './types';
 import { ChartStyles } from './styles';
 import { LabelBuilder, LabelSize } from '../label';
+import { readValue } from './value-utils';
 import { of } from 'rxjs';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -41,15 +42,20 @@ export class ChartTooltip<ITEM> {
             return null;
         }
 
-        const { xScale, xStep, barWidth } = scales;
-        
+        const { xScale, xStep, barGroupWidth, barWidth } = scales;
+
         let index = 0;
         let xPos = viewWidth / 2;
-        
+
         if (N > 1) {
             const effectiveXStep = xStep || (viewWidth / (N - 1));
-            const effectiveBarWidth = barWidth || 0;
-            // Calculate index based on the same formula used in logic: xPos = 8 + barWidth/2 + index * xStep
+            // `barGroupWidth` (the group's actual rendered span once bar series are grouped)
+            // mirrors what `ChartLogic.calculateScales` uses for `xScale`'s own edge padding;
+            // it equals `barWidth` whenever there's at most one bar slot, and falling back to
+            // `barWidth` keeps this working against a hand-built `scales` object that predates
+            // the field (see `ChartScales.barGroupWidth`).
+            const effectiveBarWidth = barGroupWidth ?? barWidth ?? 0;
+            // Calculate index based on the same formula used in logic: xPos = 8 + barGroupWidth/2 + index * xStep
             index = Math.max(0, Math.min(N - 1, Math.round((x - 8 - effectiveBarWidth / 2) / effectiveXStep)));
             xPos = xScale(index);
         }
@@ -76,9 +82,25 @@ export class ChartTooltip<ITEM> {
         this.element.appendChild(header);
 
         state.charts.forEach(chart => {
-            const val = item[chart.field as keyof ITEM];
-            const displayVal = chart.tooltipRenderer ? chart.tooltipRenderer(item) : val;
-            
+            const raw = item[chart.field as keyof ITEM];
+            let displayVal: unknown;
+            if (chart.tooltipRenderer) {
+                displayVal = chart.tooltipRenderer(item);
+            } else {
+                const num = readValue(item, chart.field as string);
+                if (num === null) {
+                    displayVal = raw;
+                } else {
+                    // A series marked useSecondaryAxis without a configured secondary axis
+                    // (scales.formatSecondary undefined) falls through to the primary format
+                    // rather than showing a raw, unformatted number.
+                    const format = scales.seriesFormats.get(chart)
+                        ?? (chart.useSecondaryAxis ? scales.formatSecondary : undefined)
+                        ?? scales.formatPrimary;
+                    displayVal = format ? format(num) : num;
+                }
+            }
+
             const row = document.createElement('div');
             row.className = 'flex items-center gap-2';
             

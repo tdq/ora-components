@@ -5,7 +5,9 @@ import { twMerge } from 'tailwind-merge';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '../../core/destroyable-element';
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
+import { VirtualRowsViewport } from '../../utils/virtual-rows-viewport';
 import { ListBoxStyle } from './types';
+import { applyTestId } from '../../core/test-id';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -19,11 +21,13 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
     private items$: Observable<ITEM[]> = of([]);
     private itemCaptionProvider: (item: ITEM) => string = (item) => String(item);
     private itemIdProvider: (item: ITEM) => string | number = (item) => String(item);
+    private optionIdProvider?: (item: ITEM) => string;
     private value$: Subject<ITEM | null> = new Subject<ITEM | null>();
     private height$?: Observable<number>;
     private error$?: Observable<string>;
     private isGlass: boolean = false;
     private externalFocusedIndex$?: Observable<number>;
+    private testId?: string;
 
     withCaption(caption: Observable<string>): this {
         this.caption$ = caption;
@@ -60,6 +64,16 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
         return this;
     }
 
+    /**
+     * Assign a stable DOM id to each rendered option `<li>`. Lets a parent (e.g. ComboBox)
+     * reference the focused option via aria-activedescendant without indexing into the DOM,
+     * which is essential once rows are virtualized (only a window is present).
+     */
+    withOptionIdProvider(provider: (item: ITEM) => string): this {
+        this.optionIdProvider = provider;
+        return this;
+    }
+
     withValue(value: Subject<ITEM | null>): this {
         this.value$ = value;
         return this;
@@ -88,6 +102,12 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
      */
     withFocusedIndex(index$: Observable<number>): this {
         this.externalFocusedIndex$ = index$;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -231,88 +251,171 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
             focusedIndex$,
         ]);
 
+        // Captured latest state read by renderRow.
+        let selectedId: string | number | null = null;
+        let currentStyle = ListBoxStyle.TONAL;
+        let currentFocusedIndex = -1;
+
+        const buildOption = (index: number, item: ITEM): HTMLElement => {
+            const id = this.itemIdProvider(item);
+            const isSelected = selectedId === id;
+            const isFocused = currentFocusedIndex === index;
+            const caption = this.itemCaptionProvider(item);
+            const style = currentStyle;
+
+            const li = document.createElement('li');
+            li.role = 'option';
+            if (this.optionIdProvider) {
+                li.id = this.optionIdProvider(item);
+            }
+            li.setAttribute('aria-selected', String(isSelected));
+            li.setAttribute('aria-setsize', String(currentItems.length));
+            li.setAttribute('aria-posinset', String(index + 1));
+
+            const isTonal = (style === ListBoxStyle.TONAL || style === ListBoxStyle.BORDERLESS) && !this.isGlass;
+            const isOutlined = style === ListBoxStyle.OUTLINED && !this.isGlass;
+
+            let itemTextColor: string;
+            let selectedBg: string;
+            let hoverBg: string;
+            let focusBg: string;
+
+            if (this.isGlass) {
+                itemTextColor = '';
+                selectedBg = 'bg-white/40';
+                hoverBg = 'hover:bg-black/5 dark:hover:bg-white/10';
+                focusBg = 'bg-black/10 dark:bg-white/20';
+            } else {
+                itemTextColor = (isSelected && isOutlined)
+                    ? 'text-on-primary-container'
+                    : (isTonal ? 'text-on-secondary-container' : 'text-on-surface');
+                selectedBg = isTonal ? 'bg-on-secondary-container/20' : 'bg-primary-container';
+                hoverBg = 'hover:bg-on-surface/8';
+                focusBg = 'bg-on-surface/12';
+            }
+
+            // `relative` is kept intentionally: the direct (ComboBox) path needs it so
+            // the focus indicator and state-layer children position against the <li>.
+            // The virtual path overrides position to `absolute` via inline style set by
+            // VirtualRowsViewport, which also satisfies the positioned-ancestor requirement.
+            li.className = cn(
+                'px-px-16 py-px-12 cursor-pointer body-large transition-colors relative overflow-hidden group',
+                itemTextColor,
+                isSelected && 'font-bold',
+                isSelected && selectedBg,
+                !isSelected && hoverBg,
+                isFocused && !isSelected && focusBg
+            );
+
+            if (isFocused) {
+                const focusIndicator = document.createElement('div');
+                focusIndicator.className = 'absolute left-0 top-0 bottom-0 w-[4px] bg-primary z-20';
+                li.appendChild(focusIndicator);
+            }
+
+            const stateLayer = document.createElement('div');
+            stateLayer.className = cn(
+                'absolute inset-0 pointer-events-none transition-colors',
+                'active:bg-current active:opacity-15'
+            );
+            li.appendChild(stateLayer);
+
+            const content = document.createElement('span');
+            content.className = 'relative z-10';
+            content.textContent = caption;
+            li.appendChild(content);
+
+            li.onclick = () => {
+                if (this.value$) {
+                    this.value$.next(item);
+                }
+            };
+
+            return li;
+        };
+
+        // All listboxes use VirtualRowsViewport for efficient windowing — including when
+        // driven by an external focus index (ComboBox mode). External consumers reference
+        // the focused option by its stable id (see withOptionIdProvider) rather than indexing
+        // into ul.children, so the spacer VirtualRowsViewport prepends is not a problem.
+        const vp = new VirtualRowsViewport<ITEM>({
+            scrollEl: list,
+            rowHeight: 44,
+            renderRow: buildOption,
+        });
+        registerDestroy(container, () => vp.destroy());
+
         const itemsSub = itemsState$.subscribe(([items, selectedItem, style, focusedIndex]) => {
+            const itemsChanged = items !== currentItems;
             currentItems = items;
-            list.innerHTML = '';
 
-            const selectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
+            const newSelectedId = selectedItem ? this.itemIdProvider(selectedItem) : null;
+            const prevSelectedId = selectedId;
+            const selectionChanged = newSelectedId !== prevSelectedId;
+            selectedId = newSelectedId;
 
-            items.forEach((item, index) => {
-                const id = this.itemIdProvider(item);
-                const isSelected = selectedId === id;
-                const isFocused = focusedIndex === index;
-                const caption = this.itemCaptionProvider(item);
+            const styleChanged = style !== currentStyle;
+            currentStyle = style;
 
-                const li = document.createElement('li');
-                li.role = 'option';
-                li.setAttribute('aria-selected', String(isSelected));
+            const prevFocusedIndex = currentFocusedIndex;
+            const focusChanged = focusedIndex !== prevFocusedIndex;
+            currentFocusedIndex = focusedIndex;
 
-                // Styling logic mirrored from ComboBox
-                const isTonal = (style === ListBoxStyle.TONAL || style === ListBoxStyle.BORDERLESS) && !this.isGlass;
-                const isOutlined = style === ListBoxStyle.OUTLINED && !this.isGlass;
+            if (itemsChanged) {
+                vp.setItems(items);
+                // A focused index outside the initial window (e.g. ComboBox seeding
+                // withFocusedIndex with a value well into a 1000-item list) must still be
+                // rendered — setItems() only lays out the window at the top of the list.
+                if (focusedIndex >= 0) vp.scrollToIndex(focusedIndex);
+                return;
+            }
 
-                let itemTextColor: string;
-                let selectedBg: string;
-                let hoverBg: string;
-                let focusBg: string;
+            if (styleChanged) {
+                // Style can change a row's rendered height (e.g. a different style
+                // variant changes font-weight/padding for the selected state) —
+                // invalidate cached heights first so refresh() re-measures from the new
+                // style instead of reusing heights measured under the old one.
+                vp.invalidateMeasurements();
+                // Style affects every rendered row — patch the whole window in place.
+                vp.refresh();
+                if (focusChanged && focusedIndex >= 0) vp.scrollToIndex(focusedIndex);
+                return;
+            }
 
-                if (this.isGlass) {
-                    itemTextColor = '';
-                    selectedBg = 'bg-white/40';
-                    hoverBg = 'hover:bg-black/5 dark:hover:bg-white/10';
-                    focusBg = 'bg-black/10 dark:bg-white/20';
-                } else {
-                    itemTextColor = (isSelected && isOutlined)
-                        ? 'text-on-primary-container'
-                        : (isTonal ? 'text-on-secondary-container' : 'text-on-surface');
-                    selectedBg = isTonal ? 'bg-on-secondary-container/20' : 'bg-primary-container';
-                    hoverBg = 'hover:bg-on-surface/8';
-                    focusBg = 'bg-on-surface/12';
+            // Targeted patch: only the previously/newly focused and previously/newly
+            // selected rows need to be re-rendered — not the whole window. This is what
+            // keeps keyboard navigation from rebuilding every rendered row per keypress.
+            // Each branch batches its indices into a single updateRows() call so the
+            // O(window) render() cost is paid once per branch, not once per row.
+            if (focusChanged) {
+                const focusIndices: number[] = [];
+                if (prevFocusedIndex >= 0) focusIndices.push(prevFocusedIndex);
+                if (focusedIndex >= 0) focusIndices.push(focusedIndex);
+                if (focusIndices.length > 0) vp.updateRows(focusIndices);
+                if (focusedIndex >= 0) {
+                    // scrollToIndex adjusts scrollTop (and renders the target row if it
+                    // was outside the previous window) when the focused row is off-screen.
+                    vp.scrollToIndex(focusedIndex);
                 }
+            }
 
-                li.className = cn(
-                    'px-px-16 py-px-12 cursor-pointer body-large transition-colors relative overflow-hidden group',
-                    itemTextColor,
-                    isSelected && 'font-bold',
-                    isSelected && selectedBg,
-                    !isSelected && hoverBg,
-                    isFocused && !isSelected && focusBg
-                );
-
-                // Focus Accent Bar
-                if (isFocused) {
-                    const focusIndicator = document.createElement('div');
-                    focusIndicator.className = 'absolute left-0 top-0 bottom-0 w-[4px] bg-primary z-20';
-                    li.appendChild(focusIndicator);
-                }
-
-                // State Layer (for focus/hover/active visual consistency)
-                const stateLayer = document.createElement('div');
-                stateLayer.className = cn(
-                    'absolute inset-0 pointer-events-none transition-colors',
-                    'active:bg-current active:opacity-15'
-                );
-                li.appendChild(stateLayer);
-
-                const content = document.createElement('span');
-                content.className = 'relative z-10';
-                content.textContent = caption;
-                li.appendChild(content);
-
-                li.onclick = () => {
-                    if (this.value$) {
-                        this.value$.next(item);
+            if (selectionChanged) {
+                // Patch every RENDERED row whose id matches the old or new selection —
+                // not just the first match. itemIdProvider is not guaranteed injective
+                // (the default provider collapses distinct objects to "[object Object]"),
+                // so multiple rendered rows can legitimately share an id and all of them
+                // must flip their selected styling together. Scanning only the current
+                // window (not the full item array) keeps this off the O(items) path.
+                const { start, end } = vp.getRenderedRange();
+                const selectionIndices: number[] = [];
+                for (let i = start; i <= end; i++) {
+                    if (i < 0 || i >= currentItems.length) continue;
+                    const id = this.itemIdProvider(currentItems[i]);
+                    if (id === prevSelectedId || id === selectedId) {
+                        selectionIndices.push(i);
                     }
-                };
-
-                list.appendChild(li);
-            });
-
-            if (focusedIndex >= 0) {
-                const item = list.children[focusedIndex] as HTMLElement | null;
-                if (item && typeof item.scrollIntoView === 'function') {
-                    item.scrollIntoView({ block: 'nearest' });
                 }
+                if (selectionIndices.length > 0) vp.updateRows(selectionIndices);
             }
         });
         registerDestroy(container, () => itemsSub.unsubscribe());
@@ -328,6 +431,8 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
             registerDestroy(container, () => errorSub.unsubscribe());
             container.appendChild(errorMsg);
         }
+
+        applyTestId(container, this.testId);
 
         return container;
     }

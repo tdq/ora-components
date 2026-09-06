@@ -1,6 +1,7 @@
 export * from './core/component-builder';
 export * from './core/destroyable-element';
 export * from './core/icons';
+export * from './core/test-id';
 export * from './types/money';
 export * from './types/trend';
 export * from './components/button';
@@ -25,7 +26,10 @@ export * from './components/grid';
 export * from './components/date-picker';
 export * from './components/listbox';
 export * from './components/multi-select-list';
+export * from './components/sidebar';
+export * from './components/chat';
 export * from './components/component-parts';
 export * from './theme';
 export * from './router';
 export * from './utils/optimized-pipeline';
+export { resolveValueFormat } from './utils/number';

@@ -59,6 +59,9 @@ All builder methods return `this` for chaining.
 - **`withClass`** — `(className: Observable<string>) => this`
   Appends additional CSS class names to the root panel element. Useful for width constraints, theme overrides, or spacing utilities.
 
+- **`withTestId`** — `(id: string) => this`
+  Sets `data-testid` on the root panel host element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`build`** — `() => HTMLElement`
   Constructs and returns the root `<div>` element. Subscribe to observables and wire up the DOM. Call once per builder.
 

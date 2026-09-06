@@ -12,6 +12,7 @@ export default {
         '^.+\\.tsx?$': ['ts-jest', {
             useESM: true,
         }],
+        '\\.mjs$': '<rootDir>/jest-mjs-transformer.cjs',
         '\\.(html|css)$': '<rootDir>/jest-text-transformer.cjs',
     },
     extensionsToTreatAsEsm: ['.ts'],

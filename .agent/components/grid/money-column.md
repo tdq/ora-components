@@ -17,5 +17,5 @@ In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) met
 - **Alignment**: Right-aligned by default (can be overridden via `withAlign()`).
 
 ## Editing
-Built-in editor is **MoneyFieldBuilder** with `asInlineError()` modifier. It is not displaying any label.
-In case if grid has `asGlass()` modifier, the money field should be initialized with `asGlass()` modifier.
+Built-in editor is **MoneyFieldBuilder** with `MoneyFieldBuilder.asInlineError()` modifier. It is not displaying any label.
+In case if grid has `GridBuilder.asGlass()` modifier, the money field should be initialized with `MoneyFieldBuilder.asGlass()` modifier.

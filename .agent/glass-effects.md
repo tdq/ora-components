@@ -24,6 +24,32 @@ The "glass effect" is characterized by a semi-transparent background with a back
 - **Caption Color**: `text-white/80`
 - **Description Color**: `text-white/60`
 
+## 1.1. Floating Glass Surfaces (popovers, chart tooltips)
+
+Two cascade traps make a floating glass surface render as an opaque box. Both bite only
+overlays, so any new floating glass element has to be checked against them.
+
+1. **Never write an inline `background-color` on a glass element.** An inline style
+   outranks `.glass-effect`'s translucent `bg-white/70`, so `backdrop-filter` stays active
+   but has nothing to show through. `PopoverBuilder` sets the opaque `--ora-popover-bg`
+   only on the non-glass branch (`component-parts/popover.ts`).
+2. **A glass overlay nested in a glass host must opt out of the nested-glass rule.**
+   `.glass-effect .glass-effect:not([popover]):not(.glass-effect--overlay)` switches the
+   inner `backdrop-filter` off so nested *panels* don't stack two blurs. An overlay is only
+   DOM-nested in its host — visually it floats above it — so it keeps its blur:
+   `[popover]` elements are exempt for free (top layer), everything else adds
+   `glass-effect--overlay` (the chart tooltip, `chart/styles.ts`).
+
+Elevation on a glass overlay must be composed with `.glass-effect`'s own 1px ring, since
+both live in `box-shadow` and the later value wins outright:
+
+- class-based overlays get `.glass-effect--overlay`, which sets
+  `var(--ora-popover-shadow), 0 0 0 1px var(--ora-popover-glass-ring)`;
+- `PopoverBuilder` writes that same pair inline (it has to, positioning is inline).
+
+Do **not** put a `shadow-level-*` utility on a glass element: a Tailwind box-shadow utility
+replaces the ring and the overlay loses its edge.
+
 ## 2. Component Changes
 
 ### 2.1. Button (`src/components/button/button.ts`)

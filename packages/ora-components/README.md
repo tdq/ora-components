@@ -10,6 +10,8 @@
 
 Designed from the ground up to achieve sub-millisecond updates, zero framework overhead, and beautiful visual effects (including premium glassmorphism).
 
+New here? See **[QUICKSTART.md](./QUICKSTART.md)** for a fast, compiling tour of the builder grammar, app shell, grid, forms, dialog, chart and theming — every snippet is checked against the shipped types.
+
 ---
 
 ## 📖 Table of Contents
@@ -186,6 +188,7 @@ A highly-optimized table component supporting fast sorting, sizing, custom cell 
 
 ```typescript
 import { GridBuilder } from '@tdq/ora-components';
+import { BehaviorSubject } from 'rxjs';
 
 const productGrid = new GridBuilder<any>();
 const columns = productGrid.withColumns();
@@ -203,6 +206,14 @@ columns.addNumberColumn('price')
   .withWidth('120px');
 
 productGrid.withItems(productListStream$); // Binds directly to dataset Observable
+
+// Two-way selection binding: read the current selection and push to update it.
+const selection$ = new BehaviorSubject<any[]>([]);
+productGrid
+  .asMultiSelect()
+  .withRowsSelected(selection$); // Grid emits selected rows into selection$; pushing rows back sets the selection
+
+selection$.subscribe(selectedRows => console.log('Selected:', selectedRows));
 
 const grid = productGrid.build();
 ```

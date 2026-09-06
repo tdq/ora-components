@@ -274,4 +274,9 @@ describe('StepsBuilder', () => {
 
         document.body.removeChild(el);
     });
+
+    it('should set data-testid on the host', () => {
+        const el = new StepsBuilder().withTestId('my-steps').build();
+        expect(el.getAttribute('data-testid')).toBe('my-steps');
+    });
 });

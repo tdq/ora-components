@@ -13,3 +13,11 @@ export type {
 } from './data-generators';
 export { createButton, createControlStrip } from './demo-controls';
 export { createGlassBackdrop, GLASS_GRADIENTS } from './glass-backdrop';
+export {
+    addNavRows,
+    createAppShell,
+    createShell,
+    NAV_ICONS,
+    NAV_ROWS,
+    SHELL_HEIGHT_PX,
+} from './app-shell';

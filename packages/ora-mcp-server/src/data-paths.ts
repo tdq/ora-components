@@ -84,3 +84,14 @@ export function getStoriesDir(): string | null {
   if (existsSync(monorepoSrc)) return monorepoSrc;
   return null;
 }
+
+export function getQuickstartPath(): string {
+  if (DATA_DIR) {
+    const p = join(DATA_DIR, 'QUICKSTART.md');
+    if (existsSync(p)) return p;
+  }
+  // Monorepo fallback: use require.resolve to find @tdq/ora-components
+  const require = createRequire(import.meta.url);
+  const pkgPath = require.resolve('@tdq/ora-components/package.json');
+  return join(dirname(pkgPath), 'QUICKSTART.md');
+}

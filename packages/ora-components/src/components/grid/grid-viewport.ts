@@ -1,5 +1,5 @@
 import { GridColumn, GridAction, GridRowData, GridGroupHeader } from './types';
-import { GridStyles } from './grid-styles';
+import { GridStyles, GRID_ROW_HEIGHT } from './grid-styles';
 import { GridRow } from './grid-row';
 import { GridGroupRow } from './grid-group-row';
 
@@ -8,7 +8,6 @@ export class GridViewport<ITEM> {
     private contentElement: HTMLElement;
     private rowsContainer: HTMLElement;
     private renderedRows = new Map<number, GridRow<ITEM> | GridGroupRow>();
-    private readonly rowHeight = 52;
     private readonly buffer = 5;
 
     private lastRows: GridRowData<ITEM>[] = [];
@@ -28,11 +27,17 @@ export class GridViewport<ITEM> {
         private onToggleSelection: (item: ITEM) => void,
         private onToggleGroup: (groupKey: string) => void,
         private isGlass: boolean = false,
-        private onCommit: (item: ITEM) => void = () => {}
+        private onCommit: (item: ITEM) => void = () => {},
+        private readonly rowHeight: number = GRID_ROW_HEIGHT
     ) {
         this.element = document.createElement('div');
         this.element.className = GridStyles.viewport;
         this.element.tabIndex = 0;
+        // ARIA grid pattern: a direct child of role="grid" must resolve to row/rowgroup in
+        // the accessible tree. Without an explicit role this scrollable div's tabindex still
+        // puts it in that tree as a plain "generic" node (axe: aria-required-children), so it
+        // is marked a rowgroup — the equivalent of <tbody> — wrapping every rendered GridRow.
+        this.element.setAttribute('role', 'rowgroup');
 
         this.contentElement = document.createElement('div');
         this.contentElement.className = GridStyles.content;
@@ -134,7 +139,7 @@ export class GridViewport<ITEM> {
                 if (existing instanceof GridRow) existing.destroy();
                 existing.getElement().remove();
             }
-            const groupRow = new GridGroupRow(header, index, (key) => this.onToggleGroup(key), this.isGlass, contentWidth);
+            const groupRow = new GridGroupRow(header, index, (key) => this.onToggleGroup(key), this.isGlass, contentWidth, this.rowHeight);
             this.rowsContainer.appendChild(groupRow.getElement());
             this.renderedRows.set(index, groupRow);
         }
@@ -262,7 +267,8 @@ export class GridViewport<ITEM> {
                 (r, cell) => this.handleEditorActivate(r, cell),
                 () => this.clearActiveEditor(),
                 (rowIndex, colIdx) => this.handleArrowToRowAbove(rowIndex, colIdx),
-                (rowIndex, colIdx) => this.handleArrowToRowBelow(rowIndex, colIdx)
+                (rowIndex, colIdx) => this.handleArrowToRowBelow(rowIndex, colIdx),
+                this.rowHeight
             );
             this.rowsContainer.appendChild(row.getElement());
             this.renderedRows.set(index, row);

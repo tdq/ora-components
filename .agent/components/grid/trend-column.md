@@ -82,7 +82,7 @@ The trend column does **not** support inline editing. Calls to `asEditable()` on
 To add the column to the column set, register it in:
 
 1. **`types.ts`** — add `TREND = 'TREND'` to `ColumnType` enum.
-2. **`columns-builder.ts`** — add `addTrendColumn(dtoField: string): TrendColumnBuilder<ITEM>` method.
+2. **`columns-builder.ts`** — add `ColumnsBuilder.addTrendColumn(dtoField: string): TrendColumnBuilder<ITEM>` method.
 3. **`columns/index.ts`** — add `export * from './trend-column'`.
 
 ## Dependencies

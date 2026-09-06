@@ -1,18 +1,14 @@
 import { Observable, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '../../core/destroyable-element';
+import { cn } from '../../utils/cn';
+import { applyTestId } from '../../core/test-id';
 
 export enum PanelGap {
     SMALL = 'SMALL',
     MEDIUM = 'MEDIUM',
     LARGE = 'LARGE',
     EXTRA_LARGE = 'EXTRA_LARGE'
-}
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
 }
 
 const GAP_MAP: Record<PanelGap, string> = {
@@ -27,6 +23,7 @@ export class PanelBuilder implements ComponentBuilder {
     private content?: ComponentBuilder;
     private isGlass: boolean = false;
     private className$?: Observable<string>;
+    private testId?: string;
 
     withGap(gap: PanelGap): this {
         this.gap = gap;
@@ -48,6 +45,12 @@ export class PanelBuilder implements ComponentBuilder {
         return this;
     }
 
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
+    }
+
     build(): HTMLElement {
         const panel = document.createElement('div');
         const className$ = this.className$ || of('');
@@ -65,8 +68,14 @@ export class PanelBuilder implements ComponentBuilder {
         registerDestroy(panel, () => sub.unsubscribe());
 
         if (this.content) {
-            panel.appendChild(this.content.build());
+            const body = this.content.build();
+            if (!body.dataset.slot) {
+                body.dataset.slot = 'body';
+            }
+            panel.appendChild(body);
         }
+
+        applyTestId(panel, this.testId);
 
         return panel;
     }

@@ -65,5 +65,10 @@ describe('LabelBuilder', () => {
         expect(element.classList.contains('custom-class')).toBe(false);
         expect(element.classList.contains('another-class')).toBe(true);
     });
+
+    it('should set data-testid', () => {
+        const el = new LabelBuilder().withTestId('my-label').build();
+        expect(el.getAttribute('data-testid')).toBe('my-label');
+    });
 });
 

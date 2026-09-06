@@ -4,6 +4,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '@/core/destroyable-element';
 import { Icons } from '@/core/icons';
+import { applyTestId } from '@/core/test-id';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -18,6 +19,7 @@ export class CheckboxBuilder implements ComponentBuilder {
     private value$?: Subject<CheckboxValue>;
     private isGlass: boolean = false;
     private ariaLabel$?: Observable<string>;
+    private testId?: string;
 
     /**
      * Set the checkbox's label caption.
@@ -67,6 +69,12 @@ export class CheckboxBuilder implements ComponentBuilder {
 
     asGlass(isGlass: boolean = true): this {
         this.isGlass = isGlass;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered `<input type="checkbox">`. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -190,6 +198,8 @@ export class CheckboxBuilder implements ComponentBuilder {
             input.addEventListener('change', onChangeFn);
             subscriptions.add({ unsubscribe: () => input.removeEventListener('change', onChangeFn) });
         }
+
+        applyTestId(input, this.testId);
 
         registerDestroy(root, () => {
             subscriptions.unsubscribe();

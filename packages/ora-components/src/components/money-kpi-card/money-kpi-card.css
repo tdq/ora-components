@@ -5,12 +5,14 @@
 
 @keyframes mkp-flash-up {
     0%   { background-color: transparent; }
+    /* ora-token-exempt: component-local token defaults */
     30%  { background-color: color-mix(in srgb, var(--mkp-trend-up, #10B981) 25%, transparent); }
     100% { background-color: transparent; }
 }
 
 @keyframes mkp-flash-down {
     0%   { background-color: transparent; }
+    /* ora-token-exempt: component-local token defaults */
     30%  { background-color: color-mix(in srgb, var(--mkp-trend-down, #EF4444) 25%, transparent); }
     100% { background-color: transparent; }
 }

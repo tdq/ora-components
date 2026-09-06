@@ -1,4 +1,4 @@
-import { GridBuilder, TabsBuilder, PanelBuilder, PanelGap, ChartBuilder, LabelBuilder, Money } from '@tdq/ora-components';
+import { GridBuilder, TabsBuilder, PanelBuilder, PanelGap, ChartBuilder, LabelBuilder, LayoutBuilder, LayoutGap, Money } from '@tdq/ora-components';
 import { of } from 'rxjs';
 import { renderStatusChip } from './chip-utils';
 import { KPICardBuilder } from './kpi-card';
@@ -64,7 +64,7 @@ function buildOrdersGrid(orders: Order[]): GridBuilder<Order> {
 
 function createSummaryStats(): HTMLElement {
     const wrapper = document.createElement('div');
-    wrapper.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px-16 mb-px-24';
+    wrapper.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px-16 mb-px-24 w-full';
 
     const totalRevenue = ALL_ORDERS.reduce((sum, o) => sum + o.total.amount, 0);
     const processing = ALL_ORDERS.filter(o => o.status === 'Processing').length;
@@ -91,7 +91,7 @@ function createSummaryStats(): HTMLElement {
 
 function createOrdersCharts(): HTMLElement {
     const wrapper = document.createElement('div');
-    wrapper.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24 mb-px-24';
+    wrapper.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24 mb-px-24 w-full';
 
     // Chart 1 — Revenue by Day
     const revenueByDate = ALL_ORDERS.reduce<Record<string, number>>((acc, o) => {
@@ -146,11 +146,16 @@ function createOrdersCharts(): HTMLElement {
 }
 
 export function createOrders(): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    // The page scroller: asScrollable() adds the .ora-scroll-bleed gutter so panel/KPI
+    // shadows are not clipped at the edges (see .agent/components/layout.md).
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.NONE)
+        .asScrollable()
+        .withClass(of('flex-1'));
 
-    container.appendChild(createSummaryStats());
-    container.appendChild(createOrdersCharts());
+    container.addSlot().withContent({ build: () => createSummaryStats() });
+    container.addSlot().withContent({ build: () => createOrdersCharts() });
 
     const tabs = new TabsBuilder();
 
@@ -170,7 +175,7 @@ export function createOrders(): HTMLElement {
         .withCaption(of('Delivered'))
         .withContent(buildOrdersGrid(ALL_ORDERS.filter(o => o.status === 'Delivered')));
 
-    container.appendChild(tabs.build());
+    container.addSlot().withContent(tabs);
 
-    return container;
+    return container.build();
 }

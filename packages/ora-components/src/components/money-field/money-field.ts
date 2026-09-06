@@ -7,6 +7,7 @@ import { registerDestroy } from '@/core/destroyable-element';
 import { MoneyFieldLogic, MoneyFieldState } from './money-field-logic';
 import { createMoneyFieldLabel } from './money-field-label';
 import { createMoneyFieldSupportText } from './money-field-error';
+import { applyTestId } from '@/core/test-id';
 
 export { FieldStyle as MoneyFieldStyle };
 
@@ -27,6 +28,7 @@ export class MoneyFieldBuilder implements ComponentBuilder {
     private isGlass: boolean = false;
     private isInlineError: boolean = false;
     private currencies: string[] = [];
+    private testId?: string;
 
     asGlass(): this {
         this.isGlass = true;
@@ -108,6 +110,12 @@ export class MoneyFieldBuilder implements ComponentBuilder {
         return this;
     }
 
+    /** Sets `data-testid` on the rendered `<input>`. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
+    }
+
     build(): HTMLElement {
         const id = generateFieldId('money-field');
         const errorId = `${id}-error`;
@@ -180,6 +188,8 @@ export class MoneyFieldBuilder implements ComponentBuilder {
         registerDestroy(container, () => {
             logic.destroy();
         });
+
+        applyTestId(input, this.testId);
 
         return container;
     }

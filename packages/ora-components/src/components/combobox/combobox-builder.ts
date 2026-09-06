@@ -1,31 +1,65 @@
-import { Observable, Subject, BehaviorSubject, combineLatest, map, distinctUntilChanged, Subscription, of } from 'rxjs';
-import { shareReplay } from 'rxjs/operators';
+import {
+    Observable,
+    Subject,
+    BehaviorSubject,
+    combineLatest,
+    map,
+    distinctUntilChanged,
+    Subscription,
+    of,
+    merge,
+    timer
+} from 'rxjs';
+import { shareReplay, switchMap, take, startWith } from 'rxjs/operators';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '@/core/destroyable-element';
 import { ComboBoxStyle } from './types';
 import { cn, STYLE_MAP } from './styles';
 import { renderComboBoxInput } from './combobox-input';
 import { PopoverBuilder } from '../component-parts/popover';
+import { ErrorPopoverBuilder } from '../component-parts/error-popover';
 import { ListBoxBuilder } from '../listbox/listbox';
 import { ListBoxStyle } from '../listbox/types';
 import { createOptimizedPipeline, GatedObserver } from '../../utils/optimized-pipeline';
+import { applyTestId } from '../../core/test-id';
 
 export { ComboBoxStyle };
 
+/** Adaptive filter debounce applied when the item list is >= 100 items. Override via withFilterDebounce. */
+const DEFAULT_FILTER_DEBOUNCE_MS = 150;
+/** Item count threshold above which filtering is debounced instead of synchronous. */
+const FILTER_DEBOUNCE_ITEM_THRESHOLD = 100;
+
+/** Public API exposed on the element returned by ComboBoxBuilder.build(). */
+export interface ComboBoxElement<ITEM> extends HTMLElement {
+    /** Selects an item programmatically: updates text, highlight, emits value, closes the popover. */
+    select(item: ITEM | null): void;
+    /** Opens the dropdown. */
+    open(): void;
+    /** Closes the dropdown. */
+    close(): void;
+}
+
 export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
     private items$?: Observable<ITEM[]>;
-    private value$: Subject<ITEM | null> = new Subject<ITEM | null>();
+    private value$?: Observable<ITEM | null>;
+    private valueWriter?: Subject<ITEM | null>;
     private itemCaptionProvider: (item: ITEM) => string = (item) => String(item);
     private itemIdProvider: (item: ITEM) => string | number = (item) => String(item);
     private placeholder?: string;
     private caption$?: Observable<string>;
+    private ariaLabel$?: Observable<string>;
     private error$?: Observable<string>;
     private enabled$?: Observable<boolean>;
     private style$?: Observable<ComboBoxStyle>;
     private className$?: Observable<string>;
     private visible$?: Observable<boolean>;
     private listWidth$?: Observable<string>;
+    private maxHeight$: Observable<number> = of(256);
+    private filterDebounceMs?: number;
     private isGlass: boolean = false;
+    private isInlineError: boolean = false;
+    private testId?: string;
 
     withItems(items: Observable<ITEM[]>): ComboBoxBuilder<ITEM> {
         this.items$ = items;
@@ -37,8 +71,15 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         return this;
     }
 
-    withValue(value: Subject<ITEM | null>): ComboBoxBuilder<ITEM> {
+    /**
+     * Sets the value driving the dropdown selection/highlight.
+     * Accepts a plain Observable (read-only: displayed text and ListBox highlight follow
+     * the stream, but user selections are NOT written back to it) or a Subject (write-back
+     * on user selection, as before).
+     */
+    withValue(value: Observable<ITEM | null> | Subject<ITEM | null>): ComboBoxBuilder<ITEM> {
         this.value$ = value;
+        this.valueWriter = value instanceof Subject ? value : undefined;
         return this;
     }
 
@@ -62,6 +103,12 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         return this;
     }
 
+    /** Sets the accessible name used when no caption is set. Priority: caption > ariaLabel > placeholder. */
+    withAriaLabel(label: string | Observable<string>): ComboBoxBuilder<ITEM> {
+        this.ariaLabel$ = typeof label === 'string' ? of(label) : label;
+        return this;
+    }
+
     asGlass(isGlass: boolean = true): ComboBoxBuilder<ITEM> {
         this.isGlass = isGlass;
         return this;
@@ -69,6 +116,16 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
     withError(error: Observable<string>): ComboBoxBuilder<ITEM> {
         this.error$ = error;
+        return this;
+    }
+
+    /**
+     * Displays errors inline — as a red outline on the input plus an error icon whose
+     * popover shows the message — instead of as support text below the field.
+     * Same behaviour as `TextFieldBuilder.asInlineError()`.
+     */
+    asInlineError(): ComboBoxBuilder<ITEM> {
+        this.isInlineError = true;
         return this;
     }
 
@@ -92,7 +149,25 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         return this;
     }
 
-    build(): HTMLElement {
+    /** Preferred popup list height in px (or reactive); clamped to viewport space. Default 256. */
+    withMaxHeight(maxHeight: number | Observable<number>): ComboBoxBuilder<ITEM> {
+        this.maxHeight$ = typeof maxHeight === 'number' ? of(maxHeight) : maxHeight;
+        return this;
+    }
+
+    /** Overrides the default 150ms debounce applied when the item list is >= 100 items. 0 disables debouncing. */
+    withFilterDebounce(ms: number): ComboBoxBuilder<ITEM> {
+        this.filterDebounceMs = ms;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered `<input>`. */
+    withTestId(id: string): ComboBoxBuilder<ITEM> {
+        this.testId = id;
+        return this;
+    }
+
+    build(): ComboBoxElement<ITEM> {
         const instanceId = `cb-${Math.random().toString(36).substring(2, 9)}`;
         const listboxId = `${instanceId}-listbox`;
 
@@ -108,10 +183,13 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
             placeholder: this.placeholder,
             ariaControls: listboxId
         });
-        if (this.placeholder) {
-            input.setAttribute('aria-label', this.placeholder);
-        }
         container.appendChild(inputContainer);
+
+        // Inline-error slot: sits between the text input and the chevron; holds the
+        // ErrorPopover trigger while an error is present (asInlineError only).
+        const errorIconContainer = document.createElement('div');
+        errorIconContainer.className = 'flex items-center justify-center pr-px-4 z-10 hidden';
+        inputContainer.insertBefore(errorIconContainer, iconContainer);
 
         const error = document.createElement('span');
         error.className = 'md-label-small text-error px-px-16 hidden';
@@ -135,33 +213,84 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         const listBoxValue$ = new Subject<ITEM | null>();
         let isSyncingExternalValue = false;
 
-        const filteredItems$ = combineLatest([gatedItems$, searchTerm$, isFiltering$]).pipe(
+        // Track the latest item count (without a second subscription cost — gatedItems$ is
+        // shareReplay'd) to drive the adaptive filter debounce below.
+        let latestItemsLength = 0;
+
+        // Manual "flush" trigger: Enter/ArrowUp/ArrowDown resolve any pending debounce
+        // immediately with the current raw term, so a fast "type + Enter" never acts on a
+        // stale filtered list.
+        const flushNow$ = new Subject<void>();
+
+        const debouncedSearchTerm$: Observable<string> = searchTerm$.pipe(
+            distinctUntilChanged(),
+            switchMap(term => {
+                const ms = term === ''
+                    ? 0
+                    : (latestItemsLength >= FILTER_DEBOUNCE_ITEM_THRESHOLD
+                        ? (this.filterDebounceMs ?? DEFAULT_FILTER_DEBOUNCE_MS)
+                        : 0);
+                if (ms <= 0) return of(term);
+                // Whichever resolves first — the debounce timer or an explicit flush — wins.
+                return merge(timer(ms), flushNow$).pipe(take(1), map(() => term));
+            })
+        );
+
+        // Captions are lower-cased once per items emission (cached), not once per keystroke.
+        let cachedItemsRef: ITEM[] | null = null;
+        let cachedLowerCaptions: string[] = [];
+
+        const filteredItems$ = combineLatest([gatedItems$, debouncedSearchTerm$, isFiltering$]).pipe(
             map(([items, term, isFiltering]) => {
+                if (items !== cachedItemsRef) {
+                    cachedItemsRef = items;
+                    cachedLowerCaptions = items.map(item => this.itemCaptionProvider(item).toLowerCase());
+                }
                 if (!isFiltering || !term) return items;
                 const lowerTerm = term.toLowerCase();
-                return items.filter(item =>
-                    this.itemCaptionProvider(item).toLowerCase().includes(lowerTerm)
-                );
-            })
+                return items.filter((_item, i) => cachedLowerCaptions[i].includes(lowerTerm));
+            }),
+            shareReplay({ bufferSize: 1, refCount: true })
         );
 
         // Subscriptions
         const subs = new Subscription();
 
-        if (this.caption$) {
-            subs.add(this.caption$.subscribe(text => {
-                captionElement.textContent = text;
-                captionElement.classList.toggle('hidden', !text);
-                // Caption doubles as the accessible name; fall back to placeholder when empty.
-                if (text) {
-                    input.setAttribute('aria-labelledby', captionElement.id);
-                    input.removeAttribute('aria-label');
-                } else {
-                    input.removeAttribute('aria-labelledby');
-                    if (this.placeholder) input.setAttribute('aria-label', this.placeholder);
-                }
-            }));
+        subs.add(gatedItems$.subscribe(items => {
+            latestItemsLength = items.length;
+        }));
+
+        // Accessible name priority: caption (aria-labelledby) > ariaLabel > placeholder (aria-label).
+        // Warn once (dev mode only) when none of the three was CONFIGURED on the builder —
+        // this is a config-time check, not a runtime one: an async caption$/ariaLabel$ that
+        // simply hasn't emitted yet is still "configured" and must not trigger the warning
+        // (it will supply a name once it emits).
+        if (!this.caption$ && !this.ariaLabel$ && !this.placeholder
+            && (typeof process === 'undefined' || process.env?.NODE_ENV !== 'production')) {
+            console.warn('[ComboBoxBuilder] No accessible name provided — use withCaption, withAriaLabel, or withPlaceholder.');
         }
+        // Seed both with startWith('') — a caption/ariaLabel Subject that hasn't emitted yet
+        // (e.g. withCaption(new Subject())) would otherwise stall combineLatest forever,
+        // leaving the input with no aria-label/aria-labelledby.
+        const captionText$ = (this.caption$ ?? of('')).pipe(startWith(''));
+        const ariaLabelText$ = (this.ariaLabel$ ?? of('')).pipe(startWith(''));
+        subs.add(combineLatest([captionText$, ariaLabelText$]).subscribe(([captionText, ariaLabelText]) => {
+            captionElement.textContent = captionText;
+            captionElement.classList.toggle('hidden', !captionText);
+            if (captionText) {
+                input.setAttribute('aria-labelledby', captionElement.id);
+                input.removeAttribute('aria-label');
+            } else {
+                input.removeAttribute('aria-labelledby');
+                if (ariaLabelText) {
+                    input.setAttribute('aria-label', ariaLabelText);
+                } else if (this.placeholder) {
+                    input.setAttribute('aria-label', this.placeholder);
+                } else {
+                    input.removeAttribute('aria-label');
+                }
+            }
+        }));
 
         const style$ = this.style$ || new BehaviorSubject<ComboBoxStyle>(ComboBoxStyle.TONAL);
         const listWidth$ = this.listWidth$ || of('match-input');
@@ -176,14 +305,17 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
         // Build ListBox — brand filteredItems$ as GatedObserver so the inner
         // ListBox's instanceof check skips re-gating the already-gated stream.
+        // No static max-height class here: the ListBox's scroll element (<ul>) gets its
+        // max-height synced reactively from the popover's clamped height below, so the
+        // popover never scrolls — only the list does.
         const listBoxBuilder = new ListBoxBuilder<ITEM>()
             .withItems(new GatedObserver(filteredItems$))
             .withValue(listBoxValue$)
             .withFocusedIndex(focusedIndex$)
             .withItemCaptionProvider(this.itemCaptionProvider)
             .withItemIdProvider(this.itemIdProvider)
-            .withStyle(mappedListBoxStyle$)
-            .withClass(of('max-h-px-256 overflow-hidden'));
+            .withOptionIdProvider((item) => `${listboxId}-option-${this.itemIdProvider(item)}`)
+            .withStyle(mappedListBoxStyle$);
 
         if (isGlass) listBoxBuilder.asGlass();
 
@@ -203,72 +335,112 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
         let currentItems: ITEM[] = [];
 
+        // Point aria-activedescendant at the focused option. The id is computed from the item
+        // (matching the ListBox's withOptionIdProvider formula) rather than read off the DOM, so
+        // this works even though the ListBox virtualizes and the focused row may only just have
+        // been rendered. The ListBox subscribes to the branded filteredItems$ inside its own
+        // build() — called above, before any of the subscriptions in this file — so by the time
+        // either caller below runs, B11's setItems()/scrollToIndex() has already rendered (and
+        // scrolled to) the row and the referenced element is present in the DOM.
+        const applyActiveDescendant = (idx: number) => {
+            const item = idx >= 0 ? currentItems[idx] : undefined;
+            if (item !== undefined) {
+                input.setAttribute('aria-activedescendant', `${listboxId}-option-${this.itemIdProvider(item)}`);
+            } else {
+                input.removeAttribute('aria-activedescendant');
+            }
+        };
+
         subs.add(filteredItems$.subscribe(items => {
             currentItems = items;
             // Keep the <ul role="listbox"> visible at all times (needed for aria-controls and
             // accessibility queries). Only toggle the "No results" message.
+            // Option <li> ids are assigned by the ListBox itself (see withOptionIdProvider),
+            // so the combobox no longer needs to reach into ulEl.children — which is required
+            // now that the ListBox virtualizes and only a window of rows is in the DOM.
             noResults.style.display = items.length === 0 ? '' : 'none';
 
-            // Assign IDs to <li> elements so aria-activedescendant and tests work.
-            // ListBox re-renders synchronously via its own combineLatest subscription,
-            // but that subscription fires in the same microtask. Use Promise.resolve()
-            // to run after ListBox's itemsSub has completed.
-            Promise.resolve().then(() => {
-                Array.from(ulEl.children).forEach((li, index) => {
-                    if (!li.id) {
-                        const item = items[index];
-                        if (item !== undefined) {
-                            (li as HTMLElement).id = `${listboxId}-option-${this.itemIdProvider(item)}`;
-                        }
-                    }
-                });
-            });
+            // Filtering can shrink the list out from under a previously-valid focusedIndex —
+            // clamp it so aria-activedescendant never names an item outside the new list
+            // (or an unrendered one) and Enter never selects the wrong row.
+            const idx = focusedIndex$.value;
+            if (idx >= items.length) {
+                focusedIndex$.next(items.length > 0 ? items.length - 1 : -1);
+            }
+
+            // Filtering can also change WHICH item sits at an in-range index without
+            // focusedIndex$'s VALUE changing at all (e.g. focus at 0 naming "Apple", typing
+            // narrows the list to ["Banana"] — index 0 is still in range, but now names a
+            // different item). The focusedIndex$ subscriber below only fires on an actual
+            // index change, so re-derive aria-activedescendant here unconditionally too.
+            applyActiveDescendant(focusedIndex$.value);
         }));
+
+        // Emits on the bound value when it is writable (a Subject). Read-only Observables
+        // never get written back to. All user-driven selection sites funnel through
+        // selectItem() -> emitValue(), so there is exactly one write-back call site.
+        const emitValue = (item: ITEM | null) => {
+            this.valueWriter?.next(item);
+        };
+
+        // Syncs the input's displayed text to an item's caption (or clears it for null),
+        // skipping redundant writes. Shared by user-driven selection and external value sync.
+        const setDisplayText = (item: ITEM | null) => {
+            if (item !== null && item !== undefined) {
+                const caption = this.itemCaptionProvider(item);
+                if (input.value !== caption) {
+                    input.value = caption;
+                    searchTerm$.next(caption);
+                }
+            } else {
+                input.value = '';
+                searchTerm$.next('');
+            }
+        };
+
+        // Applies a user-driven selection: updates the ListBox highlight, the input text,
+        // writes the value back (if writable), and closes the popover. Used by item clicks
+        // (via listBoxValue$), Enter, and the public select() API.
+        const selectItem = (item: ITEM | null) => {
+            emitValue(item);
+            currentValue$.next(item);
+            isSyncingExternalValue = true;
+            listBoxValue$.next(item);
+            isSyncingExternalValue = false;
+            setDisplayText(item);
+            isExpanded$.next(false);
+        };
 
         // When ListBox emits a selection (user clicked an item), handle it here
         subs.add(listBoxValue$.subscribe(item => {
             if (item !== null && !isSyncingExternalValue) {
-                this.value$?.next(item);
-                currentValue$.next(item);
-                isExpanded$.next(false);
-                const caption = this.itemCaptionProvider(item);
-                input.value = caption;
-                searchTerm$.next(caption);
+                selectItem(item);
             }
         }));
 
-        // Authoritative ID assigner for the focused <li>: runs synchronously so aria-activedescendant
-        // is correct at the same tick focusedIndex$ changes. The Promise.resolve() block in the
-        // filteredItems$ subscription covers IDs for non-focused items (deferred until after ListBox renders).
-        subs.add(focusedIndex$.subscribe(idx => {
-            if (idx >= 0) {
-                // Assign ID to the focused li if not already set
-                const li = ulEl.children[idx] as HTMLElement | undefined;
-                if (li) {
-                    if (!li.id) {
-                        const item = currentItems[idx];
-                        if (item !== undefined) {
-                            li.id = `${listboxId}-option-${this.itemIdProvider(item)}`;
-                        }
-                    }
-                    if (li.id) {
-                        input.setAttribute('aria-activedescendant', li.id);
-                    }
-                    li.scrollIntoView?.({ block: 'nearest' });
-                }
-            } else {
-                input.removeAttribute('aria-activedescendant');
-            }
-        }));
+        // Reacts to keyboard-driven focus changes (ArrowUp/Down/Home/End/PageUp/PageDown).
+        // The filteredItems$ subscriber above additionally calls applyActiveDescendant
+        // directly, since a filter change can alter which item sits at an unchanged index.
+        subs.add(focusedIndex$.subscribe(applyActiveDescendant));
 
         const popover = new PopoverBuilder()
             .withAnchor(inputContainer)
             .withContent({ build: () => popoverContent })
             .withWidth(mappedListWidth$)
+            .withMaxHeight(this.maxHeight$)
+            // The popover wrapper itself never scrolls (overflow-hidden in popover.ts);
+            // it writes its clamped max-height onto the <ul> and nudges the virtualized
+            // viewport, so the list is the only scroller.
+            .withScrollElement(ulEl)
             .withOnClose(() => isExpanded$.next(false))
             .withClass('max-w-[300px]');
 
         if (isGlass) popover.asGlass();
+
+        // Popover is built lazily — PopoverBuilder.show() builds on first call if build()
+        // wasn't called eagerly. Deferring avoids appending a wrapper to document.body (and
+        // registering global listeners) for comboboxes that are built but never opened.
+        // The <ul>'s max-height is kept in sync by the popover itself via withScrollElement.
 
         subs.add(style$.subscribe(style => {
             // Update input container base style
@@ -315,9 +487,20 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
         if (this.error$) {
             subs.add(this.error$.subscribe(text => {
-                error.textContent = text;
-                error.classList.toggle('hidden', !text);
                 const hasError = !!text;
+                error.textContent = this.isInlineError ? '' : text;
+                error.classList.toggle('hidden', this.isInlineError || !hasError);
+                input.setAttribute('aria-invalid', hasError ? 'true' : 'false');
+                if (this.isInlineError) {
+                    // Replacing the trigger removes its popover via registerDestroy.
+                    errorIconContainer.replaceChildren();
+                    errorIconContainer.classList.toggle('hidden', !hasError);
+                    if (hasError) {
+                        errorIconContainer.appendChild(
+                            new ErrorPopoverBuilder().withError(text).build()
+                        );
+                    }
+                }
                 inputContainer.classList.toggle('outline', hasError);
                 inputContainer.classList.toggle('outline-1', hasError);
                 inputContainer.classList.toggle('-outline-offset-1', hasError);
@@ -333,6 +516,12 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
                 input.disabled = !enabled;
                 inputContainer.classList.toggle('opacity-38', !enabled);
                 inputContainer.classList.toggle('cursor-not-allowed', !enabled);
+                iconContainer.classList.toggle('pointer-events-none', !enabled);
+                iconContainer.setAttribute('aria-disabled', String(!enabled));
+                // A list that is open when the field becomes disabled must not stay selectable.
+                if (!enabled && isExpanded$.value) {
+                    isExpanded$.next(false);
+                }
             }));
         }
 
@@ -369,21 +558,31 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         }));
 
         if (this.value$) {
-            subs.add(this.value$.pipe(distinctUntilChanged()).subscribe(val => {
-                currentValue$.next(val || null);
-                // Sync selection state to ListBox so the selected item renders highlighted
+            // No distinctUntilChanged: in read-only Observable mode, a local select()/click
+            // updates the displayed text without touching the source. If the source later
+            // re-emits the SAME value it already held (e.g. to restore the display after a
+            // local-only change), distinctUntilChanged would filter that emission out — since
+            // it compares against the last value that passed *through this stream*, not
+            // against what's currently displayed — and the display would never resync.
+            //
+            // withValue emissions are authoritative over SELECTION state (currentValue$,
+            // ListBox highlight via listBoxValue$, and the aria-activedescendant bookkeeping
+            // that reads currentItems/focusedIndex$ elsewhere) and are NEVER suppressed — for
+            // both null and non-null values. They are authoritative over the DISPLAYED INPUT
+            // TEXT only when the user is not mid-search: while isFiltering$ is true, an
+            // external re-emission (even a genuinely new selection made elsewhere) must not
+            // wipe out text the user is actively typing. isFiltering$ resets to false when the
+            // popup closes, so the two halves re-converge on the next emission after that.
+            subs.add(this.value$.subscribe(val => {
+                const newVal = val ?? null;
+
+                currentValue$.next(newVal);
                 isSyncingExternalValue = true;
-                listBoxValue$.next(val || null);
+                listBoxValue$.next(newVal);
                 isSyncingExternalValue = false;
-                if (val !== null && val !== undefined) {
-                    const caption = this.itemCaptionProvider(val);
-                    if (input.value !== caption) {
-                        input.value = caption;
-                        searchTerm$.next(caption);
-                    }
-                } else {
-                    input.value = '';
-                    searchTerm$.next('');
+
+                if (!isFiltering$.value) {
+                    setDisplayText(newVal);
                 }
             }));
         }
@@ -405,15 +604,34 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
         iconContainer.onclick = (e) => {
             e.stopPropagation();
+            if (input.disabled) return;
             isExpanded$.next(!isExpanded$.value);
             input.focus();
         };
 
         input.onkeydown = (e) => {
+            const key = e.key;
+
+            // Flush any pending filter debounce so every navigation/selection key acts on
+            // the current typed term, never a stale filtered list.
+            if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter'
+                || key === 'Home' || key === 'End' || key === 'PageUp' || key === 'PageDown') {
+                flushNow$.next();
+            }
+
             const expanded = isExpanded$.value;
             const index = focusedIndex$.value;
 
-            if (e.key === 'ArrowDown') {
+            // Shared guard for the jump keys (Home/End/PageUp/PageDown): only act while
+            // expanded and non-empty, always preventDefault, then move focus to nextIndex().
+            const jumpFocus = (nextIndex: () => number) => {
+                if (expanded && currentItems.length > 0) {
+                    e.preventDefault();
+                    focusedIndex$.next(nextIndex());
+                }
+            };
+
+            if (key === 'ArrowDown') {
                 e.preventDefault();
                 if (!expanded) {
                     isExpanded$.next(true);
@@ -421,7 +639,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
                     const nextIndex = (index + 1) % currentItems.length;
                     focusedIndex$.next(nextIndex);
                 }
-            } else if (e.key === 'ArrowUp') {
+            } else if (key === 'ArrowUp') {
                 e.preventDefault();
                 if (!expanded) {
                     isExpanded$.next(true);
@@ -429,18 +647,21 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
                     const nextIndex = (index - 1 + currentItems.length) % currentItems.length;
                     focusedIndex$.next(nextIndex);
                 }
-            } else if (e.key === 'Enter') {
+            } else if (key === 'Home') {
+                jumpFocus(() => 0);
+            } else if (key === 'End') {
+                jumpFocus(() => currentItems.length - 1);
+            } else if (key === 'PageUp') {
+                jumpFocus(() => Math.max(0, index - 10));
+            } else if (key === 'PageDown') {
+                // -1 means "before the first row" — land on the first row, not row 9.
+                jumpFocus(() => index < 0 ? 0 : Math.min(currentItems.length - 1, index + 10));
+            } else if (key === 'Enter') {
                 if (expanded && index >= 0 && index < currentItems.length) {
                     e.preventDefault();
-                    const selectedItem = currentItems[index];
-                    this.value$?.next(selectedItem);
-                    currentValue$.next(selectedItem);
-                    isExpanded$.next(false);
-                    const caption = this.itemCaptionProvider(selectedItem);
-                    input.value = caption;
-                    searchTerm$.next(caption);
+                    selectItem(currentItems[index]);
                 }
-            } else if (e.key === 'Escape') {
+            } else if (key === 'Escape') {
                 if (expanded) {
                     e.preventDefault();
                     isExpanded$.next(false);
@@ -450,8 +671,22 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
 
         registerDestroy(container, () => {
             subs.unsubscribe();
+            searchTerm$.complete();
+            isFiltering$.complete();
+            isExpanded$.complete();
+            focusedIndex$.complete();
+            currentValue$.complete();
+            listBoxValue$.complete();
+            flushNow$.complete();
         });
 
-        return container;
+        const element = container as unknown as ComboBoxElement<ITEM>;
+        applyTestId(input, this.testId);
+
+        element.select = (item: ITEM | null) => selectItem(item);
+        element.open = () => { if (!input.disabled) isExpanded$.next(true); };
+        element.close = () => isExpanded$.next(false);
+
+        return element;
     }
 }

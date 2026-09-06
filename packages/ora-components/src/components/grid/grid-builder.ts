@@ -1,4 +1,4 @@
-import { BehaviorSubject, map, Observable, combineLatest, of, Subscription } from 'rxjs';
+import { BehaviorSubject, map, Observable, combineLatest, of, Subscription, Subject } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { ColumnsBuilder } from './columns/columns-builder';
 import { ToolbarBuilder } from '../toolbar/toolbar-builder';
@@ -7,12 +7,13 @@ import { SortDirection, PivotConfig, ColumnType, GridColumn, GridRowData } from 
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { GridStyles } from './grid-styles';
+import { GridStyles, GRID_ROW_HEIGHT, GRID_HEADER_HEIGHT, GRID_TOOLBAR_HEIGHT_ALLOWANCE, toAriaRowCount } from './grid-styles';
 import { GridLogic } from './grid-logic';
 import { GridViewport } from './grid-viewport';
 import { GridHeader } from './grid-header';
 import { PivotLogic } from './pivot-logic';
 import { registerDestroy } from '@/core/destroyable-element';
+import { applyTestId } from '@/core/test-id';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -27,12 +28,39 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     private isEditable: boolean = false;
     private isMultiSelect: boolean = false;
     private _onCommit: (item: ITEM) => void = () => { };
+    private rowHeight: number = GRID_ROW_HEIGHT;
+    private isAutoHeight: boolean = false;
+    private autoHeightMaxRows: number = 0;
+    private className$?: Observable<string>;
 
     private logic = new GridLogic<ITEM>();
     private rawItems$?: Observable<ITEM[]>;
+    private selectedRows$?: Subject<ITEM[]>;
+    private testId?: string;
 
     withHeight(height: Observable<number>): this {
         this.height$ = height;
+        return this;
+    }
+
+    /** Overrides the default GRID_ROW_HEIGHT (52px) per-row height. */
+    withRowHeight(px: number): this {
+        this.rowHeight = px;
+        return this;
+    }
+
+    /**
+     * Sizes the grid's container height to fit up to `maxRows` rendered rows
+     * (min(rows.length, maxRows) * rowHeight + header height [+ toolbar allowance when
+     * withToolbar() is set]), reacting to the row count as it changes. Uses `rows.length`
+     * (the flattened, grouping-aware row list — GROUP_HEADER rows included, collapsed groups'
+     * hidden children excluded), not the raw item count, so grouped/collapsed grids size to
+     * what's actually rendered. Once the row count exceeds maxRows, the container height stays
+     * capped and the viewport scrolls internally as usual. Overrides withHeight.
+     */
+    withAutoHeight(maxRows: number): this {
+        this.isAutoHeight = true;
+        this.autoHeightMaxRows = maxRows;
         return this;
     }
 
@@ -67,8 +95,40 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         return this;
     }
 
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
+    }
+
+    /**
+     * Two-way binding between the grid's row selection and a consumer-provided Subject.
+     *
+     * Notes:
+     * - For checkbox-driven multi-row selection the grid must also be configured with
+     *   `asMultiSelect()`.
+     * - A `BehaviorSubject<ITEM[]>` may be passed to pre-seed the grid's initial
+     *   selection from the subject's current value; its replayed emission is applied
+     *   before the grid's own selection state is pushed back out.
+     */
+    withRowsSelected(rows: Subject<ITEM[]>): this {
+        this.selectedRows$ = rows;
+        return this;
+    }
+
     withItems(items: Observable<ITEM[]>): this {
         this.rawItems$ = items;
+        return this;
+    }
+
+    /**
+     * Apply custom class names to the host element, merged via `cn()` with base classes.
+     * Base classes and runtime state classes (such as collapsed state) survive every emission.
+     *
+     * @param className$ Observable of space-separated class names
+     */
+    withClass(className: Observable<string>): this {
+        this.className$ = className;
         return this;
     }
 
@@ -112,6 +172,27 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             this.isGlass && GridStyles.glass
         );
 
+        // Track previous emission's extra classes to diff on next emission
+        // (preserves runtime state classes set by the grid)
+        let prevExtraClasses = '';
+        const className$ = this.className$ || of('');
+
+        const classNameSub = className$.subscribe(extraClasses => {
+            // Remove previously added extra classes
+            if (prevExtraClasses) {
+                prevExtraClasses.split(/\s+/).forEach(cls => {
+                    if (cls) container.classList.remove(cls);
+                });
+            }
+            // Add new extra classes
+            if (extraClasses) {
+                extraClasses.split(/\s+/).forEach(cls => {
+                    if (cls) container.classList.add(cls);
+                });
+            }
+            prevExtraClasses = extraClasses;
+        });
+
         if (this.rawItems$) {
             const gatedItems$ = createOptimizedPipeline(container, this.rawItems$);
             this.logic.setItems(gatedItems$);
@@ -121,6 +202,16 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             if (this.isGlass) this.toolbarBuilder.asGlass();
             container.appendChild(this.toolbarBuilder.build());
         }
+
+        // role="grid" lives on this inner wrapper, not on `container` (the host element
+        // withTestId/registerDestroy/createOptimizedPipeline target — see rules.md "Grid ->
+        // host element"): a toolbar button is not a valid owned child of role="grid" per the
+        // ARIA grid pattern, so the toolbar stays OUTSIDE it, as container's other direct
+        // child. gridEl owns exactly the header rowgroup + body rowgroup below.
+        const gridEl = document.createElement('div');
+        gridEl.setAttribute('role', 'grid');
+        gridEl.className = GridStyles.gridBody;
+        container.appendChild(gridEl);
 
         const actions = this.actionsBuilder ? this.actionsBuilder.build() : [];
 
@@ -139,7 +230,8 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             (item) => this.logic.toggleSelection(item),
             (groupKey) => this.logic.toggleGroup(groupKey),
             this.isGlass,
-            this._onCommit
+            this._onCommit,
+            this.rowHeight
         );
 
         this.logic.setColumns(columns);
@@ -166,11 +258,14 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         const headerWrapper = document.createElement('div');
         headerWrapper.className = GridStyles.headerWrapper;
         headerWrapper.tabIndex = -1;
+        // rowgroup (the <thead> equivalent) — see GridViewport's constructor for why a
+        // tabbable direct child of role="grid" needs an explicit row/rowgroup role.
+        headerWrapper.setAttribute('role', 'rowgroup');
         headerWrapper.appendChild(header.getElement());
-        container.appendChild(headerWrapper);
+        gridEl.appendChild(headerWrapper);
 
         const viewportEl = viewport.getElement();
-        container.appendChild(viewportEl);
+        gridEl.appendChild(viewportEl);
 
         viewportEl.addEventListener('scroll', () => {
             if (headerWrapper.scrollLeft !== viewportEl.scrollLeft) {
@@ -186,6 +281,16 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         let lastRows: GridRowData<ITEM>[] = [];
         // --- Unified column visibility via derived stream ---
         let visSubs: Subscription[] = [];
+
+        // Releases per-column resources (e.g. EnumColumnBuilder's options subscription — see
+        // GridColumn.destroy in types.ts) for a column SET that is no longer in use: called for
+        // the outgoing columns whenever pivot mode regenerates/reverts the column set, and for
+        // the grid's own final teardown below. Never called for a column set still in use (e.g.
+        // the visibility-filtered `visibleColumns$` subset shares the SAME column instances as
+        // the full set, not a replacement — no destroy needed there).
+        function destroyColumns(cols: GridColumn<ITEM>[]): void {
+            cols.forEach(col => col.destroy?.());
+        }
 
         function wireVisibility(cols: GridColumn<ITEM>[]): void {
             visSubs.forEach(s => s.unsubscribe());
@@ -225,11 +330,22 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             currentItems = state.items;
             lastSelectedItems = state.selectedItems;
             lastRows = state.rows;
-            if (height === null) {
+
+            // See toAriaRowCount/GRID_HEADER_ARIA_ROWINDEX in grid-styles.ts. Lives on gridEl
+            // (the role="grid" element), not container — see the comment at gridEl's creation.
+            gridEl.setAttribute('aria-rowcount', String(toAriaRowCount(state.rows.length)));
+
+            const resolvedHeight = this.isAutoHeight
+                ? Math.min(state.rows.length, this.autoHeightMaxRows) * this.rowHeight
+                    + GRID_HEADER_HEIGHT
+                    + (this.toolbarBuilder ? GRID_TOOLBAR_HEIGHT_ALLOWANCE : 0)
+                : height;
+
+            if (resolvedHeight === null) {
                 container.style.height = '100%';
                 container.style.minHeight = '0';
             } else {
-                container.style.height = `${height}px`;
+                container.style.height = `${resolvedHeight}px`;
                 container.style.minHeight = '';
             }
 
@@ -244,17 +360,21 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
                 // Merge with base columns (row grouping fields)
                 const baseColumns = this.columnsBuilder ? this.columnsBuilder.build() : [];
+                const outgoingColumns = columns;
                 columns = [...baseColumns, ...pivotColumns];
 
                 columns$.next(columns);
                 wireVisibility(columns);
                 this.logic.setColumns(columns);
+                destroyColumns(outgoingColumns);
             } else if (!state.pivotConfig && lastPivotConfig) {
                 lastPivotConfig = undefined;
+                const outgoingColumns = columns;
                 columns = this.columnsBuilder ? this.columnsBuilder.build() : [];
                 columns$.next(columns);
                 wireVisibility(columns);
                 this.logic.setColumns(columns);
+                destroyColumns(outgoingColumns);
             }
 
             header.render(state.items, state.selectedItems, state.sortConfig);
@@ -264,13 +384,44 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         const mainSub = new Subscription();
         mainSub.add(sub);
         mainSub.add(visColSub);
+        mainSub.add(classNameSub);
+
+        if (this.selectedRows$) {
+            const subject = this.selectedRows$;
+            let suppressInbound = false;
+            let suppressOutbound = false;
+
+            // Inbound first: consumer subject -> grid selection.
+            // Subscribing inbound before outbound means a BehaviorSubject's replayed
+            // initial value seeds the grid before outSub's synchronous fire on subscribe.
+            const inSub = subject.subscribe(rows => {
+                if (suppressInbound) return;
+                suppressOutbound = true;
+                try { this.logic.setSelectedItems(new Set(rows)); } finally { suppressOutbound = false; }
+            });
+
+            // Outbound: grid selection -> consumer subject.
+            // selectedItems$ is a BehaviorSubject so this fires synchronously on subscribe;
+            // suppressInbound prevents the echo back through inSub.
+            const outSub = this.logic.selectedItems$.subscribe(set => {
+                if (suppressOutbound) return;
+                suppressInbound = true;
+                try { subject.next(Array.from(set)); } finally { suppressInbound = false; }
+            });
+
+            mainSub.add(inSub);
+            mainSub.add(outSub);
+        }
 
         registerDestroy(container, () => {
             mainSub.unsubscribe();
             visSubs.forEach(s => s.unsubscribe());
             this.logic.destroy();
             viewport.destroy();
+            destroyColumns(columns);
         });
+
+        applyTestId(container, this.testId);
 
         return container;
     }

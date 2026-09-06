@@ -1,4 +1,5 @@
-import { Observable, Subject, of } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
 import { createOptimizedPipeline, GatedObserver } from './optimized-pipeline';
 
 // The mock is installed globally via setupTests.ts
@@ -297,15 +298,15 @@ describe('createOptimizedPipeline', () => {
             }
         });
 
-        // No options passed — all defaults in effect (appearDebounceMs=150, retryBaseMs=500)
+        // No options passed — all defaults in effect (appearDebounceMs=20, retryBaseMs=500)
         const pipeline$ = createOptimizedPipeline(element, source$);
 
         const results: number[] = [];
         pipeline$.subscribe(v => results.push(v));
 
         getMock().triggerVisibility(element, true);
-        // Default appearDebounceMs is 150 — advance past it
-        jest.advanceTimersByTime(150);
+        // Default appearDebounceMs is 20 — advance past it
+        jest.advanceTimersByTime(20);
 
         // First call errored; retry #1 default delay = 500 * 2^0 = 500ms
         expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Retry #1 in 500ms'));
@@ -315,6 +316,30 @@ describe('createOptimizedPipeline', () => {
         expect(results).toEqual([77]);
 
         consoleSpy.mockRestore();
+    });
+
+    // -----------------------------------------------------------------------
+    // 8b. DEFAULT appearDebounceMs IS EXACTLY 20ms (matches the JSDoc/option comment)
+    // -----------------------------------------------------------------------
+    it('uses exactly 20ms as the default appear debounce (nothing at 19ms, flowing at 20ms)', () => {
+        const subject = new Subject<number>();
+        const pipeline$ = createOptimizedPipeline(element, subject.asObservable(), { logger });
+
+        const results: number[] = [];
+        const sub = pipeline$.subscribe(v => results.push(v));
+
+        getMock().triggerVisibility(element, true);
+
+        jest.advanceTimersByTime(19);
+        subject.next(1);
+        expect(results).toEqual([]);
+
+        jest.advanceTimersByTime(1); // total 20ms — debounce fires
+        subject.next(2);
+        expect(results).toEqual([2]);
+
+        sub.unsubscribe();
+        subject.complete();
     });
 
     // -----------------------------------------------------------------------
@@ -458,5 +483,611 @@ describe('createOptimizedPipeline', () => {
         getMock().triggerVisibility(element, true);
         jest.advanceTimersByTime(0);
         expect(subscribeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    // -----------------------------------------------------------------------
+    // 14. NO IntersectionObserver (SSR / old runtimes): always visible, synchronous
+    // -----------------------------------------------------------------------
+    describe('fallback when IntersectionObserver is unavailable', () => {
+        let original: any;
+
+        beforeEach(() => {
+            original = (globalThis as any).IntersectionObserver;
+        });
+
+        afterEach(() => {
+            (globalThis as any).IntersectionObserver = original;
+        });
+
+        it('renders synchronously without gating when IntersectionObserver is undefined', () => {
+            (globalThis as any).IntersectionObserver = undefined;
+
+            const results: number[] = [];
+            expect(() => {
+                createOptimizedPipeline(element, of(1), { logger }).subscribe(v => results.push(v));
+            }).not.toThrow();
+            // No timers advanced — delivery must be synchronous
+            expect(results).toEqual([1]);
+        });
+
+        it('does not throw and renders synchronously when IntersectionObserver is null', () => {
+            (globalThis as any).IntersectionObserver = null;
+
+            const results: number[] = [];
+            let outerComplete = false;
+            let outerError: unknown;
+            expect(() => {
+                createOptimizedPipeline(element, of(1), { logger }).subscribe({
+                    next: v => results.push(v),
+                    error: e => { outerError = e; },
+                    complete: () => { outerComplete = true; },
+                });
+            }).not.toThrow();
+            expect(results).toEqual([1]);
+
+            // A finite source$ must not complete the outer GatedObserver (NEVER tail).
+            expect(outerComplete).toBe(false);
+            expect(outerError).toBeUndefined();
+        });
+
+        it('does not complete the outer pipeline for a finite source when IntersectionObserver is undefined', () => {
+            (globalThis as any).IntersectionObserver = undefined;
+
+            const results: number[] = [];
+            let outerComplete = false;
+            let outerError: unknown;
+            createOptimizedPipeline(element, of(1, 2, 3), { logger }).subscribe({
+                next: v => results.push(v),
+                error: e => { outerError = e; },
+                complete: () => { outerComplete = true; },
+            });
+
+            expect(results).toEqual([1, 2, 3]);
+            expect(outerComplete).toBe(false);
+            expect(outerError).toBeUndefined();
+        });
+
+        it('constructs no IntersectionObserver at all in the fallback path', () => {
+            (globalThis as any).IntersectionObserver = undefined;
+
+            const subject = new Subject<number>();
+            const sub = createOptimizedPipeline(element, subject.asObservable(), { logger }).subscribe();
+
+            expect(getMock().instances).toHaveLength(0);
+
+            sub.unsubscribe();
+            subject.complete();
+        });
+
+        it('unsubscribing the fallback pipeline tears down the source subscription (no leak)', () => {
+            (globalThis as any).IntersectionObserver = undefined;
+
+            const subject = new Subject<number>();
+            const teardownSpy = jest.fn();
+            const subscribeSpy = jest.fn();
+
+            const source$ = new Observable<number>(subscriber => {
+                subscribeSpy();
+                const inner = subject.subscribe(subscriber);
+                return () => {
+                    teardownSpy();
+                    inner.unsubscribe();
+                };
+            });
+
+            const results: number[] = [];
+            const subscription = createOptimizedPipeline(element, source$, { logger })
+                .subscribe(v => results.push(v));
+
+            // Synchronous subscribe — no timers advanced.
+            expect(subscribeSpy).toHaveBeenCalledTimes(1);
+            subject.next(1);
+            expect(results).toEqual([1]);
+            expect(subject.observed).toBe(true);
+
+            subscription.unsubscribe();
+
+            expect(teardownSpy).toHaveBeenCalledTimes(1);
+            // The source is fully detached: the Subject has no observers left.
+            expect(subject.observed).toBe(false);
+            subject.next(2);
+            expect(results).toEqual([1]);
+
+            subject.complete();
+        });
+
+        it('is cold in the fallback: each subscriber gets its own source subscription and independent teardown', () => {
+            (globalThis as any).IntersectionObserver = undefined;
+
+            const subject = new Subject<number>();
+            const subscribeSpy = jest.fn();
+            const source$ = new Observable<number>(subscriber => {
+                subscribeSpy();
+                const inner = subject.subscribe(subscriber);
+                return () => inner.unsubscribe();
+            });
+
+            const pipeline$ = createOptimizedPipeline(element, source$, { logger });
+
+            const a: number[] = [];
+            const b: number[] = [];
+            const subA = pipeline$.subscribe(v => a.push(v));
+            const subB = pipeline$.subscribe(v => b.push(v));
+
+            expect(subscribeSpy).toHaveBeenCalledTimes(2);
+
+            subject.next(1);
+            expect(a).toEqual([1]);
+            expect(b).toEqual([1]);
+
+            // Tearing down one subscriber must not disturb the other.
+            subA.unsubscribe();
+            subject.next(2);
+            expect(a).toEqual([1]);
+            expect(b).toEqual([1, 2]);
+
+            subB.unsubscribe();
+            expect(subject.observed).toBe(false);
+            subject.complete();
+        });
+
+        it('stays idempotent in the fallback: an already-gated source is returned untouched', () => {
+            (globalThis as any).IntersectionObserver = undefined;
+
+            const alreadyGated$ = new GatedObserver(of(1, 2, 3));
+            let result$: GatedObserver<number>;
+
+            expect(() => {
+                result$ = createOptimizedPipeline(element, alreadyGated$, { logger });
+            }).not.toThrow();
+
+            expect(result$!).toBe(alreadyGated$);
+
+            const results: number[] = [];
+            let completed = false;
+            result$!.subscribe({
+                next: v => results.push(v),
+                complete: () => { completed = true; },
+            });
+
+            // Pass-through semantics are unchanged: of(...) still completes.
+            expect(results).toEqual([1, 2, 3]);
+            expect(completed).toBe(true);
+        });
+
+        it('mirrors test 6: exhausts retries but keeps the outer pipeline alive (self-healing)', () => {
+            (globalThis as any).IntersectionObserver = undefined;
+
+            let attempts = 0;
+            const source$ = new Observable<number>(subscriber => {
+                attempts++;
+                subscriber.error(new Error('always fail'));
+            });
+
+            const pipeline$ = createOptimizedPipeline(element, source$, {
+                retryCount: 2,
+                retryBaseMs: 50,
+                logger,
+            });
+
+            let outerError: unknown;
+            let outerComplete = false;
+            pipeline$.subscribe({
+                next: () => {},
+                error: e => { outerError = e; },
+                complete: () => { outerComplete = true; },
+            });
+
+            // Retry #1: 50ms, Retry #2: 100ms
+            jest.advanceTimersByTime(50);
+            jest.advanceTimersByTime(100);
+
+            expect(logger.warn).toHaveBeenCalledWith(
+                expect.stringContaining('Giving up after 2 retries')
+            );
+            expect(attempts).toBe(3);
+            expect(outerError).toBeUndefined();
+            expect(outerComplete).toBe(false);
+        });
+
+        it('mirrors test 10: does not complete the outer pipeline when source$ completes normally', () => {
+            (globalThis as any).IntersectionObserver = undefined;
+
+            const subject = new Subject<number>();
+            const source$ = subject.asObservable();
+
+            const pipeline$ = createOptimizedPipeline(element, source$, { logger });
+
+            const results: number[] = [];
+            let outerComplete = false;
+            let outerError: unknown;
+            pipeline$.subscribe({
+                next: v => results.push(v),
+                error: e => { outerError = e; },
+                complete: () => { outerComplete = true; },
+            });
+
+            subject.next(7);
+            subject.complete();
+
+            expect(results).toEqual([7]);
+            expect(outerComplete).toBe(false);
+            expect(outerError).toBeUndefined();
+
+            // Outer pipeline stays alive — nothing further is delivered since source$ completed,
+            // but the GatedObserver itself must not have completed or errored.
+            expect(outerComplete).toBe(false);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // eagerFirst: deliver source$'s first value synchronously before visibility
+    // -----------------------------------------------------------------------
+    describe('eagerFirst option', () => {
+        it('emits the first value synchronously before any intersection is observed', () => {
+            const source$ = of(42);
+            const pipeline$ = createOptimizedPipeline(element, source$, { eagerFirst: true, logger });
+
+            const results: number[] = [];
+            pipeline$.subscribe(v => results.push(v));
+
+            // No triggerVisibility, no timer advance — must already be there.
+            expect(results).toEqual([42]);
+        });
+
+        it('delivers the eager value once; the gated branch joining later does not replay it (a cold source may resubscribe)', () => {
+            const subscribeSpy = jest.fn();
+            let calls = 0;
+            // A source that only has a value to give on its very first subscription — models
+            // e.g. a cache hit that's exhausted after being read once. Regardless of whether
+            // the gated branch triggers a second real subscription when visibility resolves
+            // (accepted per the JSDoc), it must not cause the eager value to be re-delivered.
+            const source$ = new Observable<number>(subscriber => {
+                subscribeSpy();
+                calls++;
+                if (calls === 1) {
+                    subscriber.next(1);
+                }
+            });
+
+            const pipeline$ = createOptimizedPipeline(element, source$, {
+                eagerFirst: true,
+                appearDebounceMs: 20,
+                logger,
+            });
+
+            const results: number[] = [];
+            pipeline$.subscribe(v => results.push(v));
+
+            // Eager delivery already happened synchronously.
+            expect(results).toEqual([1]);
+
+            // Element becomes visible afterwards — no stale replay of the eager value.
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+
+            expect(results).toEqual([1]);
+        });
+
+        it('delivers exactly once when visibility opens before the source emits its first value (normal slow-network path)', () => {
+            const subject = new Subject<number>();
+            const pipeline$ = createOptimizedPipeline(element, subject.asObservable(), {
+                eagerFirst: true,
+                appearDebounceMs: 20,
+                logger,
+            });
+
+            const results: number[] = [];
+            pipeline$.subscribe(v => results.push(v));
+
+            // Visibility resolves true before the source has emitted anything — the eager
+            // branch is torn down (via takeUntil(opened$)) right here, so only the gated
+            // branch remains subscribed once the element is visible.
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+
+            expect(results).toEqual([]);
+
+            subject.next(99);
+
+            // Delivered exactly once, via the gated branch only.
+            expect(results).toEqual([99]);
+        });
+
+        it('re-subscribes and re-delivers a completing source on each new visibility window (eagerFirst: false)', () => {
+            let calls = 0;
+            const source$ = new Observable<number>(subscriber => {
+                calls++;
+                subscriber.next(calls);
+                subscriber.complete();
+            });
+
+            const pipeline$ = createOptimizedPipeline(element, source$, { appearDebounceMs: 20, logger });
+
+            const results: number[] = [];
+            pipeline$.subscribe(v => results.push(v));
+
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+            expect(results).toEqual([1]);
+
+            getMock().triggerVisibility(element, false);
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+
+            expect(results).toEqual([1, 2]);
+            expect(calls).toBe(2);
+        });
+
+        it('delivers the eager value once, then re-subscribes a completing source per visibility window with no stale replay (eagerFirst: true)', () => {
+            let calls = 0;
+            const source$ = new Observable<number>(subscriber => {
+                calls++;
+                subscriber.next(calls);
+                subscriber.complete();
+            });
+
+            const pipeline$ = createOptimizedPipeline(element, source$, {
+                eagerFirst: true,
+                appearDebounceMs: 20,
+                logger,
+            });
+
+            const results: number[] = [];
+            pipeline$.subscribe(v => results.push(v));
+
+            // Eager delivers synchronously before any visibility, from its own subscription.
+            expect(results).toEqual([1]);
+            expect(calls).toBe(1);
+
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+
+            // The gated branch subscribes fresh for this window too (the eager source$
+            // execution already completed and reset by the time visibility resolves) —
+            // its own new value, not a replay of the eager one.
+            expect(results).toEqual([1, 2]);
+
+            getMock().triggerVisibility(element, false);
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+
+            expect(results).toEqual([1, 2, 3]);
+            expect(calls).toBe(3);
+        });
+
+        it('leaves existing behaviour unchanged when eagerFirst is false (default)', () => {
+            const subject = new Subject<number>();
+            const pipeline$ = createOptimizedPipeline(element, subject.asObservable(), {
+                appearDebounceMs: 20,
+                logger,
+            });
+
+            const results: number[] = [];
+            pipeline$.subscribe(v => results.push(v));
+
+            // Nothing before visibility, exactly as the default (gated-only) contract requires.
+            expect(results).toEqual([]);
+
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+            subject.next(7);
+
+            expect(results).toEqual([7]);
+        });
+
+        it('IO-less fallback with eagerFirst delivers the first value exactly once (no duplication)', () => {
+            const original = (globalThis as any).IntersectionObserver;
+            (globalThis as any).IntersectionObserver = undefined;
+            try {
+                const subscribeSpy = jest.fn();
+                const source$ = new Observable<number>(subscriber => {
+                    subscribeSpy();
+                    subscriber.next(5);
+                });
+
+                const results: number[] = [];
+                createOptimizedPipeline(element, source$, { eagerFirst: true, logger })
+                    .subscribe(v => results.push(v));
+
+                expect(results).toEqual([5]);
+                expect(subscribeSpy).toHaveBeenCalledTimes(1);
+            } finally {
+                (globalThis as any).IntersectionObserver = original;
+            }
+        });
+
+        it('paints only the first pre-visibility value (take(1)), not every value the source emits before opening', () => {
+            const subject = new Subject<number>();
+            const pipeline$ = createOptimizedPipeline(element, subject.asObservable(), {
+                eagerFirst: true,
+                appearDebounceMs: 20,
+                logger,
+            });
+
+            const results: number[] = [];
+            const sub = pipeline$.subscribe(v => results.push(v));
+
+            subject.next(1);
+            subject.next(2);
+            subject.next(3);
+
+            // take(1) — the eager branch paints the first value and then stands down.
+            expect(results).toEqual([1]);
+
+            // From visibility onward the gated branch delivers everything.
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+            subject.next(4);
+            expect(results).toEqual([1, 4]);
+
+            sub.unsubscribe();
+            subject.complete();
+        });
+
+        it('tears down the eager branch, the source, and the IntersectionObserver on unsubscribe before visibility', () => {
+            const subject = new Subject<number>();
+            const teardownSpy = jest.fn();
+            const source$ = new Observable<number>(subscriber => {
+                const inner = subject.subscribe(subscriber);
+                return () => {
+                    teardownSpy();
+                    inner.unsubscribe();
+                };
+            });
+
+            const pipeline$ = createOptimizedPipeline(element, source$, {
+                eagerFirst: true,
+                appearDebounceMs: 20,
+                logger,
+            });
+
+            const subscription = pipeline$.subscribe();
+
+            // The eager branch holds a live subscription to source$ before visibility.
+            expect(subject.observed).toBe(true);
+
+            subscription.unsubscribe();
+
+            expect(teardownSpy).toHaveBeenCalled();
+            expect(subject.observed).toBe(false);
+
+            const stillObserving = (getMock().instances ?? []).some(
+                inst => inst.observedElements && inst.observedElements.has(element)
+            );
+            expect(stillObserving).toBe(false);
+
+            subject.complete();
+        });
+
+        it('tears down the gated branch, the source, and the IntersectionObserver on unsubscribe after visibility', () => {
+            const subject = new Subject<number>();
+            const teardownSpy = jest.fn();
+            const source$ = new Observable<number>(subscriber => {
+                const inner = subject.subscribe(subscriber);
+                return () => {
+                    teardownSpy();
+                    inner.unsubscribe();
+                };
+            });
+
+            const pipeline$ = createOptimizedPipeline(element, source$, {
+                eagerFirst: true,
+                appearDebounceMs: 20,
+                logger,
+            });
+
+            const results: number[] = [];
+            const subscription = pipeline$.subscribe(v => results.push(v));
+
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+            subject.next(1);
+            expect(results).toEqual([1]);
+
+            subscription.unsubscribe();
+
+            expect(teardownSpy).toHaveBeenCalled();
+            // Both branches gone — the Subject has no observers left at all.
+            expect(subject.observed).toBe(false);
+            subject.next(2);
+            expect(results).toEqual([1]);
+
+            const stillObserving = (getMock().instances ?? []).some(
+                inst => inst.observedElements && inst.observedElements.has(element)
+            );
+            expect(stillObserving).toBe(false);
+
+            subject.complete();
+        });
+
+        it('swallows an error raised before visibility; the gated branch still retries with backoff and succeeds', () => {
+            let calls = 0;
+            const source$ = new Observable<number>(subscriber => {
+                calls++;
+                if (calls < 3) {
+                    subscriber.error(new Error(`fail #${calls}`));
+                } else {
+                    subscriber.next(123);
+                }
+            });
+
+            const pipeline$ = createOptimizedPipeline(element, source$, {
+                eagerFirst: true,
+                appearDebounceMs: 20,
+                retryCount: 5,
+                retryBaseMs: 100,
+                logger,
+            });
+
+            const results: number[] = [];
+            let outerError: unknown;
+            let outerComplete = false;
+            const sub = pipeline$.subscribe({
+                next: v => results.push(v),
+                error: e => { outerError = e; },
+                complete: () => { outerComplete = true; },
+            });
+
+            // Attempt #1 happened eagerly and failed. The eager branch has no retry —
+            // it swallows the error (catchError -> EMPTY) rather than propagating it.
+            expect(calls).toBe(1);
+            expect(results).toEqual([]);
+            expect(outerError).toBeUndefined();
+            expect(outerComplete).toBe(false);
+            expect(logger.warn).not.toHaveBeenCalled();
+
+            // Resilience is the gated branch's job — it starts fresh at visibility.
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+
+            expect(calls).toBe(2);
+            expect(logger.warn).toHaveBeenCalledWith(
+                expect.stringContaining('Retry #1 in 100ms')
+            );
+
+            jest.advanceTimersByTime(100);
+
+            expect(calls).toBe(3);
+            expect(results).toEqual([123]);
+            expect(outerError).toBeUndefined();
+            expect(outerComplete).toBe(false);
+
+            sub.unsubscribe();
+        });
+
+        it('a replaying source (BehaviorSubject) re-delivers its current value when the gated branch joins — downstream distinctUntilChanged absorbs it', () => {
+            const value$ = new BehaviorSubject<number>(10);
+            const pipeline$ = createOptimizedPipeline(element, value$.asObservable(), {
+                eagerFirst: true,
+                appearDebounceMs: 20,
+                logger,
+            });
+
+            const raw: number[] = [];
+            const deduped: number[] = [];
+            const subA = pipeline$.subscribe(v => raw.push(v));
+            const subB = pipeline$.pipe(distinctUntilChanged()).subscribe(v => deduped.push(v));
+
+            expect(raw).toEqual([10]);
+
+            getMock().triggerVisibility(element, true);
+            jest.advanceTimersByTime(20);
+
+            // Documented contract: every visibility window re-subscribes source$ from scratch,
+            // so a replaying source hands the same value to the gated branch again.
+            expect(raw).toEqual([10, 10]);
+            // This is why consumers such as money-kpi-card-viewport pipe the gated stream
+            // through distinctUntilChanged — the repaint is collapsed.
+            expect(deduped).toEqual([10]);
+
+            value$.next(20);
+            expect(raw).toEqual([10, 10, 20]);
+            expect(deduped).toEqual([10, 20]);
+
+            subA.unsubscribe();
+            subB.unsubscribe();
+            value$.complete();
+        });
     });
 });

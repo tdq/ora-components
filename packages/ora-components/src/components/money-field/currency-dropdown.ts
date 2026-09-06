@@ -126,6 +126,10 @@ export function createCurrencyDropdown(
         .withWidth('auto')
         .withAlignment('end')
         .withMaxWidth('300px')
+        // The popover wrapper never scrolls; the ListBox <ul> receives the clamped
+        // max-height and owns the scrollbar (long currency lists).
+        .withMaxHeight(256)
+        .withScrollElement(ul)
         .withOnClose(() => {
             isOpen = false;
             button.setAttribute('aria-expanded', 'false');

@@ -1,5 +1,6 @@
 import { Observable, Subscription, of } from 'rxjs';
-import { MoneyKPICardLogic, MoneyKPIData } from './money-kpi-card-logic';
+import { distinctUntilChanged } from 'rxjs/operators';
+import { CurrencyDisplay, MoneyKPICardLogic, MoneyKPIData } from './money-kpi-card-logic';
 import { LabelBuilder } from '../label/label';
 import { TrendBuilder } from '../trend/trend-builder';
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
@@ -16,6 +17,8 @@ function cn(...inputs: ClassValue[]) {
 export interface MoneyKPICardViewportConfig {
     value$: Observable<Money>;
     precision$: Observable<number>;
+    locale$: Observable<string>;
+    currencyDisplay$: Observable<CurrencyDisplay>;
     label$?: Observable<string>;
     trend$?: Observable<Trend>;
     description$?: Observable<string>;
@@ -35,7 +38,7 @@ export class MoneyKPICardViewport {
     }
 
     build(): HTMLElement {
-        const { value$, precision$, label$, trend$, description$, glass, extraClass$ } = this.config;
+        const { value$, precision$, locale$, currencyDisplay$, label$, trend$, description$, glass, extraClass$ } = this.config;
 
         const sub = new Subscription();
 
@@ -58,25 +61,27 @@ export class MoneyKPICardViewport {
 
         // ---- Value row: symbol + whole . cents ----
         const valueRow = document.createElement('div');
-        valueRow.className = 'flex items-baseline gap-1 tabular-nums';
+        valueRow.className = 'flex items-baseline tabular-nums';
+
+        const signEl = document.createElement('span');
+        signEl.className = 'mkp-sign text-on-surface text-4xl font-bold leading-none';
 
         const symbolEl = document.createElement('span');
-        symbolEl.className = 'text-on-surface opacity-70 text-2xl font-semibold';
+        symbolEl.className = 'mkp-symbol text-on-surface opacity-70 text-2xl font-semibold whitespace-pre';
 
         const wholeEl = document.createElement('span');
-        wholeEl.className = 'text-on-surface text-4xl font-bold leading-none';
+        wholeEl.className = 'mkp-whole text-on-surface text-4xl font-bold leading-none';
 
         const sepEl = document.createElement('span');
-        sepEl.className = 'text-on-surface opacity-70 text-2xl font-semibold';
-        sepEl.textContent = '.';
+        sepEl.className = 'mkp-sep text-on-surface opacity-70 text-2xl font-semibold';
 
         const centsEl = document.createElement('span');
-        centsEl.className = 'text-on-surface text-2xl font-semibold leading-none inline-block min-w-[2ch] text-left';
+        centsEl.className = 'mkp-cents text-on-surface text-2xl font-semibold leading-none inline-block min-w-[2ch] text-left';
 
+        valueRow.appendChild(signEl);
         valueRow.appendChild(symbolEl);
         valueRow.appendChild(wholeEl);
-        valueRow.appendChild(sepEl);
-        valueRow.appendChild(centsEl);
+        // sepEl / centsEl are attached only while precision > 0 (see state$ handler)
 
         // ---- Description row ----
         const descRow = document.createElement('div');
@@ -91,11 +96,14 @@ export class MoneyKPICardViewport {
         body.appendChild(headerRow);
         body.appendChild(valueRow);
 
-        // ---- Gate value$ on viewport visibility (pipeline applies its own defaults) ----
-        const optimizedValue$ = createOptimizedPipeline(body, value$);
+        // ---- First emission paints eagerly; later updates are viewport-gated ----
+        // eagerFirst delivers the first value synchronously via the pipeline's single shared
+        // subscription to value$ — no duplicate subscription to a (possibly cold) source.
+        const paintedValue$ = createOptimizedPipeline(body, value$, { eagerFirst: true }).pipe(
+            distinctUntilChanged((a: Money, b: Money) => a.amount === b.amount && a.currencyId === b.currencyId),
+        );
 
-        // ---- Derive logic from the visibility-gated stream ----
-        const logic = new MoneyKPICardLogic(optimizedValue$, precision$);
+        const logic = new MoneyKPICardLogic(paintedValue$, precision$, locale$, currencyDisplay$);
 
         if (description$) {
             body.appendChild(descRow);
@@ -105,11 +113,20 @@ export class MoneyKPICardViewport {
         let prevCents = '';
 
         sub.add(logic.state$.subscribe((data: MoneyKPIData) => {
-            const { formatted, direction } = data;
+            const { formatted, direction, precision } = data;
 
-            symbolEl.textContent = formatted.symbol + ' ';
+            signEl.textContent = formatted.sign;
+            symbolEl.textContent = formatted.symbol;
             wholeEl.textContent = formatted.whole;
-            centsEl.textContent = formatted.cents;
+
+            if (precision > 0) {
+                sepEl.textContent = formatted.decimalSeparator;
+                centsEl.textContent = formatted.cents;
+                if (!sepEl.isConnected) valueRow.append(sepEl, centsEl);
+            } else {
+                sepEl.remove();
+                centsEl.remove();
+            }
 
             if (formatted.cents !== prevCents && prevCents !== '') {
                 centsEl.classList.remove('mkp-roll-digit');

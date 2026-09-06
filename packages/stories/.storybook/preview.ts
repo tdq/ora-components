@@ -96,6 +96,10 @@ const preview: Preview = {
                 transform: (code: string) => formatBuilderChains(code),
             },
         },
+        // 'todo' reports violations in the Storybook UI addon panel instead of failing
+        // the story there. The test-runner gate is separate and still strict: postVisit
+        // in .storybook/test-runner.ts calls checkA11y(), which hard-fails CI on violations.
+        a11y: { test: 'todo' },
         viewport: {
             viewports: {
                 desktop1280: { name: 'Desktop 1280', styles: { width: '1280px', height: '800px' }, type: 'desktop' },

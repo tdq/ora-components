@@ -6,6 +6,7 @@ import { registerDestroy } from '@/core/destroyable-element';
 import { NumberFieldLogic, NumberFieldState } from './number-field-logic';
 import { createNumberFieldLabel } from './number-field-label';
 import { createNumberFieldSupportText } from './number-field-error';
+import { applyTestId } from '@/core/test-id';
 
 export { FieldStyle as NumberFieldStyle };
 
@@ -27,6 +28,7 @@ export class NumberFieldBuilder implements ComponentBuilder {
     private suffix$ = of<HTMLElement | string>('');
     private isGlass: boolean = false;
     private isInlineError: boolean = false;
+    private testId?: string;
 
     asGlass(): this {
         this.isGlass = true;
@@ -35,6 +37,12 @@ export class NumberFieldBuilder implements ComponentBuilder {
 
     asInlineError(): this {
         this.isInlineError = true;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered `<input>`. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -192,6 +200,8 @@ export class NumberFieldBuilder implements ComponentBuilder {
         registerDestroy(container, () => {
             logic.destroy();
         });
+
+        applyTestId(input, this.testId);
 
         return container;
     }

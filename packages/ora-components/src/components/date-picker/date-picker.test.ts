@@ -1,4 +1,4 @@
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { DatePickerBuilder } from './datepicker-builder';
 import { fireEvent, screen } from '@testing-library/dom';
 import { formatDate, parseDate, isValidDate } from './date-utils';
@@ -340,7 +340,7 @@ describe('ST-7: Calendar weekday headers and day offset', () => {
 
     test('ST-7: MONDAY default renders Mo as first and Su as last weekday header', () => {
         const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 1));
-        const cal = renderCalendar({
+        const { element: cal } = renderCalendar({
             selectedDate$,
             onSelect: () => {},
             firstDayOfWeek: DayOfWeek.MONDAY,
@@ -354,7 +354,7 @@ describe('ST-7: Calendar weekday headers and day offset', () => {
 
     test('ST-7: SUNDAY renders Su as first and Sa as last weekday header', () => {
         const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 1));
-        const cal = renderCalendar({
+        const { element: cal } = renderCalendar({
             selectedDate$,
             onSelect: () => {},
             firstDayOfWeek: DayOfWeek.SUNDAY,
@@ -368,7 +368,7 @@ describe('ST-7: Calendar weekday headers and day offset', () => {
 
     test('ST-7: WEDNESDAY renders We as first weekday header', () => {
         const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 1));
-        const cal = renderCalendar({
+        const { element: cal } = renderCalendar({
             selectedDate$,
             onSelect: () => {},
             firstDayOfWeek: DayOfWeek.WEDNESDAY,
@@ -385,7 +385,7 @@ describe('ST-7: Calendar weekday headers and day offset', () => {
         // Jan 2023 starts on Sunday (getDay()=0). firstDayOfWeek=MONDAY(1).
         // offset = (0 - 1 + 7) % 7 = 6
         const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 15));
-        const cal = renderCalendar({
+        const { element: cal } = renderCalendar({
             selectedDate$,
             onSelect: () => {},
             firstDayOfWeek: DayOfWeek.MONDAY,
@@ -405,7 +405,7 @@ describe('ST-7: Calendar weekday headers and day offset', () => {
         // Jan 2023 starts on Sunday (getDay()=0). firstDayOfWeek=SUNDAY(0).
         // offset = (0 - 0 + 7) % 7 = 0 — no empty cells
         const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 15));
-        const cal = renderCalendar({
+        const { element: cal } = renderCalendar({
             selectedDate$,
             onSelect: () => {},
             firstDayOfWeek: DayOfWeek.SUNDAY,
@@ -420,7 +420,7 @@ describe('ST-7: Calendar weekday headers and day offset', () => {
     test('ST-7: omitting firstDayOfWeek defaults to MONDAY behaviour', () => {
         // Same as the MONDAY test: offset=6 for Jan 2023
         const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 15));
-        const cal = renderCalendar({
+        const { element: cal } = renderCalendar({
             selectedDate$,
             onSelect: () => {},
             // firstDayOfWeek intentionally omitted
@@ -435,5 +435,147 @@ describe('ST-7: Calendar weekday headers and day offset', () => {
             expect(cells[i].textContent).toBe('');
         }
         expect(cells[6].textContent).toBe('1');
+    });
+});
+
+// ─── A3: calendar subscriptions are registered for teardown ─────────────────
+
+describe('A3: renderCalendar subscription teardown', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    test('A3-1: repeated expansion never stacks selectedDate$ subscriptions and unsubscribe releases both streams', () => {
+        // Bare Subject: it never emits, so `take(1)` never completes the inner
+        // subscription — this is exactly the shape that used to leak.
+        const selectedDate$ = new Subject<Date | null>();
+        const isExpanded$ = new BehaviorSubject<boolean>(false);
+
+        const { subscription } = renderCalendar({
+            selectedDate$,
+            isExpanded$,
+            onSelect: () => {}
+        });
+
+        // combineLatest also subscribes to selectedDate$, so the sync stream is
+        // tracked separately: record the peak across the whole toggle sequence.
+        const counts: number[] = [selectedDate$.observers.length];
+        isExpanded$.next(true);
+        counts.push(selectedDate$.observers.length);
+        isExpanded$.next(false);
+        counts.push(selectedDate$.observers.length);
+        isExpanded$.next(true);
+        counts.push(selectedDate$.observers.length);
+
+        // One observer from the initial/expand sync stream (switchMap cancels the
+        // previous inner subscription) plus one from combineLatest.
+        expect(Math.max(...counts)).toBeLessThanOrEqual(2);
+        // The stronger property: the count never grows across toggles. Before the
+        // fix each `expanded === true` added a fresh `take(1)` subscription that a
+        // never-emitting Subject kept alive, so counts would have been 2,3,3,4.
+        expect(counts).toEqual([counts[0], counts[0], counts[0], counts[0]]);
+        expect(isExpanded$.observers.length).toBeGreaterThan(0);
+
+        subscription.unsubscribe();
+
+        expect(selectedDate$.observers.length).toBe(0);
+        expect(isExpanded$.observers.length).toBe(0);
+
+        selectedDate$.complete();
+        isExpanded$.complete();
+    });
+
+    test('A3-2: minDate$/maxDate$ observers are released by subscription.unsubscribe()', () => {
+        const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 15));
+        const isExpanded$ = new BehaviorSubject<boolean>(false);
+        const minDate$ = new BehaviorSubject<Date>(new Date(2023, 0, 1));
+        const maxDate$ = new BehaviorSubject<Date>(new Date(2023, 11, 31));
+
+        const { subscription } = renderCalendar({
+            selectedDate$,
+            isExpanded$,
+            minDate$,
+            maxDate$,
+            onSelect: () => {}
+        });
+
+        expect(minDate$.observers.length).toBeGreaterThan(0);
+        expect(maxDate$.observers.length).toBeGreaterThan(0);
+
+        subscription.unsubscribe();
+
+        expect(minDate$.observers.length).toBe(0);
+        expect(maxDate$.observers.length).toBe(0);
+        expect(selectedDate$.observers.length).toBe(0);
+
+        selectedDate$.complete();
+        isExpanded$.complete();
+        minDate$.complete();
+        maxDate$.complete();
+    });
+
+    test('A3-3: without isExpanded$ the calendar still releases selectedDate$ on unsubscribe', () => {
+        const selectedDate$ = new Subject<Date | null>();
+
+        const { element, subscription } = renderCalendar({
+            selectedDate$,
+            onSelect: () => {}
+        });
+
+        expect(element).toBeInstanceOf(HTMLElement);
+        expect(selectedDate$.observers.length).toBeGreaterThan(0);
+
+        subscription.unsubscribe();
+
+        expect(selectedDate$.observers.length).toBe(0);
+        selectedDate$.complete();
+    });
+
+    test('A3-4: unsubscribing twice is a no-op and leaves the element intact', () => {
+        const selectedDate$ = new BehaviorSubject<Date | null>(null);
+        const { element, subscription } = renderCalendar({ selectedDate$, onSelect: () => {} });
+        document.body.appendChild(element);
+
+        subscription.unsubscribe();
+        expect(() => subscription.unsubscribe()).not.toThrow();
+        expect(subscription.closed).toBe(true);
+        expect(selectedDate$.observers.length).toBe(0);
+
+        element.remove();
+        selectedDate$.complete();
+    });
+
+    test('A3-5: behaviour unchanged — reopening resyncs the view to the selected date', () => {
+        const selectedDate$ = new BehaviorSubject<Date | null>(new Date(2023, 0, 15));
+        const isExpanded$ = new BehaviorSubject<boolean>(false);
+
+        const { element, subscription } = renderCalendar({
+            selectedDate$,
+            isExpanded$,
+            onSelect: () => {}
+        });
+        document.body.appendChild(element);
+
+        // The month title is the header span carrying the label typography class
+        // (the chevron wrappers are spans too, so scope the query).
+        const title = element.querySelector('span.md-label-large') as HTMLElement;
+        expect(title.textContent).toBe('January 2023');
+
+        isExpanded$.next(true);
+        expect(title.textContent).toBe('January 2023');
+
+        // Navigate away, then close and reopen — the view must snap back.
+        const nextBtn = element.querySelector('[aria-label="Next Month"]') as HTMLButtonElement;
+        nextBtn.click();
+        expect(title.textContent).toBe('February 2023');
+
+        isExpanded$.next(false);
+        isExpanded$.next(true);
+        expect(title.textContent).toBe('January 2023');
+
+        subscription.unsubscribe();
+        element.remove();
+        selectedDate$.complete();
+        isExpanded$.complete();
     });
 });

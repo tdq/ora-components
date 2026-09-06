@@ -1,4 +1,4 @@
-import { GridBuilder, TabsBuilder } from '@tdq/ora-components';
+import { GridBuilder, LayoutBuilder, LayoutGap, SlotSize, TabsBuilder } from '@tdq/ora-components';
 import { of } from 'rxjs';
 import { renderStatusChip } from './chip-utils';
 
@@ -51,8 +51,13 @@ function createCustomerGrid(data: Customer[]): GridBuilder<Customer> {
 }
 
 export function createCustomers(): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto p-px-24';
+    // The page scroller: asScrollable() adds the .ora-scroll-bleed gutter so panel/KPI
+    // shadows are not clipped at the edges (see .agent/components/layout.md).
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.NONE)
+        .asScrollable()
+        .withClass(of('flex-1'));
 
     const activeData = ALL_CUSTOMERS.filter(c => c.status === 'Active');
     const inactiveData = ALL_CUSTOMERS.filter(c => c.status === 'Inactive' || c.status === 'Pending');
@@ -69,9 +74,9 @@ export function createCustomers(): HTMLElement {
         .withContent(createCustomerGrid(inactiveData));
 
     const tabsEl = tabs.build();
-    tabsEl.classList.add('h-full', 'flex', 'flex-col');
+    tabsEl.classList.add('w-full', 'h-full', 'flex', 'flex-col');
 
-    container.appendChild(tabsEl);
+    container.addSlot().withSize(SlotSize.GROW).withContent({ build: () => tabsEl });
 
-    return container;
+    return container.build();
 }

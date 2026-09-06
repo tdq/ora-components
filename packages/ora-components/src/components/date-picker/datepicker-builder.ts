@@ -8,6 +8,7 @@ import { DayOfWeek } from './types';
 import { Icons } from '@/core/icons';
 import { PopoverBuilder } from '../component-parts/popover';
 import { of } from 'rxjs';
+import { applyTestId } from '@/core/test-id';
 
 export class DatePickerBuilder implements ComponentBuilder {
     private value$?: Subject<Date | null>;
@@ -21,6 +22,7 @@ export class DatePickerBuilder implements ComponentBuilder {
     private className$?: Observable<string>;
     private isGlass: boolean = false;
     private firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY;
+    private testId?: string;
 
     withValue(value: Subject<Date | null>): this {
         this.value$ = value;
@@ -77,6 +79,12 @@ export class DatePickerBuilder implements ComponentBuilder {
         return this;
     }
 
+    /** Sets `data-testid` on the rendered `<input>`. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
+    }
+
     build(): HTMLElement {
         const container = document.createElement('div');
         container.className = 'flex flex-col gap-px-4 w-full relative';
@@ -101,7 +109,7 @@ export class DatePickerBuilder implements ComponentBuilder {
         calendarWrapper.id = calendarId;
         input.setAttribute('aria-controls', calendarId);
 
-        const calendar = renderCalendar({
+        const { element: calendar, subscription: calendarSub } = renderCalendar({
             selectedDate$: internalValue$,
             isExpanded$: isExpanded$,
             minDate$: this.minDate$,
@@ -117,6 +125,7 @@ export class DatePickerBuilder implements ComponentBuilder {
             firstDayOfWeek: this.firstDayOfWeek
         });
         calendarWrapper.appendChild(calendar);
+        subs.push(calendarSub);
 
         // 4. PopoverBuilder replaces the manual popup div
         const popover = new PopoverBuilder()
@@ -158,7 +167,11 @@ export class DatePickerBuilder implements ComponentBuilder {
         // 8. Cleanup
         registerDestroy(container, () => {
             subs.forEach(s => s?.unsubscribe());
+            internalValue$.complete();
+            isExpanded$.complete();
         });
+
+        applyTestId(input, this.testId);
 
         // Expose public API
         const element = container as any;

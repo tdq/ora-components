@@ -208,3 +208,74 @@ export const Styles = () => {
 
     return container;
 };
+
+/**
+ * `withMinDate`/`withMaxDate` are long-lived observables (not one-shot values) — pushing a
+ * new BehaviorSubject value re-narrows the calendar's disabled-date range live, without
+ * rebuilding the picker. This story drives both bounds from BehaviorSubjects and lets
+ * buttons widen/narrow the selectable window at runtime. The range readout is itself
+ * reactive — a BehaviorSubject<string> piped through withCaption() — rather than an
+ * imperative textContent write, consistent with the rest of the reactive data flow here.
+ */
+export const LongLivedMinMax = () => {
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const formatRange = (start: Date, end: Date) => `Range: ${start.toLocaleDateString()} – ${end.toLocaleDateString()}`;
+
+    const minDate$ = new BehaviorSubject<Date>(startOfMonth);
+    const maxDate$ = new BehaviorSubject<Date>(endOfMonth);
+    const value$ = new BehaviorSubject<Date | null>(null);
+    const rangeCaption$ = new BehaviorSubject<string>(formatRange(startOfMonth, endOfMonth));
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.LARGE);
+
+    layout.addSlot().withContent(
+        new DatePickerBuilder()
+            .withCaption(of('Constrained to the current month (live range)'))
+            .withValue(value$)
+            .withMinDate(minDate$)
+            .withMaxDate(maxDate$)
+    );
+
+    layout.addSlot().withContent(
+        new LabelBuilder()
+            .withCaption(rangeCaption$)
+            .withSize(LabelSize.SMALL)
+    );
+
+    const widenBtn = document.createElement('button');
+    widenBtn.className = 'px-3 py-1 rounded-medium border border-outline text-label-medium mr-2';
+    widenBtn.textContent = 'Widen to full quarter';
+    widenBtn.onclick = () => {
+        const quarterStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const quarterEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+        minDate$.next(quarterStart);
+        maxDate$.next(quarterEnd);
+        rangeCaption$.next(formatRange(quarterStart, quarterEnd));
+    };
+
+    const narrowBtn = document.createElement('button');
+    narrowBtn.className = 'px-3 py-1 rounded-medium border border-outline text-label-medium';
+    narrowBtn.textContent = 'Narrow back to this month';
+    narrowBtn.onclick = () => {
+        minDate$.next(startOfMonth);
+        maxDate$.next(endOfMonth);
+        rangeCaption$.next(formatRange(startOfMonth, endOfMonth));
+    };
+
+    const controls = document.createElement('div');
+    controls.className = 'flex gap-2';
+    controls.appendChild(widenBtn);
+    controls.appendChild(narrowBtn);
+
+    layout.addSlot().withContent({ build: () => controls });
+
+    const container = layout.build();
+    container.classList.add('p-4', 'max-w-md');
+
+    return container;
+};

@@ -62,10 +62,18 @@ export class ChartSvgArea {
         while (this.mainG.firstChild) this.mainG.removeChild(this.mainG.firstChild);
     }
 
-    getViewBox(padding: { top: number, right: number, bottom: number, left: number }, chartArea: HTMLElement, totalWidth?: number) {
+    /**
+     * `forcedHeight`, when given, replaces the measured chart-area rect height entirely
+     * (sparkline mode): the chart area's own height depends on the SVG's rendered size in a
+     * real browser (flex-basis: auto sizes to content, and an SVG with no definite parent
+     * height falls back to its ~150px intrinsic default) — a circular dependency that a
+     * *measured* height can never break. Deriving the viewBox height from the chart's
+     * configured `state.height` instead sidesteps the measurement entirely.
+     */
+    getViewBox(padding: { top: number, right: number, bottom: number, left: number }, chartArea: HTMLElement, totalWidth?: number, forcedHeight?: number) {
         const rect = chartArea.getBoundingClientRect();
         const width = totalWidth || rect.width || 600;
-        const height = rect.height || 400;
+        const height = forcedHeight ?? (rect.height || 400);
 
         this.svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
 
@@ -73,5 +81,14 @@ export class ChartSvgArea {
         const viewHeight = height - padding.top - padding.bottom;
 
         return { width, height, viewWidth, viewHeight };
+    }
+
+    /**
+     * Sets the `<svg>` `height` attribute to an explicit pixel value (sparkline mode) instead
+     * of the default `100%`, which would otherwise resolve against — and inherit — the same
+     * circular flex/intrinsic-size problem `getViewBox`'s `forcedHeight` sidesteps.
+     */
+    setPixelHeight(height: number | null): void {
+        this.svg.setAttribute('height', height != null ? String(height) : '100%');
     }
 }

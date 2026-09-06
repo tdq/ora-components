@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs';
-import { ComponentBuilder } from '../../core/component-builder';
 import { TextFieldBuilder } from '../text-field/text-field';
 import { NumberFieldBuilder } from '../number-field/number-field';
 import { MoneyFieldBuilder } from '../money-field';
@@ -7,13 +6,8 @@ import { ComboBoxBuilder } from '../combobox';
 import { DatePickerBuilder } from '../date-picker';
 import { CheckboxBuilder } from '../checkbox';
 import { LabelBuilder, LabelSize } from '../label';
-import { IFieldsBuilder } from './types';
+import { IFieldsBuilder, FormFieldBuilder } from './types';
 import { FORM_STYLES } from './styles';
-
-interface FormFieldBuilder extends ComponentBuilder {
-    withEnabled?(enabled: Observable<boolean>): any;
-    asGlass?(isGlass: boolean): any;
-}
 
 interface FieldConfig {
     builder: FormFieldBuilder;
@@ -67,6 +61,10 @@ export class FieldsBuilder implements IFieldsBuilder {
         return this.addField(new LabelBuilder().withSize(LabelSize.MEDIUM), column, colspan);
     }
 
+    addCustom<T extends FormFieldBuilder>(builder: T, column?: number, colspan?: number): T {
+        return this.addField(builder, column, colspan);
+    }
+
     private addField<T extends FormFieldBuilder>(builder: T, column?: number, colspan?: number): T {
         this.fields.push({ builder, column, colspan });
         return builder;
@@ -94,17 +92,18 @@ export class FieldsBuilder implements IFieldsBuilder {
             if (this.enabled$ && field.builder.withEnabled) {
                 field.builder.withEnabled(this.enabled$);
             }
-            if (field.builder.asGlass) {
-                field.builder.asGlass(this.isGlass);
+            if (this.isGlass && field.builder.asGlass) {
+                field.builder.asGlass();
             }
 
             const fieldEl = field.builder.build();
 
             // Handle grid positioning
-            if (field.column) {
+            if (field.column && field.colspan) {
+                fieldEl.style.gridColumn = `${field.column} / span ${field.colspan}`;
+            } else if (field.column) {
                 fieldEl.style.gridColumnStart = `${field.column}`;
-            }
-            if (field.colspan) {
+            } else if (field.colspan) {
                 fieldEl.style.gridColumn = `span ${field.colspan}`;
             }
 

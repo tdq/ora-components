@@ -68,6 +68,7 @@ import {
     createCustomColumnGridExample,
     createReactiveGridExample,
     createGroupedGridExample,
+    createAutoHeightSelectEditorGridExample,
 } from './components/grid';
 
 // Layouts
@@ -80,7 +81,32 @@ import {
     createVisibilityExample,
     createNestedLayoutExample,
     createComplexLayoutExample,
+    createGrowSlotExample,
 } from './components/layout';
+
+// Dialogs
+import {
+    createBeforeCloseDialogExample,
+    createFixedHeightDialogExample,
+} from './components/dialog';
+
+// ComboBox
+import {
+    createAccountPickerExample,
+} from './components/combobox';
+
+// Sidebar
+import {
+    createSidebarExample,
+    createSidebarWithFooterMenuExample,
+} from './components/sidebar';
+
+// Chat
+import {
+    createChatPanelExample,
+    createChatSuggestionsExample,
+    createChatTriggerExample,
+} from './components/chatpanel';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -186,6 +212,7 @@ page.addSlot().withContent(createMultiSelectGridExample());
 page.addSlot().withContent(createCustomColumnGridExample());
 page.addSlot().withContent(createReactiveGridExample());
 page.addSlot().withContent(createGroupedGridExample());
+page.addSlot().withContent(createAutoHeightSelectEditorGridExample());
 
 // Layouts
 page.addSlot().withContent(sectionHeader('Layouts'));
@@ -197,5 +224,34 @@ page.addSlot().withContent(createAlignmentExample());
 page.addSlot().withContent(createVisibilityExample());
 page.addSlot().withContent(createNestedLayoutExample());
 page.addSlot().withContent(createComplexLayoutExample());
+page.addSlot().withContent(createGrowSlotExample());
+
+// Dialogs
+page.addSlot().withContent(sectionHeader('Dialogs'));
+page.addSlot().withContent(row(
+    createBeforeCloseDialogExample(),
+    createFixedHeightDialogExample(),
+));
+
+// ComboBox
+page.addSlot().withContent(sectionHeader('ComboBox'));
+page.addSlot().withContent(createAccountPickerExample());
+
+// Sidebar
+page.addSlot().withContent(sectionHeader('Sidebar'));
+page.addSlot().withContent(row(
+    createSidebarExample(),
+    createSidebarWithFooterMenuExample(),
+));
+
+// Chat
+page.addSlot().withContent(sectionHeader('Chat'));
+page.addSlot().withContent(row(
+    createChatPanelExample(),
+    createChatTriggerExample(),
+));
+page.addSlot().withContent(row(
+    createChatSuggestionsExample(),
+));
 
 app.appendChild(page.build());

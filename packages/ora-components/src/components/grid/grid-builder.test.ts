@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { of, Subject, BehaviorSubject } from 'rxjs';
 import { GridBuilder } from './grid-builder';
 import { GridRow } from './grid-row';
 import { SortDirection } from './types';
@@ -6,6 +6,9 @@ import { MoneyColumnBuilder } from './columns/money-column';
 import { NumberColumnBuilder } from './columns/number-column';
 import { PercentageColumnBuilder } from './columns/percentage-column';
 import { GatedObserver } from '../../utils/optimized-pipeline';
+import { GRID_ROW_HEIGHT, GRID_HEADER_HEIGHT, GRID_TOOLBAR_HEIGHT_ALLOWANCE } from './grid-styles';
+import { EnumColumnBuilder } from './columns/enum-column';
+import { AggregationType } from './types';
 
 describe('GridBuilder', () => {
     let container: HTMLElement;
@@ -141,7 +144,8 @@ describe('GridBuilder', () => {
         // Use .items-stretch to distinguish grid rows from checkbox icon containers
         // (both have .absolute.w-full, but only grid rows have .items-stretch)
         const firstRow = container.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
-        expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
+        // Token var(--ora-grid-row-selected-bg) replaces bg-primary/10
+        expect(firstRow.className).toContain('var(--ora-grid-row-selected-bg)');
 
         document.body.removeChild(container);
     });
@@ -166,7 +170,8 @@ describe('GridBuilder', () => {
         // Use .items-stretch to distinguish grid rows from checkbox icon containers
         const rows = container.querySelectorAll('.absolute.w-full.items-stretch');
         rows.forEach(row => {
-            expect(row.classList.contains('bg-primary/10')).toBe(true);
+            // Token var(--ora-grid-row-selected-bg) replaces bg-primary/10
+            expect((row as HTMLElement).className).toContain('var(--ora-grid-row-selected-bg)');
         });
 
         document.body.removeChild(container);
@@ -337,6 +342,183 @@ describe('GridBuilder', () => {
         } finally {
             window.IntersectionObserver = OriginalMock;
         }
+    });
+
+    it('IO-less fallback: withItems renders rows synchronously when IntersectionObserver is unavailable', () => {
+        const OriginalMock = window.IntersectionObserver;
+        (window as any).IntersectionObserver = undefined;
+
+        try {
+            const grid = new GridBuilder<TestItem>()
+                .withItems(of(items))
+                .withHeight(of(400));
+
+            grid.withColumns().addTextColumn('name').withHeader('Name');
+
+            // build() + connect: no viewport events, no timer advancement.
+            container = grid.build();
+            document.body.appendChild(container);
+
+            const rows = container.querySelectorAll('.absolute.w-full');
+            expect(rows.length).toBeGreaterThan(0);
+
+            // disconnect must stay clean without an IntersectionObserver to disconnect.
+            expect(() => document.body.removeChild(container)).not.toThrow();
+        } finally {
+            window.IntersectionObserver = OriginalMock;
+        }
+    });
+
+    describe('withRowHeight / withAutoHeight', () => {
+        interface RHItem { id: number; name: string; }
+        const rhItems: RHItem[] = Array.from({ length: 3 }, (_, i) => ({ id: i, name: `Item ${i}` }));
+
+        it('withRowHeight changes row element height and translateY math', () => {
+            const grid = new GridBuilder<RHItem>()
+                .withItems(of(rhItems))
+                .withHeight(of(400))
+                .withRowHeight(40);
+            grid.withColumns().addTextColumn('name');
+
+            const rhContainer = grid.build();
+            document.body.appendChild(rhContainer);
+
+            const rows = Array.from(rhContainer.querySelectorAll('.absolute.w-full.items-stretch')) as HTMLElement[];
+            expect(rows.length).toBeGreaterThan(0);
+            expect(rows[0].style.height).toBe('40px');
+            expect(rows[0].style.transform).toBe('translateY(0px)');
+
+            const secondRow = rows.find(r => r.style.transform === 'translateY(40px)');
+            expect(secondRow).toBeTruthy();
+            expect(secondRow!.style.height).toBe('40px');
+
+            document.body.removeChild(rhContainer);
+        });
+
+        it('defaults to GRID_ROW_HEIGHT when withRowHeight is not called', () => {
+            const grid = new GridBuilder<RHItem>()
+                .withItems(of(rhItems))
+                .withHeight(of(400));
+            grid.withColumns().addTextColumn('name');
+
+            const rhContainer = grid.build();
+            document.body.appendChild(rhContainer);
+
+            const row = rhContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
+            expect(row.style.height).toBe(`${GRID_ROW_HEIGHT}px`);
+
+            document.body.removeChild(rhContainer);
+        });
+
+        it('withAutoHeight sizes the container for the current item count up to maxRows', () => {
+            const grid = new GridBuilder<RHItem>()
+                .withItems(of(rhItems)) // 3 items
+                .withAutoHeight(5);
+            grid.withColumns().addTextColumn('name');
+
+            const rhContainer = grid.build();
+            document.body.appendChild(rhContainer);
+
+            expect(rhContainer.style.height).toBe(`${3 * GRID_ROW_HEIGHT + GRID_HEADER_HEIGHT}px`);
+
+            document.body.removeChild(rhContainer);
+        });
+
+        it('withAutoHeight caps the container height at maxRows once itemCount exceeds it (scrolls inside)', () => {
+            const many: RHItem[] = Array.from({ length: 20 }, (_, i) => ({ id: i, name: `Item ${i}` }));
+            const grid = new GridBuilder<RHItem>()
+                .withItems(of(many))
+                .withAutoHeight(5);
+            grid.withColumns().addTextColumn('name');
+
+            const rhContainer = grid.build();
+            document.body.appendChild(rhContainer);
+
+            expect(rhContainer.style.height).toBe(`${5 * GRID_ROW_HEIGHT + GRID_HEADER_HEIGHT}px`);
+
+            document.body.removeChild(rhContainer);
+        });
+
+        it('withAutoHeight sizes on rendered rows.length (group headers), not raw item count, when grouped', () => {
+            interface GItem { id: number; name: string; category: string; }
+            const gItems: GItem[] = [
+                { id: 1, name: 'A', category: 'Cat1' },
+                { id: 2, name: 'B', category: 'Cat1' },
+                { id: 3, name: 'C', category: 'Cat2' },
+            ];
+            const grid = new GridBuilder<GItem>()
+                .withItems(of(gItems))
+                .withGrouping(of(['category']))
+                .withAutoHeight(10);
+            grid.withColumns().addTextColumn('name');
+
+            const rhContainer = grid.build();
+            document.body.appendChild(rhContainer);
+
+            // Groups start collapsed -> rows = 2 GROUP_HEADER rows only, not the 3 raw items.
+            expect(rhContainer.style.height).toBe(`${2 * GRID_ROW_HEIGHT + GRID_HEADER_HEIGHT}px`);
+
+            document.body.removeChild(rhContainer);
+        });
+
+        it('withAutoHeight budgets a toolbar height allowance when withToolbar() is set', () => {
+            const grid = new GridBuilder<RHItem>()
+                .withItems(of(rhItems)) // 3 items
+                .withAutoHeight(5);
+            grid.withToolbar().addTextButton().withCaption(of('Refresh'));
+            grid.withColumns().addTextColumn('name');
+
+            const rhContainer = grid.build();
+            document.body.appendChild(rhContainer);
+
+            expect(rhContainer.style.height).toBe(
+                `${3 * GRID_ROW_HEIGHT + GRID_HEADER_HEIGHT + GRID_TOOLBAR_HEIGHT_ALLOWANCE}px`
+            );
+
+            document.body.removeChild(rhContainer);
+        });
+
+        it('withAutoHeight re-sizes reactively as the row count changes', () => {
+            const items$ = new BehaviorSubject<RHItem[]>(rhItems); // 3 items
+            const grid = new GridBuilder<RHItem>()
+                .withItems(items$)
+                .withAutoHeight(5);
+            grid.withColumns().addTextColumn('name');
+
+            const rhContainer = grid.build();
+            document.body.appendChild(rhContainer);
+
+            expect(rhContainer.style.height).toBe(`${3 * GRID_ROW_HEIGHT + GRID_HEADER_HEIGHT}px`);
+
+            // Grows with the row count...
+            items$.next(Array.from({ length: 4 }, (_, i) => ({ id: i, name: `Item ${i}` })));
+            expect(rhContainer.style.height).toBe(`${4 * GRID_ROW_HEIGHT + GRID_HEADER_HEIGHT}px`);
+
+            // ...caps at maxRows...
+            items$.next(Array.from({ length: 12 }, (_, i) => ({ id: i, name: `Item ${i}` })));
+            expect(rhContainer.style.height).toBe(`${5 * GRID_ROW_HEIGHT + GRID_HEADER_HEIGHT}px`);
+
+            // ...and shrinks again, down to the header alone when the grid empties.
+            items$.next([]);
+            expect(rhContainer.style.height).toBe(`${GRID_HEADER_HEIGHT}px`);
+
+            document.body.removeChild(rhContainer);
+        });
+
+        it('withRowHeight combined with withAutoHeight uses the custom row height in the calculation', () => {
+            const grid = new GridBuilder<RHItem>()
+                .withItems(of(rhItems)) // 3 items
+                .withRowHeight(30)
+                .withAutoHeight(5);
+            grid.withColumns().addTextColumn('name');
+
+            const rhContainer = grid.build();
+            document.body.appendChild(rhContainer);
+
+            expect(rhContainer.style.height).toBe(`${3 * 30 + GRID_HEADER_HEIGHT}px`);
+
+            document.body.removeChild(rhContainer);
+        });
     });
 
     describe('column alignment', () => {
@@ -515,6 +697,139 @@ describe('GridBuilder', () => {
 
             document.body.removeChild(row.getElement());
             row.destroy();
+        });
+    });
+
+    describe('withRowsSelected — two-way selection binding', () => {
+        let selContainer: HTMLElement;
+
+        afterEach(() => {
+            if (selContainer && selContainer.parentNode) {
+                selContainer.parentNode.removeChild(selContainer);
+            }
+        });
+
+        function buildWithSubject(subject: Subject<TestItem[]>): HTMLElement {
+            const grid = new GridBuilder<TestItem>()
+                .withItems(of(items))
+                .withHeight(of(400))
+                .asMultiSelect()
+                .withRowsSelected(subject);
+            grid.withColumns().addTextColumn('name');
+            const el = grid.build();
+            document.body.appendChild(el);
+            return el;
+        }
+
+        it('withRowsSelected returns this (chainable)', () => {
+            const subject = new Subject<TestItem[]>();
+            const grid = new GridBuilder<TestItem>();
+            const result = grid.withRowsSelected(subject);
+            expect(result).toBe(grid);
+        });
+
+        it('outbound: clicking a row checkbox emits that item into the subject', () => {
+            const subject = new Subject<TestItem[]>();
+            const emissions: TestItem[][] = [];
+            subject.subscribe(v => emissions.push(v));
+            selContainer = buildWithSubject(subject);
+
+            // checkboxes[0] = header, checkboxes[1] = first row
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            const baselineCount = emissions.length;
+            (checkboxes[1] as HTMLInputElement).click();
+
+            expect(emissions.length).toBe(baselineCount + 1);
+            expect(emissions[emissions.length - 1]).toEqual([items[0]]);
+        });
+
+        it('outbound: clicking the header "select all" checkbox emits all items', () => {
+            const subject = new Subject<TestItem[]>();
+            const emissions: TestItem[][] = [];
+            subject.subscribe(v => emissions.push(v));
+            selContainer = buildWithSubject(subject);
+
+            const headerCheckbox = selContainer.querySelector('input[type="checkbox"]') as HTMLInputElement;
+            const baselineCount = emissions.length;
+            headerCheckbox.click();
+
+            expect(emissions.length).toBe(baselineCount + 1);
+            expect(emissions[emissions.length - 1]).toEqual(items);
+        });
+
+        it('outbound: deselecting via header checkbox emits []', () => {
+            const subject = new Subject<TestItem[]>();
+            const emissions: TestItem[][] = [];
+            subject.subscribe(v => emissions.push(v));
+            selContainer = buildWithSubject(subject);
+
+            // First click: select all. The header re-renders and replaces the checkbox element.
+            (selContainer.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+            // Re-query after re-render to get the current element, then deselect.
+            (selContainer.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+
+            expect(emissions[emissions.length - 1]).toEqual([]);
+        });
+
+        it('inbound: subject$.next([items[0]]) selects that row in the grid', () => {
+            const subject = new Subject<TestItem[]>();
+            selContainer = buildWithSubject(subject);
+
+            subject.next([items[0]]);
+
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            const firstRowCheckbox = checkboxes[1] as HTMLInputElement;
+            expect(firstRowCheckbox.checked).toBe(true);
+            const firstRow = selContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
+            expect((firstRow as HTMLElement).className).toContain('var(--ora-grid-row-selected-bg)');
+        });
+
+        it('pre-seed: BehaviorSubject initial value selects that row on initial render', () => {
+            const subject = new BehaviorSubject<TestItem[]>([items[0]]);
+            const grid = new GridBuilder<TestItem>()
+                .withItems(of(items))
+                .withHeight(of(400))
+                .asMultiSelect()
+                .withRowsSelected(subject);
+            grid.withColumns().addTextColumn('name');
+            selContainer = grid.build();
+            document.body.appendChild(selContainer);
+
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            const firstRowCheckbox = checkboxes[1] as HTMLInputElement;
+            expect(firstRowCheckbox.checked).toBe(true);
+            const firstRow = selContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
+            expect((firstRow as HTMLElement).className).toContain('var(--ora-grid-row-selected-bg)');
+        });
+
+        it('no feedback loop: a single checkbox click causes exactly one new outbound emission', () => {
+            const subject = new Subject<TestItem[]>();
+            const emissions: TestItem[][] = [];
+            subject.subscribe(v => emissions.push(v));
+            selContainer = buildWithSubject(subject);
+
+            const baselineCount = emissions.length;
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            (checkboxes[1] as HTMLInputElement).click();
+
+            expect(emissions.length).toBe(baselineCount + 1);
+        });
+
+        it('without withRowsSelected the grid builds and selection works as before', () => {
+            const grid = new GridBuilder<TestItem>()
+                .withItems(of(items))
+                .withHeight(of(400))
+                .asMultiSelect();
+            grid.withColumns().addTextColumn('name');
+            selContainer = grid.build();
+            document.body.appendChild(selContainer);
+
+            const checkboxes = selContainer.querySelectorAll('input[type="checkbox"]');
+            expect(checkboxes.length).toBe(4);
+            (checkboxes[1] as HTMLInputElement).click();
+
+            const firstRow = selContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
+            expect((firstRow as HTMLElement).className).toContain('var(--ora-grid-row-selected-bg)');
         });
     });
 
@@ -739,5 +1054,242 @@ describe('GridBuilder', () => {
 
             document.body.removeChild(container);
         });
+    });
+
+    describe('GridColumn.destroy() lifecycle (GridBuilder wiring)', () => {
+        interface DestroyTestItem { category: string; value: number; status: string; }
+
+        function spyOnBuiltColumnDestroy(): { destroyCalls: number[]; restore: () => void } {
+            const destroyCalls: number[] = [];
+            let buildCount = 0;
+            const originalBuild = EnumColumnBuilder.prototype.build;
+            const spy = jest.spyOn(EnumColumnBuilder.prototype, 'build').mockImplementation(function (this: any) {
+                const col = originalBuild.call(this);
+                const generation = ++buildCount;
+                const originalDestroy = col.destroy;
+                col.destroy = () => {
+                    destroyCalls.push(generation);
+                    originalDestroy?.();
+                };
+                return col;
+            });
+            return { destroyCalls, restore: () => spy.mockRestore() };
+        }
+
+        it('destroys every column when the grid itself is removed', () => {
+            const { destroyCalls, restore } = spyOnBuiltColumnDestroy();
+            try {
+                const grid = new GridBuilder<DestroyTestItem>()
+                    .withItems(of([{ category: 'A', value: 1, status: 'ACTIVE' }]))
+                    .withHeight(of(400));
+                grid.withColumns().addEnumColumn('status').withOptions([{ value: 'ACTIVE', label: 'Active' }]);
+
+                const el = grid.build();
+                document.body.appendChild(el);
+
+                expect(destroyCalls).toEqual([]);
+
+                document.body.removeChild(el);
+
+                expect(destroyCalls).toEqual([1]);
+            } finally {
+                restore();
+            }
+        });
+
+        it('destroys the OUTGOING column generation when pivot mode regenerates the column set, keeping the surviving generation alive', () => {
+            const { destroyCalls, restore } = spyOnBuiltColumnDestroy();
+            try {
+                const itemsSubject = new BehaviorSubject<DestroyTestItem[]>([
+                    { category: 'A', value: 1, status: 'ACTIVE' },
+                ]);
+                const grid = new GridBuilder<DestroyTestItem>()
+                    .withItems(itemsSubject)
+                    .withPivot({
+                        rows: ['category'],
+                        columns: [],
+                        values: [{ field: 'value', aggregation: AggregationType.SUM }],
+                    });
+                grid.withColumns().addEnumColumn('status').withOptions([{ value: 'ACTIVE', label: 'Active' }]);
+
+                const el = grid.build();
+                document.body.appendChild(el);
+
+                // GridLogic's items$ starts as a BehaviorSubject([]) and the gated items
+                // pipeline resolves the real array right after (synchronously here, via the
+                // always-intersecting IntersectionObserver mock) — this can already regenerate
+                // pivot columns once during mount, before our own trigger below. Snapshot
+                // whatever that produced rather than assuming an exact count.
+                const destroyedAtMount = destroyCalls.length;
+                const liveGeneration = destroyedAtMount + 1; // the generation currently in use
+
+                // A new items array reference re-triggers pivot column regeneration (same
+                // pivotConfig, different state.rawItems) — the currently-live generation
+                // becomes the outgoing set and must be destroyed exactly once; the new
+                // generation (now live) must NOT be.
+                itemsSubject.next([{ category: 'B', value: 2, status: 'ACTIVE' }]);
+
+                expect(destroyCalls.length).toBe(destroyedAtMount + 1);
+                expect(destroyCalls[destroyCalls.length - 1]).toBe(liveGeneration);
+
+                const survivingGeneration = liveGeneration + 1;
+
+                // Removing the grid destroys the surviving generation.
+                document.body.removeChild(el);
+
+                expect(destroyCalls.length).toBe(destroyedAtMount + 2);
+                expect(destroyCalls[destroyCalls.length - 1]).toBe(survivingGeneration);
+            } finally {
+                restore();
+            }
+        });
+
+        it('leaves ZERO observers on a reactive options source after the grid is removed', () => {
+            // Reviewer NIT (3): the real end-to-end check behind destroy() — a live options
+            // Subject must have no subscribers left once the grid is gone, otherwise every
+            // mounted/unmounted grid permanently retains its enum columns.
+            const options$ = new Subject<{ value: any; label: string }[]>();
+            const grid = new GridBuilder<DestroyTestItem>()
+                .withItems(of([{ category: 'A', value: 1, status: 'ACTIVE' }]))
+                .withHeight(of(400));
+            grid.withColumns().addEnumColumn('status').withOptions(options$);
+
+            const el = grid.build();
+            document.body.appendChild(el);
+            options$.next([{ value: 'ACTIVE', label: 'Active' }]);
+
+            // Rendering the cells established the single shared options subscription.
+            expect(options$.observers.length).toBe(1);
+
+            document.body.removeChild(el);
+
+            expect(options$.observers.length).toBe(0);
+        });
+
+        it('leaves ZERO observers after an editable enum column\'s editor was open at teardown (ordering check)', () => {
+            // Resurrection guard: GridBuilder's registerDestroy runs viewport.destroy() —
+            // which commits any open editor and therefore calls col.render(), re-subscribing
+            // the options source — BEFORE destroyColumns(). Only that ordering ends at zero;
+            // the reverse would leave a resurrected subscription behind.
+            const options$ = new Subject<{ value: any; label: string }[]>();
+            const grid = new GridBuilder<DestroyTestItem>()
+                .withItems(of([{ category: 'A', value: 1, status: 'ACTIVE' }]))
+                .withHeight(of(400))
+                .asEditable(() => {});
+            grid.withColumns().addEnumColumn('status').withOptions(options$).asEditable();
+
+            const el = grid.build();
+            document.body.appendChild(el);
+            options$.next([
+                { value: 'ACTIVE', label: 'Active' },
+                { value: 'INACTIVE', label: 'Inactive' },
+            ]);
+
+            // Open the enum editor and leave it open across teardown.
+            const row = el.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
+            expect(row).toBeTruthy();
+            const cell = row.children[0] as HTMLElement; // the single enum column's cell
+            cell.click();
+            expect(cell.dataset.editing).toBe('1');
+
+            expect(options$.observers.length).toBe(1);
+
+            document.body.removeChild(el);
+
+            expect(options$.observers.length).toBe(0);
+        });
+    });
+
+    it('withTestId sets data-testid on the host element', () => {
+        const grid = new GridBuilder<TestItem>().withItems(of(items)).withTestId('items-grid');
+        container = grid.build();
+        expect(container.getAttribute('data-testid')).toBe('items-grid');
+    });
+
+    it('keeps data-testid on the host across an items$ emission that re-renders the rows', () => {
+        const items$ = new BehaviorSubject<TestItem[]>(items);
+        const grid = new GridBuilder<TestItem>().withItems(items$).withTestId('items-grid');
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+        document.body.appendChild(container);
+
+        const rowsBefore = container.querySelectorAll('.absolute.w-full.items-stretch').length;
+
+        items$.next([...items, { id: 99, name: 'Zeta' }]);
+        jest.advanceTimersByTime(150);
+
+        // The re-render really happened, and the host attribute survived it.
+        expect(container.querySelectorAll('.absolute.w-full.items-stretch').length)
+            .not.toBe(rowsBefore);
+        expect(container.getAttribute('data-testid')).toBe('items-grid');
+
+        document.body.removeChild(container);
+    });
+
+    it('should apply custom classes reactively and replace on new emission', () => {
+        const class$ = new BehaviorSubject('custom-class-1');
+        const grid = new GridBuilder<TestItem>()
+            .withItems(of(items))
+            .withHeight(of(400))
+            .withClass(class$);
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+        document.body.appendChild(container);
+
+        expect(container.classList.contains('custom-class-1')).toBe(true);
+
+        class$.next('custom-class-2');
+        expect(container.classList.contains('custom-class-1')).toBe(false);
+        expect(container.classList.contains('custom-class-2')).toBe(true);
+
+        document.body.removeChild(container);
+    });
+
+    it('should preserve grid state classes through withClass emissions', () => {
+        const class$ = new BehaviorSubject('custom-1');
+        const grid = new GridBuilder<TestItem>()
+            .withItems(of(items))
+            .withHeight(of(400))
+            .withClass(class$);
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+        document.body.appendChild(container);
+
+        // Check that base classes are present
+        expect(container.className).toContain('custom-1');
+
+        // Emit a new class
+        class$.next('custom-2');
+        expect(container.className).toContain('custom-2');
+        expect(container.className).not.toContain('custom-1');
+
+        document.body.removeChild(container);
+    });
+
+    // S8a-1: assert var(--ora-grid-header-bg) once tokens land
+    it('should build grid header using var(--ora-grid-header-bg) token', () => {
+        const grid = new GridBuilder<TestItem>()
+            .withItems(of(items))
+            .withHeight(of(400));
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+
+        // Note: jsdom does not compute var() in computed styles from class-derived rules,
+        // so we assert on the class string itself. The headerWrapper should contain
+        // the arbitrary Tailwind class that references the token.
+        const headerWrapper = container.querySelector('[class*="sticky"][class*="top-0"]');
+        expect(headerWrapper?.className).toContain('var(--ora-grid-header-bg)');
+    });
+
+    it('should apply withClass to grid container', () => {
+        const class$ = of('t');
+        const grid = new GridBuilder<TestItem>()
+            .withItems(of(items))
+            .withHeight(of(400))
+            .withClass(class$);
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+
+        expect(container.classList.contains('t')).toBe(true);
     });
 });

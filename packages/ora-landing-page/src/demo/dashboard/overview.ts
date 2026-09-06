@@ -8,7 +8,8 @@ export function createOverview(): HTMLElement {
     const container = new LayoutBuilder()
         .asVertical()
         .withGap(LayoutGap.EXTRA_LARGE)
-        .withClass(of('flex-1 overflow-y-auto p-px-24'));
+        .asScrollable()
+        .withClass(of('flex-1'));
 
     container.addSlot().withContent({ build: () => createStatsGrid() });
 

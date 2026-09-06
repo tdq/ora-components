@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subscription, skip, of } from 'rxjs';
 import { GridColumn, SortConfig, SortDirection } from './types';
-import { GridStyles, getAlignClass, applyColumnWidth } from './grid-styles';
+import { GridStyles, getAlignClass, applyColumnWidth, GRID_HEADER_ARIA_ROWINDEX } from './grid-styles';
 import { CheckboxBuilder } from '../checkbox/checkbox';
 import type { CheckboxValue } from '../checkbox/checkbox';
 import { clsx, type ClassValue } from 'clsx';
@@ -33,6 +33,11 @@ export class GridHeader<ITEM> {
             GridStyles.header,
             this.isGlass && GridStyles.headerGlass
         );
+        // ARIA grid row-numbering convention: see GRID_HEADER_ARIA_ROWINDEX in grid-styles.ts
+        // (single source of truth, also used by GridRow's aria-rowindex and GridBuilder's
+        // aria-rowcount).
+        header.setAttribute('role', 'row');
+        header.setAttribute('aria-rowindex', String(GRID_HEADER_ARIA_ROWINDEX));
         return header;
     }
 
@@ -57,6 +62,11 @@ export class GridHeader<ITEM> {
             const checkCell = reuse ? (this.element.children[childIdx++] as HTMLElement) : document.createElement('div');
             if (!reuse) {
                 checkCell.className = GridStyles.checkboxCell;
+                // A body row's checkbox cell is a gridcell (grid-row.ts); the header's
+                // equivalent is a columnheader, same as every other header cell — it just
+                // selects/deselects every row instead of sorting one column.
+                checkCell.setAttribute('role', 'columnheader');
+                checkCell.setAttribute('aria-label', 'Select all');
             }
 
             const allSelected = items.length > 0 && items.every(item => selected.has(item));
@@ -89,6 +99,9 @@ export class GridHeader<ITEM> {
 
         this.columns.forEach((col, index) => {
             const cell = reuse ? (this.element.children[childIdx++] as HTMLElement) : document.createElement('div');
+            if (!reuse) {
+                cell.setAttribute('role', 'columnheader');
+            }
             applyColumnWidth(cell, col);
 
             const alignClass = getAlignClass(col.align);
@@ -123,14 +136,15 @@ export class GridHeader<ITEM> {
                 const iconSvg = isCurrent && sort.direction === SortDirection.ASC ? Icons.SORT_UP :
                     isCurrent && sort.direction === SortDirection.DESC ? Icons.SORT_DOWN : Icons.SORT;
 
-                // Make the sortable header keyboard-navigable.
-                // `aria-sort` requires a `columnheader`/`rowheader` role contained in a `row`,
-                // which this grid doesn't model. Convey sort state via `aria-label` instead.
-                const sortStateLabel = isCurrent && sort.direction === SortDirection.ASC ? 'sorted ascending' :
-                    isCurrent && sort.direction === SortDirection.DESC ? 'sorted descending' : 'not sorted';
+                // The header is now a real `row` (see createHeader) with `columnheader` cells,
+                // so `aria-sort` can live directly on the columnheader as the ARIA grid pattern
+                // expects — no more `role="button"` standing in for it. The cell itself is the
+                // focusable, keyboard-activatable control (tabindex=0, Enter/Space triggers
+                // sort below); its accessible name comes from the header text content.
+                const ariaSort = isCurrent && sort.direction === SortDirection.ASC ? 'ascending' :
+                    isCurrent && sort.direction === SortDirection.DESC ? 'descending' : 'none';
                 cell.tabIndex = 0;
-                cell.setAttribute('role', 'button');
-                cell.setAttribute('aria-label', `${headerText}, ${sortStateLabel}, activate to sort`);
+                cell.setAttribute('aria-sort', ariaSort);
 
                 if (!iconWrapper) {
                     iconWrapper = document.createElement('span');
@@ -215,6 +229,19 @@ export class GridHeader<ITEM> {
 
         if (this.actionCount > 0) {
             const actionCell = reuse ? (this.element.children[childIdx++] as HTMLElement) : document.createElement('div');
+            if (!reuse) {
+                // Same reasoning as the checkbox cell above: the body row's action cell is a
+                // gridcell (grid-row.ts), so its header counterpart needs a role too. Unlike
+                // the checkbox cell (which has a labelled <input> descendant), this cell has
+                // no content of its own — axe's empty-table-header rule wants discernible
+                // text INSIDE a header cell, not just an aria-label on an otherwise-empty
+                // element, so a visually-hidden text node carries the name instead.
+                actionCell.setAttribute('role', 'columnheader');
+                const srLabel = document.createElement('span');
+                srLabel.className = 'sr-only';
+                srLabel.textContent = 'Actions';
+                actionCell.appendChild(srLabel);
+            }
             const targetClass = cn(
                 GridStyles.actionHeaderCell,
                 this.isGlass && GridStyles.actionHeaderCellGlass

@@ -29,6 +29,9 @@ const router = new RouterBuilder()
     .withBase('/app');       // strip this prefix from all paths before matching (optional)
 ```
 
+- `withClass(className: Observable<string>): this` - extra classes merged with the outlet's base `w-full h-full`, recomputed on every emission.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered outlet element. See [Test ids](builder-pattern.md#test-ids).
+
 ### Adding routes
 
 Routes are added via `router.addRoute()`, which returns a `RouteBuilder` (inline builder).
@@ -142,8 +145,13 @@ new LinkBuilder(router)
     .withCaption('Dashboard')                  // string or Observable<string>
     .withExactMatch(false)                     // default false — prefix match
     .withActiveClass('router-link-active')     // default 'active'
+    .withClass(of('custom-class'))             // custom classes via Observable
+    .withTestId('nav-dashboard')                // sets data-testid on the rendered <a>
     .build();                                  // → HTMLAnchorElement
 ```
+
+- `withClass(className$: Observable<string>): this` - apply custom class names to the host element, merged via `cn()` whenever the href, route, or custom classes change. The active route class and base classes survive every recompute; a second custom class emission replaces the first.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered `<a>` element. See [Test ids](builder-pattern.md#test-ids).
 
 ### Active state
 
@@ -206,11 +214,11 @@ router.addRoute()
         return new SettingsBuilder();
     });
 
-// Navigation bar
-const nav = new LayoutBuilder()
-    .asHorizontal()
-    .addSlot().withContent(new LinkBuilder(router).withHref('/').withCaption('Home').withExactMatch(true))
-    .addSlot().withContent(new LinkBuilder(router).withHref('/settings').withCaption('Settings'));
+// Navigation bar — each addSlot() call is a separate statement off `nav`
+// (SlotBuilder.withContent() returns the SlotBuilder itself, not the layout)
+const nav = new LayoutBuilder().asHorizontal();
+nav.addSlot().withContent(new LinkBuilder(router).withHref('/').withCaption('Home').withExactMatch(true));
+nav.addSlot().withContent(new LinkBuilder(router).withHref('/settings').withCaption('Settings'));
 
 // Mount
 document.body.appendChild(nav.build());
@@ -236,7 +244,7 @@ src/router/
 ## Follow-up / known limitations
 
 ### Route guards
-There is no `withGuard()` hook yet. To protect routes, call `router.replace('/login')` manually inside `onEnter`:
+There is no dedicated guard hook yet. To protect routes, call `router.replace('/login')` manually inside `onEnter`:
 
 ```typescript
 router.addRoute()
@@ -247,10 +255,10 @@ router.addRoute()
     .withContent(() => new AdminBuilder());
 ```
 
-A `withGuard((match) => boolean | Promise<boolean>)` method on `RouteBuilder` would be a clean v2 addition.
+A guard-style method on `RouteBuilder` — taking a `(match) => boolean | Promise<boolean>` predicate — would be a clean v2 addition.
 
 ### Loading placeholder
-During async `withContent` factory resolution, the outlet shows nothing. Add `withLoading(builder: ComponentBuilder)` on `RouterBuilder` to display a spinner or skeleton while the Promise resolves.
+During async `withContent` factory resolution, the outlet shows nothing. A loading-placeholder method on `RouterBuilder`, taking a `ComponentBuilder` to display while the Promise resolves, would be a clean v2 addition.
 
 ### Nested routes
 Child routes (e.g. `/settings/profile` rendered inside a `SettingsBuilder` that itself has an outlet) are not supported. Each `RouterBuilder` instance manages one flat outlet. Nested routing would require passing a router instance down to child builders.
@@ -260,3 +268,7 @@ Multiple `RouterBuilder` instances can coexist on the same page (e.g. a sidebar 
 
 ### `params$` is router-level
 `router.params$` emits the params of the current route. Components that need params should subscribe to `router.currentRoute$` and read `match.params`, or receive params directly via their `withContent` factory argument.
+
+## Gotchas
+
+- RouterBuilder.build() returns an outlet element with no `id` attribute API; set the id directly on the returned element if needed for skip-links (e.g. `outlet.id = 'main-content'` after `build()`).

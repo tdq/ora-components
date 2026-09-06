@@ -4,6 +4,7 @@ import { registerDestroy } from '../../core/destroyable-element';
 import { Trend } from '../../types/trend';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { applyTestId } from '../../core/test-id';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -20,6 +21,7 @@ const BASE_CLASSES = 'inline-flex items-center gap-px-4 text-label-small font-se
 export class TrendBuilder implements ComponentBuilder {
     private trend$?: Observable<Trend>;
     private className$?: Observable<string>;
+    private testId?: string;
 
     withTrend(trend$: Observable<Trend>): this {
         this.trend$ = trend$;
@@ -28,6 +30,12 @@ export class TrendBuilder implements ComponentBuilder {
 
     withClass(className$: Observable<string>): this {
         this.className$ = className$;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -77,27 +85,9 @@ export class TrendBuilder implements ComponentBuilder {
             }));
         }
 
-        sub.add(this.trend$.subscribe(trend => {
-            const direction: 'up' | 'down' | 'flat' =
-                trend.value > 0 ? 'up' : trend.value < 0 ? 'down' : 'flat';
-
-            const sign = direction === 'down' ? '-' : '+';
-            const arrow = direction === 'up' ? '▲' : direction === 'down' ? '▼' : '';
-
-            root.className = cn(BASE_CLASSES, DIRECTION_CLASS[direction], currentClass);
-
-            root.innerHTML = '';
-            if (arrow) {
-                const arrowSpan = document.createElement('span');
-                arrowSpan.textContent = arrow;
-                arrowSpan.setAttribute('aria-hidden', 'true');
-                root.appendChild(arrowSpan);
-            }
-            root.appendChild(document.createTextNode(`${sign}${Math.abs(trend.value).toFixed(1)}% `));
-            root.appendChild(document.createTextNode(trend.period));
-        }));
-
         registerDestroy(root, () => sub.unsubscribe());
+
+        applyTestId(root, this.testId);
 
         return root;
     }
