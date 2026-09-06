@@ -72,10 +72,11 @@
  * (0,1,0) and both live in the same @layer ora-components, so it simply wins —
  * and an !important inside a layer would break the contract that a consuming
  * app's unlayered CSS outranks ours (see .agent/theme.md 10b).
+ * Prefixed declaration first — see the .glass-effect note in src/index-layered.css.
  */
 .ora-sidebar--animating .ora-sidebar-panel.glass-effect {
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
 .ora-sidebar-inner {

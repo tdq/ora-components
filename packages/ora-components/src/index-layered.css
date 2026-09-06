@@ -69,12 +69,19 @@
    * specificity — so the layered `.glass-effect{--tw-backdrop-blur:blur(24px)}` lost,
    * `backdrop-filter` computed to `none` and the ring to nothing in the landing demo
    * (theme.md §10, rule 1). Plain values have no such dependency.
+   *
+   * `-webkit-backdrop-filter` MUST precede `backdrop-filter`. Lightning CSS (Vite's
+   * default CSS minifier since v8) folds the prefixed and unprefixed declarations
+   * into one logical property and keeps only the LAST one written, so
+   * `backdrop-filter; -webkit-backdrop-filter` minifies down to the -webkit- form
+   * alone — Safari still blurs, Chrome and Firefox render an opaque-less flat panel.
+   * scripts/wrap-css-layer.mjs fails the build if the order is ever flipped.
    */
   .glass-effect {
     @apply bg-white/70 text-gray-900;
     @apply dark:bg-white/5 dark:text-white;
-    backdrop-filter: blur(24px) saturate(1.5);      /* backdrop-blur-xl backdrop-saturate-150 */
     -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    backdrop-filter: blur(24px) saturate(1.5);      /* backdrop-blur-xl backdrop-saturate-150 */
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);       /* ring-1 ring-black/10 */
     transform: translateZ(0);                        /* transform-gpu */
     will-change: backdrop-filter;
@@ -108,9 +115,8 @@
    * opts in with .glass-effect--overlay.
    */
   .glass-effect .glass-effect:not([popover]):not(.glass-effect--overlay) {
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    
+    backdrop-filter: none;
     will-change: opacity;
   }
 

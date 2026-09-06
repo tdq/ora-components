@@ -99,6 +99,31 @@ export function assertLayeredComposition(css, layerName = 'ora-components') {
     }
 }
 
+/**
+ * Vendor-prefixed `backdrop-filter` must come BEFORE the unprefixed one inside a
+ * rule. Lightning CSS — Vite's default CSS minifier since v8 — folds the prefixed
+ * and unprefixed declarations into one logical property and keeps only the last
+ * one written, so `backdrop-filter:…;-webkit-backdrop-filter:…` minifies down to
+ * the -webkit- form alone in the consuming app's production bundle: Safari still
+ * blurs, Chrome and Firefox lose the glass effect entirely. (Our own cssnano
+ * `--minify` pass preserves the order, which is why this only shows up downstream.)
+ *
+ * Matches `backdrop-filter:<value>;` followed — within the same declaration block,
+ * i.e. before the next `}` — by `-webkit-backdrop-filter`.
+ */
+const UNPREFIXED_BEFORE_WEBKIT_BACKDROP_FILTER = /(?:^|[{;])\s*backdrop-filter\s*:[^;}]*;[^}]*-webkit-backdrop-filter\s*:/;
+
+export function assertBackdropFilterPrefixOrder(css, sourceLabel) {
+    const match = UNPREFIXED_BEFORE_WEBKIT_BACKDROP_FILTER.exec(css);
+    if (match) {
+        throw new Error(
+            `${sourceLabel}: "-webkit-backdrop-filter" must precede "backdrop-filter" in the same rule ` +
+            `(Lightning CSS keeps only the last of the two, dropping the unprefixed one). ` +
+            `Offending block: ${match[0].slice(0, 120)}`,
+        );
+    }
+}
+
 // CLI: `node scripts/wrap-css-layer.mjs compose <baseFile> <layeredFile> <outFile>`
 // Reads the two already-built Tailwind bundles, asserts the layered one is
 // self-contained and the composition didn't regress the cascade, writes the
@@ -113,6 +138,7 @@ function runCli(argv) {
     const base = readFileSync(baseFile, 'utf8');
     const layered = readFileSync(layeredFile, 'utf8');
     assertNoImportOrCharset(layered, layeredFile);
+    assertBackdropFilterPrefixOrder(layered, layeredFile);
 
     const composed = composeStylesheet(base, layered);
     assertLayeredComposition(composed);

@@ -5,6 +5,7 @@ import {
     composeStylesheet,
     assertNoImportOrCharset,
     assertLayeredComposition,
+    assertBackdropFilterPrefixOrder,
     COMPONENT_SHEET_SENTINELS,
 } from './wrap-css-layer.mjs';
 
@@ -60,6 +61,52 @@ describe('assertNoImportOrCharset', () => {
 
     it('does not false-alarm on a declaration value that merely contains the text "@import"', () => {
         expect(() => assertNoImportOrCharset('.a{content:"@import"}', 'layered.css')).not.toThrow();
+    });
+});
+
+describe('assertBackdropFilterPrefixOrder', () => {
+    it('passes when -webkit-backdrop-filter precedes backdrop-filter', () => {
+        expect(() =>
+            assertBackdropFilterPrefixOrder(
+                '.glass-effect{-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}',
+                'layered.css',
+            ),
+        ).not.toThrow();
+    });
+
+    it('passes when only one form is present', () => {
+        expect(() => assertBackdropFilterPrefixOrder('.a{backdrop-filter:none}', 'x')).not.toThrow();
+        expect(() => assertBackdropFilterPrefixOrder('.a{-webkit-backdrop-filter:none}', 'x')).not.toThrow();
+    });
+
+    it('throws when the unprefixed declaration comes first (Lightning CSS drops it)', () => {
+        expect(() =>
+            assertBackdropFilterPrefixOrder(
+                '.glass-effect{backdrop-filter:blur(24px) saturate(1.5);box-shadow:none;-webkit-backdrop-filter:blur(24px) saturate(1.5)}',
+                'layered.css',
+            ),
+        ).toThrow(/layered\.css.*-webkit-backdrop-filter/);
+    });
+
+    it('does not pair declarations across different rules', () => {
+        expect(() =>
+            assertBackdropFilterPrefixOrder(
+                '.a{backdrop-filter:none}.b{-webkit-backdrop-filter:none}',
+                'x',
+            ),
+        ).not.toThrow();
+    });
+
+    it('holds for the real src/index-layered.css and every component sheet', () => {
+        const files = [
+            'src/index-layered.css',
+            'src/components/sidebar/sidebar.css',
+            'src/components/chat/chat.css',
+        ];
+        for (const file of files) {
+            const css = readFileSync(join(__dirname, '..', file), 'utf8');
+            expect(() => assertBackdropFilterPrefixOrder(css, file)).not.toThrow();
+        }
     });
 });
 
