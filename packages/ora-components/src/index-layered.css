@@ -99,11 +99,30 @@
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3); /* dark:ring-white/30 */
   }
 
-  .glass-effect .glass-effect:not([popover]) {
+  /*
+   * A glass surface nested inside another one (a glass panel inside a glass form)
+   * would stack two blurs over the same backdrop, so the inner one drops its filter.
+   * Floating overlays are exempt: a chart tooltip or a dropdown is only *DOM*-nested
+   * inside its glass host — visually it floats above it and must stay blurred.
+   * [popover] elements are exempt for free (top layer); everything else that floats
+   * opts in with .glass-effect--overlay.
+   */
+  .glass-effect .glass-effect:not([popover]):not(.glass-effect--overlay) {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     
     will-change: opacity;
+  }
+
+  /*
+   * Elevation for a floating glass overlay, composed with .glass-effect's own 1px ring
+   * — the same pairing PopoverBuilder writes inline. Never reach for the
+   * `shadow-level-*` utilities here: a Tailwind box-shadow utility replaces the ring
+   * outright, leaving a glass overlay with no edge against the surface behind it.
+   * Doubled class so this outranks .glass-effect's box-shadow.
+   */
+  .glass-effect.glass-effect--overlay {
+    box-shadow: var(--ora-popover-shadow), 0 0 0 1px var(--ora-popover-glass-ring);
   }
 }
 
@@ -151,6 +170,17 @@
     background-color: color-mix(in srgb, var(--md-sys-color-surface-variant) 30%, transparent);
   }
 
+  /* Scroll container that keeps room for its children's shadows / focus rings
+     (see --ora-shadow-bleed). Padding gives the room; the negative margin keeps
+     the content aligned with siblings. Width is deliberately left `auto`: a
+     block or flex-stretched box then grows by the negative margins on its own,
+     and a flex-row item keeps its flex-driven size — never pair with w-full.
+     Emitted by LayoutBuilder.asScrollable() / SlotBuilder.asScrollable(). */
+  .ora-scroll-bleed {
+    padding: var(--ora-shadow-bleed);
+    margin: calc(-1 * var(--ora-shadow-bleed));
+  }
+
 }
 
 /* ===================================================== */
@@ -159,8 +189,4 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
 }

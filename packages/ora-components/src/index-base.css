@@ -71,10 +71,14 @@
   --md-sys-elevation-level3: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --md-sys-elevation-level4: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --md-sys-elevation-level5: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  /* Room a scroll container leaves around its content so children's shadows
+     (level-2 bleeds ~10px below) and focus rings (2px ring + 2px offset) are
+     not clipped at the container edge. Consumed by `.ora-scroll-bleed`. */
+  --ora-shadow-bleed: 12px;
 
   /* ================= TYPOGRAPHY BASE ================= */
 
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--ora-font-family);
   line-height: 1.5;
   font-weight: 400;
 
@@ -86,14 +90,70 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* ================= COMPONENT TOKENS ================= */
+
+  /* Font */
+  --ora-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Border Radius */
+  --ora-radius-small: 4px;
+  --ora-radius-medium: 6px;
+  --ora-radius-large: 12px;
+  --ora-radius-extra-large: 24px;
+
+  /* Grid */
+  --ora-grid-header-bg: color-mix(in srgb, var(--md-sys-color-surface-container-low) 30%, transparent);
+  --ora-grid-header-fg: var(--md-sys-color-on-surface-variant);
+  --ora-grid-row-hover-bg: color-mix(in srgb, var(--md-sys-color-surface-variant) 20%, transparent);
+  --ora-grid-row-selected-bg: color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent);
+  --ora-grid-border: color-mix(in srgb, var(--md-sys-color-outline) 20%, transparent);
+
+  /* Sidebar */
+  --ora-sidebar-bg: rgba(255, 255, 255, 0.05);
+  --ora-sidebar-border: rgba(255, 255, 255, 0.1);
+  --ora-sidebar-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --ora-sidebar-item-active-bg: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+  --ora-sidebar-tooltip-fg: rgba(30, 10, 60, 0.9);
+  --ora-sidebar-tooltip-bg: rgba(255, 255, 255, 0.95);
+  --ora-sidebar-tooltip-border: rgba(30, 10, 60, 0.12);
+  --ora-sidebar-tooltip-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  /* Dialog */
+  --ora-dialog-bg: var(--md-sys-color-surface);
+  --ora-dialog-fg: var(--md-sys-color-on-surface);
+
+  /* Popover */
+  --ora-popover-bg: var(--md-sys-color-surface-container-low);
+  --ora-popover-shadow: var(--md-sys-elevation-level2);
+  --ora-popover-radius: 8px;
+  /*
+   * Edge definition for a glass popover. .glass-effect carries this as its own
+   * box-shadow ring, but PopoverBuilder must write box-shadow inline (to add the
+   * elevation), and an inline shadow replaces the class's — so the ring colour is
+   * exposed as a token the builder can compose with the elevation.
+   */
+  --ora-popover-glass-ring: rgba(0, 0, 0, 0.1);
+
+  /* Chart */
+  --ora-chart-series-1: var(--md-sys-color-primary);
+  --ora-chart-series-2: var(--md-sys-color-secondary);
+  --ora-chart-series-3: var(--md-sys-color-tertiary);
+  --ora-chart-series-4: var(--md-sys-color-error);
+  --ora-chart-series-5: #6750A4;
+  --ora-chart-series-6: #625B71;
+  --ora-chart-series-7: #7D5260;
+  --ora-chart-series-8: #B3261E;
+  --ora-chart-grid-line: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 100%, transparent);
+  --ora-chart-grid-line-opacity: 0.1;
+  --ora-chart-axis-fg: var(--md-sys-color-on-surface-variant);
 }
 
 /* ===================================================== */
 /* Dark Theme */
 /* ===================================================== */
 
-[data-theme="dark"],
-.dark {
+[data-theme="dark"] {
   --md-sys-color-primary: #60A5FA;
   --md-sys-color-on-primary: #002D5F;
   --md-sys-color-primary-container: #1E3A8A;
@@ -120,6 +180,16 @@
   --md-sys-color-outline: #475569;
   --md-sys-color-error: #EF4444;
   --md-sys-color-on-error: #450A0A;
+
+  /* Dark theme component tokens */
+  --ora-sidebar-bg: rgba(30, 10, 60, 0.88);
+  --ora-sidebar-border: rgba(167, 139, 250, 0.22);
+  --ora-sidebar-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --ora-sidebar-tooltip-fg: #f0e6ff;
+  --ora-sidebar-tooltip-bg: rgba(30, 10, 60, 0.88);
+  --ora-sidebar-tooltip-border: rgba(167, 139, 250, 0.22);
+  --ora-sidebar-tooltip-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --ora-popover-glass-ring: rgba(255, 255, 255, 0.2);
 }
 
 /* ===================================================== */

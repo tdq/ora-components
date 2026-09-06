@@ -2,12 +2,16 @@ import { Observable, Subscription, combineLatest, isObservable, of } from 'rxjs'
 import { ComponentBuilder } from '../core/component-builder';
 import { registerDestroy } from '../core/destroyable-element';
 import { RouterBuilder } from './router-builder';
+import { applyTestId } from '../core/test-id';
+import { cn } from '../utils/cn';
 
 export class LinkBuilder implements ComponentBuilder {
     private href$: Observable<string> = of('/');
     private caption$: Observable<string> = of('');
     private exactMatch: boolean = false;
     private activeClass: string = 'active';
+    private testId?: string;
+    private className$?: Observable<string>;
 
     constructor(private readonly router: RouterBuilder) {}
 
@@ -28,6 +32,22 @@ export class LinkBuilder implements ComponentBuilder {
 
     withActiveClass(cls: string): this {
         this.activeClass = cls;
+        return this;
+    }
+
+    /**
+     * Apply custom class names to the host element, merged via `cn()` with base classes.
+     *
+     * @param className$ Observable of space-separated class names
+     */
+    withClass(className: Observable<string>): this {
+        this.className$ = className;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered `<a>` element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -71,22 +91,26 @@ export class LinkBuilder implements ComponentBuilder {
             })
         );
 
+        // Combine active state and custom classes into a single recompute
+        // (ensures active class survives className$ emissions and vice versa)
+        const className$ = this.className$ || of('');
         subscriptions.add(
-            combineLatest([this.href$, this.router.currentRoute$]).subscribe(([href, route]) => {
+            combineLatest([this.href$, this.router.currentRoute$, className$]).subscribe(([href, route, extraClasses]) => {
                 const currentPath = route?.path ?? '';
                 const isActive = this.exactMatch
                     ? currentPath === href
                     : currentPath.startsWith(href) && (href === '/' ? currentPath === '/' : true);
 
-                if (isActive) {
-                    anchor.classList.add(this.activeClass);
-                } else {
-                    anchor.classList.remove(this.activeClass);
-                }
+                anchor.className = cn(
+                    isActive && this.activeClass,
+                    extraClasses
+                );
             })
         );
 
         registerDestroy(anchor, () => subscriptions.unsubscribe());
+
+        applyTestId(anchor, this.testId);
 
         return anchor;
     }

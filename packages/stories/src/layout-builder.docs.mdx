@@ -63,11 +63,17 @@ All builder methods return `this` for chaining. Pass RxJS observables into react
 - **`withGap`** — `(gap: LayoutGap) => this`
   Sets the gap between adjacent slots. Accepts a `LayoutGap` enum value. Default is `LayoutGap.MEDIUM`.
 
+- **`asScrollable`** — `() => this`
+  Makes the layout a vertical scroll container (`overflow-y-auto min-h-0`) with the `.ora-scroll-bleed` gutter: `padding: var(--ora-shadow-bleed)` (12px) plus the same negative margin, so children's `shadow-level-*` shadows and `ring-offset` focus rings paint into the gutter instead of being clipped at the edge, while content stays aligned with siblings. Omits `w-full` (the gutter relies on `width: auto`); do not add it back through `withClass`.
+
 - **`withClass`** — `(className: Observable<string>) => this`
   Appends additional CSS class names to the root layout element. Useful for theme overrides or spacing utilities.
 
 - **`withAlignment`** — `(alignment: Observable<Alignment>) => this`
   Sets the default alignment for all child slots that do not have their own alignment override. Only applies to horizontal layouts.
+
+- **`withTestId`** — `(id: string) => this`
+  Sets `data-testid` on the layout's root host element for end-to-end tests. A static string — call once; it never changes at runtime.
 
 - **`build`** — `() => HTMLElement`
   Constructs and returns the layout `<div>` element with all configured slots. Call once per builder.
@@ -88,8 +94,14 @@ Returned by `addSlot()`. Each slot wraps a single child component.
 - **`withAlignment`** — `(alignment: Observable<Alignment>) => SlotBuilder`
   Overrides the layout-level alignment for this specific slot.
 
+- **`asScrollable`** — `() => SlotBuilder`
+  Makes this slot the vertical scroll container, with the same `.ora-scroll-bleed` gutter as `LayoutBuilder.asScrollable()`. Pair with `withSize(SlotSize.GROW)` so the slot takes the remaining height and scrolls its content.
+
 - **`withName`** — `(name: string) => SlotBuilder`
   Sets the slot's `data-slot` attribute value, useful for styling hooks, testing selectors, and debugging layout structure in devtools. When not set, the slot defaults to its zero-based index as a string (`data-slot="0"`, `data-slot="1"`, ...). In dev mode, `LayoutBuilder` warns via `console.warn` if two slots in the same layout resolve to the same effective `data-slot` value (whether both explicit or one explicit colliding with an index) — `data-slot` values should be unique within a layout.
+
+- **`withTestId`** — `(id: string) => SlotBuilder`
+  Sets `data-testid` on this slot's wrapper element for end-to-end tests. A static string — call once; it never changes at runtime.
 
 ---
 
@@ -173,6 +185,14 @@ The `MixedSizes` story shows a horizontal layout where each slot has an explicit
 The `ConditionalVisibility` story demonstrates reactive slot visibility controlled by a `BehaviorSubject<boolean>`. A toggle button shows and hides the middle slot, while the other two slots reflow to fill the available space.
 
 <Canvas of={Stories.ConditionalVisibility} />
+
+---
+
+## Scrollable Slot
+
+The `ScrollableSlot` story is the "fixed header + scrollable body" shell built with `addSlot().withSize(SlotSize.GROW).asScrollable()`. The body slot is the scroll container and carries the `.ora-scroll-bleed` gutter — `padding: var(--ora-shadow-bleed)` (12px) pulled back by the same negative margin — so the elevated rows' `shadow-level-2` shadows and focus rings paint into the gutter instead of being cut at the scroller's edge, while the rows stay aligned with the header above. Compare with `VerticalGrowSlot`, where a hand-written `overflow-y-auto` element inside the slot does the scrolling.
+
+<Canvas of={Stories.ScrollableSlot} />
 
 ---
 

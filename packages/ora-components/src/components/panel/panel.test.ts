@@ -151,4 +151,9 @@ describe('PanelBuilder', () => {
         expect(body).not.toBeNull();
         expect(element.querySelector('[data-slot="body"]')).toBeNull();
     });
+
+    it('should set data-testid', () => {
+        const el = new PanelBuilder().withTestId('my-panel').build();
+        expect(el.getAttribute('data-testid')).toBe('my-panel');
+    });
 });

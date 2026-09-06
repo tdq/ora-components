@@ -31,6 +31,8 @@ export interface SidebarItemBuilder {
      * `withClick` — the menu always wins. Created once.
      */
     withMenu(): SidebarMenuBuilder;
+    /** Sets `data-testid` on the row's `<a>`/`<button>` element. */
+    withTestId(id: string): this;
 }
 
 export interface SidebarFooterBuilder {
@@ -39,6 +41,8 @@ export interface SidebarFooterBuilder {
     withCaption(caption: Observable<string>): this;
     withDescription(desc: Observable<string>): this;
     withMenu(): SidebarMenuBuilder;
+    /** Sets `data-testid` on the footer's `<button>`/`<div>` row. */
+    withTestId(id: string): this;
 }
 
 class SidebarItemBuilderImpl implements SidebarItemBuilder {
@@ -51,6 +55,7 @@ class SidebarItemBuilderImpl implements SidebarItemBuilder {
     private _visible$?: Observable<boolean>;
     private _tooltip$?: Observable<string>;
     private _menu?: SidebarMenu;
+    private _testId?: string;
 
     withIcon(icon: string | Observable<string>): this {
         this._icon$ = isObservable(icon) ? icon : of(icon);
@@ -97,6 +102,11 @@ class SidebarItemBuilderImpl implements SidebarItemBuilder {
         return this._menu;
     }
 
+    withTestId(id: string): this {
+        this._testId = id;
+        return this;
+    }
+
     /** Internal — not part of {@link SidebarItemBuilder}. */
     toViewportConfig(
         router: RouterBuilder | undefined,
@@ -115,7 +125,8 @@ class SidebarItemBuilderImpl implements SidebarItemBuilder {
             menu: this._menu,
             router,
             expanded$,
-            glass
+            glass,
+            testId: this._testId
         };
     }
 }
@@ -126,6 +137,7 @@ class SidebarFooterBuilderImpl implements SidebarFooterBuilder {
     private _caption$?: Observable<string>;
     private _description$?: Observable<string>;
     private _menu?: SidebarMenu;
+    private _testId?: string;
 
     withIcon(icon: string | Observable<string>): this {
         this._icon$ = isObservable(icon) ? icon : of(icon);
@@ -152,6 +164,11 @@ class SidebarFooterBuilderImpl implements SidebarFooterBuilder {
         return this._menu;
     }
 
+    withTestId(id: string): this {
+        this._testId = id;
+        return this;
+    }
+
     /** Internal — not part of {@link SidebarFooterBuilder}. */
     toViewportConfig(): SidebarFooterViewportConfig {
         return {
@@ -159,7 +176,8 @@ class SidebarFooterBuilderImpl implements SidebarFooterBuilder {
             avatar: this._avatar,
             caption$: this._caption$,
             description$: this._description$,
-            menu: this._menu
+            menu: this._menu,
+            testId: this._testId
         };
     }
 }
@@ -196,6 +214,8 @@ export class SideBarBuilder implements ComponentBuilder {
     private _entries: (SidebarItemBuilderImpl | 'divider')[] = [];
     private _footer?: SidebarFooterBuilderImpl;
     private _glass = false;
+    private _testId?: string;
+    private _className$?: Observable<string>;
 
     withRouter(router: RouterBuilder): this {
         this._router = router;
@@ -261,6 +281,23 @@ export class SideBarBuilder implements ComponentBuilder {
         return this;
     }
 
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this._testId = id;
+        return this;
+    }
+
+    /**
+     * Apply custom class names to the host element, merged via `cn()` with base classes.
+     * Base classes and runtime state classes (such as expanded/collapsed state) survive every emission.
+     *
+     * @param className$ Observable of space-separated class names
+     */
+    withClass(className: Observable<string>): this {
+        this._className$ = className;
+        return this;
+    }
+
     build(): HTMLElement {
         const controller = this._createExpandedController();
 
@@ -279,7 +316,9 @@ export class SideBarBuilder implements ComponentBuilder {
             entries,
             footer: this._footer?.toViewportConfig(),
             glass: this._glass,
-            onDestroy: () => controller.destroy()
+            onDestroy: () => controller.destroy(),
+            testId: this._testId,
+            className$: this._className$
         });
     }
 

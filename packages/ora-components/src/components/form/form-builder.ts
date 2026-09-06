@@ -15,6 +15,7 @@ export class FormBuilder implements ComponentBuilder {
 
     private toolbarBuilder?: ToolbarBuilder;
     private fieldsBuilder?: FieldsBuilder;
+    private testId?: string;
 
     withEnabled(enabled: Observable<boolean>): this {
         this.enabled$ = enabled;
@@ -51,11 +52,21 @@ export class FormBuilder implements ComponentBuilder {
         return this.fieldsBuilder;
     }
 
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
+    }
+
     build(): HTMLElement {
         // Prepare container classes and reactivity
         const layout = new LayoutBuilder()
             .asVertical()
             .withGap(LayoutGap.EXTRA_LARGE);
+
+        if (this.testId) {
+            layout.withTestId(this.testId);
+        }
 
         // 1. Header (Caption & Description)
         const headerLayout = new LayoutBuilder()

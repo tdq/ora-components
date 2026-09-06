@@ -7,9 +7,9 @@ import { SeriesRenderer } from './series-renderer';
 import { readValue } from './value-utils';
 import { ChartLegend } from './chart-legend';
 import { ChartTooltip } from './chart-tooltip';
-import { HIGHLIGHT_RADIUS } from './constants';
+import { HIGHLIGHT_RADIUS, DEFAULT_SPARKLINE_HEIGHT } from './constants';
 import { LabelBuilder, LabelSize } from '../label';
-import { map, Subscription } from 'rxjs';
+import { map, Subscription, Observable } from 'rxjs';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '@/core/destroyable-element';
@@ -36,8 +36,12 @@ export class ChartViewport<ITEM> {
     private lastScales: any = null;
     private lastViewHeight = 0;
     private hoverG: SVGGElement | null = null;
+    private className$?: Observable<string>;
+    private lastEmittedClassName = '';
+    private sub: Subscription;
 
-    constructor(private logic: ChartLogic<ITEM>) {
+    constructor(private logic: ChartLogic<ITEM>, className$?: Observable<string>) {
+        this.className$ = className$;
         ChartViewport._idCounter++;
         this._clipId = `chart-plot-${ChartViewport._idCounter}`;
 
@@ -61,9 +65,12 @@ export class ChartViewport<ITEM> {
         this.element.appendChild(this.legend.getElement());
         this.chartArea.appendChild(this.tooltip.getElement());
 
-        const sub = new Subscription();
+        this.sub = new Subscription();
 
-        sub.add(this.logic.state$.subscribe(state => {
+        // Subscribe to className$ first, so custom classes are set before render() is called
+        this.subscribeToClassName();
+
+        this.sub.add(this.logic.state$.subscribe(state => {
             this.lastState = state;
             this.render(state);
         }));
@@ -90,12 +97,23 @@ export class ChartViewport<ITEM> {
         this.svgArea.observe(this.chartArea);
 
         registerDestroy(this.element, () => {
-            sub.unsubscribe();
+            this.sub.unsubscribe();
             this.logic.destroy();
             this.svgArea.destroy();
             svg.removeEventListener('mousemove', handleMouseMove);
             svg.removeEventListener('mouseleave', handleMouseLeave);
         });
+    }
+
+    private subscribeToClassName(): void {
+        if (!this.className$) return;
+        this.sub.add(this.className$.subscribe(className => {
+            this.lastEmittedClassName = className;
+            // Trigger a re-render to include the updated classes
+            if (this.lastState) {
+                this.render(this.lastState);
+            }
+        }));
     }
 
     getElement(): HTMLElement {
@@ -109,13 +127,38 @@ export class ChartViewport<ITEM> {
     }
 
     private render(state: ChartState<ITEM>) {
-        this.element.className = cn(ChartStyles.container, state.isGlass && ChartStyles.glass);
+        // Set base classes + include custom classes from withClass() subscriptions
+        this.element.className = cn(
+            ChartStyles.container,
+            state.isGlass && ChartStyles.glass,
+            this.lastEmittedClassName
+        );
+        // A fixed min-height on the chart area would override the sparkline's configured
+        // (default 32px) height in a real browser — jsdom's layout-less rendering can't catch
+        // this, only a class-list assertion or a real browser can.
+        this.chartArea.className = cn(ChartStyles.chartArea, !state.isSparkline && ChartStyles.chartAreaMinHeight);
+
+        const sparklineHeight = state.height > 0 ? state.height : DEFAULT_SPARKLINE_HEIGHT;
+
         if (state.height > 0) {
             this.element.style.height = `${state.height}px`;
         } else {
             this.element.style.height = '100%';
         }
         this.element.style.width = state.width;
+
+        // Sparkline mode: give the chart area an explicit, definite height instead of relying
+        // on flex-grow (flex-basis: auto sizes to content, and an SVG with no definite parent
+        // height falls back to its ~150px intrinsic default — a circular dependency `flex: none`
+        // plus a fixed pixel height breaks outright, in every browser, not just via measurement).
+        if (state.isSparkline) {
+            this.chartArea.style.height = `${sparklineHeight}px`;
+            this.chartArea.style.flex = 'none';
+        } else {
+            this.chartArea.style.height = '';
+            this.chartArea.style.flex = '';
+        }
+        this.svgArea.setPixelHeight(state.isSparkline ? sparklineHeight : null);
 
         this.titleEl.classList.toggle('hidden', !state.title);
 
@@ -124,11 +167,14 @@ export class ChartViewport<ITEM> {
 
         if (state.data.length === 0) return;
 
-        const padding = { top: 20, right: 40, bottom: 40, left: 60 };
+        const padding = state.isSparkline
+            ? { top: 0, right: 0, bottom: 0, left: 0 }
+            : { top: 20, right: 40, bottom: 40, left: 60 };
+        const forcedHeight = state.isSparkline ? sparklineHeight : undefined;
 
         // --- Part B: horizontal scroll (post-downsampling) ---
         // Step 1: first pass — compute viewBox with standard padding, no scroll override yet.
-        const firstViewBox = this.svgArea.getViewBox(padding, this.chartArea);
+        const firstViewBox = this.svgArea.getViewBox(padding, this.chartArea, undefined, forcedHeight);
         if (firstViewBox.viewWidth <= 0 || firstViewBox.viewHeight <= 0) return;
 
         // Step 2: compute initial scales to know the post-downsampling category count.
@@ -153,7 +199,7 @@ export class ChartViewport<ITEM> {
         }
 
         // Step 4: recompute viewBox with the correct total width.
-        const { viewWidth, viewHeight } = this.svgArea.getViewBox(padding, this.chartArea, needsScroll ? totalWidth : undefined);
+        const { viewWidth, viewHeight } = this.svgArea.getViewBox(padding, this.chartArea, needsScroll ? totalWidth : undefined, forcedHeight);
         if (viewWidth <= 0 || viewHeight <= 0) return;
 
         // Step 5: compute scales with the correct viewWidth, then check label rotation.
@@ -169,7 +215,7 @@ export class ChartViewport<ITEM> {
         let finalPadding = { ...padding };
         let finalViewWidth = viewWidth;
         let finalViewHeight = viewHeight;
-        if (labelRotation !== 0) {
+        if (labelRotation !== 0 && !state.isSparkline && state.xAxis.visible) {
             // -45°: labels extend diagonally, need ~40px extra; -90°: labels stand upright, need ~60px extra.
             finalPadding = { ...padding, bottom: labelRotation === -90 ? 100 : 80 };
             const { viewWidth: vw2, viewHeight: vh2 } = this.svgArea.getViewBox(
@@ -208,13 +254,18 @@ export class ChartViewport<ITEM> {
         g.setAttribute('transform', `translate(${finalPadding.left}, ${finalPadding.top})`);
         mainG.appendChild(g);
 
-        // Series rendered in a clipped child group; axes remain in the parent
-        // so tick labels (which sit outside the plot area bounds) are not clipped.
+        // SVG paints in document order, so the axis group is appended FIRST: grid
+        // lines, ticks and axis labels sit behind the series, never across them.
+        // The axis group is deliberately unclipped — tick labels sit outside the
+        // plot area bounds — while the series group is clipped to it.
+        const axisG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.appendChild(axisG);
+
         const seriesG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         seriesG.setAttribute('clip-path', `url(#${this._clipId})`);
         g.appendChild(seriesG);
 
-        this.axisRenderer.render(g, state, finalScales, finalViewWidth, finalViewHeight);
+        this.axisRenderer.render(axisG, state, finalScales, finalViewWidth, finalViewHeight);
         this.seriesRenderer.render(seriesG, state, finalScales);
         this.legend.render(state);
 

@@ -27,6 +27,7 @@ export interface ComponentEntry {
   methods: MethodEntry[];
   example: string;
   enums?: EnumEntry[];
+  notes?: string[];
 }
 
 export interface ComponentManifest {

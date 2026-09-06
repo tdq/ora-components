@@ -9,6 +9,7 @@ It has the following methods:
 - `withValue(value: Subject<CheckboxValue>): this` - sets bidirectional value for checkbox. Accepts `boolean | 'intermediate'`.
 - `withAriaLabel(ariaLabel: Observable<string>): this` - sets an explicit `aria-label`, overriding the default (which is derived from `withCaption`).
 - `asGlass(isGlass?: boolean): this` - sets special styling option for checkbox and its popup with items as transparent with blur background (glass effect).
+- `withTestId(id: string): this` - sets `data-testid` on the rendered `<input type="checkbox">`. See [Test ids](../builder-pattern.md#test-ids).
 
 ## Value Type
 `CheckboxValue = boolean | 'intermediate'`

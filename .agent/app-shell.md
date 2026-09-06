@@ -2,7 +2,7 @@
 
 How to compose a full application screen from `SideBarBuilder`, a content area and the chat pair (`ChatPanelBuilder` + `ChatTriggerBuilder`) with `LayoutBuilder`.
 
-The shell is a single horizontal `LayoutBuilder` with three slots. Two of them are `SlotSize.FIT` — the sidebar and the chat panel size themselves from their own CSS (`--ora-sidebar-width` / `--ora-chat-width`) and animate their own width — and the content slot is `SlotSize.FULL`, so it absorbs whatever those two give back.
+The shell is a single horizontal `LayoutBuilder` with three slots. Two of them are `SlotSize.FIT` — the sidebar and the chat panel size themselves from their own CSS (`--ora-sidebar-width` / `--ora-chat-width`) and animate their own width — and the content slot is `SlotSize.GROW`, so it absorbs whatever those two give back. `FULL` (`basis-full`) forces an equal, fixed share of the layout's main axis; `GROW` (`flex-1` plus `min-h-0`/`min-w-0`) instead takes all *remaining* space after fixed/`FIT` siblings and lets a scrollable child (the router outlet, a grid, a chart) shrink below its content size instead of overflowing.
 
 ```typescript
 import { BehaviorSubject, of } from 'rxjs';
@@ -25,12 +25,15 @@ sidebar.addItem().withIcon(Icons.MENU).withCaption(of('Ledger')).withHref('/ledg
 sidebar.addItem().withIcon(Icons.CALENDAR).withCaption(of('Payables')).withHref('/payables');
 sidebar.withFooter().withCaption(of('Northwind Ltd')).withDescription(of('Owner'));
 
-// 2. Content — a vertical layout the router (or the page) fills.
+// 2. Content — a vertical layout the router (or the page) fills. asScrollable() makes it
+//    the scroll container and adds the .ora-scroll-bleed gutter, so page cards' shadows and
+//    focus rings are not clipped at the content edge (see .agent/components/layout.md).
 const contentArea = new LayoutBuilder()
     .asVertical()
     .withGap(LayoutGap.LARGE)
-    .withClass(of('h-full overflow-auto p-4'));
-contentArea.addSlot().withSize(SlotSize.FULL).withContent(routerOutlet);
+    .asScrollable()
+    .withClass(of('h-full p-4'));
+contentArea.addSlot().withSize(SlotSize.GROW).withContent(routerOutlet);
 
 // 3. Chat panel — view-only; the app owns messages$ and the transport.
 const chatPanel = new ChatPanelBuilder()
@@ -50,12 +53,12 @@ contentArea.addSlot().withSize(SlotSize.FIT).withContent(chatTrigger);
 const shell = new LayoutBuilder()
     .asHorizontal()
     .withGap(LayoutGap.NONE)
-    .withClass(of('h-screen w-full overflow-hidden'));
+    .withClass(of('h-screen w-full min-h-0'));
 
 // FIT: the sidebar owns its collapsed/expanded width and transitions it itself.
 shell.addSlot().withSize(SlotSize.FIT).withContent(sidebar);
-// FULL: takes every remaining pixel and shrinks as the panels open.
-shell.addSlot().withSize(SlotSize.FULL).withContent(contentArea);
+// GROW: takes every remaining pixel and shrinks as the panels open.
+shell.addSlot().withSize(SlotSize.GROW).withContent(contentArea);
 // FIT: 0px wide while closed, --ora-chat-width while open.
 shell.addSlot().withSize(SlotSize.FIT).withContent(chatPanel);
 
@@ -65,6 +68,52 @@ document.body.appendChild(shell.build());
 `LayoutGap.NONE` is deliberate: the sidebar reserves its own gutter through `--ora-sidebar-gutter`, and the chat container carries its own padding, so a layout gap on top of them would double the spacing and desynchronise the two width animations.
 
 The trigger is **not** a shell slot. It is a floating pill positioned by its own CSS, so it is added inside the content area (as above) or appended straight to `document.body` — either way it must not take a column in the shell row.
+
+## Skip link
+
+A skip link is application policy, the same way [Cmd/Ctrl+K](#cmdctrlk) is: the library ships no skip link, and the shell wires one to jump keyboard/screen-reader users past the sidebar's nav rows straight to the routed content.
+
+The target is the router outlet element. `RouterBuilder` (`src/router/router-builder.ts`) gives that element a class (`withClass`) and a `data-testid` (`withTestId`), but **no `id`** — there is no `withId` method, and `data-testid` is a test hook, not an anchor target (it is stripped from production builds by some pipelines and is not guaranteed unique/stable API surface the way an `id` is). The element `router.build()` returns is final the moment it is returned — [builder-pattern.md](builder-pattern.md#anti-patterns--post-build-manipulation) forbids calling `setAttribute`/setting `.id`/`.tabIndex` on it afterwards, the same way it forbids `classList.add` or `appendChild` on any other builder's output. The compliant shape is the reverse: the consumer creates its **own** landmark element — which it owns outright, so setting attributes on it is fine — and appends the router's output into it as a child, same as any other builder's output would be:
+
+```typescript
+import type { ComponentBuilder } from '@tdq/ora-components';
+
+const MAIN_CONTENT_ID = 'main-content';
+
+const mainContent: ComponentBuilder = {
+    build: () => {
+        // `main` is created and owned by this code, so setting attributes on it is fine.
+        // `router.build()`'s return value is never touched after build() — it is only
+        // appended as a child, exactly like any other ComponentBuilder's output.
+        const main = document.createElement('main');
+        main.id = MAIN_CONTENT_ID;
+        // A skip link's target should not itself be a stop in the normal tab order,
+        // but does need to be programmatically focusable once jumped to.
+        main.tabIndex = -1;
+        main.appendChild(router.build());
+        return main;
+    },
+};
+
+contentArea.addSlot().withSize(SlotSize.GROW).withContent(mainContent);
+```
+
+**Follow-up**: a `withId`-style API on `RouterBuilder`/`LayoutBuilder` slots is not planned as part of this change.
+
+The link itself is visually hidden until it receives focus (Tab from the top of the page, before the sidebar), and moves focus to the outlet on activation since an in-page `href="#…"` jump alone does not reliably move screen-reader focus for a `<div>` target:
+
+```typescript
+const skipLink = document.createElement('a');
+skipLink.href = `#${MAIN_CONTENT_ID}`;
+skipLink.textContent = 'Skip to content';
+skipLink.className = 'sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-on-primary';
+skipLink.addEventListener('click', () => {
+    document.getElementById(MAIN_CONTENT_ID)?.focus();
+});
+document.body.insertBefore(skipLink, document.body.firstChild);
+```
+
+It must be the first focusable element in the DOM (inserted before the shell, not inside it), so the first `Tab` press on the page reaches it before the sidebar's rows.
 
 ## One subject for the whole chat
 

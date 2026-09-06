@@ -7,6 +7,7 @@ import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '../../core/destroyable-element';
 import { LabelBuilder, LabelSize } from '../label/label';
 import { generateFieldId } from '../component-parts';
+import { applyTestId } from '../../core/test-id';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -19,6 +20,7 @@ export class TabsBuilder implements ComponentBuilder {
     private isGlass: boolean = false;
     private tabs: TabBuilder[] = [];
     private activeTabIndex$ = new BehaviorSubject<number>(0);
+    private testId?: string;
 
     withCaption(caption: Observable<string>): this {
         this.caption$ = caption;
@@ -43,6 +45,12 @@ export class TabsBuilder implements ComponentBuilder {
 
     withClass(className: Observable<string>): this {
         this.className$ = className;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -221,6 +229,8 @@ export class TabsBuilder implements ComponentBuilder {
         registerDestroy(container, () => contentSub.unsubscribe());
 
         container.appendChild(contentArea);
+
+        applyTestId(container, this.testId);
 
         return container;
     }

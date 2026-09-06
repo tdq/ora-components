@@ -24,7 +24,7 @@ export class SeriesRenderer {
                         this.renderLine(g, state, scales, chart as LineChartConfig<any>, xScale, scale, filterId);
                         break;
                     case 'bar':
-                        this.renderBars(g, state, scales, chart as BarChartConfig<any>, xScale, scale, filterId);
+                        this.renderBars(g, state, scales, chart as BarChartConfig<any>, xScale, scale, filterId, i);
                         break;
                     case 'area':
                         this.renderArea(g, state, scales, chart as AreaChartConfig<any>, xScale, scale, filterId);
@@ -197,26 +197,54 @@ export class SeriesRenderer {
         }
     }
 
-    private renderBars(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: BarChartConfig<any>, xScale: any, yScale: any, filterId: string) {
+    private renderBars(g: SVGGElement, state: ChartState<any>, scales: ChartScales, config: BarChartConfig<any>, xScale: any, yScale: any, filterId: string, chartIndex: number) {
         const data = scales.displayData;
-        const barWidth = scales.barWidth || 32;
+        // `barGroupWidth` is the group's actual rendered span (may exceed `barWidth` — see
+        // `ChartScales.barGroupWidth`); `barWidth` remains the fallback for callers that
+        // predate it (e.g. a `scales` object built by hand in a test).
+        const groupWidth = scales.barGroupWidth ?? scales.barWidth ?? 32;
+        const barSlot = scales.barSlot ?? groupWidth;
+        const ratio = config.barWidth ?? 0.8;
+        const width = barSlot * ratio;
+        // A non-stacked series gets its own slot; every stacked series shares one slot
+        // with the rest of its stacked group (see ChartLogic.calculateScales).
+        const slotIndex = scales.barSeriesIndex?.get(chartIndex) ?? 0;
         const relevantDomain = config.useSecondaryAxis && scales.secondaryYDomain
             ? scales.secondaryYDomain
             : scales.yDomain;
         const baselineY = yScale(Math.max(relevantDomain[0], Math.min(relevantDomain[1], 0)));
         const field = String(config.field);
+        const stackBaselines = config.isStacked ? scales.barBaselines?.get(config) : undefined;
 
         data.forEach((d: any, i: number) => {
             const val = readValue(d, field);
             if (val === null) return; // gap: no bar
-            const valY = yScale(val);
-            const y = Math.min(baselineY, valY);
-            const height = Math.max(0.5, Math.abs(baselineY - valY));
+
+            let y: number;
+            let height: number;
+            let animStartY: number;
+
+            if (config.isStacked) {
+                const baseline = stackBaselines ? (stackBaselines[i] ?? 0) : 0;
+                const topValue = baseline + val;
+                const yBase = yScale(baseline);
+                const yTop = yScale(topValue);
+                y = Math.min(yBase, yTop);
+                height = Math.max(0.5, Math.abs(yBase - yTop));
+                animStartY = yBase;
+            } else {
+                const valY = yScale(val);
+                y = Math.min(baselineY, valY);
+                height = Math.max(0.5, Math.abs(baselineY - valY));
+                animStartY = baselineY;
+            }
+
+            const x = xScale(i) - groupWidth / 2 + slotIndex * barSlot + barSlot * (1 - ratio) / 2;
 
             const rect = this.createSvgElement('rect', {
-                x: String(xScale(i) - barWidth / 2),
-                y: String(state.animate ? baselineY : y),
-                width: String(barWidth),
+                x: String(x),
+                y: String(state.animate ? animStartY : y),
+                width: String(width),
                 height: String(state.animate ? 0 : height),
                 fill: config.color || 'currentColor',
                 rx: '2',
@@ -226,7 +254,7 @@ export class SeriesRenderer {
             if (state.animate) {
                 const animY = this.createSvgElement('animate', {
                     attributeName: 'y',
-                    from: String(baselineY),
+                    from: String(animStartY),
                     to: String(y),
                     dur: '0.5s',
                     fill: 'freeze',

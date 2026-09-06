@@ -1,6 +1,7 @@
 export * from './core/component-builder';
 export * from './core/destroyable-element';
 export * from './core/icons';
+export * from './core/test-id';
 export * from './types/money';
 export * from './types/trend';
 export * from './components/button';
@@ -31,3 +32,4 @@ export * from './components/component-parts';
 export * from './theme';
 export * from './router';
 export * from './utils/optimized-pipeline';
+export { resolveValueFormat } from './utils/number';

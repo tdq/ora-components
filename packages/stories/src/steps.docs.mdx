@@ -83,6 +83,9 @@ All `StepsBuilder` methods return `this` for chaining. Pass RxJS observables int
 - **`withClass`** — `(className: Observable<string>) => this`
   Appends additional CSS class names to the root container element.
 
+- **`withTestId`** — `(id: string) => this`
+  Sets `data-testid` on the root container host element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`build`** — `() => HTMLElement`
   Constructs and returns the DOM element. Subscribes to all observables and wires up click handlers. Call once per builder instance.
 

@@ -185,11 +185,21 @@ export class PopoverBuilder implements PopupBuilder {
         // overflow-hidden: the popover wrapper never scrolls; scrollable content inside
         // it (see withScrollElement) owns the scrollbar. A calendar or menu without a
         // maxHeight renders at natural height with no scrollbar.
-        const baseClasses = 'fixed m-0 rounded-small shadow-level-2 overflow-hidden p-0';
+        const baseClasses = 'fixed m-0 rounded-[var(--ora-popover-radius)] overflow-hidden p-0';
         el.className = baseClasses;
 
         if (this._glass) {
+            // No inline background: an inline style outranks any class, so writing the
+            // opaque --ora-popover-bg here would sit on top of .glass-effect's
+            // translucent bg-white/70 and the backdrop-filter would have nothing to
+            // show through (theme.md §10). The elevation is composed with the glass
+            // ring instead, since an inline box-shadow replaces the class's ring too.
             el.classList.add('glass-effect');
+            el.style.boxShadow =
+                'var(--ora-popover-shadow), 0 0 0 1px var(--ora-popover-glass-ring)';
+        } else {
+            el.style.boxShadow = 'var(--ora-popover-shadow)';
+            el.style.backgroundColor = 'var(--ora-popover-bg)';
         }
 
         if (this._className) {

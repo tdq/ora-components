@@ -1,0 +1,9 @@
+/* Dev-only layout for the examples page. Not part of the published ora-components
+   package — the library CSS deliberately no longer ships a body layout rule
+   (see docs/superpowers/plans/2026-09-02-bakeoff-findings-fixes.md, Task 1). */
+body {
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}

@@ -10,6 +10,7 @@ Steps is a custom component that displays a stepper / wizard progress indicator:
 - `asGlass(): this` — sets special styling option as transparent with adjusted colors for use on gradient / glass backgrounds.
 - `asVertical(): this` — stacks steps top-to-bottom with vertical connectors. Default is horizontal.
 - `withClass(className: Observable<string>): this` — sets css class name on the container.
+- `withTestId(id: string): this` — sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 
 `StepBuilder` has the following methods:
 - `withCaption(caption: Observable<string>): this` — sets the short label shown next to the step's circle.

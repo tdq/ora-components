@@ -100,6 +100,13 @@ inline builders documented in the next section.
   Renders the panel with `.glass-effect` instead of a solid surface, and propagates the glass
   flag to every popover menu the rail opens.
 
+- **`withClass`** — `(className$: Observable<string>): this`
+  Apply custom class names to the host element via classList mutations. On each emission, previously added custom classes are removed and new ones are added; base classes and runtime state classes (such as expanded/collapsed state and animation state) survive because only custom classes are removed. Useful for per-instance theming via scoped CSS variables under your own class.
+
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the rail's wrapper host element for end-to-end tests. A static string —
+  call once; it never changes at runtime.
+
 - **`build`** — `(): HTMLElement`
   Constructs the rail. Call once per builder.
 
@@ -120,6 +127,7 @@ inline builders documented in the next section.
 | `withVisible` | `(visible: Observable<boolean>): this` | Same semantics as `SlotBuilder.withVisible`: toggles `display`, no rebuild, subscriptions stay live. |
 | `withTooltip` | `(text: Observable<string>): this` | Tooltip shown while collapsed. Defaults to the caption. |
 | `withMenu` | `(): SidebarMenuBuilder` | Clicking the row opens this menu instead of navigating or running `withClick`. Memoised — created once. |
+| `withTestId` | `(id: string): this` | Sets `data-testid` on this row's element for end-to-end tests. A static string — call once; it never changes at runtime. |
 
 ### `SidebarFooterBuilder` — `sidebar.withFooter()`
 
@@ -130,6 +138,7 @@ inline builders documented in the next section.
 | `withCaption` | `(caption: Observable<string>): this` | Primary line — the organisation or user name. |
 | `withDescription` | `(desc: Observable<string>): this` | Secondary line — role, period, tenant. |
 | `withMenu` | `(): SidebarMenuBuilder` | Account menu opened by clicking the footer row. Memoised. |
+| `withTestId` | `(id: string): this` | Sets `data-testid` on the footer row's element for end-to-end tests. A static string — call once; it never changes at runtime. |
 
 An avatar-only footer is still named: the accessible name falls back to the caption, then the
 description, then `'Menu'`.

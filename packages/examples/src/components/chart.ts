@@ -197,7 +197,7 @@ export function createDualAxisChartExample(): PanelBuilder {
  *   `.withFormat(fn|str)`     — custom tick label formatter
  *   `.withMin(n|'auto')`      — force a minimum value (prevents zero-baseline compression)
  *   `.withMax(n|'auto')`      — force a maximum value
- *   `.withGridLines(false)`   — hide major grid lines
+ *   `.withGridLines(true)`    — show major grid lines (hidden by default)
  *   `.withVisible(false)`     — hide the axis entirely
  */
 export function createAxisConfigExample(): PanelBuilder {
@@ -218,7 +218,7 @@ export function createAxisConfigExample(): PanelBuilder {
 
     chart.withXAxis()
         .withLabel('Month')
-        .withGridLines(false);
+        .withGridLines(true);
 
     return chartPanel('Axis Configuration', chart);
 }

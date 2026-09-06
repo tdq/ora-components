@@ -20,8 +20,10 @@ Used to configure line-based series.
 ## BarChartBuilder
 Used to configure bar-based series.
 - `asStacked(): this`: Sets the series to be stacked with other bar or area series.
-- `withBarWidth(width: number): this`: Sets the relative width of the bars (0-1).
-- **Max Width**: The absolute width of a bar MUST NOT exceed **32px**.
+- `withBarWidth(width: number): this`: Sets the relative width of the bars (0-1, default 0.8). Each bar slot is narrowed proportionally within its category group.
+
+### Grouped & Stacked Placement
+Each non-stacked bar renders at the same width it would have as the only bar series; grouped bars widen the category group rather than shrinking the bars. When the preferred width would cause adjacent groups to overlap, the layout falls back to dividing the space evenly among slots (previous behavior) so bars never overlap. A stacked group occupies one slot, with all stacked series sharing the same x-position and width. Grouping is computed across both Y-axes together (all bar series in a category share one x-range regardless of primary/secondary axis). Stacked series render from per-category positive/negative baselines per axis (primary and secondary stacks accumulate independently). `withBarWidth()` narrows each bar within its slot (default 0.8 means bars occupy 80% of their slot width). The absolute width of a bar MUST NOT exceed **32px**.
 
 ## AreaChartBuilder
 Used to configure area-based series (line with filled area below).

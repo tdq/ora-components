@@ -236,6 +236,12 @@ export function createVisibilityExample(): ComponentBuilder {
  *
  * Use it for the classic "fixed header + scrollable body" shell: a toolbar
  * slot sized FIT, a GROW slot holding a tall list, and nothing below it.
+ *
+ * The body is made scrollable with `asScrollable()` rather than a hand-written
+ * `overflow-y-auto` class: any overflow container clips its children's
+ * `shadow-level-*` shadows and focus rings at the edge, and `asScrollable()`
+ * reserves a `--ora-shadow-bleed` gutter for them (also available per slot as
+ * `addSlot().asScrollable()`).
  */
 export function createGrowSlotExample(): ComponentBuilder {
     return {
@@ -251,10 +257,13 @@ export function createGrowSlotExample(): ComponentBuilder {
 
             shell.addSlot().withSize(SlotSize.FIT).withContent(box('Toolbar (FIT — content height)'));
 
+            // asScrollable() makes this layout the scroll container and adds the
+            // .ora-scroll-bleed gutter (12px padding pulled back by a -12px margin), so a
+            // row's shadow or focus ring is not clipped at the scroller's edge.
             const scrollArea = new LayoutBuilder()
                 .asVertical()
                 .withGap(LayoutGap.SMALL)
-                .withClass(of('overflow-y-auto'));
+                .asScrollable();
             for (let i = 1; i <= 12; i++) {
                 scrollArea.addSlot().withSize(SlotSize.FIT).withContent(box(`Row ${i}`));
             }

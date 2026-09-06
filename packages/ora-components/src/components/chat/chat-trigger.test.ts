@@ -85,4 +85,49 @@ describe('ChatTriggerBuilder', () => {
         trigger.remove();
         expect(open$.observed).toBe(false);
     });
+
+    it('withTestId sets data-testid on the host element', () => {
+        const trigger = new ChatTriggerBuilder()
+            .withOpen(new BehaviorSubject(false))
+            .withTestId('ask-assistant')
+            .build();
+        expect(trigger.getAttribute('data-testid')).toBe('ask-assistant');
+    });
+
+    it('should apply custom classes reactively and replace on new emission', () => {
+        const class$ = new BehaviorSubject('custom-class-1');
+        const trigger = new ChatTriggerBuilder()
+            .withOpen(new BehaviorSubject(false))
+            .withClass(class$)
+            .build();
+
+        expect(trigger.classList.contains('custom-class-1')).toBe(true);
+        expect(trigger.classList.contains('ora-chat-trigger-wrapper')).toBe(true);
+
+        class$.next('custom-class-2');
+        expect(trigger.classList.contains('custom-class-1')).toBe(false);
+        expect(trigger.classList.contains('custom-class-2')).toBe(true);
+        expect(trigger.classList.contains('ora-chat-trigger-wrapper')).toBe(true);
+    });
+
+    it('should survive state class mutations during withClass emissions', () => {
+        const open$ = new BehaviorSubject(false);
+        const class$ = new BehaviorSubject('custom-1');
+        const trigger = new ChatTriggerBuilder()
+            .withOpen(open$)
+            .withClass(class$)
+            .build();
+
+        expect(trigger.classList.contains('custom-1')).toBe(true);
+
+        // Emit a state change
+        open$.next(true);
+        expect(trigger.classList.contains('ora-chat-trigger-wrapper--hidden')).toBe(true);
+
+        // Emit a new class
+        class$.next('custom-2');
+        expect(trigger.classList.contains('custom-2')).toBe(true);
+        // State class should survive
+        expect(trigger.classList.contains('ora-chat-trigger-wrapper--hidden')).toBe(true);
+    });
 });

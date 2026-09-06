@@ -3,6 +3,7 @@ import { ComponentBuilder } from '../../core/component-builder';
 import { clsx, type ClassValue } from 'clsx';
 import { registerDestroy } from '@/core/destroyable-element';
 import { twMerge } from 'tailwind-merge';
+import { applyTestId } from '@/core/test-id';
 
 export enum LayoutGap {
     NONE = 'NONE',
@@ -58,6 +59,9 @@ const JUSTIFY_MAP: Record<Alignment, string> = {
     [Alignment.CENTER]: 'justify-center',
 };
 
+// Vertical scroll container with the shadow/focus-ring gutter; min-h-0 lets a flex child shrink and actually scroll.
+const SCROLLABLE_CLASSES = 'ora-scroll-bleed overflow-y-auto min-h-0';
+
 const ITEMS_CENTER = 'items-center'; // every Alignment centers the cross axis; only justify-* varies
 
 const ALIGNMENT_MAP: Record<Alignment, string> = {
@@ -72,6 +76,10 @@ export interface SlotBuilder {
     withName(name: string): SlotBuilder;
     withVisible(visible: Observable<boolean>): SlotBuilder;
     withAlignment(alignment: Observable<Alignment>): SlotBuilder;
+    /** Makes the slot a vertical scroll container with a gutter (`.ora-scroll-bleed`) so children's shadows and focus rings are not clipped. */
+    asScrollable(): SlotBuilder;
+    /** Sets `data-testid` on the rendered slot element. */
+    withTestId(id: string): SlotBuilder;
 }
 
 class SlotBuilderImpl implements SlotBuilder {
@@ -80,6 +88,8 @@ class SlotBuilderImpl implements SlotBuilder {
     private name?: string;
     private visible$?: Observable<boolean>;
     private alignment$?: Observable<Alignment>;
+    private scrollable = false;
+    private testId?: string;
 
     withContent(content: ComponentBuilder): SlotBuilder {
         this.content = content;
@@ -114,6 +124,16 @@ class SlotBuilderImpl implements SlotBuilder {
         return this;
     }
 
+    asScrollable(): SlotBuilder {
+        this.scrollable = true;
+        return this;
+    }
+
+    withTestId(id: string): SlotBuilder {
+        this.testId = id;
+        return this;
+    }
+
     build(index: number, isVertical: boolean, layoutAlignment$?: Observable<Alignment>): HTMLElement {
         const wrapper = document.createElement('div');
         wrapper.dataset.slot = this.effectiveSlotName(index);
@@ -124,8 +144,9 @@ class SlotBuilderImpl implements SlotBuilder {
                 'flex',
                 this.size && SIZE_MAP[this.size],
                 !this.size && !isVertical && 'flex-1', // Auto size for horizontal if not specified; min-w-0 lets the slot shrink below content intrinsic width instead of overflowing
-                isVertical && 'w-full', // Full width for slots in vertical layout
+                isVertical && !this.scrollable && 'w-full', // Full width for slots in vertical layout; a scrollable slot keeps width auto so .ora-scroll-bleed's negative margins widen it
                 isGrow && (isVertical ? 'min-h-0' : 'min-w-0'), // GROW fills the main axis and may shrink below content size
+                this.scrollable && SCROLLABLE_CLASSES,
                 alignment && (isGrow ? JUSTIFY_MAP[alignment] : ALIGNMENT_MAP[alignment]) // GROW keeps items-stretch so its child can fill the cross axis instead of sitting at intrinsic size
             );
         };
@@ -152,6 +173,8 @@ class SlotBuilderImpl implements SlotBuilder {
             wrapper.appendChild(this.content.build());
         }
 
+        applyTestId(wrapper, this.testId);
+
         return wrapper;
     }
 }
@@ -162,6 +185,8 @@ export class LayoutBuilder implements ComponentBuilder {
     private gap: LayoutGap = LayoutGap.MEDIUM;
     private alignment$?: Observable<Alignment>;
     private className$?: Observable<string>;
+    private scrollable = false;
+    private testId?: string;
 
     addSlot(): SlotBuilder {
         const slot = new SlotBuilderImpl();
@@ -184,6 +209,12 @@ export class LayoutBuilder implements ComponentBuilder {
         return this;
     }
 
+    /** Makes the layout a vertical scroll container with a gutter (`.ora-scroll-bleed`) so children's shadows and focus rings are not clipped at its edges. */
+    asScrollable(): LayoutBuilder {
+        this.scrollable = true;
+        return this;
+    }
+
     withClass(className: Observable<string>): LayoutBuilder {
         this.className$ = className;
         return this;
@@ -191,6 +222,12 @@ export class LayoutBuilder implements ComponentBuilder {
 
     withAlignment(alignment: Observable<Alignment>): LayoutBuilder {
         this.alignment$ = alignment;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): LayoutBuilder {
+        this.testId = id;
         return this;
     }
 
@@ -227,7 +264,8 @@ export class LayoutBuilder implements ComponentBuilder {
 
         const sub = combineLatest([alignment$, className$]).subscribe(([alignment, cls]) => {
             container.className = cn(
-                'flex w-full',
+                'flex',
+                this.scrollable ? SCROLLABLE_CLASSES : 'w-full', // .ora-scroll-bleed needs width auto (see index-layered.css)
                 this.isVertical ? 'flex-col' : 'flex-row',
                 hasGrow && (this.isVertical ? 'h-full min-h-0' : 'min-w-0'),
                 GAP_MAP[this.gap],
@@ -240,6 +278,8 @@ export class LayoutBuilder implements ComponentBuilder {
         this.slots.forEach((slot, index) => {
             container.appendChild(slot.build(index, this.isVertical, this.alignment$));
         });
+
+        applyTestId(container, this.testId);
 
         return container;
     }

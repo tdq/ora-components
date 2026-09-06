@@ -189,7 +189,7 @@ ones via CSS cascade:
 
 1. **`ora-components/src/index.css`** — Library base. Defines Material Design 3
    tokens for both light (`:root` / `[data-theme="light"]`) and dark
-   (`[data-theme="dark"]` / `.dark`). Default palette: Sapphire Blue & Slate
+   (`[data-theme="dark"]`). Default palette: Sapphire Blue & Slate
    Gray.
 
 2. **`storybook-layout.css`** — Layout resets only (fullscreen root, no
@@ -231,7 +231,6 @@ export const globalTypes = {
 The decorator calls `applyTheme()` on every story render, which:
 
 1. Sets `data-theme` attribute on `<html>` (`'dark'` or `'light'`)
-2. Toggles the `dark` class on `<html>` for Tailwind `dark:` variants
 
 The `'system'` option resolves via `window.matchMedia('(prefers-color-scheme:
 dark)')`.
@@ -239,9 +238,7 @@ dark)')`.
 ### How components respond
 
 Components use CSS variables (`var(--md-sys-color-primary)`, etc.) that
-reference the `data-theme`-scoped tokens. Because `index.css` defines selectors
-for both `[data-theme="dark"]` and `.dark`, components work whether the dark
-state is set via attribute or class.
+reference the `[data-theme]`-scoped tokens in `index.css`. The dark theme is applied when `[data-theme="dark"]` is set on the root element.
 
 ### Manager Theme (UI Chrome)
 

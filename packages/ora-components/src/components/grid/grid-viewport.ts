@@ -33,6 +33,11 @@ export class GridViewport<ITEM> {
         this.element = document.createElement('div');
         this.element.className = GridStyles.viewport;
         this.element.tabIndex = 0;
+        // ARIA grid pattern: a direct child of role="grid" must resolve to row/rowgroup in
+        // the accessible tree. Without an explicit role this scrollable div's tabindex still
+        // puts it in that tree as a plain "generic" node (axe: aria-required-children), so it
+        // is marked a rowgroup — the equivalent of <tbody> — wrapping every rendered GridRow.
+        this.element.setAttribute('role', 'rowgroup');
 
         this.contentElement = document.createElement('div');
         this.contentElement.className = GridStyles.content;

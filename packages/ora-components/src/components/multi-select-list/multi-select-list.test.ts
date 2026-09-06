@@ -1051,4 +1051,9 @@ describe('MultiSelectListBuilder', () => {
             delete (HTMLDivElement.prototype as any).offsetHeight;
         }
     });
+
+    it('should set data-testid on the host', () => {
+        const el = new MultiSelectListBuilder<Item>().withTestId('my-multi-select').build();
+        expect(el.getAttribute('data-testid')).toBe('my-multi-select');
+    });
 });

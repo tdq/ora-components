@@ -2,6 +2,7 @@ import { Observable, Subject, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { ChatPanelViewport } from './chat-panel-viewport';
 import { ChatMessage, ChatSuggestion } from './types';
+import { applyTestId } from '../../core/test-id';
 
 const DEFAULTS = {
     caption: 'Assistant',
@@ -31,6 +32,8 @@ export class ChatPanelBuilder implements ComponentBuilder {
     private suggestions$?: Observable<ChatSuggestion[]>;
     private width$: Observable<number> = of(DEFAULTS.width);
     private glass = false;
+    private testId?: string;
+    private className$?: Observable<string>;
 
     /**
      * Required. The full message list on every emission; rows are diffed by `id`.
@@ -124,6 +127,22 @@ export class ChatPanelBuilder implements ComponentBuilder {
         return this;
     }
 
+    /**
+     * Apply custom class names to the host element, merged via `cn()` with base classes.
+     *
+     * @param className$ Observable of space-separated class names
+     */
+    withClass(className: Observable<string>): this {
+        this.className$ = className;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
+    }
+
     build(): HTMLElement {
         if (!this.messages$) {
             throw new Error('ChatPanelBuilder: withMessages() is required before build()');
@@ -132,7 +151,7 @@ export class ChatPanelBuilder implements ComponentBuilder {
             throw new Error('ChatPanelBuilder: withOnSend() is required before build()');
         }
 
-        return new ChatPanelViewport({
+        const element = new ChatPanelViewport({
             messages$: this.messages$,
             onSend: this.onSend,
             open$: this.open$,
@@ -144,6 +163,10 @@ export class ChatPanelBuilder implements ComponentBuilder {
             suggestions$: this.suggestions$,
             width$: this.width$,
             glass: this.glass,
+            className$: this.className$,
         }).build();
+
+        applyTestId(element, this.testId);
+        return element;
     }
 }

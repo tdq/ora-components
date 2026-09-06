@@ -6,8 +6,10 @@ Layout component is a component which is used for layout of the page. It has the
 - `asVertical(): this` - sets layout to vertical.
 - `asHorizontal(): this` - sets layout to horizontal.
 - `withGap(gap: LayoutGap): this` - sets gap between slots.
+- `asScrollable(): this` - makes the layout a vertical scroll container (`overflow-y-auto min-h-0`) with the `.ora-scroll-bleed` gutter, so children's shadows and focus rings are not clipped at its edges. Drops `w-full` (see Gotchas).
 - `withClass(className: Observable<string>): this` - sets class css name of the layout.
 - `withAlignment(alignment: Observable<Alignment>): this` - sets alignment of the content in the layout.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 
 Layout omponent should have full width.
 
@@ -25,6 +27,8 @@ SlotBuilder has the following methods:
 - `withVisible(visible: Observable<boolean>): this` - sets visibility of the slot.
 - `withAlignment(alignment: Observable<Alignment>): this` - sets alignment of the content in the slot.
 - `withName(name: string): this` - sets the slot's `data-slot` attribute value (see [Slot addressing](#slot-addressing)).
+- `asScrollable(): this` - makes the slot a vertical scroll container with the `.ora-scroll-bleed` gutter; pair with `withSize(SlotSize.GROW)` so it fills the remaining height and scrolls.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered slot element. See [Test ids](../builder-pattern.md#test-ids).
 
 SlotSize is an enum with values:
 - `QUARTER`. 1/4 of available space
@@ -59,6 +63,12 @@ Every slot wrapper carries a `data-slot` attribute — its `withName(...)` value
 
 Names are caller-owned: the library never rewrites or suffixes them. Duplicates (two `withName('a')`, or `withName('0')` colliding with slot 0's default) are emitted verbatim and produce a `console.warn` from `build()`.
 
+## Gotchas
+
+- `SlotSize.GROW` fills remaining space along the layout's main axis but requires the parent layout to have `h-full min-h-0` (in vertical mode) or `min-w-0` (in horizontal mode) to prevent the layout itself from growing beyond its parent.
+- Any `overflow-*` container clips children's `shadow-level-*` shadows (level-2 bleeds ~10px below, ~5px sideways) and `ring-2 ring-offset-2` focus rings at its edges. Make the scroller with `asScrollable()` (layout or slot) instead of `withClass(of('overflow-y-auto'))`: it adds `.ora-scroll-bleed` — `padding: var(--ora-shadow-bleed)` (12px) plus the same negative margin — so content stays aligned with siblings while the shadow paints into the gutter. The class relies on `width: auto`, so `asScrollable()` omits `w-full`; do not add it back via `withClass`.
+- For a flex wrapper that only needs to let a child shrink (not scroll), use `min-h-0` / `min-w-0`, not `overflow-hidden` — the latter clips shadows for nothing.
+
 ## Usage
 
 ```typescript
@@ -71,4 +81,20 @@ layout.addSlot().withContent(new LabelBuilder().withCaption(of('Header')));
 layout.addSlot().withContent(new LabelBuilder().withCaption(of('Body')));
 
 const element = layout.build();
+```
+
+```typescript
+// Scrollable page: the layout is the scroll container, with the shadow gutter
+const page = new LayoutBuilder()
+    .asVertical()
+    .withGap(LayoutGap.LARGE)
+    .asScrollable()
+    .withClass(of('flex-1'));
+page.addSlot().withContent(statsRow);   // KPI cards with shadow-level-2 — not clipped
+page.addSlot().withContent(mainPanel);
+
+// Fixed header + scrollable body: only the GROW slot scrolls
+const shell = new LayoutBuilder().asVertical().withGap(LayoutGap.SMALL);
+shell.addSlot().withSize(SlotSize.FIT).withContent(toolbar);
+shell.addSlot().withSize(SlotSize.GROW).asScrollable().withContent(list);
 ```

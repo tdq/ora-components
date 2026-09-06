@@ -2,6 +2,7 @@ import { Observable, combineLatest } from 'rxjs';
 import { map, scan, startWith } from 'rxjs/operators';
 import { Money } from '../../types/money';
 import { CurrencyRegistry } from '../../utils/currency-registry';
+import { getLocaleSeparators } from '../../utils/number';
 
 export type CurrencyDisplay = 'symbol' | 'code';
 
@@ -20,31 +21,9 @@ export interface MoneyKPIData {
     };
 }
 
-interface LocaleSeparators {
-    group: string;
-    decimal: string;
-}
-
-const separatorCache = new Map<string, LocaleSeparators>();
-
-/** Grouping/decimal separators for a locale, resolved once via Intl.NumberFormat parts. */
-function getLocaleSeparators(locale: string): LocaleSeparators {
-    let seps = separatorCache.get(locale);
-    if (!seps) {
-        let parts: Intl.NumberFormatPart[];
-        try {
-            parts = new Intl.NumberFormat(locale).formatToParts(1234567.8);
-        } catch {
-            parts = new Intl.NumberFormat('en-US').formatToParts(1234567.8);
-        }
-        seps = {
-            group: parts.find(p => p.type === 'group')?.value ?? ',',
-            decimal: parts.find(p => p.type === 'decimal')?.value ?? '.',
-        };
-        separatorCache.set(locale, seps);
-    }
-    return seps;
-}
+// Grouping/decimal separators come from the shared utils/number.getLocaleSeparators (same
+// Intl.NumberFormat-parts derivation MoneyField and the chart axis formatters use — the plan's
+// Step 7 three-way consistency requirement) rather than a private duplicate of the same logic.
 
 /** Math-based grouping of a non-negative integer (no string parsing of Intl output). */
 function groupInteger(intPart: number, group: string): string {

@@ -41,6 +41,14 @@ registerDestroy(label, () => {
 });
 ```
 
+**Never clear the `innerHTML` of the element you passed to `registerDestroy`.** The helper
+inserts a hidden `<ora-lifecycle-boundary>` child into that element, so `root.innerHTML = ''`
+inside a subscription evicts the boundary. It is re-inserted only when the host is still
+`isConnected`; on a host that has not been appended to the document yet (`build()` → an
+emission → `appendChild`), the boundary is destroyed, no `disconnectedCallback` ever fires,
+and the subscription leaks when the container is later removed. Render into a child container
+and replace *that* element's content instead — or use `createLifecycleBoundary` directly.
+
 ### Viewport-gated lazy subscriptions: `createOptimizedPipeline`
 
 For data streams that should only be active when their host element is visible in the viewport, use `createOptimizedPipeline` from `src/utils/optimized-pipeline.ts`. This is especially useful for off-screen or below-the-fold data-heavy components:

@@ -1,0 +1,24 @@
+{
+  "name": "ora-smoke-consumer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Headless consumer smoke test that installs the packed @tdq/ora-components tarball and exercises it like a real app, catching packaging bugs the source-aliased examples app cannot see. Deliberately excluded from the root workspaces list (see root package.json) so that npm always installs a real extraction of the tarball here instead of the workspace symlink other packages resolve to, and a plain `npm install`/`npm run build`/`npm test` at the repo root never touches or needs this package's tarball dependency.",
+  "type": "module",
+  "scripts": {
+    "prepare:tarball": "node scripts/prepare.mjs",
+    "playwright:install": "node scripts/install-playwright.mjs",
+    "typecheck:bundler": "tsc --noEmit -p tsconfig.json",
+    "typecheck:nodenext": "tsc --noEmit -p tsconfig.nodenext.json",
+    "typecheck": "npm run typecheck:bundler && npm run typecheck:nodenext",
+    "build:app": "npm run typecheck && vite build",
+    "preview": "vite preview --port 4180 --strictPort",
+    "test:e2e": "playwright test",
+    "smoke": "npm ci && npm run prepare:tarball && npm run playwright:install && npm run build:app && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.60.0",
+    "rxjs": "^7.8.2",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.10"
+  }
+}

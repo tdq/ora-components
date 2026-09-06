@@ -352,3 +352,10 @@ describe('FxTickerBuilder — reactive data integration', () => {
         expect(track.textContent).toContain('GBP/USD');
     });
 });
+
+describe('FxTickerBuilder — withTestId', () => {
+    it('sets data-testid on the host element', () => {
+        const root = freshBuilder().withData(data$).withTestId('fx-ticker').build();
+        expect(root.getAttribute('data-testid')).toBe('fx-ticker');
+    });
+});

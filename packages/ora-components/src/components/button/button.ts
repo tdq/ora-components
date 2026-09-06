@@ -3,6 +3,7 @@ import { ComponentBuilder } from '../../core/component-builder';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '@/core/destroyable-element';
+import { applyTestId } from '@/core/test-id';
 
 export enum ButtonStyle {
     FILLED = 'filled',
@@ -35,6 +36,7 @@ export class ButtonBuilder implements ComponentBuilder {
     private className$?: Observable<string>;
     private ariaLabel$?: Observable<string>;
     private isGlass: boolean = false;
+    private testId?: string;
 
     asGlass(isGlass: boolean = true): ButtonBuilder {
         this.isGlass = isGlass;
@@ -96,6 +98,12 @@ export class ButtonBuilder implements ComponentBuilder {
      */
     getAriaLabel$(): Observable<string> | undefined {
         return this.ariaLabel$ ?? this.caption$;
+    }
+
+    /** Sets `data-testid` on the rendered `<button>`. */
+    withTestId(id: string): ButtonBuilder {
+        this.testId = id;
+        return this;
     }
 
     build(): HTMLButtonElement {
@@ -210,6 +218,8 @@ export class ButtonBuilder implements ComponentBuilder {
             enabledSub?.unsubscribe();
             styleSub?.unsubscribe();
         });
+
+        applyTestId(button, this.testId);
 
         return button;
     }

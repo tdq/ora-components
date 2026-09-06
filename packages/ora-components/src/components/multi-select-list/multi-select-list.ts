@@ -8,6 +8,7 @@ import { Icons } from '../../core/icons';
 import { MultiSelectListStyle } from './types';
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { VirtualRowsViewport } from '../../utils/virtual-rows-viewport';
+import { applyTestId } from '../../core/test-id';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -34,6 +35,7 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
     private error$?: Observable<string>;
     private isGlass: boolean = false;
     private showSelectAll: boolean = true;
+    private testId?: string;
 
     withCaption(caption: Observable<string>): this {
         this.caption$ = caption;
@@ -92,6 +94,12 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
 
     withSelectAll(show: boolean): this {
         this.showSelectAll = show;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -404,6 +412,8 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
             registerDestroy(container, () => errorSub.unsubscribe());
             container.appendChild(errorMsg);
         }
+
+        applyTestId(container, this.testId);
 
         return container;
     }

@@ -30,7 +30,7 @@ export function createHero(): HTMLElement {
                                 </svg>
                                 <span>RxJS native &middot; TypeScript &middot; Material 3</span>
                             </div>
-                            <h1 id="hero-heading" class="text-4xl sm:text-5xl md:text-7xl font-bold leading-tight">
+                            <h1 id="hero-heading" class="text-4xl sm:text-4xl md:text-4xl font-bold leading-tight">
                                 <span id="hero-title-1" class="text-gradient-1 transition-all duration-500">Components for</span><br />
                                 <span id="hero-title-2" class="text-gradient-2 transition-all duration-500">Financial Applications</span>
                             </h1>

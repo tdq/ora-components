@@ -17,6 +17,10 @@ Methods:
 - `withMaxHeight(maxHeight: Observable<number> | number): this` — preferred maximum height in px, always clamped down to the space actually available. **Under `BOTTOM` it is opt-in**: when unset the popover takes its content's natural height with no clamp and no scrollbar (the DatePicker calendar relies on this); when set it is clamped to the space on the chosen side. **Under `RIGHT` a viewport cap applies whether or not it is set** — see [Fitting the viewport](#fitting-the-viewport).
 - `withScrollElement(el: HTMLElement): this` — element inside the content that owns scrolling (e.g. a ListBox `<ul>`). On every reposition the popover writes its clamped max-height to this element's `style.maxHeight` and dispatches a `scroll` event on it so virtualized viewports re-measure. The popover wrapper itself is `overflow-hidden` and never scrolls.
 - `asGlass(): this` — applies the `glass-effect` class (backdrop-blur, semi-transparent background).
+  A glass popover writes **no** inline `background-color` (an inline background would outrank
+  `.glass-effect` and the blur would have nothing to show through) and its inline `box-shadow`
+  composes `--ora-popover-shadow` with `--ora-popover-glass-ring`. Non-glass popovers keep the
+  opaque `--ora-popover-bg`.
 - `build(): this` — eagerly builds the popover wrapper element and appends it to `document.body` without showing it. Call this after setting `withAnchor` and `withContent` to ensure the popover's content is queryable in the DOM before the first `show()`. Returns `this` for chaining. Throws the same guard errors as `show()` if anchor or content are missing.
 - `show(): void` — lazily builds the popover on first call (if `build()` was not called), positions it, and calls `showPopover()`. Subsequent calls when already open only reposition.
 - `close(): void` — sets the open flag to `false` (before calling `hidePopover()`, so any `toggle` event fires after the flag is already cleared), hides the element, and fires the `onClose` callback. No-op if already closed. **Focus restoration:** if focus is currently inside the popover when it closes, focus is restored to the anchor. `popover="manual"` gets no automatic browser focus restoration, so without this, hiding the popover while it holds focus would drop `document.activeElement` onto `<body>` — which, inside a modal dialog, breaks the dialog's focus trap. Callers therefore do not need to restore focus to the anchor themselves.
@@ -55,6 +59,12 @@ Cleanup (event listener removal, DOM detachment, Observable unsubscription) is a
 `PopoverBuilder` automatically detects if its anchor is inside a `<dialog>` element. If so, it appends the popover to that dialog instead of `document.body`. This ensures that:
 1. The popover is not made `inert` when the dialog is shown as a modal.
 2. The dialog's **Focus Trap** correctly includes the popover's focusable elements in its tab order.
+
+## Gotchas
+
+- `PopoverPlacement.BOTTOM` flips above when there is more room there; `PopoverPlacement.RIGHT` never flips vertically but slides into viewport bounds and is capped to viewport height.
+- PopoverBuilder automatically detects if its anchor is inside a `<dialog>` and appends the popover to that dialog instead of `document.body` to preserve focus-trap semantics.
+- Popover positioning runs on `show()`, window resize, and Observable emissions to `withWidth` / `withMaxHeight`; window scroll closes it (does not reposition).
 
 ## Usage Examples
 

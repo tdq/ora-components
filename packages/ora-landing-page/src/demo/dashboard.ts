@@ -25,16 +25,18 @@ export function createDashboardDemo(): HTMLElement {
     const mainContent = document.createElement('div');
     // The rail's symmetric 16px gutter is the left gap; the column pads the other three
     // sides by the same 16px and stacks the floating top bar and the page with that gap.
+    // No overflow-hidden on the column or the outlet: only the page scroller clips, and it
+    // uses the .ora-scroll-bleed gutter so panel/KPI shadows are not cut at the edges.
     // No background here: the column is transparent so the shell's themed blob wash
     // (see `.demo-shell` in styles.css) shows behind the floating bar and page.
-    mainContent.className = 'flex-1 flex flex-col h-screen overflow-hidden gap-px-16 pt-px-16 pr-px-16 pb-px-16 min-w-0';
+    mainContent.className = 'flex-1 flex flex-col h-screen min-h-0 gap-px-16 pt-px-16 pr-px-16 pb-px-16 min-w-0';
 
     // Dashboard Header
     mainContent.appendChild(createDashboardHeader());
 
     // Dashboard Content Outlet
     const contentOutlet = document.createElement('div');
-    contentOutlet.className = 'flex-1 overflow-hidden flex flex-col';
+    contentOutlet.className = 'flex-1 min-h-0 flex flex-col';
 
     const routeSub = router.currentRoute$.subscribe(route => {
         contentOutlet.innerHTML = '';

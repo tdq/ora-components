@@ -1,4 +1,4 @@
-import { AxisBuilder, AxisConfig, AxisPosition, ScaleType } from '../types';
+import { AxisBuilder, AxisConfig, AxisPosition, ScaleType, ValueFormat } from '../types';
 
 export class AxisBuilderImpl implements AxisBuilder {
     private config: AxisConfig;
@@ -6,7 +6,8 @@ export class AxisBuilderImpl implements AxisBuilder {
     constructor(defaultPosition: AxisPosition, defaultScaleType: ScaleType) {
         this.config = {
             visible: true,
-            showGridLines: true,
+            // Grid lines are opt-in: call withGridLines(true) to draw them.
+            showGridLines: false,
             showMinorGridLines: false,
             position: defaultPosition,
             scaleType: defaultScaleType,
@@ -24,7 +25,7 @@ export class AxisBuilderImpl implements AxisBuilder {
         return this;
     }
 
-    withFormat(format: string | ((value: any) => string)): this {
+    withFormat(format: ValueFormat | (string & {})): this {
         this.config.format = format;
         return this;
     }

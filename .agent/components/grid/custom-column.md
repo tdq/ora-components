@@ -11,9 +11,16 @@ In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) met
 
 ## Implementation Details
 - **Rendering**: Directly calls the provided renderer with the current data item.
-- **Renderer identity contract**: the cell caches the item it last rendered (`__prevItem`) and re-invokes the renderer only when the item reference changes. Comparing the renderer's *output* instead — as the cell used to — meant a renderer returning a fresh element each call rebuilt the cell on every row update, destroying focus, selection and any open dropdown inside it. Corollary for consumers: the renderer must be a pure function of the item, and item objects must be replaced (not mutated) when their data changes.
+- **Renderer identity contract**: the cell caches the item it last rendered (`__prevItem`) and re-invokes the renderer only when the item reference changes. Comparing the renderer's *output* instead — as the cell used to — meant a renderer returning a fresh element each call rebuilt the cell on every row update, destroying focus, selection and any open dropdown inside it. Corollary for consumers: the renderer must be a pure function of the item.
+
+### Renderer identity and the editing contract
+This column's own `asEditable()` never fires `onCommit` and never touches item data (see above), so it never mutates an item on its own. But the grid-wide editing contract (`GridBuilder.asEditable(onCommit)`, documented in [grid.md](grid.md#configuration)) does: on commit it mutates the edited item in place and hands that same reference to `onCommit`. That matters here because of the cache rule above — if a `CustomColumnBuilder` renders data from a row that some *other* column just edited in place, the cell's `__prevItem` check sees the same reference and will **not** re-invoke the renderer, so the custom cell will not pick up the change until the item is actually replaced. Consumers who need a custom column to reflect an in-place edit from elsewhere on the row must rebuild the item (and array) themselves — the same `items.map(...)` pattern shown in [grid.md](grid.md#configuration) — rather than relying on the mutation alone.
 - **Teardown**: `GridRow.destroy()` and row recycling clear custom cell content, so `registerDestroy` / lifecycle-boundary callbacks registered by the renderer actually fire. A custom renderer that subscribes must register its teardown on an element it puts *inside* the cell.
 - **`focusTarget` is resolved fresh** on every activation — never cache the returned node, since cell content may be recycled across renders.
+
+## Gotchas
+
+- Custom cells cache the item they last rendered and only re-invoke the renderer when the item reference changes; renderers must be pure functions of the item or in-place mutations from other columns on the same row will not be reflected.
 
 ## Styling
 - **Flexibility**: The custom renderer is responsible for its own internal styling.

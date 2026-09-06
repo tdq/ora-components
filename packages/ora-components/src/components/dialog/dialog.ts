@@ -6,6 +6,7 @@ import { LayoutBuilder, LayoutGap } from '../layout/layout';
 import { registerDestroy } from '@/core/destroyable-element';
 import { setupFocusTrap } from '@/core/focus-trap';
 import { cn } from '@/utils/cn';
+import { applyTestId } from '@/core/test-id';
 
 export enum DialogSize {
     SMALL = 'SMALL',
@@ -42,6 +43,7 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
     private fixedHeight$?: Observable<number>;
     /** True once the built element has been torn down (disconnected); a dead element is never reused. */
     private destroyed: boolean = false;
+    private testId?: string;
 
     withCaption(caption: Observable<string>): this {
         this.caption$ = caption;
@@ -110,6 +112,12 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
             this.toolbarBuilder = new ToolbarBuilder();
         }
         return this.toolbarBuilder;
+    }
+
+    /** Sets `data-testid` on the rendered `<dialog>` element. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
     }
 
     /**
@@ -187,13 +195,17 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
             'm-auto',
             this.isGlass
                 ? 'glass-effect'
-                : 'bg-surface border-none text-on-surface',
-            'rounded-large elevation-5 flex flex-col overflow-hidden p-0 backdrop:bg-transparent',
+                : 'border-none flex flex-col overflow-hidden p-0',
+            'rounded-[var(--ora-radius-large)] elevation-5 backdrop:bg-transparent',
             DIALOG_SIZE_MAP[this.size],
             this.fixedHeight$ && 'max-h-[90vh]'
         );
 
         dialog.className = getBaseClasses();
+        if (!this.isGlass) {
+            dialog.style.backgroundColor = 'var(--ora-dialog-bg)';
+            dialog.style.color = 'var(--ora-dialog-fg)';
+        }
 
         // Header
         const headerBuilder = new LayoutBuilder()
@@ -402,6 +414,8 @@ export class DialogBuilder implements ComponentBuilder, PopupBuilder {
         });
 
         setupFocusTrap(dialog);
+
+        applyTestId(dialog, this.testId);
 
         this.element = dialog;
         return dialog;

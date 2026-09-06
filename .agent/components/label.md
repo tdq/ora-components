@@ -6,6 +6,7 @@ It has the following methods:
 - `withCaption(caption: Observable<string>): this` - sets caption of the label.
 - `withSize(size: LabelSize): this` - sets size of the label.
 - `withClass(className: Observable<string>): this` - sets class css name of the label.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 
 LabelSize is an enum with the following values according to Material Design 3:
 - `SMALL`

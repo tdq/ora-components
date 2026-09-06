@@ -22,6 +22,7 @@ It uses the builder pattern (implements ComponentBuilder) and follows Material D
 - `withLocale(locale: Observable<string>): this` - sets locale for number formatting via Intl.NumberFormat.
 - `asGlass(): this` - enables glass effect styling (transparent with blur background).
 - `asInlineError(): this` - displays errors as field style change instead of support text below.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered `<input>`. See [Test ids](../builder-pattern.md#test-ids).
 
 ### FieldStyle enum (from `@/theme`)
 - `TONAL` - filled background style with bottom active indicator

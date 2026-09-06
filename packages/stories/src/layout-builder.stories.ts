@@ -125,6 +125,50 @@ export const LayoutAlignmentStory = () => {
  * (defaulted from its index, or set explicitly via `withName`) is visible in the DOM — inspect
  * the elements to see `data-slot="header"`, `data-slot="scroll-area"`, `data-slot="footer"`.
  */
+export const ScrollableSlot = () => {
+    const outer = document.createElement('div');
+    outer.className = 'h-[500px] border-2 border-dashed border-primary/40 p-2';
+
+    const layout = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.SMALL);
+
+    layout.addSlot()
+        .withName('header')
+        .withContent(createPlaceholder('Header (content-fit height)', '#DBEAFE'));
+
+    // asScrollable() makes the GROW slot itself the scroll container and adds the
+    // .ora-scroll-bleed gutter, so the rows' shadow-level-2 shadows are not clipped
+    // at the top/bottom/side edges of the scroller.
+    const rows = document.createElement('div');
+    rows.className = 'w-full flex flex-col gap-4';
+    for (let i = 1; i <= 40; i++) {
+        const row = document.createElement('div');
+        row.className = 'px-3 py-2 rounded-large bg-surface text-body-medium border border-outline/10 shadow-level-2';
+        row.textContent = `Elevated row ${i} — its shadow paints into the scroller's bleed gutter instead of being cut`;
+        rows.appendChild(row);
+    }
+    layout.addSlot()
+        .withName('scroll-area')
+        .withSize(SlotSize.GROW)
+        .asScrollable()
+        .withContent({ build: () => rows });
+
+    layout.addSlot()
+        .withName('footer')
+        .withContent(createPlaceholder('Footer (content-fit height, always visible)', '#E5E7EB'));
+
+    const el = layout.build();
+    // The scroller must be reachable by keyboard alone (axe: scrollable-region-focusable).
+    const scroller = el.querySelector<HTMLElement>('[data-slot="scroll-area"]')!;
+    scroller.tabIndex = 0;
+    scroller.setAttribute('role', 'region');
+    scroller.setAttribute('aria-label', 'Scrollable elevated rows');
+
+    outer.appendChild(el);
+    return outer;
+};
+
 export const VerticalGrowSlot = () => {
     const outer = document.createElement('div');
     outer.className = 'h-[500px] border-2 border-dashed border-primary/40 p-2';

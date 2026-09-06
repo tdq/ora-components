@@ -83,6 +83,9 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 - **`asEmail`** — `(): this`
   Sets `type="email"` for native email validation.
 
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the `<input>` element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`asInlineError`** — `(): this`
   Displays validation errors as a coloured ring and error icon next to the input instead of support text below.
 

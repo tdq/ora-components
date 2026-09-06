@@ -18,6 +18,7 @@ export interface ChatPanelViewportConfig {
     suggestions$?: Observable<ChatSuggestion[]>;
     width$: Observable<number>;
     glass: boolean;
+    className$?: Observable<string>;
 }
 
 /** Delay before the composer receives focus, matched to the slide-in transition. */
@@ -107,6 +108,19 @@ export class ChatPanelViewport {
         }
 
         sub.add(messages$.subscribe(messages => this.renderMessages(messages)));
+
+        // Apply custom classes if provided
+        if (this.config.className$) {
+            sub.add(this.config.className$.subscribe(extraClasses => {
+                // Remove all extra classes from wrapper (start fresh since no runtime mutations)
+                wrapper.className = 'ora-chat-panel-wrapper';
+                if (extraClasses) {
+                    extraClasses.split(/\s+/).forEach(cls => {
+                        if (cls) wrapper.classList.add(cls);
+                    });
+                }
+            }));
+        }
 
         const boundary = createLifecycleBoundary();
         boundary.onDisconnect = () => {

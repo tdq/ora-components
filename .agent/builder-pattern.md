@@ -155,6 +155,12 @@ safelist: [
 Never use `text-[#hex]` or `bg-[rgba(...)]` in template literals with `withClass()` —
 Tailwind cannot validate or safelist these.
 
+### Per-instance theming
+
+`withClass(className$: Observable<string>)` is the only per-component hook for runtime class changes. Each builder ensures that a second emission replaces the first custom classes, and that base classes survive every emission. Most preserve runtime state classes (e.g., active routes, sort direction, expand/collapse state); refer to individual component guides for the exact mechanism and any state guarantees.
+
+Custom theming beyond `withClass` — named color tokens, CSS custom properties, semantic aliases — is configured globally in [theme.md](theme.md) and applied to all components. Component-level tokens are a later subtask; see that guide for the token list.
+
 ### Building sub-components prematurely
 
 Pass builder instances to `withContent()` and `addSlot().withContent()` — do NOT
@@ -178,6 +184,46 @@ parent.withContent(
 `ComponentBuilder` instances; they call `.build()` internally at the right time.
 Never call `.build()` on a builder and then construct an ad-hoc `{ build: () => el }`
 wrapper — pass the builder instance directly.
+
+## Test ids
+
+Every main builder (and the inline builders that own their own addressable element — `SlotBuilder`, `SidebarItemBuilder`, `SidebarFooterBuilder`) exposes `withTestId(id: string): this`, which sets `data-testid` on that builder's **one** primary element, applied inside `build()` — never from outside via `setAttribute` (see [Anti-patterns](#anti-patterns--post-build-manipulation) above).
+
+- **One id per builder.** A builder has exactly one addressable element. There is no per-part id API on a builder that renders more than one interactive element (e.g. `ToolbarBuilder`, `DialogBuilder`'s header/body).
+- **Sub-parts go through the inline builder that owns them.** A dialog's toolbar buttons, a form's fields, a sidebar's nav items, etc. are each their own builder (`ButtonBuilder`, `TextFieldBuilder`, the `SidebarItemBuilder` returned by `addItem()`) returned by a `with*`/`add*` call — call `withTestId` on *that* returned builder, not on the parent. Do not build a `TestIdBuilder`-style wrapper or reach into the DOM after `build()` to stamp an id — every element that needs one is reachable through a builder method. Two inline surfaces do not have `withTestId` yet — `SidebarMenuItemBuilder` (the popover menu) and the grid column/action builders; see [follow-ups.md](follow-ups.md#api-coverage).
+- **Static string only.** Like every other `with*` config, `withTestId` takes a plain `string`, not an `Observable<string>` — test ids never change at runtime, so there is nothing to subscribe to.
+- **Applied inside `build()`.** The id is written via the shared `applyTestId(el, id)` helper (`core/test-id.ts`) as the last step of `build()`, after everything else is configured. A missing/empty id is a no-op — `withTestId` is opt-in.
+
+### Target element by component
+
+| Component | Target |
+|---|---|
+| `Button` | `<button>` |
+| `Label`, `Panel`, `Layout` | host element |
+| `Layout` slot (`SlotBuilder`) | the slot's wrapper element |
+| `TextField`, `NumberField`, `MoneyField`, `DatePicker`, `ComboBox`, `Checkbox` | the focusable `<input>` |
+| `ListBox`, `MultiSelectList`, `Tabs`, `Steps`, `Grid`, `Chart`, `MoneyKPICard`, `Trend`, `FxTicker`, `ChatPanel`, `ChatTrigger`, `Form` | host element |
+| `Dialog` | the `<dialog>` element |
+| `SideBar` | the host `<nav>` element |
+| `SideBar` item (`SidebarItemBuilder`) | the row's `<a>`/`<button>` element |
+| `SideBar` footer (`SidebarFooterBuilder`) | the footer's `<button>`/`<div>` row |
+| `Router` outlet (`RouterBuilder`) | the outlet element |
+| `Link` (`LinkBuilder`) | the `<a>` element |
+| `Toolbar` | none — no toolbar-level id; use `withTestId` on the `ButtonBuilder`s it returns |
+
+### Example
+
+```typescript
+const dialog = new DialogBuilder()
+    .withCaption(of('Delete invoice?'))
+    .withTestId('delete-invoice-dialog');
+
+dialog.withToolbar().withPrimaryButton().withTestId('save');
+
+dialog.show();
+// document.querySelector('[data-testid=save]') is a <button> inside the toolbar,
+// document.querySelector('[data-testid=delete-invoice-dialog]') is the <dialog> itself
+```
 
 ## Example of builder with inline builder:
 

@@ -8,6 +8,7 @@ import { DayOfWeek } from './types';
 import { Icons } from '@/core/icons';
 import { PopoverBuilder } from '../component-parts/popover';
 import { of } from 'rxjs';
+import { applyTestId } from '@/core/test-id';
 
 export class DatePickerBuilder implements ComponentBuilder {
     private value$?: Subject<Date | null>;
@@ -21,6 +22,7 @@ export class DatePickerBuilder implements ComponentBuilder {
     private className$?: Observable<string>;
     private isGlass: boolean = false;
     private firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY;
+    private testId?: string;
 
     withValue(value: Subject<Date | null>): this {
         this.value$ = value;
@@ -74,6 +76,12 @@ export class DatePickerBuilder implements ComponentBuilder {
 
     withFirstDayOfTheWeek(day: DayOfWeek): this {
         this.firstDayOfWeek = day;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered `<input>`. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -162,6 +170,8 @@ export class DatePickerBuilder implements ComponentBuilder {
             internalValue$.complete();
             isExpanded$.complete();
         });
+
+        applyTestId(input, this.testId);
 
         // Expose public API
         const element = container as any;

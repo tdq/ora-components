@@ -66,6 +66,20 @@ describe('SideBarBuilder', () => {
             expect(rows(el)[2].querySelector('.ora-sidebar-item-icon')).toBeNull();
         });
 
+        it('renders the host as a labelled <nav> landmark', () => {
+            const el = new SideBarBuilder().withCaption(of('Aurora')).build();
+
+            expect(el.tagName).toBe('NAV');
+            expect(el.getAttribute('aria-label')).toBe('Aurora');
+        });
+
+        it('falls back to a generic label when no caption is set', () => {
+            const el = new SideBarBuilder().build();
+
+            expect(el.tagName).toBe('NAV');
+            expect(el.getAttribute('aria-label')).toBe('Navigation');
+        });
+
         it('renders the brand monogram from the caption and stamps nav/footer slots', () => {
             const sidebar = new SideBarBuilder().withCaption(of('Aurora'));
             sidebar.withFooter().withCaption(of('Northwind'));
@@ -905,6 +919,109 @@ describe('SideBarBuilder', () => {
 
             expect(expanded$.closed).toBe(false);
             expect(() => expanded$.next(true)).not.toThrow();
+        });
+    });
+
+    describe('withTestId', () => {
+        it('sets data-testid on the host element and on the item row itself', () => {
+            const sidebar = new SideBarBuilder().withTestId('main-nav');
+            sidebar.addItem().withCaption(of('Dashboard')).withTestId('nav-dashboard');
+            const el = sidebar.build();
+
+            expect(el.getAttribute('data-testid')).toBe('main-nav');
+
+            const item = el.querySelector('[data-testid=nav-dashboard]');
+            expect(item).toBeTruthy();
+            // The id must land ON the row itself (the <a>/<button>), not on some
+            // ancestor/descendant that merely contains it.
+            expect(['A', 'BUTTON']).toContain(item?.tagName);
+            expect(item?.classList.contains('ora-sidebar-item')).toBe(true);
+        });
+
+        it('sets data-testid on the exact footer row element (non-interactive: a <div>)', () => {
+            const sidebar = new SideBarBuilder();
+            sidebar.withFooter().withCaption(of('Northwind Ltd')).withTestId('nav-footer');
+            const el = sidebar.build();
+
+            const footer = el.querySelector('[data-testid=nav-footer]');
+            expect(footer).toBeTruthy();
+            // A menu-less footer is not a control: the row is the <div class="ora-sidebar-footer-content">
+            // that is the only child of the .ora-sidebar-footer wrapper.
+            expect(footer!.tagName).toBe('DIV');
+            expect(footer!.className).toBe('ora-sidebar-footer-content');
+            expect(footer!.parentElement!.classList.contains('ora-sidebar-footer')).toBe(true);
+            expect(footer).toBe(el.querySelector('.ora-sidebar-footer')!.firstElementChild);
+        });
+
+        it('sets data-testid on the exact footer row element (with a menu: a <button>)', () => {
+            const sidebar = new SideBarBuilder();
+            const footerBuilder = sidebar.withFooter().withCaption(of('Northwind Ltd')).withTestId('nav-footer');
+            footerBuilder.withMenu().addItem().withCaption(of('Sign out'));
+            const el = sidebar.build();
+
+            const footer = el.querySelector('[data-testid=nav-footer]');
+            expect(footer).toBeTruthy();
+            expect(footer!.tagName).toBe('BUTTON');
+            expect(footer!.className).toBe('ora-sidebar-footer-button');
+            expect(footer).toBe(el.querySelector('.ora-sidebar-footer')!.firstElementChild);
+        });
+
+        it('keeps data-testid on the host and the item row across a route change', () => {
+            const stub = routerStub('/dashboard');
+            const sidebar = new SideBarBuilder().withRouter(stub.router).withTestId('main-nav');
+            sidebar.addItem().withCaption(of('Dashboard')).withHref('/dashboard').withTestId('nav-dashboard');
+            sidebar.addItem().withCaption(of('Ledger')).withHref('/ledger').withTestId('nav-ledger');
+            const el = mount(sidebar.build());
+
+            const dashboard = el.querySelector('[data-testid=nav-dashboard]') as HTMLElement;
+            const ledger = el.querySelector('[data-testid=nav-ledger]') as HTMLElement;
+            expect(dashboard.classList.contains('ora-sidebar-item--active')).toBe(true);
+            expect(ledger.classList.contains('ora-sidebar-item--active')).toBe(false);
+
+            stub.currentRoute$.next({ path: '/ledger', params: {}, query: {} });
+
+            // The active toggle really flipped, and every id survived it.
+            expect(dashboard.classList.contains('ora-sidebar-item--active')).toBe(false);
+            expect(ledger.classList.contains('ora-sidebar-item--active')).toBe(true);
+            expect(el.getAttribute('data-testid')).toBe('main-nav');
+            expect(el.querySelector('[data-testid=nav-dashboard]')).toBe(dashboard);
+            expect(el.querySelector('[data-testid=nav-ledger]')).toBe(ledger);
+        });
+
+        it('should apply custom classes reactively and replace on new emission', () => {
+            const { BehaviorSubject } = require('rxjs');
+            const class$ = new BehaviorSubject('custom-class-1');
+            const sidebar = new SideBarBuilder()
+                .withCaption(of('Nav'))
+                .withClass(class$);
+            sidebar.addItem().withCaption(of('Home')).withHref('/');
+            const el = mount(sidebar.build());
+
+            expect(el.classList.contains('custom-class-1')).toBe(true);
+
+            class$.next('custom-class-2');
+            expect(el.classList.contains('custom-class-1')).toBe(false);
+            expect(el.classList.contains('custom-class-2')).toBe(true);
+        });
+
+        it('should preserve sidebar state classes through withClass emissions', () => {
+            const { BehaviorSubject } = require('rxjs');
+            const class$ = new BehaviorSubject('extra-1');
+            const sidebar = new SideBarBuilder()
+                .withCaption(of('Nav'))
+                .withClass(class$);
+            sidebar.addItem().withCaption(of('Home')).withHref('/');
+            const el = mount(sidebar.build());
+
+            expect(el.classList.contains('extra-1')).toBe(true);
+            expect(el.classList.contains('ora-sidebar')).toBe(true);
+
+            class$.next('extra-2');
+            // Extra classes should be replaced
+            expect(el.classList.contains('extra-1')).toBe(false);
+            expect(el.classList.contains('extra-2')).toBe(true);
+            // Base class should survive
+            expect(el.classList.contains('ora-sidebar')).toBe(true);
         });
     });
 });

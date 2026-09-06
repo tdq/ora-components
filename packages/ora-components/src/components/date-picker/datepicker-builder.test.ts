@@ -714,4 +714,23 @@ describe('DatePicker calendar popover sizing (no scrollbar regression)', () => {
         expect(popover.className).toContain('overflow-hidden');
         expect(popover.className).not.toContain('overflow-y-auto');
     });
+
+    it('should set data-testid on the input', () => {
+        const el = new DatePickerBuilder().withTestId('my-date-field').build();
+        expect(el.querySelector('input')?.dataset.testid).toBe('my-date-field');
+    });
+
+    it('should put data-testid on the element that receives focus', () => {
+        const el = new DatePickerBuilder().withTestId('my-date-field').build();
+        document.body.appendChild(el);
+
+        const tagged = el.querySelector('[data-testid="my-date-field"]') as HTMLElement;
+        expect(tagged.tagName).toBe('INPUT');
+        expect(el.querySelectorAll('input').length).toBe(1);
+
+        tagged.focus();
+        expect(document.activeElement).toBe(tagged);
+
+        document.body.removeChild(el);
+    });
 });

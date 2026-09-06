@@ -1,9 +1,14 @@
-import { CheckboxValue, FormBuilder, LabelSize, TabsBuilder } from '@tdq/ora-components';
+import { CheckboxValue, FormBuilder, LabelSize, LayoutBuilder, LayoutGap, TabsBuilder } from '@tdq/ora-components';
 import { of, BehaviorSubject } from 'rxjs';
 
 export function createSettings(): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto';
+    // The page scroller: asScrollable() adds the .ora-scroll-bleed gutter so panel/KPI
+    // shadows are not clipped at the edges (see .agent/components/layout.md).
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.NONE)
+        .asScrollable()
+        .withClass(of('flex-1'));
 
     const profileForm = new FormBuilder()
         .withCaption(of('Profile Settings'))
@@ -57,9 +62,9 @@ export function createSettings(): HTMLElement {
     tabs.addTab().withCaption(of('Notifications')).withContent(notificationsForm);
 
     const tabsEl = tabs.build();
-    tabsEl.classList.add('max-w-2xl');
+    tabsEl.classList.add('w-full', 'max-w-2xl');
 
-    container.appendChild(tabsEl);
+    container.addSlot().withContent({ build: () => tabsEl });
 
-    return container;
+    return container.build();
 }

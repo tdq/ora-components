@@ -10,6 +10,8 @@
 
 Designed from the ground up to achieve sub-millisecond updates, zero framework overhead, and beautiful visual effects (including premium glassmorphism).
 
+New here? See **[QUICKSTART.md](./QUICKSTART.md)** for a fast, compiling tour of the builder grammar, app shell, grid, forms, dialog, chart and theming — every snippet is checked against the shipped types.
+
 ---
 
 ## 📖 Table of Contents

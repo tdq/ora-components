@@ -15,6 +15,8 @@ ChatPanel is a view-only docked chat surface: a header, a scrolling message list
 - `withSuggestions(suggestions: Observable<ChatSuggestion[]>): this` - renders app-driven quick-reply chips between the message log and the composer, in the empty state and mid-conversation alike. Clicking a chip sends that item's `text` through `withOnSend()` without touching the composer. The panel never clears the chips itself — emit `[]` to hide the row.
 - `withWidth(width: Observable<number>): this` - sets the panel width in pixels, written to the `--ora-chat-width` custom property. Defaults to `420`.
 - `asGlass(): this` - renders the panel body with the shared `glass-effect` translucent, blurred surface.
+- `withClass(className$: Observable<string>): this` - apply custom class names to the host element. On each emission, the host element's className is reset to base and custom classes are added; a second emission replaces the first custom classes.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 - `build(): HTMLElement` - builds the panel element. Throws when `withMessages()` or `withOnSend()` was not supplied.
 
 `ChatMessage` is the transport-free message shape:

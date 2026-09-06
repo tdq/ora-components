@@ -7,6 +7,7 @@ It has the following methods:
 - `withClass(className: Observable<string>): this` - sets class css name of the panel.
 - `withContent(content: ComponentBuilder): this` - sets content of the panel.
 - `asGlass(): this` - sets special styling option for panel as transparent with blur background (glass effect). 
+- `withTestId(id: string): this` - sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 
 PanelGap is an enum with values:
 - `SMALL`. 4px gap

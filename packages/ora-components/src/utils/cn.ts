@@ -26,6 +26,7 @@ const ORA_COLORS = [
     'background', 'on-background',
     'surface', 'on-surface', 'surface-variant', 'on-surface-variant',
     'outline', 'surface-container-low',
+    'foreground', 'muted',
 ];
 
 const ORA_FONT_SIZES = [

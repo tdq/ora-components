@@ -6,19 +6,19 @@
 
 **Background:** The same "Ledger Lite" app was built twice from one spec. With the model knowing MUI and not ora, the ora build cost 239k tokens vs 99k. With a one-page ora cheat sheet the ora build cost 97k — the gap is knowledge plus missing escape hatches, not the builder API. Report: https://claude.ai/code/artifact/b05d7329-c2e8-425f-a635-6349ffdecd98. The confirmed defects and the measured cost each one caused are listed per task below.
 
-**Architecture:** All changes are additive to the existing builder grammar (`with*` / `add*` / `as*`, configure-then-`build()`). A shared `applyAttributes` helper in `core/` gives every main builder an attribute API. Chart bar placement moves from a single shared `barWidth` to a per-series slot computed in `chart-logic.ts`. Component styling hooks become CSS custom properties with the current hard-coded values as defaults. Documentation gets a shipped `QUICKSTART.md`, consumer-facing dialog/toolbar docs, and a CI cross-check between `.agent/components/*.md` and `component-manifest.json`.
+**Architecture:** All changes are additive to the existing builder grammar (`with*` / `add*` / `as*`, configure-then-`build()`). A shared `applyTestId` helper in `core/` gives every main builder a `withTestId()` method. Chart bar placement moves from a single shared `barWidth` to a per-series slot computed in `chart-logic.ts`. All theming goes through CSS custom properties: component styling hooks become `--ora-*` tokens with the current hard-coded values as defaults, and there is no JavaScript theme API; per-instance theming uses the builders' existing `withClass` with scoped token overrides. Documentation gets a shipped `QUICKSTART.md`, consumer-facing dialog/toolbar docs, and a CI cross-check between `.agent/components/*.md` and `component-manifest.json`.
 
 **Tech Stack:** TypeScript, RxJS 7, Tailwind 3 (`clsx` + `tailwind-merge` via `cn()`), jsdom + ts-jest (Jest), jest-axe (already a devDependency, currently unused), Vite, Storybook (`packages/stories`), MCP server (`packages/ora-mcp-server`).
 
 ## Global Constraints
 
-- Package under test: `packages/ora-components`. Run tests from there: `cd packages/ora-components && npx jest <file>`. Full run must go from **5 failing / 1660 passing** (current state of `release/0.1.8`) to 0 failing.
+- Package under test: `packages/ora-components`. Run tests from there: `cd packages/ora-components && npx jest <file>`. Full run must go from **5 failing** (`theme-manager` ×4, `text-field` ×1 on `release/0.1.8`) to 0 failing.
 - Test environment is **jsdom**: `clientHeight`/`scrollTop` are `0`, `ResizeObserver`/`requestAnimationFrame`/`IntersectionObserver` are not native. Follow the mocking pattern in `src/components/grid/grid-viewport.test.ts`.
 - No post-build DOM manipulation in library code paths that consumers are told to avoid (`.agent/builder-pattern.md` anti-patterns). Every new capability is a builder method applied inside `build()`.
 - Builder naming rules from `.agent/builder-pattern.md`: only `with*`, `add*`, `as*`, `build`. New methods return `this`.
 - **Repo commit convention:** do NOT run `git commit` without explicit user approval. The "Commit" steps below mean: `git add` the listed files and prepare the commit message, then pause for the user to approve the actual commit.
 - After every task that changes a public builder: `npm run build` in `packages/ora-components` must succeed (it regenerates `dist/component-manifest.json`), and the matching `.agent/components/<name>.md` and `packages/stories/src/<name>.docs.mdx` must be updated in the same task.
-- Consumer verification: `packages/examples` aliases the **source**, so it cannot catch packaging bugs. Task 2 adds a tarball-based smoke app; use it for the CSS and attribute tasks.
+- Consumer verification: `packages/examples` aliases the **source**, so it cannot catch packaging bugs. Task 2 adds a tarball-based smoke app; use it for the CSS, test-id and theming tasks (1, 5, 8).
 
 ---
 
@@ -30,8 +30,8 @@
 
 **Files:**
 - Modify: `packages/ora-components/src/index-layered.css` (rule at ~line 163)
-- Modify: `packages/ora-components/scripts/wrap-css-layer.mjs` (add a guard)
-- Test: `packages/ora-components/scripts/check-css-globals.test.mjs` (new; or a jest test that reads `dist/ora-components.css` if the build runs before tests in CI)
+- Create: `packages/ora-components/scripts/check-css-globals.mjs` (build-time guard, wired into `package.json` `build`)
+- Modify: `packages/ora-components/package.json`, `CHANGELOG.md`
 
 - [ ] **Step 1: Write the failing check**
 
@@ -91,16 +91,16 @@ Read `text-field.test.ts:160-175` and `text-field.ts` inline-error class list. E
 
 ### Task 4: Reconcile documentation drift and add a doc/manifest cross-check
 
-**Measured cost:** three traps hit during the bake-off: `app-shell.md` uses `SlotSize.FULL` where `GROW` fills; `combobox.md` documents `asInlineError()` which is absent from 0.1.8 types; grid `asEditable` mutates items in place while `.agent/components/grid/custom-column.md` says items must be replaced. Plus `dialog.md` describes the toolbar in one line, which led both bake-off agents to build their own button row.
+**Measured cost:** three traps hit during the bake-off: `app-shell.md` uses `SlotSize.FULL` where `GROW` fills; `combobox.md` documented `asInlineError()` while it was absent from the 0.1.8 types (implemented on this branch on 2026-09-02, uncommitted, with tests, stories and the doc line updated — the cross-check below must see a rebuilt `dist/component-manifest.json` or it will flag it); grid `asEditable` mutates items in place while `.agent/components/grid/custom-column.md` says items must be replaced. Plus `dialog.md` describes the toolbar in one line, which led both bake-off agents to build their own button row.
 
 **Files:**
-- Modify: `.agent/app-shell.md`, `.agent/components/combobox.md`, `.agent/components/grid/custom-column.md`, `.agent/components/grid/grid.md`, `.agent/components/dialog.md`, `.agent/components/toolbar.md`
+- Modify: `.agent/app-shell.md`, `.agent/components/grid/custom-column.md`, `.agent/components/grid/grid.md`, `.agent/components/dialog.md`, `.agent/components/toolbar.md`
 - Create: `packages/ora-components/scripts/check-docs-vs-manifest.mjs`
 - Modify: `packages/ora-components/package.json` (run the check after `generate-manifest.mjs`)
 
 - [ ] **Step 1: Write the cross-check script**
 
-Parse every `` `methodName(` `` backtick token in `.agent/components/**/*.md`, map each doc file to its builder(s) by an explicit table at the top of the script (e.g. `combobox.md → ComboBoxBuilder`), and fail if a documented method is missing from that builder's `methods[]` in `dist/component-manifest.json`. Print the misses.
+Parse every `` `methodName(` `` backtick token in `.agent/components/**/*.md`, map each doc file to its builder(s) by an explicit table at the top of the script (e.g. `combobox.md → ComboBoxBuilder`), and fail if a documented method is missing from that builder's `methods[]` in `dist/component-manifest.json`. Print the misses. Run `npm run build` first so the manifest reflects the current source (e.g. the new `ComboBoxBuilder.asInlineError`).
 
 - [ ] **Step 2: Fix the drift**
 
@@ -120,89 +120,119 @@ Parse every `` `methodName(` `` backtick token in `.agent/components/**/*.md`, m
 
 ---
 
-## Phase 1 — Escape hatches (≈3 days)
+## Phase 1 — Escape hatches and value formatting (≈4 days)
 
-### Task 5: `withAttribute` / `withId` / `withTestId` on every main builder
+### Task 5: `withTestId` on every main builder
 
 **Measured cost:** 62-line `TestIdBuilder` shim + post-build `querySelectorAll('.ora-sidebar-item')` stamping in both ora apps; toolbar buttons and the `<dialog>` element unreachable; the reason both agents bypassed `dialog.withToolbar()`.
 
 **Files:**
-- Create: `packages/ora-components/src/core/attributes.ts`
-- Test: `packages/ora-components/src/core/attributes.test.ts`
-- Modify (add the three methods + call `applyAttributes` in `build()`): `components/button/button.ts`, `label/label.ts`, `panel/panel.ts`, `layout/layout.ts` (host and per-slot via `SlotBuilder`), `text-field/text-field.ts`, `number-field/number-field.ts`, `money-field/money-field.ts`, `checkbox/checkbox.ts`, `combobox/combobox-builder.ts`, `date-picker/datepicker-builder.ts`, `listbox/listbox.ts`, `multi-select-list/multi-select-list.ts`, `tabs/tabs.ts`, `steps/steps.ts`, `dialog/dialog.ts`, `toolbar/toolbar-builder.ts`, `grid/grid-builder.ts`, `chart/chart-builder.ts`, `money-kpi-card/money-kpi-card-builder.ts`, `trend/trend-builder.ts`, `fx-ticker/fx-ticker-builder.ts`, `sidebar/sidebar-builder.ts` (+ item inline builder in `sidebar-builder.ts` / `sidebar-item-viewport.ts`), `chat/chat-panel-builder.ts`, `chat/chat-trigger-builder.ts`, `form/form-builder.ts`, `router/router-builder.ts`, `router/link.ts`
-- Modify: `.agent/builder-pattern.md` (new "Attributes" section), every `.agent/components/*.md` (one line each), `packages/stories/src/*.docs.mdx` (Builder API tables)
+- Create: `packages/ora-components/src/core/test-id.ts`
+- Test: `packages/ora-components/src/core/test-id.test.ts`
+- Modify (add `withTestId` + call `applyTestId` in `build()`): `components/button/button.ts`, `label/label.ts`, `panel/panel.ts`, `layout/layout.ts` (host and per-slot via `SlotBuilder`), `text-field/text-field.ts`, `number-field/number-field.ts`, `money-field/money-field.ts`, `checkbox/checkbox.ts`, `combobox/combobox-builder.ts`, `date-picker/datepicker-builder.ts`, `listbox/listbox.ts`, `multi-select-list/multi-select-list.ts`, `tabs/tabs.ts`, `steps/steps.ts`, `dialog/dialog.ts`, `toolbar/toolbar-builder.ts`, `grid/grid-builder.ts`, `chart/chart-builder.ts`, `money-kpi-card/money-kpi-card-builder.ts`, `trend/trend-builder.ts`, `fx-ticker/fx-ticker-builder.ts`, `sidebar/sidebar-builder.ts` (+ item inline builder in `sidebar-builder.ts` / `sidebar-item-viewport.ts`), `chat/chat-panel-builder.ts`, `chat/chat-trigger-builder.ts`, `form/form-builder.ts`, `router/router-builder.ts`, `router/link.ts`
+- Modify: `.agent/builder-pattern.md` (new "Test ids" section), every `.agent/components/*.md` (one line each), `packages/stories/src/*.docs.mdx` (Builder API tables)
 
 **Interfaces:**
 ```ts
-// core/attributes.ts
-export type AttributeValue = string | number | boolean | null | Observable<string | number | boolean | null>;
-export interface AttributeConfig { name: string; value: AttributeValue }
-export function applyAttributes(el: HTMLElement, attrs: AttributeConfig[]): Subscription; // null/false removes, true → ""
-// Mixin-style helper for builders (avoid inheritance; builders are plain classes):
-export class AttributeBag {
-    add(name: string, value: AttributeValue): void;
-    apply(el: HTMLElement): Subscription;
-    readonly isEmpty: boolean;
-}
+// core/test-id.ts
+/** Sets `data-testid` on `el`; a null/empty id is a no-op. Static string only — test ids never change at runtime. */
+export function applyTestId(el: HTMLElement, testId: string | undefined): void;
 ```
 Builder surface (identical on every builder):
 ```ts
-withAttribute(name: string, value: AttributeValue): this;
-withId(id: string): this;              // sugar for withAttribute('id', id)
-withTestId(id: string): this;          // sugar for withAttribute('data-testid', id)
+withTestId(id: string): this;   // rendered as data-testid on the builder's primary element
 ```
-Target rules (document in `builder-pattern.md`): field builders (`TextField`, `NumberField`, `MoneyField`, `DatePicker`, `ComboBox`, `Checkbox`) apply attributes to the focusable `<input>`, except `id`/`class` handling already in `field-id.ts`; `Button` → `<button>`; `Dialog` → `<dialog>`; `Grid`, `Chart`, `Panel`, `Layout`, `Label` → host element; `SideBar` item → the `<a>`/`<button>` row; `Router` → outlet.
+Target rules (document in `builder-pattern.md`): field builders (`TextField`, `NumberField`, `MoneyField`, `DatePicker`, `ComboBox`, `Checkbox`) put the id on the focusable `<input>`; `Button` → `<button>`; `Dialog` → `<dialog>`; `Grid`, `Chart`, `Panel`, `Layout`, `Label`, `MoneyKPICard`, `Trend`, `FxTicker`, `Tabs`, `Steps`, `ChatPanel`, `ChatTrigger`, `Form` → host element; `SideBar` → host element (a `<nav>` after Task 9), `SideBar` item → the `<a>`/`<button>` row; `Router` → outlet; `Link` → `<a>`. One id per builder; sub-parts that need their own id are reached through the inline builder that owns them (e.g. toolbar buttons through the `ButtonBuilder` returned by `withPrimaryButton()`).
 
-- [ ] **Step 1: Write failing tests for `applyAttributes`** (static value set, observable updates, `null` removes, `true` → empty string, subscription unsubscribes on `registerDestroy`).
+- [ ] **Step 1: Write failing tests for `applyTestId`** (sets the attribute; `undefined`/`''` leaves the element untouched; calling `withTestId` twice keeps the last value).
 
-- [ ] **Step 2: Implement `core/attributes.ts`; export from `src/index.ts`.**
+- [ ] **Step 2: Implement `core/test-id.ts`; export from `src/index.ts`.**
 
-- [ ] **Step 3: Add to builders in this order, each with a 2-line test in the existing `*.test.ts`** (`build()` then `expect(el.getAttribute('data-testid')).toBe('x')` / for fields `expect(el.querySelector('input')?.dataset.testid)`): Button, Label, Panel, Layout + slot, TextField, MoneyField, NumberField, Checkbox, ComboBox, DatePicker, Dialog, Toolbar (only via the returned `ButtonBuilder`s — no toolbar-level attr needed), Grid, Chart, SideBar item, Router outlet, then the rest.
+- [ ] **Step 3: Add to builders in this order, each with a 2-line test in the existing `*.test.ts`** (`build()` then `expect(el.getAttribute('data-testid')).toBe('x')` / for fields `expect(el.querySelector('input')?.dataset.testid).toBe('x')`): Button, Label, Panel, Layout + slot, TextField, MoneyField, NumberField, Checkbox, ComboBox, DatePicker, Dialog, Toolbar (only via the returned `ButtonBuilder`s — no toolbar-level id needed), Grid, Chart, SideBar + item, Router outlet, then the rest.
 
 - [ ] **Step 4: Dialog toolbar reachability test** (`dialog.test.ts`): `dialog.withToolbar().withPrimaryButton().withTestId('save')`; `show()`; `document.querySelector('dialog [data-testid=save]')` exists and is a `<button>` inside the toolbar container, below the content container.
 
 - [ ] **Step 5: `RouterBuilder.withClass(Observable<string>)`** (merged with `cn('w-full','h-full')` in `build()`), test in `router-builder.test.ts`.
 
-- [ ] **Step 6: Docs + manifest.** `builder-pattern.md` "Attributes" section replaces the "no attribute API" anti-pattern workaround; delete the `TestIdBuilder`-style example if any doc suggests it. `npm run build` → manifest lists the new methods. Run the Task 4 doc cross-check.
+- [ ] **Step 6: Docs + manifest.** `builder-pattern.md` "Test ids" section replaces the "no attribute API" workaround. Delete the `TestIdBuilder`-style example if any doc suggests it. `npm run build` → manifest lists the new method on every builder. Run the Task 4 doc cross-check.
 
 - [ ] **Step 7: Rebuild the smoke app (Task 2) with `withTestId` on nav items, dialog buttons and grid → assertions pass.** Commit (pause for approval).
 
-### Task 6: Money formatting gaps
+### Task 6: Money and chart value formatting gaps
 
-**Measured cost:** `MoneyFieldBuilder` never inserts thousands separators (`utils/number.ts formatNumber` defaults `useGrouping:false` and `money-field-logic.ts syncInputValue` does not pass it); the spec item "1,234.56 on blur" needed a hand-written blur formatter. Grid money column always prints the currency symbol; `MoneyKPICardBuilder` value node is not addressable (solved by Task 5) and grouping/precision defaults differ from the field.
+**Measured cost (chart):** `AxisBuilder.withFormat(format)` accepts `string | ((value) => string)` and the axis guide documents string presets (`'currency'`, `'percentage'`), but `axis-renderer.ts:142` applies only the function form and falls back to `val.toFixed(0)` for everything else, so a string format is silently ignored and ticks render as `611944`. `chart-tooltip.ts` never formats values at all, so a money chart shows raw floats on hover. Both bake-off dashboards rendered unformatted axes for this reason.
+
+**Measured cost (money):** `MoneyFieldBuilder` never inserts thousands separators (`utils/number.ts formatNumber` defaults `useGrouping:false` and `money-field-logic.ts syncInputValue` does not pass it); the spec item "1,234.56 on blur" needed a hand-written blur formatter. `MoneyKPICardBuilder` value node is not addressable (solved by Task 5).
 
 **Files:**
 - Modify: `packages/ora-components/src/components/money-field/money-field.ts`, `money-field-logic.ts`, `money-field.test.ts`
-- Modify: `packages/ora-components/src/components/grid/columns/money-column.ts` (+ test)
-- Modify: `packages/ora-components/src/utils/number.ts` (no behaviour change; document `useGrouping`)
-- Modify: `.agent/components/money-field.md`, `.agent/components/grid/money-column.md`, `.agent/components/money-kpi-card.md`
+- Modify: `packages/ora-components/src/utils/number.ts` (document `useGrouping`; add `resolveValueFormat`) + `number.test.ts`
+- Modify: `packages/ora-components/src/components/chart/types.ts` (`ValueFormat` type), `builders/axis-builder.ts`, `builders/chart-type-builders.ts` (series-level `withFormat`), `axis-renderer.ts`, `chart-tooltip.ts`, `chart-logic.ts` (format resolution lives in the scales/state, not in renderers) + `chart.test.ts`
+- Modify: `.agent/components/money-field.md`, `.agent/components/money-kpi-card.md`, `.agent/components/chart/axis-builder.md`, `.agent/components/chart/chart.md`, `packages/stories/src/chart.stories.ts` (a `FormattedAxes` story: money left axis, percentage right axis, tooltip)
 
 **Interfaces:**
 ```ts
-MoneyFieldBuilder.withGrouping(grouping: boolean | Observable<boolean>): this; // default true
-MoneyColumn.withCurrencyDisplay(display: 'symbol' | 'code' | 'none'): this;   // default 'symbol' (unchanged)
+// MoneyFieldBuilder: no new API — the display value is always grouped (Intl useGrouping: true), matching MoneyColumn and MoneyKPICard.
+
+// chart/types.ts — one format vocabulary shared by axis ticks and tooltip values
+export type ValueFormatPreset =
+    | 'number'                     // grouped, decimals as in the value (no rounding; the default when withFormat is not called)
+    | 'money'                      // grouped, exactly 2 decimals
+    | 'integer'                    // grouped, 0 decimals
+    | 'compact'                    // 1.2K / 3.4M (Intl notation: 'compact')
+    | 'percentage'                 // value is a fraction: 0.153 → 15.3%
+    | 'currency'                   // Intl currency; currency id from ChartBuilder.withCurrency() (default 'EUR')
+    | `currency:${string}`;        // 'currency:USD'
+export type ValueFormat = ValueFormatPreset | ((value: number) => string);
+
+// utils/number.ts
+export function resolveValueFormat(format: ValueFormat | undefined, locale?: string): (value: number) => string;
+// - function → returned as-is
+// - preset → Intl.NumberFormat with useGrouping:true; unknown string → console.warn once, fall back to 'number'
+
+// AxisBuilder (signature unchanged, behaviour fixed): withFormat(format: ValueFormat): this — applies to tick labels AND to
+// tooltip values of every series bound to this axis (primary or secondary).
+// Series builders (Line/Bar/Area): withFormat(format: ValueFormat): this — per-series tooltip override; wins over the axis format.
+// ChartBuilder: withLocale(locale: string | Observable<string>): this — locale for all presets (default: navigator.language).
+// ChartBuilder: withCurrency(currencyId: string): this — currency used by the bare 'currency' preset (default 'EUR').
 ```
 
-- [ ] **Step 1: Failing test** in `money-field.test.ts`: value `1234567.891`, precision 2, blur → input value `1,234,567.89`; with `withGrouping(false)` → `1234567.89`; locale `de-DE` → `1.234.567,89`; typing `1,250` then blur → `value$` emits `{amount:1250}`.
+- [ ] **Step 1: Failing test** in `money-field.test.ts`: value `1234567.891`, precision 2, blur → input value `1,234,567.89`; locale `de-DE` → `1.234.567,89`; typing `1,250` then blur → `value$` emits `{amount:1250}`; typing `1250` then blur → input shows `1,250.00`.
 
-- [ ] **Step 2: Implement**: thread `grouping$` into `MoneyFieldLogic` state; pass `useGrouping` to `formatNumber` in `syncInputValue`; ensure `normalizeNumberString` already strips the locale grouping char (it does) so parse stays symmetric.
+- [ ] **Step 2: Implement**: pass `useGrouping: true` to `formatNumber` in `money-field-logic.ts syncInputValue` (no builder option; grouping is always on); `normalizeNumberString` already strips the locale grouping char, so parsing stays symmetric. Check the existing money-field tests for assertions that expected ungrouped output and update them.
 
-- [ ] **Step 3: Money column** `withCurrencyDisplay('none')` renders `1,234.56` right-aligned; test in `columns/money-column.test.ts`. Align `MoneyKPICardBuilder` docs with `withPrecision`/`withLocale`/`withCurrencyDisplay` (already exist) and add `withTestId` example.
+- [ ] **Step 3: KPI card docs**: align `MoneyKPICardBuilder` docs with `withPrecision`/`withLocale`/`withCurrencyDisplay` (already exist) and add a `withTestId` example.
 
-- [ ] **Step 4: Docs, changelog, commit** (pause for approval).
+- [ ] **Step 4: Failing tests for `resolveValueFormat`** in `utils/number.test.ts`: `'number'` → `611,944.4` for `611944.4` and `1,234.567` for `1234.567` (grouping only, no rounding); `'money'` → `611,944.40` and `1,234.57`; `'integer'` → `611,944`; `'compact'` → `612K`; `'percentage'` → `15.3%` for `0.153`; `'currency:EUR'` → `€611,944.40`; function passthrough; unknown string warns once and formats as `'number'`; `locale: 'de-DE'` → `611.944,4` for `'number'`, `611.944,40` for `'money'` and currency.
+
+- [ ] **Step 5: Failing chart tests** in `chart.test.ts` (jsdom builds the SVG):
+  - no `withFormat` → y tick text contains a grouping separator (`600,000`, not `600000`), the current `toFixed(0)` path is gone;
+  - `chart.withYAxis().withFormat('currency:EUR')` → every y tick text starts with `€` and is grouped;
+  - `chart.withSecondaryYAxis().withFormat('percentage')` → secondary ticks end with `%` while primary ticks do not;
+  - `withFormat(v => v + ' units')` → ticks use the function;
+  - tooltip: hover (dispatch `mousemove` at a data x) on a chart with a currency y axis → the tooltip value cell reads `€1,234.50`, and a series with its own `withFormat('integer')` overrides the axis format in the tooltip only (ticks unchanged);
+  - category (x) axis is untouched by `withFormat` (dates/labels pass through).
+
+- [ ] **Step 6: Implement chart formatting**: `chart-logic.ts` resolves `primaryFormat`/`secondaryFormat`/per-series `format` once per state change with `resolveValueFormat(…, locale)` and exposes them on `ChartScales` (so renderers never parse format strings); `axis-renderer.ts` replaces `typeof config.format === 'function' ? … : val.toFixed(0)` with `scales.formatPrimary(val)` / `scales.formatSecondary(val)`; `chart-tooltip.ts` formats each series value with `series.format ?? (series.useSecondaryAxis ? formatSecondary : formatPrimary)`; `ChartBuilder.withLocale` feeds the resolver. Keep `withFormat`'s existing string-typed signature so no consumer breaks; `'currency'` without an id uses the chart's `withCurrency(id)` if set, else `'EUR'`, and warns once.
+
+- [ ] **Step 7: Money ↔ chart consistency check**: one test that formats the same amount through the grid `MoneyColumn`, `MoneyFieldBuilder` and a chart y axis (`'currency:EUR'`) and asserts identical digit/separator output for the same locale — the three paths must share `formatNumber` / `Intl.NumberFormat` options, not three hand-rolled formatters.
+
+- [ ] **Step 8: Docs, story, changelog, commit** (pause for approval). `axis-builder.md` lists the presets and states that `withFormat` also drives the tooltip; `chart.md` documents `withLocale`, `withCurrency`, and series `withFormat`; `money-field.md` states that the display value is always grouped. Changelog: Fixed — "AxisBuilder.withFormat string presets were ignored (ticks always `toFixed(0)`); tooltip values are now formatted".
 
 ---
 
 ## Phase 2 — Chart correctness (≈2 days)
 
-### Task 7: Grouped and stacked bars, formatted ticks, sparkline mode
+### Task 7: Grouped and stacked bars, sparkline mode
 
-**Measured cost:** R1 maintenance task was blocked: `series-renderer.ts renderBars` draws every bar series at `xScale(i) - barWidth/2` with the single `scales.barWidth`; `BarChartBuilder.asStacked()` and `withBarWidth()` are stored in config but never read for placement (only `chart-logic.ts` y-domain uses `isStacked`). Workaround was a 72-line `MutationObserver` re-positioning rects. Y-axis ticks rendered `611944` because `withFormat` exists on `AxisBuilder` but has no grouping default.
+**Measured cost:** R1 maintenance task was blocked: `series-renderer.ts renderBars` draws every bar series at `xScale(i) - barWidth/2` with the single `scales.barWidth`; `BarChartBuilder.asStacked()` and `withBarWidth()` are stored in config but never read for placement (only `chart-logic.ts` y-domain uses `isStacked`). Workaround was a 72-line `MutationObserver` re-positioning rects.
 
 **Files:**
-- Modify: `packages/ora-components/src/components/chart/types.ts` (`ChartScales`), `chart-logic.ts`, `series-renderer.ts`, `chart-tooltip.ts` (hit-testing uses `barWidth`), `axis-renderer.ts`, `builders/axis-builder.ts`, `chart-builder.ts`
+- Modify: `packages/ora-components/src/components/chart/types.ts` (`ChartScales`), `chart-logic.ts`, `series-renderer.ts`, `chart-tooltip.ts` (hit-testing uses `barWidth`), `chart-builder.ts` (`asSparkline`)
 - Test: `packages/ora-components/src/components/chart/chart.test.ts` (extend), new `series-renderer.test.ts`
-- Modify: `.agent/components/chart/chart.md`, `individual-charts.md`, `axis-builder.md`; `packages/stories/src/chart.stories.ts` (grouped + stacked stories)
+- Modify: `.agent/components/chart/chart.md`, `individual-charts.md`; `packages/stories/src/chart.stories.ts` (grouped + stacked + sparkline stories)
+
+**Depends on:** Task 6 (tick and tooltip formatting, including the grouped default) — rebase on it so the grouped/stacked stories render formatted axes.
 
 **Interfaces:**
 ```ts
@@ -213,7 +243,6 @@ export interface ChartScales {
     barSlot?: number;               // width of one series' bar inside the group
     barSeriesIndex?: Map<number, number>; // chart index → position inside the group (non-stacked bar series only)
 }
-// AxisBuilder (existing withFormat(string | fn) kept) — new default: Intl.NumberFormat(locale).format for numeric ticks
 // ChartBuilder
 asSparkline(): this; // hides axes, legend, tooltip, padding; height default 32
 ```
@@ -224,49 +253,87 @@ asSparkline(): this; // hides axes, legend, tooltip, padding; height default 32
 
 - [ ] **Step 3: `series-renderer.ts renderBars`**: `x = xScale(i) - barWidth/2 + slotIndex*barSlot + barSlot*(1-ratio)/2`, `width = barSlot*ratio` where `ratio = config.barWidth ?? 0.8`. For `config.isStacked`, keep a per-category running baseline (positive and negative stacks separately) across stacked series; render from that baseline. Preserve the animation branch and `filter="url(#shadow-i)"`.
 
-- [ ] **Step 4: Ticks**: in `axis-renderer.ts`, when no `withFormat` is set and the value is numeric, format with `Intl.NumberFormat(undefined, {maximumFractionDigits: 2})`. Test: domain `[0, 611944]` renders a tick containing `,`.
+- [ ] **Step 4: `asSparkline()`**: sets axes invisible, legend/tooltip off, padding 0, default height 32; test that no `<text>` nodes are rendered. Story `Chart/Sparkline`.
 
-- [ ] **Step 5: `asSparkline()`**: sets axes invisible, legend/tooltip off, padding 0, default height 32; test that no `<text>` nodes are rendered. Story `Chart/Sparkline`.
-
-- [ ] **Step 6: Docs (`individual-charts.md` must now describe grouped/stacked behaviour accurately), changelog, commit** (pause for approval).
+- [ ] **Step 5: Docs (`individual-charts.md` must now describe grouped/stacked behaviour accurately), changelog, commit** (pause for approval).
 
 ---
 
 ## Phase 3 — Theming and styling hooks (≈3 days)
 
-### Task 8: Theme override API and component tokens
+### Task 8: Theming through CSS variables only
 
-**Measured cost:** R3 rebrand had no API: palette is baked into `index-base.css` as `--md-sys-color-*` blocks; overriding works only because of `@layer`, and is undocumented. Grid header background is a hard-coded Tailwind class (`GridStyles.headerWrapper` `bg-[color-mix(…)]`), so tinting it required substring-matching a generated class name. Every consumer copies ~40 lines of Tailwind config from the landing page.
+**Measured cost:** R3 rebrand had no documented path: the palette is baked into `index-base.css` as `--md-sys-color-*` blocks; overriding them from app CSS works only because the library is wrapped in `@layer ora-components`, and nothing says so. Grid header background is a hard-coded Tailwind class (`GridStyles.headerWrapper` `bg-[color-mix(…)]`), so tinting it required substring-matching a generated class name. Every consumer copies ~40 lines of Tailwind config from the landing page.
+
+**Principle:** all theming goes through CSS custom properties, at two levels:
+- **Global** — a consumer rebrands by redeclaring `--md-sys-color-*` and `--ora-*` variables in their own stylesheet (unlayered app CSS always wins over `@layer ora-components`), on `:root` / `[data-theme="dark"]`.
+- **Per component instance** — every main builder exposes `withClass(Observable<string>)`; the consumer passes a class of their own and scopes token overrides to it (`.ledger-grid { --ora-grid-header-bg: … }` + `grid.withClass(of('ledger-grid'))`), or uses Tailwind utilities from the preset. Because internal parts (grid header, sidebar rail, dialog surface) read their colours from `--ora-*` tokens, a token set on the host element themes the parts without any part-level class hook.
+
+There is no JavaScript theme API and no new per-part class hooks; `withClass` + tokens is the whole surface. `ThemeManager` keeps its single job of stamping `data-theme`.
 
 **Files:**
-- Create: `packages/ora-components/src/theme/define-theme.ts` (+ test), `packages/ora-components/tailwind-preset.cjs` (published; add to `package.json` `exports` and `files`)
-- Modify: `packages/ora-components/src/theme/types.ts`, `theme/index.ts`, `src/index.ts`
-- Modify: `packages/ora-components/src/components/grid/grid-styles.ts`, `src/index-base.css` (component tokens with defaults), `grid/grid-builder.ts` (`withHeaderClass`, `withRowClass`)
-- Modify: `.agent/theme.md` (new "Overriding the palette" + "Component tokens" + "Tailwind preset" sections), `packages/ora-landing-page/tailwind.config.mjs` (consume the preset), `packages/stories` config likewise
+- Modify: `packages/ora-components/src/index-base.css` (component tokens with the current values as defaults, for light and dark)
+- Modify: every component style file that hard-codes a colour, radius, font or shadow instead of a token — start with `components/grid/grid-styles.ts`, then `sidebar/*`, `dialog/*`, `chart/styles.ts`, `chart/constants.ts` (series palette), `toolbar/styles.ts`, `component-parts/popover.ts`, `combobox/styles.ts`; use `grep -rn "#[0-9a-fA-F]\{3,6\}\|rgba\?(\|color-mix\|font-family" src/components src/index-*.css` to find the rest
+- Modify (add `withClass` where missing, applied on the host element via `cn()` like `ButtonBuilder`): `components/grid/grid-builder.ts`, `components/chart/chart-builder.ts`, `components/sidebar/sidebar-builder.ts`, `components/chat/chat-panel-builder.ts`, `components/chat/chat-trigger-builder.ts`, `router/router-builder.ts` (already planned in Task 5 Step 5 — do it there, reference here), `router/link.ts`
+- Create: `packages/ora-components/tailwind-preset.cjs` (published; add to `package.json` `exports` and `files`)
+- Create: `packages/ora-components/scripts/check-theme-tokens.mjs` (build-time guard, see Step 5)
+- Modify: `.agent/theme.md` (rewrite as the token reference: every variable, its default in light and dark, what it affects, and the override recipe), `packages/stories/src/theme.docs.mdx` + a `Theme/Rebrand` story, `packages/ora-landing-page/tailwind.config.mjs` and `packages/stories` Tailwind config (consume the preset)
 
-**Interfaces:**
-```ts
-export interface ThemePalette { primary?: string; onPrimary?: string; primaryContainer?: string; …every --md-sys-color-* key in camelCase… }
-export interface ThemeDefinition { light?: ThemePalette; dark?: ThemePalette; fontFamily?: string }
-export function defineTheme(def: ThemeDefinition, scope: HTMLElement | Document = document): () => void; // writes CSS vars, returns disposer
-// GridBuilder
-withHeaderClass(className: Observable<string>): this;
-withRowClass(className: Observable<string> | ((item: ITEM, index: number) => string)): this;
+**Depends on:** Task 2 (smoke app, used by Step 7) and Task 5 Step 5 (`RouterBuilder.withClass`).
+
+**Interfaces (CSS, not TypeScript):**
+```css
+/* index-base.css — palette (existing) */
+:root, [data-theme="light"] { --md-sys-color-primary: …; /* every md-sys-color token, unchanged names */ }
+.dark, [data-theme="dark"]  { --md-sys-color-primary: …; }
+
+/* index-base.css — component tokens (new), defaults = today's hard-coded values */
+:root {
+  --ora-font-family: Inter, system-ui, -apple-system, sans-serif;
+  --ora-radius-small: …; --ora-radius-medium: …; --ora-radius-large: …; --ora-radius-extra-large: …;
+  --ora-grid-header-bg: color-mix(in srgb, var(--md-sys-color-surface-container-low) 30%, transparent);
+  --ora-grid-header-fg: var(--md-sys-color-on-surface-variant);
+  --ora-grid-row-hover-bg: …; --ora-grid-row-selected-bg: …; --ora-grid-border: …;
+  --ora-sidebar-bg: …; --ora-sidebar-item-active-bg: …; --ora-sidebar-width: …;   /* --ora-sidebar-width / --ora-chat-width already exist */
+  --ora-dialog-bg: …; --ora-popover-bg: …; --ora-popover-shadow: …;
+  --ora-chart-series-1: …; … --ora-chart-series-8: …;   /* default series palette; per-series withColor() still overrides */
+  --ora-chart-grid-line: …; --ora-chart-axis-fg: …;
+}
+[data-theme="dark"] { /* dark values for the same component tokens where they differ */ }
 ```
-Component tokens (defaults = current values), all declared in `index-base.css` `:root`:
-`--ora-grid-header-bg`, `--ora-grid-row-hover-bg`, `--ora-grid-border`, `--ora-sidebar-bg`, `--ora-dialog-bg`, `--ora-font-family`.
+Consumer recipe (the whole theming API):
+```css
+/* app.css — unlayered, so it outranks @layer ora-components */
+:root { --md-sys-color-primary: #0F766E; --ora-font-family: "IBM Plex Sans", system-ui, sans-serif; --ora-grid-header-bg: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent); }
+[data-theme="dark"] { --md-sys-color-primary: #5EEAD4; }
+```
+```ts
+// per-instance override — the only per-component hook is withClass()
+const grid = new GridBuilder<Row>().withItems(rows$).withClass(of('ledger-grid'));
+```
+```css
+.ledger-grid { --ora-grid-header-bg: color-mix(in srgb, var(--md-sys-color-tertiary) 12%, transparent); --ora-grid-row-hover-bg: …; }
+```
+```js
+// tailwind.config.mjs (consumer)
+export default { presets: [require('@tdq/ora-components/tailwind-preset')], content: ['./src/**/*.ts'] };
+```
 
-- [ ] **Step 1: Failing tests** for `defineTheme`: writes `--md-sys-color-primary` on `:root` for light and on `[data-theme=dark]` scope for dark (implement dark by injecting a `<style>` element with `[data-theme="dark"]{…}`), disposer removes it, `fontFamily` sets `--ora-font-family`.
+- [ ] **Step 1: Failing token tests** in `grid-styles.test.ts`, `sidebar` tests, `chart.test.ts`: the rendered class/attribute strings reference `var(--ora-grid-header-bg)`, `var(--ora-sidebar-bg)`, `var(--ora-chart-series-1)` etc. and contain no literal hex/rgba colour; plus one jsdom test that sets `document.documentElement.style.setProperty('--ora-grid-header-bg', 'rgb(1, 2, 3)')` before `build()` and asserts `getComputedStyle(header).backgroundColor` (jsdom resolves `var()` on inline styles only — so for this assertion the header must set the background via an inline `style` referencing the var, or the test reads the class string; pick one and note it in the test).
 
-- [ ] **Step 2: Implement `defineTheme`; export.**
+- [ ] **Step 2: `withClass` on every main builder**: add to Grid, Chart, SideBar, ChatPanel, ChatTrigger, Link (Router is in Task 5); merged into the host element's class list via `cn()` exactly like `ButtonBuilder.withClass`; 2-line test per builder; `.agent/components/*.md` + Storybook API tables updated. Add a test on Grid that a token set through a `withClass` class themes the header: build the grid with `withClass(of('t'))`, inject `<style>.t{--ora-grid-header-bg:rgb(1,2,3)}</style>`, and assert the header reads the var (see Step 1 note on jsdom and `var()`).
 
-- [ ] **Step 3: Tokens**: replace `GridStyles.headerWrapper` background with `bg-[var(--ora-grid-header-bg)]`, add the token to `index-base.css` with the existing `color-mix(...)` value; same for the other five tokens. `grid-styles.test.ts` asserts the class string contains the var. Ensure Tailwind safelist/JIT picks up `bg-[var(--ora-grid-header-bg)]` (it appears literally in source, so JIT does).
+- [ ] **Step 3: Tokens in `index-base.css`**: add every `--ora-*` token above with the current value as default, light and dark. Names follow `--ora-<component>-<part>-<property>`.
 
-- [ ] **Step 4: `withHeaderClass` / `withRowClass`** in `grid-builder.ts` → `grid-header.ts` / `grid-row.ts` via `cn()`; tests.
+- [ ] **Step 4: Replace hard-coded values in component styles** with `var(--ora-…)` (Tailwind arbitrary values `bg-[var(--ora-grid-header-bg)]`, `font-[family-name:var(--ora-font-family)]`, `rounded-[var(--ora-radius-large)]`; where a value is set from TypeScript, e.g. chart series fills in `series-renderer.ts`, use the var string directly in the attribute). Chart series default palette resolves to `var(--ora-chart-series-n)` so SVG picks up the theme; `withColor()` on a series still wins.
 
-- [ ] **Step 5: Tailwind preset** `tailwind-preset.cjs`: `darkMode: ['selector','[data-theme="dark"]']`, `corePlugins:{preflight:false}`, the `--md-sys-color-*` colour map and `rounded-*` tokens currently duplicated in `packages/ora-landing-page/tailwind.config.mjs`. Landing page and stories switch to `presets: [require('@tdq/ora-components/tailwind-preset')]` and delete the duplicated block.
+- [ ] **Step 5: Build-time guard** `scripts/check-theme-tokens.mjs`: fails the build if any file under `src/components` or the built `dist/ora-components.css` (outside `index-base.css`'s token blocks) contains a literal hex/rgb/hsl colour or a `font-family:` with a literal face. Wire into `package.json` `build` after `build:css`. Allow-list only via an explicit comment `/* ora-token-exempt: reason */`.
 
-- [ ] **Step 6: Docs, story `Theme/Rebrand` showing `defineTheme({light:{primary:'#0F766E'},dark:{primary:'#5EEAD4'}})`, changelog, commit** (pause for approval).
+- [ ] **Step 6: Tailwind preset** `tailwind-preset.cjs`: `darkMode: ['selector','[data-theme="dark"]']`, `corePlugins:{preflight:false}`, the colour map (`primary: 'var(--md-sys-color-primary)'`, …), `fontFamily.sans: 'var(--ora-font-family)'`, `borderRadius` mapped to `--ora-radius-*` — i.e. the block currently duplicated in `packages/ora-landing-page/tailwind.config.mjs`. Landing page and stories switch to `presets: [require('@tdq/ora-components/tailwind-preset')]` and delete the duplicated block.
+
+- [ ] **Step 7: Landing-page and smoke-app rebrand check**: apply the consumer recipe above to the smoke app (Task 2) — global override on `:root`/`[data-theme=dark]` plus one grid themed differently through `withClass` — and assert in Playwright that the computed primary colour, body font and both grid header backgrounds are as expected in light and dark, with no library file touched.
+
+- [ ] **Step 8: Docs, story, changelog, commit** (pause for approval). `.agent/theme.md` becomes the token reference and states the rule: no JS theme API; global theming is CSS variables, per-instance theming is `withClass` + scoped variables. `Theme/Rebrand` story injects the consumer recipe as a `<style>` element. Changelog: Added — component tokens + Tailwind preset; Changed — hard-coded component colours replaced by tokens (visual output identical by default).
 
 ---
 
@@ -307,11 +374,11 @@ Component tokens (defaults = current values), all declared in `index-base.css` `
 - Modify: `packages/ora-components/scripts/generate-manifest.mjs` (behaviour notes)
 - Modify: `.agent/components/*.md` (add a `## Gotchas` section where relevant)
 
-- [ ] **Step 1: Write `QUICKSTART.md`** (target ≤ 2 500 tokens): install + CSS import + Tailwind preset (Task 8); builder grammar; Layout `GROW` vs `FULL`; app shell (Router + SideBar) snippet; Grid with typed columns and sizing rule; Form fields incl. MoneyField grouping; **Dialog with `withToolbar()` actions**; Chart incl. grouped bars and `asSparkline()`; `withTestId`; theme override; teardown rules. Every snippet must compile against `dist/*.d.ts` — add `scripts/check-quickstart.mjs` that extracts ` ```ts ` blocks into a temp file and runs `tsc --noEmit` against the built types.
+- [ ] **Step 1: Write `QUICKSTART.md`** (target ≤ 2 500 tokens): install + CSS import + Tailwind preset (Task 8); builder grammar; Layout `GROW` vs `FULL`; app shell (Router + SideBar) snippet; Grid with typed columns and sizing rule; Form fields incl. MoneyField grouping; **Dialog with `withToolbar()` actions**; Chart incl. grouped bars and `asSparkline()`; `withTestId`; theming via CSS variables (the consumer recipe from Task 8); teardown rules. Every snippet must compile against `dist/*.d.ts` — add `scripts/check-quickstart.mjs` that extracts ` ```ts ` blocks into a temp file and runs `tsc --noEmit` against the built types.
 
 - [ ] **Step 2: MCP tool `get_quickstart`** returns the file; add to `list_components` response a hint `"Start with get_quickstart"`.
 
-- [ ] **Step 3: Behaviour notes in the manifest**: `generate-manifest.mjs` reads the `## Gotchas` section of the matching `.agent/components/<name>.md` and emits it as `notes: string[]` on each component; `get_component_api` returns it. Seed gotchas from the bake-off: grid sizes to parent height; `asEditable` mutates in place; dialog `show()` builds and appends itself; toolbar is the action bar; MoneyField grouping default; popover placement.
+- [ ] **Step 3: Behaviour notes in the manifest**: `generate-manifest.mjs` reads the `## Gotchas` section of the matching `.agent/components/<name>.md` and emits it as `notes: string[]` on each component; `get_component_api` returns it. Seed gotchas from the bake-off: grid sizes to parent height; `asEditable` mutates in place; dialog `show()` builds and appends itself; toolbar is the action bar; MoneyField always groups thousands; popover placement.
 
 - [ ] **Step 4: Measure**: re-run the bake-off build prompt (spec in the report appendix) with only `QUICKSTART.md` + `.d.ts` available; target ≤ 110k tokens and zero post-build DOM manipulation in the produced app. Record the number in `CHANGELOG.md`.
 
@@ -323,21 +390,21 @@ Component tokens (defaults = current values), all declared in `index-base.css` `
 
 ```
 Task 1 (CSS)  ──┐
-Task 2 (smoke) ─┼─► Task 5 (attributes) ─► Task 6 (money) ─► Task 10 (quickstart)
-Task 3 (tests) ─┘                          Task 7 (chart)  ─┘
-Task 4 (docs + cross-check) ─────────────► Task 8 (theme) ─┘
+Task 2 (smoke) ─┼─► Task 5 (test ids) ─► Task 6 (money + value formats) ─► Task 7 (grouped bars) ─► Task 10 (quickstart)
+Task 3 (tests) ─┘
+Task 4 (docs + cross-check) ─────────────► Task 8 (theme, also needs Task 2 + Task 5) ─┘
                                            Task 9 (a11y)
 ```
 
-Tasks 1–4 are independent of each other. Task 5 must land before Task 10 so the quickstart can teach `withTestId` and toolbar actions without workarounds. Tasks 6–9 are independent of each other.
+Tasks 1–4 are independent of each other. Task 8 needs the smoke app from Task 2 and `RouterBuilder.withClass` from Task 5. Task 5 must land before Task 10 so the quickstart can teach `withTestId` and toolbar actions without workarounds. Task 7 builds on Task 6 (its grouped/stacked stories must render formatted axes). Tasks 6, 8 and 9 are independent of each other.
 
 | Phase | Effort | Removes |
 |---|---|---|
 | 0 hygiene | 1 d | 1 of 3 layout bugs per new app, 5 failing tests, 3 doc traps, dialog-toolbar bypass (docs half) |
-| 1 escape hatches | 3 d | ≈130 lines of shims per app, all post-build stamping, MoneyField gap, dialog-toolbar bypass (API half) |
-| 2 chart | 2 d | R1 blocked-by-library (72-line MutationObserver workaround), unformatted ticks |
-| 3 theming | 3 d | R3 brittle selector, 40 lines of Tailwind config per consumer |
+| 1 escape hatches + formatting | 4 d | ≈130 lines of shims per app, all post-build stamping, MoneyField grouping, ignored chart `withFormat` + raw tooltip values, dialog-toolbar bypass (API half) |
+| 2 chart | 2 d | R1 blocked-by-library (72-line MutationObserver workaround) |
+| 3 theming | 3 d | R3 brittle selector, undocumented palette override, 40 lines of Tailwind config per consumer |
 | 4 accessibility | 3 d | grid/combobox semantics gap vs MUI DataGrid |
 | 5 knowledge | 2 d + ongoing | ≈140k tokens per first-time build |
 
-Total ≈ 14 working days. Success criterion: the bake-off spec built by a fresh agent from `QUICKSTART.md` + types alone costs about what the MUI build costs (≈100k tokens), contains no post-`build()` DOM manipulation, and the resulting app passes the same functional and axe checks.
+Total ≈ 15 working days. Success criterion: the bake-off spec built by a fresh agent from `QUICKSTART.md` + types alone costs about what the MUI build costs (≈100k tokens), contains no post-`build()` DOM manipulation, and the resulting app passes the same functional and axe checks.

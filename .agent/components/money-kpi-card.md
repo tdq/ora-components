@@ -44,20 +44,21 @@ The logic layer uses **math-based splitting** (not string parsing of `Intl` outp
 
 The `symbol` comes from `CurrencyRegistry.getSymbol(currencyId)` in `'symbol'` mode, or the ISO code in `'code'` mode. `CurrencyRegistry.format()` is used for the `full` string only (for aria-label and copy purposes) and accepts an optional locale.
 
+The locale's grouping and decimal separator characters are read via `getLocaleSeparators` (`utils/number.ts`) — the same cached, `Intl.NumberFormat(...).formatToParts()`-derived helper `MoneyField` uses for its display formatting and parsing, so a whole-number/decimal split looks identical between a `MoneyKPICard` and a `MoneyField` showing the same amount at the same locale.
+
 ## MoneyKPICardBuilder Methods
 
-| Method | Signature | Default | Required | Purpose |
-|---|---|---|---|---|
-| `withValue` | `(value$: Observable<Money>): this` | — | yes | Sets the monetary value source. Drives display formatting and triggers animations on change. |
-| `withLabel` | `(label$: Observable<string>): this` | — | no | KPI card title displayed above the value (e.g. "Cash on Hand"). |
-| `withTrend` | `(trend$: Observable<Trend>): this` | — | no | Trend indicator chip displayed next to the label. Delegates to `TrendBuilder` internally. |
-| `withDescription` | `(description$: Observable<string>): this` | — | no | Text line displayed below the value (e.g. "live · reconciled to the cent"). Rendered with class `mkp-description` for CSS icon injection. |
-| `withPrecision` | `(precision: number \| Observable<number>): this` | `2` | no | Number of decimal places for the cents display. Passed to `CurrencyRegistry.format()`. **Precision `0`** renders neither the decimal separator nor the cents span — no trailing "." artefact. |
-| `withLocale` | `(locale: string \| Observable<string>): this` | `'en-US'` | no | Locale used for grouping and decimal separators. The default stays `'en-US'` rather than `navigator.language` so existing cards keep their output; opt in explicitly for locale-aware formatting. |
-| `withCurrencyDisplay` | `(display: CurrencyDisplay \| Observable<CurrencyDisplay>): this` | `'symbol'` | no | `'symbol'` renders `€1.234,56`; `'code'` renders `EUR 1.234,56`. |
-| `withClass` | `(className$: Observable<string>): this` | — | no | Merges extra Tailwind classes onto the root element via `cn()`. |
-| `asGlass` | `(): this` | off | no | Wraps the card in a glass surface via `PanelBuilder().asGlass()`. |
-| `build` | `(): HTMLElement` | — | yes | Constructs and returns the final element. Must be called last. |
+- `withValue(value$: Observable<Money>): this` - Sets the monetary value source (required). Drives display formatting and triggers animations on change.
+- `withLabel(label$: Observable<string>): this` - KPI card title displayed above the value (e.g. "Cash on Hand").
+- `withTrend(trend$: Observable<Trend>): this` - Trend indicator chip displayed next to the label. Delegates to `TrendBuilder` internally.
+- `withDescription(description$: Observable<string>): this` - Text line displayed below the value (e.g. "live · reconciled to the cent"). Rendered with class `mkp-description` for CSS icon injection.
+- `withPrecision(precision: number | Observable<number>): this` - Number of decimal places for the cents display. Default `2`. Passed to `CurrencyRegistry.format()`. Precision `0` renders neither the decimal separator nor the cents span — no trailing "." artefact.
+- `withLocale(locale: string | Observable<string>): this` - Locale used for grouping and decimal separators. Default `'en-US'`. The default stays `'en-US'` rather than `navigator.language` so existing cards keep their output; opt in explicitly for locale-aware formatting.
+- `withCurrencyDisplay(display: CurrencyDisplay | Observable<CurrencyDisplay>): this` - Default `'symbol'`. `'symbol'` renders `€1.234,56`; `'code'` renders `EUR 1.234,56`.
+- `withClass(className$: Observable<string>): this` - Merges extra Tailwind classes onto the root element via `cn()`.
+- `withTestId(id: string): this` - Sets `data-testid` on the card's root element.
+- `asGlass(): this` - Wraps the card in a glass surface via `PanelBuilder().asGlass()`. Off by default.
+- `build(): HTMLElement` - Constructs and returns the final element (required). Must be called last.
 
 All `with*` / `as*` methods return `this` for chaining and can be called in any order.
 
@@ -237,6 +238,17 @@ const card = new MoneyKPICardBuilder()
     .withLabel(of('US Revenue'))
     .build();
 // Renders: $525,000.00 with US locale formatting
+```
+
+### With a test id
+
+```typescript
+const card = new MoneyKPICardBuilder()
+    .withValue(money$)
+    .withLabel(of('Cash on Hand'))
+    .withTestId('cash-on-hand-kpi')
+    .build();
+// document.querySelector('[data-testid="cash-on-hand-kpi"]') === card
 ```
 
 ## Migration from `cash-on-hand-tile.ts`

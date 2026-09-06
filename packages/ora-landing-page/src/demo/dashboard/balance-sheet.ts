@@ -1,3 +1,6 @@
+import { LayoutBuilder, LayoutGap } from '@tdq/ora-components';
+import { of } from 'rxjs';
+
 interface BSLineItem {
     label: string;
     amount: number;
@@ -112,24 +115,29 @@ function renderSection(title: string, items: BSLineItem[], grandTotal: number, g
 }
 
 export function createBalanceSheet(): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto';
+    // The page scroller: asScrollable() adds the .ora-scroll-bleed gutter so panel/KPI
+    // shadows are not clipped at the edges (see .agent/components/layout.md).
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.NONE)
+        .asScrollable()
+        .withClass(of('flex-1'));
 
     // Header
     const header = document.createElement('div');
-    header.className = 'mb-px-24';
+    header.className = 'mb-px-24 w-full';
     header.innerHTML = `
         <h2 class="text-headline-small font-bold text-on-surface" style="letter-spacing: -0.02em;">Balance Sheet</h2>
         <p class="text-body-medium text-on-surface-variant mt-px-4" style="opacity: 0.6;">As of April 30, 2026</p>
     `;
-    container.appendChild(header);
+    container.addSlot().withContent({ build: () => header });
 
     // Two-column grid
     const columns = document.createElement('div');
-    columns.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24 mb-px-24';
+    columns.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24 mb-px-24 w-full';
     columns.appendChild(renderSection('Assets', ASSETS, TOTAL_ASSETS, 'TOTAL ASSETS'));
     columns.appendChild(renderSection('Liabilities & Equity', LIABILITIES, TOTAL_LE, 'TOTAL LIABILITIES & EQUITY'));
-    container.appendChild(columns);
+    container.addSlot().withContent({ build: () => columns });
 
     // Balance check banner
     const isBalanced = TOTAL_ASSETS === TOTAL_LE;
@@ -139,7 +147,7 @@ export function createBalanceSheet(): HTMLElement {
         ? `Balanced — Assets (€${assetsStr}) = Liabilities & Equity (€${leStr})`
         : `Out of balance — Assets: €${assetsStr} ≠ Liabilities & Equity: €${leStr}`;
     const banner = document.createElement('div');
-    banner.className = 'flex items-center gap-px-12 p-px-16 rounded-extra-large border';
+    banner.className = 'flex items-center gap-px-12 p-px-16 rounded-extra-large border w-full';
     banner.style.cssText = isBalanced
         ? 'background: var(--kpi-green-soft); border-color: color-mix(in srgb, var(--kpi-green) 22%, transparent);'
         : 'background: var(--kpi-red-soft); border-color: color-mix(in srgb, var(--kpi-red) 22%, transparent);';
@@ -149,7 +157,7 @@ export function createBalanceSheet(): HTMLElement {
             ${balanceMsg}
         </span>
     `;
-    container.appendChild(banner);
+    container.addSlot().withContent({ build: () => banner });
 
-    return container;
+    return container.build();
 }

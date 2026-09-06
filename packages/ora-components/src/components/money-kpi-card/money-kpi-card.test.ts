@@ -840,4 +840,12 @@ describe('MoneyKPICard — A2 requirements', () => {
         expect(frames.length).toBeLessThanOrEqual(2);
         expect(new Set(frames).size).toBe(1); // every frame paints the same text
     });
+
+    it('withTestId sets data-testid on the host element', () => {
+        const card = new MoneyKPICardBuilder()
+            .withValue(of({ amount: 100, currencyId: 'USD' }))
+            .withTestId('revenue-card')
+            .build();
+        expect(card.getAttribute('data-testid')).toBe('revenue-card');
+    });
 });

@@ -20,6 +20,7 @@ It has the following methods:
 - `withMaxHeight(maxHeight: number | Observable<number>): this` - preferred dropdown height in px (default 256), clamped to the space available in the viewport.
 - `withFilterDebounce(ms: number): this` - overrides the adaptive filter debounce (see [Filtering](#filtering)). Use e.g. 300 when `withItems` is fed by a server-side search.
 - `asInlineError(): this` - displays errors as a red outline plus an `ErrorPopoverBuilder` icon inside the input (between the text and the chevron) instead of support text below the field; `aria-invalid` is set on the input either way. Same contract as `TextFieldBuilder.asInlineError()`.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered `<input>`. See [Test ids](../builder-pattern.md#test-ids).
 
 `build()` returns a `ComboBoxElement<ITEM>` — the container element plus a small imperative API, mirroring DatePicker's `showPopover`/`hidePopover`/`toggle`:
 - `select(item: ITEM | null): void` - selects an item programmatically (updates the input text, the highlight, and writes back through `withValue` when it is a `Subject`).
@@ -44,14 +45,14 @@ When dropdown opens it highlights selected item (scrolls into it if it is not vi
 ### Dropdown
 The dropdown is powered by `PopoverBuilder` (from `component-parts`) with a `ListBoxBuilder` (BORDERLESS style) as its content. `PopoverBuilder` handles popover element creation, anchor-relative positioning, click-outside / scroll / resize close, and width management. `isExpanded$` controls open/close by calling `popover.show()` / `popover.close()`.
 
-`ListBoxBuilder` handles item rendering, selection highlighting, and focused-item highlighting. ComboBox drives the focused index externally via `withFocusedIndex(focusedIndex$)` — the input's `keydown` handler remains the sole writer of `focusedIndex$`. When the user clicks an item, ListBox emits via its `withValue` subject and ComboBox handles the selection (closes popup, updates input value).
+`ListBoxBuilder` handles item rendering, selection highlighting, and focused-item highlighting. ComboBox drives the focused index externally via `ListBoxBuilder.withFocusedIndex(focusedIndex$)` — the input's `keydown` handler remains the sole writer of `focusedIndex$`. When the user clicks an item, ListBox emits via its `withValue` subject and ComboBox handles the selection (closes popup, updates input value).
 
 When the dropdown opens with an existing selected value, that item is shown with the selection highlight (bold, `bg-on-secondary-container/20`). A "No results" message is shown when the filter produces no matches; the `<ul role="listbox">` remains in the DOM at all times for accessibility.
 
 ### Virtualization
 The dropdown is virtualized: the inner `ListBoxBuilder` uses `VirtualRowsViewport`, so only a window of `<li role="option">` rows around the visible/focused area is in the DOM at any time — large option lists no longer materialize every row. This applies even in ComboBox mode (external focus index); there is no separate "render everything" path.
 
-Because rows are sparse, ComboBox must **not** index into `ulEl.children`. Instead it gives the ListBox `withOptionIdProvider((item) => `${listboxId}-option-${itemIdProvider(item)}`)`, so every rendered option carries a stable, item-derived id. ComboBox computes the focused option's id from `currentItems[idx]` with the same formula (never reading the DOM) to set `aria-activedescendant`. Scrolling the focused row into view is handled by the ListBox (`vp.scrollToIndex`), not by ComboBox.
+Because rows are sparse, ComboBox must **not** index into `ulEl.children`. Instead it gives the ListBox `ListBoxBuilder.withOptionIdProvider((item) => `${listboxId}-option-${itemIdProvider(item)}`)`, so every rendered option carries a stable, item-derived id. ComboBox computes the focused option's id from `currentItems[idx]` with the same formula (never reading the DOM) to set `aria-activedescendant`. Scrolling the focused row into view is handled by the ListBox (`vp.scrollToIndex`), not by ComboBox.
 
 Ordering is safe: the ListBox subscribes to `focusedIndex$` inside its `build()` (before ComboBox's own `focusedIndex$` subscription), so when `focusedIndex$` emits, the ListBox renders and scrolls the focused row into view first — the referenced element is present in the DOM by the time ComboBox sets `aria-activedescendant`.
 
@@ -110,3 +111,7 @@ Use standardized 1px borders for error states instead of thicker borders to main
 On error set red outline for text field. 
 Add error icon on the right inside of text field. 
 Clicking this icon shows tooltip with error text.
+
+## Gotchas
+
+- `ComboBoxBuilder.asInlineError()` exists and displays errors as a red outline with an icon inside the input (not support text below).

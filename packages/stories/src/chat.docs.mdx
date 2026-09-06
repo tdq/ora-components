@@ -109,6 +109,13 @@ shellRow.appendChild(panel.build());
   Drops the panel's own background and border and lets `.glass-effect` supply a frosted
   surface.
 
+- **`withClass`** — `(className$: Observable<string>): this`
+  Apply custom class names to the host element. On each emission, the host element's className is reset to base and custom classes are added; a second emission replaces the first custom classes. Useful for per-instance theming via scoped CSS variables under your own class.
+
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the panel's root host element for end-to-end tests. A static string —
+  call once; it never changes at runtime.
+
 - **`build`** — `(): HTMLElement`
   Constructs the panel. **Throws** if `withMessages()` or `withOnSend()` was not called.
 
@@ -121,6 +128,13 @@ shellRow.appendChild(panel.build());
 
 - **`withCaption`** — `(caption: Observable<string>): this`
   Button label, also its `aria-label`. Defaults to `'Ask assistant'`.
+
+- **`withClass`** — `(className$: Observable<string>): this`
+  Apply custom class names to the host element via classList mutations. On each emission, previously added custom classes are removed and new ones are added; base classes and runtime state classes (such as the `--hidden` state) survive because only custom classes are removed. Useful for per-instance theming via scoped CSS variables under your own class.
+
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the trigger's wrapper host element for end-to-end tests. A static
+  string — call once; it never changes at runtime.
 
 ---
 

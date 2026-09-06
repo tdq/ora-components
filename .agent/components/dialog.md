@@ -16,6 +16,7 @@ It has the following methods:
 - `withDraggable(draggable: boolean | Observable<boolean>): this` - enables/disables header dragging (default: enabled).
 - `withToolbar(): ToolbarBuilder` - defines bottom toolbar in the dialog.
 - `asGlass(): this` - sets special styling option for dialog and its content as transparent with blur background (glass effect).
+- `withTestId(id: string): this` - sets `data-testid` on the rendered `<dialog>` element. See [Test ids](../builder-pattern.md#test-ids). A toolbar button's own id is set on the `ButtonBuilder` returned by `withToolbar()`'s methods — see [Toolbar](toolbar.md).
 - `show(): void` - opens the dialog modally (appends to `document.body`, calls `showModal()`). Must be called after builder configuration is complete.
 - `close(): Promise<void>` - consults `withBeforeClose` (hence async) and, if allowed, closes the dialog and removes it from `document.body`. Clears inline positioning styles so the dialog re-centers on next `show()`.
 - `forceClose(): void` - closes immediately, bypassing the `withBeforeClose` guard. Use for "the operation succeeded, tear it down" paths.
@@ -47,6 +48,26 @@ On opening dialog must be displayed in center.
 4. A **closed popover that remains in the dialog's DOM** as `display:none` (e.g. the DatePicker calendar after it closes). Its focusable elements must be excluded from the trap — they live in a hidden subtree, so the trap skips elements with a hidden ancestor. Otherwise the trap could try to focus a hidden element and drop focus to `<body>`, breaking the trap.
 5. Recovery when focus escapes the dialog by means other than Tab (e.g. a native popover hiding itself): a `focusin` fallback pulls focus back inside.
 6. **Safari keyboard navigation.** The trap drives all Tab movement itself (explicitly focusing the next/previous element on every Tab) rather than relying on the browser's native Tab. Safari's default keyboard navigation skips `<button>` / `<a>` elements, so native delegation would make toolbar buttons unreachable and let focus escape after the last form field.
+
+## Gotchas
+
+- `DialogBuilder.show()` builds and appends the dialog to the DOM itself (appends to `document.body`, calls `showModal()`); do not call `show()` until builder configuration is complete.
+- Dialog actions belong in the toolbar; do not add a button row to the content.
+
+## Actions
+
+Dialog actions belong in the toolbar; do not add a button row to the content. The toolbar stays pinned under scrolling content and follows MD3 alignment.
+
+`withToolbar()` returns a `ToolbarBuilder` (see [Toolbar](toolbar.md)); its `ToolbarBuilder.withPrimaryButton()` and `ToolbarBuilder.addSecondaryButton()` / `ToolbarBuilder.addTextButton()` methods each return a `ButtonBuilder` that you configure and wire up directly — including calling `dialog.close()` from a button's `ButtonBuilder.withClick()`. Canonical shape:
+
+```typescript
+const dialog = new DialogBuilder().withCaption(of('New entry')).withContent(form);
+dialog.withToolbar().addSecondaryButton().withCaption(of('Cancel')).withClick(() => dialog.close());
+dialog.withToolbar().withPrimaryButton().withCaption(of('Save')).withClick(save);
+dialog.show();
+```
+
+`withToolbar()` is idempotent per dialog — calling it again returns the same `ToolbarBuilder`, so `dialog.withToolbar()` can be called once per button as shown above without creating a second toolbar.
 
 ## Styling
 Style according to Material Design 3 

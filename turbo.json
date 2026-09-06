@@ -8,6 +8,10 @@
     "test": {
       "dependsOn": ["^build"]
     },
+    "verify": {
+      "dependsOn": ["@tdq/ora-components#build"],
+      "cache": false
+    },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,

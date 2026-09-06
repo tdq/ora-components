@@ -21,6 +21,7 @@ import { ErrorPopoverBuilder } from '../component-parts/error-popover';
 import { ListBoxBuilder } from '../listbox/listbox';
 import { ListBoxStyle } from '../listbox/types';
 import { createOptimizedPipeline, GatedObserver } from '../../utils/optimized-pipeline';
+import { applyTestId } from '../../core/test-id';
 
 export { ComboBoxStyle };
 
@@ -58,6 +59,7 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
     private filterDebounceMs?: number;
     private isGlass: boolean = false;
     private isInlineError: boolean = false;
+    private testId?: string;
 
     withItems(items: Observable<ITEM[]>): ComboBoxBuilder<ITEM> {
         this.items$ = items;
@@ -156,6 +158,12 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
     /** Overrides the default 150ms debounce applied when the item list is >= 100 items. 0 disables debouncing. */
     withFilterDebounce(ms: number): ComboBoxBuilder<ITEM> {
         this.filterDebounceMs = ms;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered `<input>`. */
+    withTestId(id: string): ComboBoxBuilder<ITEM> {
+        this.testId = id;
         return this;
     }
 
@@ -673,6 +681,8 @@ export class ComboBoxBuilder<ITEM> implements ComponentBuilder {
         });
 
         const element = container as unknown as ComboBoxElement<ITEM>;
+        applyTestId(input, this.testId);
+
         element.select = (item: ITEM | null) => selectItem(item);
         element.open = () => { if (!input.disabled) isExpanded$.next(true); };
         element.close = () => isExpanded$.next(false);

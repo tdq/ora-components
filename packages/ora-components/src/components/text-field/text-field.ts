@@ -6,6 +6,7 @@ import { buildTextField } from './text-field-logic';
 import { createTextFieldLabel } from './text-field-label';
 import { createTextFieldIconContainer } from './text-field-icon';
 import { createTextFieldSupportText } from './text-field-error';
+import { applyTestId } from '../../core/test-id';
 
 export { FieldStyle as TextFieldStyle };
 
@@ -22,6 +23,7 @@ export class TextFieldBuilder implements ComponentBuilder {
     private isPassword: boolean = false;
     private isEmail: boolean = false;
     private isInlineError: boolean = false;
+    private testId?: string;
 
     private prefix$ = of<HTMLElement | string>('');
     private suffix$ = of<HTMLElement | string>('');
@@ -95,6 +97,12 @@ export class TextFieldBuilder implements ComponentBuilder {
         return this;
     }
 
+    /** Sets `data-testid` on the rendered `<input>`. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
+    }
+
     build(): HTMLElement {
         const id = generateFieldId('text-field');
         const errorId = `${id}-error`;
@@ -138,7 +146,7 @@ export class TextFieldBuilder implements ComponentBuilder {
         const supportText = createTextFieldSupportText(errorId);
         footer.appendChild(supportText);
 
-        return buildTextField({
+        const result = buildTextField({
             value$: this.value$,
             placeholder$: this.placeholder$,
             enabled$: this.enabled$,
@@ -168,5 +176,9 @@ export class TextFieldBuilder implements ComponentBuilder {
             footer,
             supportText
         });
+
+        applyTestId(input, this.testId);
+
+        return result;
     }
 }

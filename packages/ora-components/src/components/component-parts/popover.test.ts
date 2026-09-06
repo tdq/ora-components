@@ -390,7 +390,8 @@ describe('PopoverBuilder', () => {
 
             const popover = document.body.querySelector('[popover]')!;
             expect(popover.classList.contains('fixed')).toBe(true);
-            expect(popover.classList.contains('rounded-small')).toBe(true);
+            // Note: radius is now set via token var(--ora-popover-radius)
+            expect(popover.className).toContain('rounded-[var(--ora-popover-radius)]');
         });
 
         test('asGlass adds glass-effect class', () => {
@@ -414,6 +415,35 @@ describe('PopoverBuilder', () => {
 
             const popover = document.body.querySelector('[popover]')!;
             expect(popover.classList.contains('glass-effect')).toBe(false);
+        });
+
+        test('a glass popover leaves the background to .glass-effect', () => {
+            const anchor = makeAnchor();
+            new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .asGlass()
+                .show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            // An inline background would outrank .glass-effect's translucent bg and
+            // leave the backdrop-filter with nothing to blur through.
+            expect(popover.style.backgroundColor).toBe('');
+            // The inline shadow replaces the class's ring, so it carries both.
+            expect(popover.style.boxShadow).toContain('var(--ora-popover-shadow)');
+            expect(popover.style.boxShadow).toContain('var(--ora-popover-glass-ring)');
+        });
+
+        test('a non-glass popover keeps the opaque popover background', () => {
+            const anchor = makeAnchor();
+            new PopoverBuilder()
+                .withAnchor(anchor)
+                .withContent(makeContent())
+                .show();
+
+            const popover = document.body.querySelector('[popover]') as HTMLElement;
+            expect(popover.style.backgroundColor).toBe('var(--ora-popover-bg)');
+            expect(popover.style.boxShadow).toBe('var(--ora-popover-shadow)');
         });
 
         test('withClass adds extra CSS class', () => {

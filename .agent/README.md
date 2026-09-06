@@ -16,6 +16,7 @@ Logic and state are managed by RxJS.
 - [Router](router.md) - Client-side SPA routing
 - [App Shell](app-shell.md) - Composing SideBar + content + ChatPanel/ChatTrigger with LayoutBuilder
 - [Storybook](storybook.md) - Story format conventions, decorator, tags, viewport config, theme chain
+- [Follow-ups](follow-ups.md) - Known gaps deliberately left out of scope, with the reasoning
 - [Story Helpers](story-helpers.md) - Reusable utilities for story authors (action log, data generators, demo controls, glass backdrop)
 
 ## Components
@@ -40,6 +41,13 @@ Logic and state are managed by RxJS.
 - [SideBar](components/sidebar.md)
 - [ChatPanel](components/chatpanel.md)
 - [ChatTrigger](components/chattrigger.md)
+- [Trend](components/trend.md)
+- [FxTicker](components/fx-ticker.md)
+- [MoneyKPICard](components/money-kpi-card.md)
+- [MultiSelectList](components/multi-select-list.md)
+- [Steps](components/step-builder.md)
+- [Popover](components/popover.md)
+- [ComponentParts](components/component-parts.md)
 
 ## Packages
 

@@ -7,6 +7,7 @@ import { getComponentGuide } from './tools/get-component-guide.js';
 import { getComponentStories } from './tools/get-component-stories.js';
 import { getRouterDocs } from './tools/get-router-docs.js';
 import { getArchitectureGuide } from './tools/get-architecture-guide.js';
+import { getQuickstart } from './tools/get-quickstart.js';
 
 export interface ToolDef {
   name: string;
@@ -89,7 +90,7 @@ export const tools: ToolDef[] = [
   },
   {
     name: 'get_architecture_guide',
-    description: 'Get an architecture or pattern guide. Topics: architecture, builder-pattern, reactive, theme, glass-effects, icons, component, layout, app-shell. Use "layout" for LayoutBuilder patterns — SlotSize, LayoutGap, Alignment, nesting, app-shell, chart sizing, and reactive classes. Use "app-shell" for composing SideBar + content + ChatPanel/ChatTrigger into a full screen.',
+    description: 'Get an architecture or pattern guide. Topics: architecture, builder-pattern, reactive, theme, glass-effects, icons, component, layout, app-shell. Use "layout" for LayoutBuilder patterns — SlotSize, LayoutGap, Alignment, nesting, app-shell, chart sizing, reactive classes, and asScrollable() (scroll containers with the --ora-shadow-bleed gutter so card shadows and focus rings are not clipped). Use "app-shell" for composing SideBar + content + ChatPanel/ChatTrigger into a full screen.',
     zodSchema: { topic: z.string().describe('Guide topic: architecture | builder-pattern | reactive | theme | glass-effects | icons | component | layout | app-shell') },
     jsonSchema: {
       type: 'object',
@@ -97,5 +98,12 @@ export const tools: ToolDef[] = [
       required: ['topic'],
     },
     handler: ({ topic }) => getArchitectureGuide(String(topic)),
+  },
+  {
+    name: 'get_quickstart',
+    description: 'Get the quickstart guide for Ora Components — installation, builder pattern, layout strategies, form fields, charts, grids, dialogs, theming, and memory safety.',
+    zodSchema: {},
+    jsonSchema: emptyJsonSchema,
+    handler: () => getQuickstart(),
   },
 ];

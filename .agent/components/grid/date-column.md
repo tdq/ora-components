@@ -16,5 +16,5 @@ In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) met
 - **Alignment**: Center or Left aligned.
 
 ## Editing
-Built-in editor is **DatePickerBuilder** with `asInlineError()` modifier. It is not displaying any label.
-In case if grid has `asGlass()` modifier, the date picker should be initialized with `asGlass()` modifier.
+Built-in editor is **DatePickerBuilder**. It is not displaying any label. `DatePickerBuilder` has no inline-error modifier (unlike the text/number/money/percentage column editors), so a validation error on a date column falls back to the standard support-text error display.
+In case if grid has `GridBuilder.asGlass()` modifier, the date picker should be initialized with `DatePickerBuilder.asGlass()` modifier.

@@ -46,7 +46,7 @@ describe('DialogBuilder', () => {
 
     it('should apply base classes including border radius and white backdrop', () => {
         const dialog = new DialogBuilder().build();
-        expect(dialog).toHaveClass('rounded-large');
+        expect(dialog.className).toContain('rounded-[var(--ora-radius-large)]');
         expect(dialog).toHaveClass('backdrop:bg-transparent');
     });
 
@@ -740,6 +740,75 @@ describe('DialogBuilder', () => {
             expect(document.activeElement).toBe(input1);
 
             document.body.removeChild(dialog);
+        });
+    });
+
+    describe('withTestId', () => {
+        it('sets data-testid on the <dialog> element', () => {
+            const dialog = new DialogBuilder().withTestId('my-dialog').build();
+            expect(dialog.getAttribute('data-testid')).toBe('my-dialog');
+        });
+
+        it('makes a toolbar action button reachable and correctly positioned', () => {
+            // Other tests in this file leave dialogs attached to document.body; clear them
+            // so the plain `document.querySelector('dialog ...')` below only ever sees ours.
+            document.querySelectorAll('dialog').forEach(d => d.remove());
+
+            const dialogBuilder = new DialogBuilder()
+                .withCaption(of('Entry'))
+                .withContent({ build: () => document.createElement('div') });
+            dialogBuilder.withToolbar().withPrimaryButton().withCaption(of('Save')).withTestId('save');
+
+            dialogBuilder.show();
+
+            const button = document.querySelector('dialog [data-testid=save]');
+            expect(button).toBeTruthy();
+            expect(button?.tagName).toBe('BUTTON');
+
+            const dialogEl = document.querySelector('dialog') as HTMLElement;
+            const containers = Array.from(dialogEl.children) as HTMLElement[];
+            const toolbarContainer = containers.find(c => c.contains(button));
+            expect(toolbarContainer).toBeTruthy();
+
+            // The toolbar wrapper must come after the content container (the flex-1 div
+            // holding withContent()'s output) in DOM order.
+            const contentContainer = containers.find(c => c.className.includes('flex-1'));
+            expect(contentContainer).toBeTruthy();
+            expect(containers.indexOf(toolbarContainer!)).toBeGreaterThan(containers.indexOf(contentContainer!));
+
+            dialogBuilder.forceClose();
+        });
+
+        it('makes secondary and text toolbar action ids reachable the same way', () => {
+            document.querySelectorAll('dialog').forEach(d => d.remove());
+
+            const dialogBuilder = new DialogBuilder()
+                .withCaption(of('Entry'))
+                .withContent({ build: () => document.createElement('div') });
+            const toolbar = dialogBuilder.withToolbar();
+            toolbar.withPrimaryButton().withCaption(of('Save')).withTestId('save');
+            toolbar.addSecondaryButton().withCaption(of('Duplicate')).withTestId('duplicate');
+            toolbar.addTextButton().withCaption(of('Cancel')).withTestId('cancel');
+
+            dialogBuilder.show();
+
+            const dialogEl = document.querySelector('dialog') as HTMLElement;
+            const containers = Array.from(dialogEl.children) as HTMLElement[];
+            const contentContainer = containers.find(c => c.className.includes('flex-1'));
+            expect(contentContainer).toBeTruthy();
+
+            for (const id of ['save', 'duplicate', 'cancel']) {
+                const button = document.querySelector(`dialog [data-testid=${id}]`);
+                expect(button).toBeTruthy();
+                expect(button?.tagName).toBe('BUTTON');
+
+                const toolbarContainer = containers.find(c => c.contains(button));
+                expect(toolbarContainer).toBeTruthy();
+                expect(containers.indexOf(toolbarContainer!))
+                    .toBeGreaterThan(containers.indexOf(contentContainer!));
+            }
+
+            dialogBuilder.forceClose();
         });
     });
 });

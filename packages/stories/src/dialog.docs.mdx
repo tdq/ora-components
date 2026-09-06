@@ -96,6 +96,12 @@ All builder methods return `this` for chaining (except `withToolbar` which retur
 
 - **`withToolbar`** — `(): ToolbarBuilder`
   Returns a `ToolbarBuilder` for adding action buttons at the bottom of the dialog. Call once to create the toolbar.
+  `ToolbarBuilder` itself has no `withTestId` — reach individual toolbar buttons through the
+  `ButtonBuilder` each of `withPrimaryButton()`, `addSecondaryButton()`, and `addTextButton()`
+  returns, and call `withTestId()` on that.
+
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the native `<dialog>` element for end-to-end tests.
 
 - **`asGlass`** — `(): this`
   Enables the glass-effect variant with frosted background and blur on the dialog and its toolbar.
@@ -111,6 +117,21 @@ All builder methods return `this` for chaining (except `withToolbar` which retur
 
 - **`build`** — `(): HTMLElement`
   Constructs and returns the native `<dialog>` element. Called automatically by `show()` if not already built. Returns the cached element on repeat calls — see the single-use lifecycle note below.
+
+---
+
+## Actions
+
+Dialog actions belong in the toolbar; do not add a button row to the content. The toolbar stays pinned under scrolling content and follows MD3 alignment.
+
+```typescript
+const dialog = new DialogBuilder().withCaption(of('New entry')).withContent(form);
+dialog.withToolbar().addSecondaryButton().withCaption(of('Cancel')).withClick(() => dialog.close());
+dialog.withToolbar().withPrimaryButton().withCaption(of('Save')).withClick(save);
+dialog.show();
+```
+
+`withToolbar()` is idempotent per dialog — calling it again returns the same `ToolbarBuilder`, so `dialog.withToolbar()` can be called once per button as shown above without creating a second toolbar. See [Toolbar](../?path=/docs/components-toolbar--docs) for the rest of the `ToolbarBuilder` API.
 
 ---
 

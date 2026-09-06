@@ -127,6 +127,67 @@ it('should update rows on scroll', () => {
     expect(firstRowTop).toBe(15 * 52);
 });
 
+describe('ARIA row semantics', () => {
+    it('gives every rendered row role="row" and a 1-based aria-rowindex (header is row 1)', () => {
+        viewport.update(rowData, new Set());
+
+        const content = viewport.getElement().querySelector('.relative') as HTMLElement;
+        const rowsContainer = content.querySelector('.absolute') as HTMLElement;
+        const rows = Array.from(rowsContainer.querySelectorAll('[role="row"]')) as HTMLElement[];
+
+        // startIndex 0, endIndex 8 (see 'should render visible rows' above) -> rows 0..8,
+        // aria-rowindex = flattened index + 2 (row 1 is the header).
+        expect(rows.length).toBe(9);
+        expect(rows.map(r => r.getAttribute('aria-rowindex')))
+            .toEqual(Array.from({ length: 9 }, (_, i) => String(i + 2)));
+    });
+
+    it('keeps aria-rowindex correct on rendered rows after scrolling', () => {
+        viewport.update(rowData, new Set());
+
+        const scrollTop = 20 * 52;
+        Object.defineProperty(viewport.getElement(), 'scrollTop', { value: scrollTop, configurable: true });
+        viewport.getElement().dispatchEvent(new Event('scroll'));
+
+        const content = viewport.getElement().querySelector('.relative') as HTMLElement;
+        const rowsContainer = content.querySelector('.absolute') as HTMLElement;
+        const rows = Array.from(rowsContainer.querySelectorAll('[role="row"]')) as HTMLElement[];
+
+        // Window is 15..28 (see 'should update rows on scroll' above).
+        const rowIndices = rows.map(r => Number(r.getAttribute('aria-rowindex'))).sort((a, b) => a - b);
+        expect(rowIndices).toEqual(Array.from({ length: 14 }, (_, i) => 15 + i + 2));
+    });
+
+    it('keeps aria-rowindex in sync when a rendered row DOM node is RECYCLED to a different item', () => {
+        viewport.update(rowData, new Set());
+
+        const content = viewport.getElement().querySelector('.relative') as HTMLElement;
+        const rowsContainer = content.querySelector('.absolute') as HTMLElement;
+        const before = Array.from(rowsContainer.querySelectorAll('[role="row"]')) as HTMLElement[];
+        const firstSlotEl = before[0];
+        expect(firstSlotEl.getAttribute('aria-rowindex')).toBe('2');
+        expect(firstSlotEl.textContent).toContain('Item 0');
+
+        // Rows are pooled by slot index (GridViewport.renderedRows), so shifting the data
+        // hands slot 0's EXISTING element to a different item via GridRow.update(). That
+        // update path is the only place aria-rowindex is refreshed after construction
+        // (grid-row.ts) — if it were dropped, the recycled node would keep a stale index and
+        // every earlier "after scrolling" assertion would still pass, because those windows
+        // never reuse a node for a new index.
+        viewport.update(rowData.slice(5), new Set());
+
+        const after = Array.from(rowsContainer.querySelectorAll('[role="row"]')) as HTMLElement[];
+        // Same DOM node, recycled — not re-created.
+        expect(after[0]).toBe(firstSlotEl);
+        expect(firstSlotEl.textContent).toContain('Item 5');
+        expect(firstSlotEl.getAttribute('aria-rowindex')).toBe('2');
+
+        // And the whole recycled window stays a contiguous 1-based run.
+        expect(after.map(r => Number(r.getAttribute('aria-rowindex'))))
+            .toEqual(after.map((_, i) => i + 2));
+    });
+});
+
 describe('custom rowHeight (GridBuilder.withRowHeight plumbing)', () => {
     it('defaults to GRID_ROW_HEIGHT when no rowHeight is passed', () => {
         const vp = new GridViewport<TestItem>(columns, [], false, false, () => {}, () => {});

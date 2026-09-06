@@ -76,6 +76,9 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 - **`asGlass`** — `(): this`
   Enables the glass-effect variant with frosted background and blur on the list panel.
 
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the root container host element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`build`** — `(): HTMLElement`
   Constructs and returns the root element. Subscribe to observables and wire up the DOM. Call once per builder.
 

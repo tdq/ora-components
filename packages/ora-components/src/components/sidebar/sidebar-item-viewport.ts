@@ -3,6 +3,7 @@ import type { RouterBuilder } from '../../router/router-builder';
 import { cn } from '../../utils/cn';
 import { attachSidebarTooltip, hideSidebarTooltip } from './sidebar-tooltip';
 import type { SidebarMenu } from './sidebar-menu';
+import { applyTestId } from '../../core/test-id';
 
 export interface SidebarItemViewportConfig {
     icon$?: Observable<string>;
@@ -18,6 +19,7 @@ export interface SidebarItemViewportConfig {
     router?: RouterBuilder;
     expanded$: Observable<boolean>;
     glass: boolean;
+    testId?: string;
 }
 
 export interface SidebarItemViewport {
@@ -161,6 +163,8 @@ export function buildSidebarItem(config: SidebarItemViewportConfig): SidebarItem
     subscription.add(
         attachSidebarTooltip(element, config.tooltip$ ?? config.caption$, config.expanded$)
     );
+
+    applyTestId(element, config.testId);
 
     return { element, subscription };
 }

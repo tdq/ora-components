@@ -452,4 +452,9 @@ describe('FieldsBuilder.addCustom', () => {
         formEl.remove();
         expect(() => caption$.next('after removal')).not.toThrow();
     });
+
+    it('withTestId sets data-testid on the host element', () => {
+        const form = new FormBuilder().withTestId('entry-form').build();
+        expect(form.getAttribute('data-testid')).toBe('entry-form');
+    });
 });

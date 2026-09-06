@@ -75,6 +75,36 @@ describe('ComboBoxBuilder', () => {
         expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
+    // Task 9 measured-cost note: bake-off axe scan reported dropdown options as unlabelled
+    // divs. Reproduced: ListBox (listbox.ts) already sets role="option"/aria-selected on
+    // every rendered <li>, and VirtualRowsViewport is a plain positioning wrapper that does
+    // not touch attributes — so the combobox's own dropdown never lost the role. Kept as a
+    // regression guard; this is a non-issue for ComboBox (see also enum-column.test.ts for
+    // the grid's ENUM cell editor, which renders through this same ComboBoxBuilder).
+    test('every visible dropdown option has role="option" and aria-selected', async () => {
+        const items$ = new BehaviorSubject(items);
+        const value$ = new BehaviorSubject<string | null>('Banana');
+        const container = builder
+            .withItems(items$)
+            .withValue(value$)
+            .build();
+        triggerContainerVisibleAndWait(container);
+
+        const input = screen.getByRole('combobox');
+        fireEvent.click(input);
+
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            expect(options.length).toBe(items.length);
+            options.forEach(option => {
+                expect(option).toHaveAttribute('role', 'option');
+                expect(option).toHaveAttribute('aria-selected');
+            });
+            const selected = options.find(o => o.textContent === 'Banana');
+            expect(selected).toHaveAttribute('aria-selected', 'true');
+        });
+    });
+
     test('should verify filtering: typing in the input should update the list of displayed options', async () => {
         const items$ = new BehaviorSubject(items);
         const container = builder
@@ -1793,5 +1823,24 @@ describe('ComboBoxBuilder asInlineError', () => {
         const popovers = document.body.querySelectorAll('.error-popover');
         expect(popovers).toHaveLength(1);
         expect(popovers[0].textContent).toBe('Still too short');
+    });
+
+    it('should set data-testid on the input', () => {
+        const el = new ComboBoxBuilder<string>().withTestId('my-combobox').build();
+        expect(el.querySelector('input')?.dataset.testid).toBe('my-combobox');
+    });
+
+    it('should put data-testid on the element that receives focus', () => {
+        const el = new ComboBoxBuilder<string>().withTestId('my-combobox').build();
+        document.body.appendChild(el);
+
+        const tagged = el.querySelector('[data-testid="my-combobox"]') as HTMLElement;
+        expect(tagged.tagName).toBe('INPUT');
+        expect(el.querySelectorAll('input').length).toBe(1);
+
+        tagged.focus();
+        expect(document.activeElement).toBe(tagged);
+
+        document.body.removeChild(el);
     });
 });

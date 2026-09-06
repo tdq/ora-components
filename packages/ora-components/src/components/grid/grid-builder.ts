@@ -7,12 +7,13 @@ import { SortDirection, PivotConfig, ColumnType, GridColumn, GridRowData } from 
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { GridStyles, GRID_ROW_HEIGHT, GRID_HEADER_HEIGHT, GRID_TOOLBAR_HEIGHT_ALLOWANCE } from './grid-styles';
+import { GridStyles, GRID_ROW_HEIGHT, GRID_HEADER_HEIGHT, GRID_TOOLBAR_HEIGHT_ALLOWANCE, toAriaRowCount } from './grid-styles';
 import { GridLogic } from './grid-logic';
 import { GridViewport } from './grid-viewport';
 import { GridHeader } from './grid-header';
 import { PivotLogic } from './pivot-logic';
 import { registerDestroy } from '@/core/destroyable-element';
+import { applyTestId } from '@/core/test-id';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -30,10 +31,12 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
     private rowHeight: number = GRID_ROW_HEIGHT;
     private isAutoHeight: boolean = false;
     private autoHeightMaxRows: number = 0;
+    private className$?: Observable<string>;
 
     private logic = new GridLogic<ITEM>();
     private rawItems$?: Observable<ITEM[]>;
     private selectedRows$?: Subject<ITEM[]>;
+    private testId?: string;
 
     withHeight(height: Observable<number>): this {
         this.height$ = height;
@@ -92,6 +95,12 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         return this;
     }
 
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
+    }
+
     /**
      * Two-way binding between the grid's row selection and a consumer-provided Subject.
      *
@@ -109,6 +118,17 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
 
     withItems(items: Observable<ITEM[]>): this {
         this.rawItems$ = items;
+        return this;
+    }
+
+    /**
+     * Apply custom class names to the host element, merged via `cn()` with base classes.
+     * Base classes and runtime state classes (such as collapsed state) survive every emission.
+     *
+     * @param className$ Observable of space-separated class names
+     */
+    withClass(className: Observable<string>): this {
+        this.className$ = className;
         return this;
     }
 
@@ -152,6 +172,27 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             this.isGlass && GridStyles.glass
         );
 
+        // Track previous emission's extra classes to diff on next emission
+        // (preserves runtime state classes set by the grid)
+        let prevExtraClasses = '';
+        const className$ = this.className$ || of('');
+
+        const classNameSub = className$.subscribe(extraClasses => {
+            // Remove previously added extra classes
+            if (prevExtraClasses) {
+                prevExtraClasses.split(/\s+/).forEach(cls => {
+                    if (cls) container.classList.remove(cls);
+                });
+            }
+            // Add new extra classes
+            if (extraClasses) {
+                extraClasses.split(/\s+/).forEach(cls => {
+                    if (cls) container.classList.add(cls);
+                });
+            }
+            prevExtraClasses = extraClasses;
+        });
+
         if (this.rawItems$) {
             const gatedItems$ = createOptimizedPipeline(container, this.rawItems$);
             this.logic.setItems(gatedItems$);
@@ -161,6 +202,16 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             if (this.isGlass) this.toolbarBuilder.asGlass();
             container.appendChild(this.toolbarBuilder.build());
         }
+
+        // role="grid" lives on this inner wrapper, not on `container` (the host element
+        // withTestId/registerDestroy/createOptimizedPipeline target — see rules.md "Grid ->
+        // host element"): a toolbar button is not a valid owned child of role="grid" per the
+        // ARIA grid pattern, so the toolbar stays OUTSIDE it, as container's other direct
+        // child. gridEl owns exactly the header rowgroup + body rowgroup below.
+        const gridEl = document.createElement('div');
+        gridEl.setAttribute('role', 'grid');
+        gridEl.className = GridStyles.gridBody;
+        container.appendChild(gridEl);
 
         const actions = this.actionsBuilder ? this.actionsBuilder.build() : [];
 
@@ -207,11 +258,14 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         const headerWrapper = document.createElement('div');
         headerWrapper.className = GridStyles.headerWrapper;
         headerWrapper.tabIndex = -1;
+        // rowgroup (the <thead> equivalent) — see GridViewport's constructor for why a
+        // tabbable direct child of role="grid" needs an explicit row/rowgroup role.
+        headerWrapper.setAttribute('role', 'rowgroup');
         headerWrapper.appendChild(header.getElement());
-        container.appendChild(headerWrapper);
+        gridEl.appendChild(headerWrapper);
 
         const viewportEl = viewport.getElement();
-        container.appendChild(viewportEl);
+        gridEl.appendChild(viewportEl);
 
         viewportEl.addEventListener('scroll', () => {
             if (headerWrapper.scrollLeft !== viewportEl.scrollLeft) {
@@ -277,6 +331,10 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             lastSelectedItems = state.selectedItems;
             lastRows = state.rows;
 
+            // See toAriaRowCount/GRID_HEADER_ARIA_ROWINDEX in grid-styles.ts. Lives on gridEl
+            // (the role="grid" element), not container — see the comment at gridEl's creation.
+            gridEl.setAttribute('aria-rowcount', String(toAriaRowCount(state.rows.length)));
+
             const resolvedHeight = this.isAutoHeight
                 ? Math.min(state.rows.length, this.autoHeightMaxRows) * this.rowHeight
                     + GRID_HEADER_HEIGHT
@@ -326,6 +384,7 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
         const mainSub = new Subscription();
         mainSub.add(sub);
         mainSub.add(visColSub);
+        mainSub.add(classNameSub);
 
         if (this.selectedRows$) {
             const subject = this.selectedRows$;
@@ -361,6 +420,8 @@ export class GridBuilder<ITEM> implements ComponentBuilder {
             viewport.destroy();
             destroyColumns(columns);
         });
+
+        applyTestId(container, this.testId);
 
         return container;
     }

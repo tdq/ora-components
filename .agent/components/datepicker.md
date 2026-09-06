@@ -13,6 +13,7 @@ It has the following methods:
 - `withMinDate(min: Observable<Date>): this` - Sets minimum selectable date.
 - `withMaxDate(max: Observable<Date>): this` - Sets maximum selectable date.
 - `withFormat(format: string): this` - sets date format (default: 'DD-MM-YYYY')
+- `withTestId(id: string): this` - sets `data-testid` on the rendered `<input>`. See [Test ids](../builder-pattern.md#test-ids).
 
 ## Requirements
 - DatePicker should not allow to type not in defined format. For example, if format is DD/MM/YYYY it should not allow to set anything like "asbasbds".

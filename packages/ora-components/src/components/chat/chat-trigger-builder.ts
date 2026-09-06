@@ -2,6 +2,7 @@ import { Observable, Subject, Subscription, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { createLifecycleBoundary } from '../../core/lifecycle-boundary';
 import { Icons } from '../../core/icons';
+import { applyTestId } from '../../core/test-id';
 
 const DEFAULTS = {
     caption: 'Ask assistant',
@@ -15,6 +16,8 @@ const DEFAULTS = {
 export class ChatTriggerBuilder implements ComponentBuilder {
     private open$?: Subject<boolean>;
     private caption$: Observable<string> = of(DEFAULTS.caption);
+    private testId?: string;
+    private className$?: Observable<string>;
 
     /** Required. Clicking emits the negation of the latest value. */
     withOpen(open: Subject<boolean>): this {
@@ -25,6 +28,22 @@ export class ChatTriggerBuilder implements ComponentBuilder {
     /** Button label. Defaults to 'Ask assistant'. */
     withCaption(caption: Observable<string>): this {
         this.caption$ = caption;
+        return this;
+    }
+
+    /**
+     * Apply custom class names to the host element, merged via `cn()` with base classes.
+     *
+     * @param className$ Observable of space-separated class names
+     */
+    withClass(className: Observable<string>): this {
+        this.className$ = className;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -65,6 +84,27 @@ export class ChatTriggerBuilder implements ComponentBuilder {
         let isOpen = false;
         button.addEventListener('click', () => open$.next(!isOpen));
 
+        // Track previous emission's extra classes to diff on next emission
+        // (preserves runtime state classes like ora-chat-trigger-wrapper--hidden)
+        let prevExtraClasses = '';
+        if (this.className$) {
+            sub.add(this.className$.subscribe(extraClasses => {
+                // Remove previously added extra classes
+                if (prevExtraClasses) {
+                    prevExtraClasses.split(/\s+/).forEach(cls => {
+                        if (cls) wrapper.classList.remove(cls);
+                    });
+                }
+                // Add new extra classes
+                if (extraClasses) {
+                    extraClasses.split(/\s+/).forEach(cls => {
+                        if (cls) wrapper.classList.add(cls);
+                    });
+                }
+                prevExtraClasses = extraClasses;
+            }));
+        }
+
         sub.add(open$.subscribe(open => {
             isOpen = open;
             // toggle(), not a className rewrite: classes the consumer's wrapper picked up
@@ -83,6 +123,8 @@ export class ChatTriggerBuilder implements ComponentBuilder {
         const boundary = createLifecycleBoundary();
         boundary.onDisconnect = () => sub.unsubscribe();
         wrapper.appendChild(boundary);
+
+        applyTestId(wrapper, this.testId);
 
         return wrapper;
     }

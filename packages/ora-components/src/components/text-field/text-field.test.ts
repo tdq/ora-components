@@ -152,7 +152,7 @@ describe('TextFieldBuilder', () => {
         expect(inputWrapper.textContent).toContain('USD');
     });
 
-    test('should support inline error with popover and red outline', async () => {
+    test('should support inline error with popover and error outline', async () => {
         const error$ = new BehaviorSubject('');
         const container = builder.withError(error$).asInlineError().build();
         document.body.appendChild(container);
@@ -168,7 +168,6 @@ describe('TextFieldBuilder', () => {
         // Check red outline on input wrapper
         const inputWrapper = container.querySelector('div.relative.flex.items-center.h-\\[48px\\]') as HTMLElement;
         expect(inputWrapper.classList.contains('outline-error')).toBe(true);
-        expect(inputWrapper.classList.contains('outline-2')).toBe(true);
 
         // Click to toggle popover
         errorBtn.click();
@@ -201,6 +200,49 @@ describe('TextFieldBuilder', () => {
         jest.useRealTimers();
         container.remove();
         if (popover) popover.remove();
+    });
+
+    it('should set data-testid on the input', () => {
+        const el = new TextFieldBuilder().withTestId('my-field').build();
+        expect(el.querySelector('input')?.dataset.testid).toBe('my-field');
+    });
+
+    it('should put data-testid on the element that receives focus', () => {
+        const el = new TextFieldBuilder().withTestId('my-field').build();
+        document.body.appendChild(el);
+
+        const tagged = el.querySelector('[data-testid="my-field"]') as HTMLElement;
+        expect(tagged.tagName).toBe('INPUT');
+        expect(el.querySelectorAll('input').length).toBe(1);
+
+        tagged.focus();
+        expect(document.activeElement).toBe(tagged);
+    });
+
+    it('should keep data-testid after a value emission and an error state change', () => {
+        const value$ = new BehaviorSubject('a');
+        const error$ = new BehaviorSubject('');
+        const el = new TextFieldBuilder()
+            .withValue(value$)
+            .withError(error$)
+            .withTestId('my-field')
+            .build();
+        document.body.appendChild(el);
+
+        const input = el.querySelector('input') as HTMLInputElement;
+        expect(input.dataset.testid).toBe('my-field');
+
+        value$.next('changed');
+        error$.next('Required');
+
+        expect(input.dataset.testid).toBe('my-field');
+        expect(el.querySelector('[data-testid="my-field"]')).toBe(input);
+
+        error$.next('');
+        expect(el.querySelector('[data-testid="my-field"]')).toBe(input);
+
+        value$.complete();
+        error$.complete();
     });
 });
 

@@ -99,6 +99,9 @@ All builder methods return `this` for chaining unless they return a sub-builder.
 - **`withToolbar`** — `() => ToolbarBuilder`
   Adds an optional top toolbar with primary, secondary, and text buttons. Returns a `ToolbarBuilder`.
 
+- **`withTestId`** — `(id: string) => this`
+  Sets `data-testid` on the grid's root container host element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`withActions`** — `() => ActionsBuilder<ITEM>`
   Adds per-row action buttons in a dedicated sticky trailing column. Returns an `ActionsBuilder`.
 
@@ -113,6 +116,9 @@ All builder methods return `this` for chaining unless they return a sub-builder.
 
 - **`asGlass`** — `() => this`
   Enables translucent glass styling with backdrop blur on the header. Overrides default surface colours.
+
+- **`withClass`** — `(className$: Observable<string>): this`
+  Apply custom class names to the host element via classList mutations. On each emission, previously added custom classes are removed and new ones are added; base classes and runtime state classes (such as sort and expanded/collapsed group states) survive because only custom classes are removed. Useful for per-instance theming via scoped CSS variables under your own class.
 
 - **`build`** — `() => HTMLElement`
   Constructs and returns the grid container element. Subscribe to observables and wire up the DOM. Call once per builder.

@@ -10,6 +10,7 @@ It has the folowing methods:
 - `asGlass(): this` - sets special styling option for form and its fields as transparent with blur background (glass effect). 
 - `withToolbar(): ToolbarBuilder` - defines toolbar in the form.
 - `withFields(columnsAmount?: number): FieldsBuilder` - defines fields which are displayed in the form.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered host element (the form's outer `LayoutBuilder` container). See [Test ids](../builder-pattern.md#test-ids).
 
 ## FieldsBuilder
 Defines which fields should be displayed in the form.

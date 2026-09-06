@@ -28,7 +28,8 @@ export default defineConfig({
                 sidebar: resolve(__dirname, 'src/components/sidebar/index.ts'),
                 tabs: resolve(__dirname, 'src/components/tabs/index.ts'),
                 textfield: resolve(__dirname, 'src/components/text-field/index.ts'),
-                toolbar: resolve(__dirname, 'src/components/toolbar/index.ts')
+                toolbar: resolve(__dirname, 'src/components/toolbar/index.ts'),
+                router: resolve(__dirname, 'src/router/index.ts')
             },
             name: '@tdq/ora-components',
             formats: ['es']

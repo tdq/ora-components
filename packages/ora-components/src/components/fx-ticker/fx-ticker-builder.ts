@@ -2,6 +2,7 @@ import { Observable, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { FxRate, TickerItem } from './fx-ticker-logic';
 import { FxTickerViewport } from './fx-ticker-viewport';
+import { applyTestId } from '../../core/test-id';
 
 const DEFAULTS = {
     label: 'FX · live',
@@ -26,6 +27,7 @@ export class FxTickerBuilder implements ComponentBuilder {
     private _flashDownClass?: string;
     private _extraClass$?: Observable<string>;
     private _announcing: boolean = false;
+    private _testId?: string;
 
     withData(data: Observable<FxRate[]>): this {
         this._data$ = data;
@@ -88,6 +90,12 @@ export class FxTickerBuilder implements ComponentBuilder {
         return this;
     }
 
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this._testId = id;
+        return this;
+    }
+
     build(): HTMLElement {
         if (!this._data$) {
             throw new Error('FxTickerBuilder: withData() is required before build()');
@@ -109,6 +117,8 @@ export class FxTickerBuilder implements ComponentBuilder {
             announcing:      this._announcing,
         });
 
-        return viewport.build();
+        const element = viewport.build();
+        applyTestId(element, this._testId);
+        return element;
     }
 }

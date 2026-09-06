@@ -39,8 +39,19 @@ The `GridBuilder<ITEM>` class uses a generic type `ITEM` to ensure type safety a
 - `withPivot(config: PivotConfig): this`: Enables the [Pivoting Mode](pivot.md) for data aggregation.
 - `asGlass(): this`: Enables translucent glass styling with backdrop blur.
 - `asEditable(onCommit: (item: ITEM) => void): this`: Enables inline cell editing mode. Rows get `cursor-text` styling. Columns that have `asEditable()` configured display their editor component when a cell is clicked or activated via keyboard. See [Keyboard Navigation](#keyboard-navigation) below for full key bindings.
+
+  **Editing contract**: on commit, the grid writes the new value directly onto the existing item object (mutates it in place) and then calls `onCommit(item)` with that same, now-updated, reference — it never replaces the item or the array. Consumers backed by a plain, mutable object are done: the mutation is already visible. Consumers backed by an immutable store (Redux/NgRx-style, or any `items$` fed by `.map()`ed snapshots) must rebuild the array themselves inside `onCommit`, since re-pushing the same mutated reference will not be seen as a change by reference-equality checks:
+  ```typescript
+  grid.asEditable((item) => {
+      items = items.map((it) => (it === item ? { ...item } : it));
+      items$.next(items);
+  });
+  ```
+  This is the same contract `CustomColumnBuilder`'s renderer-identity cache relies on for *externally* driven updates — see [Custom Column](custom-column.md#renderer-identity-and-the-editing-contract).
 - `asMultiSelect(): this`: Enables row selection via checkboxes and "Select All" functionality in the header.
 - `withRowsSelected(rows: Subject<ITEM[]>): this`: Establishes a **two-way binding** between the grid's selection and the provided RxJS `Subject<ITEM[]>`. Outbound, selection changes emit the selected items into the subject; inbound, items pushed into the subject drive the grid's selection. Pass a `BehaviorSubject<ITEM[]>` to pre-seed the initial selection. Only meaningful together with `asMultiSelect()`. See [Selection](#selection).
+- `withClass(className$: Observable<string>): this`: Apply custom class names to the host element via classList mutations. On each emission, previously added custom classes are removed and new ones are added; base classes and runtime state classes (such as sort and expanded/collapsed group states) survive because only custom classes are removed.
+- `withTestId(id: string): this`: Sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 
 ## Column Configuration
 
@@ -59,14 +70,14 @@ Used to add specialized columns to the grid:
 - `addCustomColumn()`: Custom rendering logic for complex cell content.
 
 ### BaseColumnBuilder (Shared Methods)
-All column builders inherit these common methods:
-- `withHeader(header: string)`: Sets the display name in the column header.
-- `withWidth(width: string)`: Sets CSS width (e.g., `'100px'`, `'2fr'`, `'15%'`).
-- `asSortable()`: Enables the sorting UI for the column.
-- `asResizable()`: Enables column resizing via a handle in the header.
-- `asEditable()`: Marks the column as inline-editable. When the parent grid has `asEditable()` called, cells for this column render their editor component on activation. See [Keyboard Navigation](#keyboard-navigation) for the full key-binding table. `CustomColumnBuilder` overrides this with a focus-only variant — see [Custom Column](custom-column.md).
-- `withAlign(align: 'left' | 'center' | 'right')`: Sets the text and flex alignment for the column header and cells. Default is `'left'`.
-- `withClass(classProvider: (item: ITEM) => string)`: Adds custom CSS classes to all cells in this column via a provider function. Useful for conditional styling based on item data.
+`BaseColumnBuilder` is an internal abstract class, not itself exported — every concrete column builder (`TextColumnBuilder`, `NumberColumnBuilder`, `DateColumnBuilder`, `MoneyColumnBuilder`, `PercentageColumnBuilder`, `BooleanColumnBuilder`, `EnumColumnBuilder`, `TrendColumnBuilder`, …) inherits these common methods with the same signature. Shown below qualified against `TextColumnBuilder` as a representative:
+- `TextColumnBuilder.withHeader(header: string)`: Sets the display name in the column header.
+- `TextColumnBuilder.withWidth(width: string)`: Sets CSS width (e.g., `'100px'`, `'2fr'`, `'15%'`).
+- `TextColumnBuilder.asSortable()`: Enables the sorting UI for the column.
+- `TextColumnBuilder.asResizable()`: Enables column resizing via a handle in the header.
+- `TextColumnBuilder.asEditable()`: Marks the column as inline-editable. When the parent grid has `GridBuilder.asEditable()` called, cells for this column render their editor component on activation. See [Keyboard Navigation](#keyboard-navigation) for the full key-binding table. `CustomColumnBuilder` overrides this with a focus-only variant — see [Custom Column](custom-column.md).
+- `TextColumnBuilder.withAlign(align: 'left' | 'center' | 'right')`: Sets the text and flex alignment for the column header and cells. Default is `'left'`.
+- `TextColumnBuilder.withClass(classProvider: (item: ITEM) => string)`: Adds custom CSS classes to all cells in this column via a provider function. Useful for conditional styling based on item data.
 
 ## Implementation Requirements
 
@@ -158,6 +169,50 @@ When navigating to a row that is outside the current viewport, `GridViewport` sc
 - **Commit callback**: `(cell as any).__commitEdit` stores the commit closure so that `GridViewport.commitActiveEditor()` can trigger it externally (e.g., when a row is evicted from the virtualized pool during scrolling).
 - **Group rows are skipped**: Cross-row navigation (`moveToRow`) walks the `lastRows` array and skips rows with `type === 'GROUP_HEADER'`, landing only on `type === 'ITEM'` rows.
 
+## Accessibility
+
+The grid follows the [W3C ARIA `grid` pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/). `role="grid"` lives on an **inner wrapper**, not on the host element `GridBuilder.build()` returns — a toolbar button (`withToolbar()`) is not a valid owned child of `role="grid"` (axe: `aria-required-children`), so the toolbar sits outside it as a sibling. The host element still carries `withTestId`; the inner `role="grid"` wrapper never gets a `data-testid`.
+
+### Structure
+
+```
+container (host, no role)
+├─ toolbar (optional, sibling of the grid — not inside it)
+└─ div[role="grid"][aria-rowcount]
+   ├─ div[role="rowgroup"]              — header wrapper
+   │  └─ div[role="row"][aria-rowindex=1]
+   │     ├─ div[role="columnheader"][aria-label="Select all"]   — asMultiSelect() checkbox cell, if enabled
+   │     ├─ div[role="columnheader"][aria-sort]                 — one per column; aria-sort only on asSortable() columns
+   │     └─ div[role="columnheader"]                             — "Actions" text cell, if withActions() has any action
+   └─ div[role="rowgroup"].overflow-auto — scrollable body (the viewport itself is the rowgroup)
+      ├─ div[role="row"][aria-rowindex]  — item row: role="gridcell" per column
+      └─ div[role="row"][aria-rowindex]  — group row (withGrouping()): one role="rowheader" cell instead of gridcells
+```
+
+### `aria-rowcount` / `aria-rowindex`
+
+Single source of truth: `GRID_HEADER_ARIA_ROWINDEX = 1` and `toAriaRowCount`/`toAriaRowIndex` in `grid-styles.ts`.
+
+- The header row is always `aria-rowindex="1"`.
+- A data or group row's `aria-rowindex` is its 1-based position in the **flattened** rows array (`state.rows`, group rows and item rows interleaved) plus 2.
+- `aria-rowcount` on the `role="grid"` element is `state.rows.length + 1` (the flattened row count plus the header) — it counts only rows that are currently **reachable**, so it changes when a group is expanded or collapsed. A collapsed group's children are not part of the flattened array and are not counted; expanding a group grows both `aria-rowcount` and the `aria-rowindex` of every row that follows it, and collapsing it shrinks them back — there is no high-water mark.
+
+### Header cells
+
+- Every column gets `role="columnheader"`.
+- The `asMultiSelect()` checkbox cell is `role="columnheader"` with `aria-label="Select all"` (a body row's equivalent cell is `role="gridcell"`, not `columnheader`).
+- The `withActions()` trailing cell is `role="columnheader"` with the literal text content `"Actions"`.
+- `TextColumnBuilder.asSortable()` columns additionally get `tabindex="0"` and `aria-sort`, cycling `"ascending" → "descending" → "none"` on click, Enter, or Space; the cell itself is the focusable, keyboard-activatable control (no separate `role="button"`), and its accessible name comes from the header text.
+
+### Body cells
+
+- Item rows: `role="row"` with `role="gridcell"` children, one per column (plus the checkbox/action cells when enabled).
+- Group rows (`withGrouping()`): `role="row"` with a single `role="rowheader"` cell (not `gridcell` — a `rowheader` is the ARIA-correct role for a cell that identifies/describes the row) carrying the group label and count. Group and item rows are flattened into the same body `rowgroup`, so both roles coexist as siblings.
+
+### Known gaps
+
+- No keyboard roving-tabindex cell navigation on read-only grids — `ArrowLeft`/`ArrowRight`/`ArrowUp`/`ArrowDown` cell focus (see [Keyboard Navigation](#keyboard-navigation)) is only wired when `asEditable()` is enabled. A read-only grid's cells are not independently focusable or arrow-navigable; only `TextColumnBuilder.asSortable()` header cells and interactive cell content (checkboxes, action buttons) are in the tab order.
+
 ## File Structure
 - `grid-builder.ts`: Orchestrator that assembles the grid using specialized modules.
 - `grid-logic.ts`: Reactive state and data processing logic.
@@ -239,6 +294,11 @@ This means the consumer's code does not change — `withItems(observable)` works
 - `ToolbarBuilder` (`src/components/toolbar/`): Integration for optional headers.
 - `CheckboxBuilder` (`src/components/checkbox/`): Used for multi-select and boolean columns.
 - `LabelBuilder` (`src/components/label/`): Used for consistent header and cell typography.
+
+## Gotchas
+
+- `SlotSize.GROW` items need `min-h-0` to shrink below their content height (add it to the parent layout, not the grid).
+- `GridBuilder.asEditable(onCommit)` mutates the item in place; immutable stores must rebuild the array in `onCommit`.
 
 ## Styling (Material Design 3)
 Styling is centralized in `grid-styles.ts` and uses Tailwind CSS utilities following MD3 specifications.

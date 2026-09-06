@@ -178,6 +178,71 @@ describe('MoneyFieldBuilder', () => {
             input.dispatchEvent(new Event('input'));
             expect(input.value).toBe('1234');
         });
+
+        test('typing in the middle of a grouped value does not strip the grouping separator or reset the caret', () => {
+            // Regression: the oninput handler used to strip the grouping separator on every
+            // keystroke and rewrite target.value, which (a) turned "1,234.50" into "1234.50"
+            // mid-edit and (b) always resets the caret to the end when target.value is assigned.
+            // Grouping must only be (re)applied on blur / external value push (syncInputValue).
+            const container = builder.withCurrencies(['USD']).build();
+            const input = container.querySelector('input') as HTMLInputElement;
+            document.body.appendChild(container);
+
+            input.focus();
+            input.value = '1,234.50';
+            const caret = 4; // between "1,23" and "4.50"
+            input.setSelectionRange(caret, caret);
+
+            input.dispatchEvent(new Event('input'));
+
+            expect(input.value).toBe('1,234.50');
+            expect(input.selectionStart).toBe(caret);
+        });
+
+        test('the caret is adjusted for a stripped character, not left at its raw (pre-strip) index', () => {
+            // Regression: the previous fix restored target.selectionStart verbatim, which indexes
+            // into the RAW (pre-filter) string, not the shorter filtered one — typing a letter at
+            // index 1 of "1,234.50" (-> "1x,234.50", caret at 2) left the caret at 2 instead of 1
+            // once the "x" was stripped back out, drifting one character right of where it should be.
+            const container = builder.withCurrencies(['USD']).build();
+            const input = container.querySelector('input') as HTMLInputElement;
+            document.body.appendChild(container);
+
+            input.focus();
+            input.value = '1x,234.50';
+            input.setSelectionRange(2, 2); // caret right after the just-typed "x"
+
+            input.dispatchEvent(new Event('input'));
+
+            expect(input.value).toBe('1,234.50');
+            expect(input.selectionStart).toBe(1); // not 2 — the stripped "x" was before the caret
+        });
+
+        test('sv-SE: the locale minus sign (U+2212) is preserved while typing, not stripped as an invalid character', () => {
+            // Regression: the typing allow-list only recognized ASCII '-'. In sv-SE (whose actual
+            // minus glyph is U+2212), the first keystroke on a pre-filled negative value stripped
+            // the U+2212 out entirely and emitted a POSITIVE amount.
+            const value$ = new BehaviorSubject<Money | null>({ amount: -9876.54, currencyId: 'SEK' });
+            const locale$ = new BehaviorSubject('sv-SE');
+            const container = builder
+                .withValue(value$)
+                .withLocale(locale$)
+                .withPrecision(new BehaviorSubject(2))
+                .withCurrencies(['SEK'])
+                .build();
+            const input = container.querySelector('input') as HTMLInputElement;
+
+            // Displayed value already carries the locale's own minus glyph (U+2212) — simulate a
+            // keystroke that doesn't touch the sign (e.g. a caret move + no-op input, or a digit
+            // typed elsewhere) by re-dispatching 'input' unchanged. The typing pipeline
+            // normalizes any minus variant to ASCII '-' (grouping/decimal are re-applied via
+            // Intl on blur, same as the minus glyph would be) — the bug was the sign being
+            // stripped entirely (a positive amount emitted), not which glyph represents it.
+            input.dispatchEvent(new Event('input'));
+
+            expect(input.value).toMatch(/^[\u2212-]/);
+            expect(value$.value?.amount).toBeCloseTo(-9876.54, 2);
+        });
     });
 
     describe('5. Blur logic', () => {
@@ -622,5 +687,143 @@ describe('MoneyFieldBuilder', () => {
 
         value$.next({ amount: 20, currencyId: 'USD' });
         expect(input.value).toBe('10'); // Should not have updated
+    });
+
+    describe('11. Grouping (display value is always grouped)', () => {
+        test('blur formats with thousands separators', () => {
+            const value$ = new BehaviorSubject<Money | null>({ amount: 1234567.891, currencyId: 'USD' });
+            const precision$ = new BehaviorSubject(2);
+            const container = builder
+                .withValue(value$)
+                .withPrecision(precision$)
+                .withCurrencies(['USD'])
+                .build();
+            const input = container.querySelector('input') as HTMLInputElement;
+
+            input.value = '1234567.891';
+            input.dispatchEvent(new Event('blur'));
+            expect(input.value).toBe('1,234,567.89');
+        });
+
+        test('locale de-DE groups with dot and decimal with comma', () => {
+            const value$ = new BehaviorSubject<Money | null>({ amount: 1234567.891, currencyId: 'USD' });
+            const precision$ = new BehaviorSubject(2);
+            const locale$ = new BehaviorSubject('de-DE');
+            const container = builder
+                .withValue(value$)
+                .withPrecision(precision$)
+                .withLocale(locale$)
+                .withCurrencies(['USD'])
+                .build();
+            const input = container.querySelector('input') as HTMLInputElement;
+
+            input.value = '1234567,891';
+            input.dispatchEvent(new Event('blur'));
+            expect(input.value).toBe('1.234.567,89');
+        });
+
+        test('typing a grouped value then blur emits the numeric amount', () => {
+            const value$ = new BehaviorSubject<Money | null>({ amount: 10, currencyId: 'USD' });
+            const precision$ = new BehaviorSubject(2);
+            const container = builder
+                .withValue(value$)
+                .withPrecision(precision$)
+                .withCurrencies(['USD'])
+                .build();
+            const input = container.querySelector('input') as HTMLInputElement;
+
+            input.value = '1,250';
+            input.dispatchEvent(new Event('input'));
+            input.dispatchEvent(new Event('blur'));
+            expect(value$.value?.amount).toBe(1250);
+        });
+
+        test('typing an ungrouped value then blur displays it grouped with precision', () => {
+            const value$ = new BehaviorSubject<Money | null>({ amount: 10, currencyId: 'USD' });
+            const precision$ = new BehaviorSubject(2);
+            const container = builder
+                .withValue(value$)
+                .withPrecision(precision$)
+                .withCurrencies(['USD'])
+                .build();
+            const input = container.querySelector('input') as HTMLInputElement;
+
+            input.value = '1250';
+            input.dispatchEvent(new Event('input'));
+            input.dispatchEvent(new Event('blur'));
+            expect(input.value).toBe('1,250.00');
+        });
+    });
+
+    describe('12. Locale round-trips (grouping separator is not always "." or ",")', () => {
+        // Blurring without editing simulates a user tabbing through a field that already holds
+        // the Intl-formatted display value — the exact scenario that breaks when the locale's
+        // real grouping separator (a narrow no-break space, an apostrophe, ...) isn't the one
+        // `normalizeNumberString` strips.
+        function roundTripsOnBlur(locale: string, amount: number, precision: number) {
+            const value$ = new BehaviorSubject<Money | null>({ amount, currencyId: 'USD' });
+            const precision$ = new BehaviorSubject(precision);
+            const locale$ = new BehaviorSubject(locale);
+            const container = new MoneyFieldBuilder()
+                .withValue(value$)
+                .withPrecision(precision$)
+                .withLocale(locale$)
+                .withCurrencies(['USD'])
+                .build();
+            const input = container.querySelector('input') as HTMLInputElement;
+
+            const displayedBeforeBlur = input.value;
+            input.dispatchEvent(new Event('blur'));
+
+            expect(input.value).toBe(displayedBeforeBlur);
+            expect(value$.value?.amount).toBeCloseTo(amount, precision);
+        }
+
+        test('fr-FR (narrow no-break space grouping, comma decimal)', () => {
+            roundTripsOnBlur('fr-FR', 1234567.89, 2);
+        });
+
+        test('pt-PT (whitespace grouping, comma decimal)', () => {
+            roundTripsOnBlur('pt-PT', 1234567.89, 2);
+        });
+
+        test('de-CH (apostrophe-like grouping, dot decimal)', () => {
+            roundTripsOnBlur('de-CH', 1234567.89, 2);
+        });
+
+        test('en-IN (lakh-style comma grouping, dot decimal)', () => {
+            roundTripsOnBlur('en-IN', 1234567.89, 2);
+        });
+
+        test('sv-SE negative amount (U+2212 minus sign, whitespace grouping, comma decimal)', () => {
+            roundTripsOnBlur('sv-SE', -9876.54, 2);
+        });
+
+        test('nb-NO negative amount (U+2212 minus sign, whitespace grouping, comma decimal)', () => {
+            roundTripsOnBlur('nb-NO', -1234.5, 2);
+        });
+
+        test('fi-FI negative amount (U+2212 minus sign, whitespace grouping, comma decimal)', () => {
+            roundTripsOnBlur('fi-FI', -500, 0);
+        });
+    });
+
+    it('should set data-testid on the input', () => {
+        const el = new MoneyFieldBuilder().withTestId('my-money-field').build();
+        expect(el.querySelector('input')?.dataset.testid).toBe('my-money-field');
+    });
+
+    it('should put data-testid on the element that receives focus', () => {
+        const el = new MoneyFieldBuilder().withTestId('my-money-field').build();
+        document.body.appendChild(el);
+
+        const tagged = el.querySelector('[data-testid="my-money-field"]') as HTMLElement;
+        expect(tagged.tagName).toBe('INPUT');
+        expect(el.querySelectorAll('input').length).toBe(1);
+
+        tagged.focus();
+        expect(document.activeElement).toBe(tagged);
+
+        document.body.removeChild(el);
     });
 });

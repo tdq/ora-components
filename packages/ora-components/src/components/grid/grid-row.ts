@@ -1,6 +1,6 @@
 import { Subscription, BehaviorSubject, skip, of } from 'rxjs';
 import { GridColumn, GridAction, ColumnType, CELL_COMMIT_EVENT } from './types';
-import { GridStyles, getAlignClass, applyColumnWidth, GRID_ROW_HEIGHT } from './grid-styles';
+import { GridStyles, getAlignClass, applyColumnWidth, GRID_ROW_HEIGHT, toAriaRowIndex } from './grid-styles';
 import { CheckboxBuilder } from '../checkbox/checkbox';
 import type { CheckboxValue } from '../checkbox/checkbox';
 import { clsx, type ClassValue } from 'clsx';
@@ -43,6 +43,9 @@ export class GridRow<ITEM> {
 
     private createRow(): HTMLElement {
         const row = document.createElement('div');
+        row.setAttribute('role', 'row');
+        // See toAriaRowIndex/GRID_HEADER_ARIA_ROWINDEX in grid-styles.ts.
+        row.setAttribute('aria-rowindex', String(toAriaRowIndex(this.index)));
         row.className = cn(
             GridStyles.row,
             !this.isGlass && this.index % 2 === 1 && GridStyles.rowOdd,
@@ -68,6 +71,7 @@ export class GridRow<ITEM> {
             const checkCell = reuse ? (row.children[childIdx++] as HTMLElement) : document.createElement('div');
             if (!reuse) {
                 checkCell.className = GridStyles.checkboxCell;
+                checkCell.setAttribute('role', 'gridcell');
             }
             
             const value$ = new BehaviorSubject<CheckboxValue>(this.isSelected);
@@ -100,6 +104,9 @@ export class GridRow<ITEM> {
 
         this.columns.forEach((col, index) => {
             const cell = reuse ? (row.children[childIdx++] as HTMLElement) : document.createElement('div');
+            if (!reuse) {
+                cell.setAttribute('role', 'gridcell');
+            }
             this.populateCell(cell, col, signal);
             if (!reuse) row.appendChild(cell);
             if (!firstCell && index === 0) {
@@ -116,6 +123,7 @@ export class GridRow<ITEM> {
         if (this.actions.length > 0) {
             const actionCell = reuse ? (row.children[childIdx++] as HTMLElement) : document.createElement('div');
             if (!reuse) {
+                actionCell.setAttribute('role', 'gridcell');
                 actionCell.className = cn(
                     GridStyles.actionCell,
                     this.isSelected ? GridStyles.actionCellSelected : (this.isGlass ? GridStyles.actionCellGlass : GridStyles.actionCellDefault),
@@ -632,6 +640,10 @@ export class GridRow<ITEM> {
         this.columnSubscriptions.forEach(s => s.unsubscribe());
         this.columnSubscriptions = [];
         this.listenerAbort?.abort();
+
+        // A rendered row is recycled to a new logical index on scroll — aria-rowindex must
+        // track it (see toAriaRowIndex in grid-styles.ts).
+        this.element.setAttribute('aria-rowindex', String(toAriaRowIndex(this.index)));
 
         this.element.className = cn(
             GridStyles.row,

@@ -22,6 +22,7 @@ const config: StorybookConfig = {
     },
     addons: [
         "@storybook/addon-links",
+        "@storybook/addon-a11y",
         {
             name: "@storybook/addon-docs",
             options: {

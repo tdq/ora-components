@@ -95,7 +95,16 @@ async function main() {
   const agentSrc = join(MONOREPO_ROOT, '.agent');
   await copyDir(agentSrc, join(DATA_DIR, 'agent'));
 
-  // 5) Emit a small manifest for traceability
+  // 5) Copy QUICKSTART.md
+  const quickstartSrc = join(MONOREPO_ROOT, 'packages', 'ora-components', 'QUICKSTART.md');
+  if (await exists(quickstartSrc)) {
+    const { copyFile } = await import('node:fs/promises');
+    await copyFile(quickstartSrc, join(DATA_DIR, 'QUICKSTART.md'));
+  } else {
+    console.warn(`[stage-api] WARN: QUICKSTART.md not found at ${quickstartSrc}`);
+  }
+
+  // 6) Emit a small manifest for traceability
   await writeFile(join(API_DIST, 'staged-at.json'), JSON.stringify({
     stagedAt: new Date().toISOString(),
     monorepoRoot: MONOREPO_ROOT,

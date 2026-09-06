@@ -100,6 +100,11 @@ All builder methods return `this` for chaining, except for `withPrimaryButton`, 
 - **`build`** — `(): HTMLElement`
   Constructs and returns the toolbar element (a `LayoutBuilder` output). Depending on which buttons were added, produces either a single-sided or split horizontal layout. Call once per builder.
 
+`ToolbarBuilder` has no `withTestId` of its own — there is no single toolbar-level element to
+tag. To reach a specific button for end-to-end tests, call `withTestId(id)` on the
+`ButtonBuilder` returned by `withPrimaryButton()`, `addSecondaryButton()`, or `addTextButton()`;
+see [Button](../?path=/docs/components-button--docs).
+
 ---
 
 ## Styling

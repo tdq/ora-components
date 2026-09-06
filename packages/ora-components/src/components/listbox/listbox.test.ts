@@ -1221,4 +1221,9 @@ describe('ListBoxBuilder', () => {
             expect(positions).toEqual([...positions].sort((a, b) => a - b));
         });
     });
+
+    it('should set data-testid on the host', () => {
+        const el = new ListBoxBuilder<string>().withTestId('my-listbox').build();
+        expect(el.getAttribute('data-testid')).toBe('my-listbox');
+    });
 });

@@ -16,6 +16,8 @@ Composition with the main content area and the chat panel is covered in [app-she
 - `addDivider(): this` - appends a horizontal separator (`role="separator"`) at the current position in the item list.
 - `withFooter(): SidebarFooterBuilder` - creates the footer row (account/organisation block) and returns its builder. Memoised: repeated calls return the same builder.
 - `asGlass(): this` - renders the panel with the shared `glass-effect` (translucent, blurred) surface instead of the solid `ora-sidebar-panel--solid` surface. Menus opened from the sidebar inherit the glass treatment.
+- `withClass(className$: Observable<string>): this` - apply custom class names to the host element via classList mutations. On each emission, previously added custom classes are removed and new ones are added; base classes and runtime state classes (such as expanded/collapsed state and animation state) survive because only custom classes are removed.
+- `withTestId(id: string): this` - sets `data-testid` on the rendered host element — a real `<nav>`, not a decorative wrapper. See [Test ids](../builder-pattern.md#test-ids) and [Accessibility](#accessibility) below.
 - `build(): HTMLElement` - builds the sidebar element. Teardown is bound to a single lifecycle boundary on the wrapper.
 
 ## Inline builders
@@ -33,6 +35,7 @@ Four nested builders are reached only through the parent; none of them is constr
 - `withVisible(visible: Observable<boolean>): this` - shows or hides the row with the same semantics as `SlotBuilder.withVisible`, toggling `display` on the existing node without rebuilding it. Subscriptions stay live while hidden.
 - `withTooltip(text: Observable<string>): this` - overrides the tooltip shown while the sidebar is collapsed. Defaults to the caption.
 - `withMenu(): SidebarMenuBuilder` - turns the row into a menu button: clicking it opens a popover menu beside the rail instead of navigating or running `withClick`. The row is always a `<button>` even when `withHref` was also set. Memoised.
+- `withTestId(id: string): this` - sets `data-testid` on the row's `<a>`/`<button>` element. See [Test ids](../builder-pattern.md#test-ids).
 
 ### SidebarFooterBuilder — `sideBar.withFooter()`
 
@@ -41,6 +44,7 @@ Four nested builders are reached only through the parent; none of them is constr
 - `withCaption(caption: Observable<string>): this` - sets the footer's primary line, for example the organisation name. Also names the footer button and feeds its collapsed tooltip.
 - `withDescription(desc: Observable<string>): this` - sets the footer's secondary line, for example the signed-in role. Used as the accessible name when there is no caption.
 - `withMenu(): SidebarMenuBuilder` - attaches an account menu to the footer. Only a footer with a menu renders as a `<button>` with a chevron; without one it renders as an inert `<div>` so there is no dead tab stop and no promised interaction. Memoised.
+- `withTestId(id: string): this` - sets `data-testid` on the footer's `<button>`/`<div>` row. See [Test ids](../builder-pattern.md#test-ids).
 
 ### SidebarMenuBuilder — `item.withMenu()` / `footer.withMenu()`
 
@@ -99,7 +103,7 @@ div.ora-sidebar[.ora-sidebar--expanded][.ora-sidebar--animating][data-sidebar-in
 
 A menu is a `PopoverBuilder` configured with `PopoverPlacement.RIGHT`, an 8px offset, the `ora-sidebar-menu` class and, when the sidebar is glass, `asGlass()`. `PopoverBuilder` already owns outside-click dismissal, dismissal on any scroll outside the popover, the single-active-popover rule, dialog re-parenting, and repositioning on window resize; the sidebar adds placement, the anchor's `aria-expanded`, and teardown.
 
-**Bounded height.** A RIGHT-placed popover never flips vertically, so `PopoverBuilder` caps it to the viewport height (`window.innerHeight - 8`) whether or not a max-height was asked for. The menu asks for one anyway — `withMaxHeight(320)` — to keep a long account menu from filling a tall screen, so its effective height is `min(320, window.innerHeight - 8)`. `withScrollElement(menuList)` hands that clamped height to the list, which owns the scrollbar; the popover wrapper itself stays `overflow: hidden` and never scrolls.
+**Bounded height.** A RIGHT-placed popover never flips vertically, so `PopoverBuilder` caps it to the viewport height (`window.innerHeight - 8`) whether or not a max-height was asked for. The menu asks for one anyway — `PopoverBuilder.withMaxHeight(320)` — to keep a long account menu from filling a tall screen, so its effective height is `min(320, window.innerHeight - 8)`. `PopoverBuilder.withScrollElement(menuList)` hands that clamped height to the list, which owns the scrollbar; the popover wrapper itself stays `overflow: hidden` and never scrolls.
 
 **Keyboard contract (WAI-ARIA menu button).** `role="menu"` is a promise, and the menu keeps it:
 
@@ -134,6 +138,14 @@ One tooltip element (`.ora-sidebar-tooltip`, `role="tooltip"`) is shared by ever
 - Icons are inline SVG strings, normally `Icons.*` constants. See [icons.md](../icons.md).
 - The sidebar renders items in `addItem()` / `addDivider()` call order; there is no reordering and no reactive item list.
 
+## Accessibility
+
+The host element `buildSidebarViewport()` returns (and that `withTestId` targets) is a real `<nav aria-label>`, not a decorative `<div>` — it is the application's navigation landmark, and `<nav class="ora-sidebar-nav">` inside it (the row container in the [DOM contract](#architecture) above) is a second, unlabelled `<nav>` nested for layout only.
+
+- **Accessible name**: `aria-label` is driven by `withCaption(caption$)`. It is seeded to the fallback `"Navigation"` before the first subscription (same "seed before subscribing" reasoning as the brand and header toggle — a plain `Observable`'s first emission may be arbitrarily late), then kept in sync with every `caption$` emission; an empty-string emission falls back to `"Navigation"` again rather than leaving the landmark unlabelled.
+- **`withTestId`** sets `data-testid` on this same `<nav>` — there is only one host element, so the test id and the landmark label live on the same node.
+- **Known gaps**: `SidebarMenuItemBuilder` (`menu.addItem()`) has no `withTestId` — its rendered `role="menuitem"` button cannot be targeted by test id, unlike every other row/footer/item builder in this file.
+
 ## Styling
 
 Geometry is exposed as custom properties on `.ora-sidebar`, so a consuming application retheme is a CSS override rather than an API change:
@@ -151,3 +163,7 @@ Material 3 token mapping: icons use `--md-sys-color-on-surface-variant`, promote
 **No `backdrop-filter` during the width transition.** A backdrop-filtered surface is re-composited every frame, and re-blurring a panel whose width is animating drops the animation to single-digit frame rates on mid-range hardware, with visible tearing on the labels. The viewport therefore adds `.ora-sidebar--animating` to the wrapper for the duration of the width transition, and `.ora-sidebar--animating .ora-sidebar-panel.glass-effect { backdrop-filter: none }` suspends the blur for exactly that window. The class is removed on the wrapper's own `width` `transitionend`, with a 400ms timeout as a safety net. It is **not** applied on the first emission (the initial state paints at its final width and does not animate), nor on a re-emission of the same value, nor under `prefers-reduced-motion: reduce` — with `transition: none` there is no `transitionend`, so the class would linger for the whole fallback timeout and turn the mitigation into a visible blur flash on every toggle. No `!important` is needed: the rule is specificity `(0,3,0)` against `.glass-effect`'s `(0,1,0)` in the same `@layer ora-components`, and an `!important` inside the layer would break the contract that a consuming app's unlayered CSS outranks ours (see [theme.md](../theme.md) 10b).
 
 The width transition is additionally gated on `[data-sidebar-initialized]`, stamped one `requestAnimationFrame` after mount so the sidebar does not animate from zero width on its first paint.
+
+## Gotchas
+
+- The sidebar host is a `<nav>` element (accessible landmark); sidebar menu items lack `withTestId()` (set test ids on the item's click handler closure or use `withCaption()` for element selection).

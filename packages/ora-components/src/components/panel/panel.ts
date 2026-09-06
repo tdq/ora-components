@@ -2,6 +2,7 @@ import { Observable, of } from 'rxjs';
 import { ComponentBuilder } from '../../core/component-builder';
 import { registerDestroy } from '../../core/destroyable-element';
 import { cn } from '../../utils/cn';
+import { applyTestId } from '../../core/test-id';
 
 export enum PanelGap {
     SMALL = 'SMALL',
@@ -22,6 +23,7 @@ export class PanelBuilder implements ComponentBuilder {
     private content?: ComponentBuilder;
     private isGlass: boolean = false;
     private className$?: Observable<string>;
+    private testId?: string;
 
     withGap(gap: PanelGap): this {
         this.gap = gap;
@@ -40,6 +42,12 @@ export class PanelBuilder implements ComponentBuilder {
 
     withClass(className: Observable<string>): this {
         this.className$ = className;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -66,6 +74,8 @@ export class PanelBuilder implements ComponentBuilder {
             }
             panel.appendChild(body);
         }
+
+        applyTestId(panel, this.testId);
 
         return panel;
     }

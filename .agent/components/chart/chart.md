@@ -45,7 +45,19 @@ Each method returns a specialized builder for that series.
 - `withLegend(visible: boolean): this`: Toggles the legend visibility.
 - `withTooltip(enabled: boolean): this`: Toggles interactive tooltips.
 - `withAnimation(enabled: boolean): this`: Toggles entry animations for data series (default: true).
+- `withLocale(locale: string | Observable<string>): this`: Locale used by `withFormat` presets on axes and series (grouping/decimal separators, currency symbol placement, `'compact'`/`'percentage'` rendering). Defaults to `navigator.language` — unlike `MoneyColumn`/`MoneyKPICard`, which default to `'en-US'` — since a chart has no money-specific reason to force an American default; pass an explicit locale to match them.
+- `withCurrency(currencyId: string): this`: Currency id used by the bare `'currency'` preset (not `` `currency:${string}` ``, which carries its own id). Defaults to `'EUR'`; an invalid id `console.warn`s once and falls back to `'number'`.
 - `asGlass(): this`: Adds padding to the chart container and enables glass effect styling for tooltips.
+  The glass tooltip carries `glass-effect glass-effect--overlay`: the overlay class exempts it
+  from the nested-glass rule that switches `backdrop-filter` off inside another glass surface
+  (a chart usually lives in a glass panel) and supplies the elevation composed with
+  `glass-effect`'s 1px ring. Do not add a `shadow-level-*` utility to it — a Tailwind
+  box-shadow utility replaces that ring. See `.agent/theme.md`.
+- `asSparkline(): this`: Hides axes, legend, and tooltip; sets padding to 0; defaults height to 32px (unless `withHeight()` was already called).
+- `withClass(className$: Observable<string>): this`: Apply custom class names to the host element, merged via `cn()` with base classes on every render. Base classes and glass state survive every emission; a second emission replaces the first custom classes.
+- `withTestId(id: string): this`: Sets `data-testid` on the rendered host element. See [Test ids](../../builder-pattern.md#test-ids).
+
+Series builders (`LineChartBuilder`/`BarChartBuilder`/`AreaChartBuilder` returned by `addLineChart`/`addBarChart`/`addAreaChart`) also expose their own `withFormat` method, taking a `ValueFormat` — a per-series **tooltip-only** override. It does not affect tick labels: those always follow the format set on the axis the series is bound to (`withYAxis`/`withSecondaryYAxis`). When set, it wins over the bound axis's format in the tooltip; when unset, the tooltip uses the axis's format (primary or secondary, depending on whether the series was routed to the secondary axis). See `.agent/components/chart/axis-builder.md` for the `ValueFormat` preset list.
 
 ## Implementation Requirements
 - **Orchestration**: `ChartBuilder.build()` MUST instantiate `ChartViewport` and pass the `ChartLogic` instance to it.
@@ -62,6 +74,10 @@ Each method returns a specialized builder for that series.
 - **Hover Interaction**: `ChartViewport.renderHoverEffects` MUST use the downsampled `displayData` from `ChartScales` instead of the raw `state.data` to correctly map the hover index to the visible points. The highlight ring radius MUST use `HIGHLIGHT_RADIUS` (6px).
 - **Tooltip Glass Effect**: When `state.isGlass` is true, `ChartTooltip` MUST apply the `glass-effect` style, matching the visual appearance of a glassy `Panel` (including `rounded-large` and `[overflow:clip]`).
 - **Cleanup**: `ChartViewport` MUST use `createLifecycleBoundary` to unsubscribe from RxJS and disconnect observers.
+
+## Gotchas
+
+- Tick labels default to `'number'` format (grouped, decimal precision as in the value); `AxisBuilder.withFormat()` also drives tooltip values unless overridden per series via the series builder's own withFormat method (`LineChartBuilder.withFormat()`, `BarChartBuilder.withFormat()`, or `AreaChartBuilder.withFormat()`).
 
 ## Styling
 - Hovered point should be highlighted with a ring of radius **6px** (`HIGHLIGHT_RADIUS`) only on line and area charts.

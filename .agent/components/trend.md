@@ -24,7 +24,10 @@ Direction is derived automatically from the sign of `value`:
 |---|---|---|---|---|
 | `withTrend` | `(trend$: Observable<Trend>): this` | — | yes | Sets the trend data source. |
 | `withClass` | `(className$: Observable<string>): this` | — | no | Merges extra Tailwind classes onto the root element via `cn()`. |
+| `withTestId` | `(id: string): this` | — | no | Sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids). |
 | `build` | `(): HTMLElement` | — | yes | Constructs and returns the final element. Must be called last. |
+
+- `withTestId(id: string): this` — sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 
 All `with*` methods return `this` for chaining. Methods can be called in any order; the element is only constructed inside `build()`.
 

@@ -1,5 +1,6 @@
 import { ChartBuilder, ButtonBuilder, LabelBuilder } from '@tdq/ora-components';
 import { of, BehaviorSubject } from 'rxjs';
+import { createButton, createControlStrip } from './story-helpers';
 
 export default {
     title: 'Components/Chart',
@@ -544,6 +545,84 @@ export const MissingValues = () => {
  * later). The entry animation still plays correctly once it lands in the document.
  */
 
+interface FormattedItem {
+    month: string;
+    revenue: number;
+    margin: number;
+    unitsSold: number;
+}
+
+// Realistic monthly SaaS revenue data: revenue in EUR, margin as a fraction (0.184 -> 18.4%).
+// See the FormattedAxes JSDoc below for why unitsSold gets its own withFormat('integer').
+const formattedData: FormattedItem[] = [
+    { month: 'Jan', revenue: 128400, margin: 0.184, unitsSold: 3210 },
+    { month: 'Feb', revenue: 119800, margin: 0.171, unitsSold: 2985 },
+    { month: 'Mar', revenue: 142650, margin: 0.203, unitsSold: 3524 },
+    { month: 'Apr', revenue: 136200, margin: 0.196, unitsSold: 3390 },
+    { month: 'May', revenue: 151300, margin: 0.212, unitsSold: 3711 },
+    { month: 'Jun', revenue: 148900, margin: 0.208, unitsSold: 3648 },
+    { month: 'Jul', revenue: 163750, margin: 0.229, unitsSold: 4002 },
+];
+
+/**
+ * Demonstrates `withFormat` on both y axes plus a per-series tooltip override:
+ * - Primary (left) axis: `withFormat('currency:EUR')` — grouped euro ticks and tooltip.
+ * - Secondary (right) axis: `withFormat('percentage')` — the margin series' fraction values
+ *   (0.184) render as "18.4%".
+ * - The `unitsSold` series stays on the primary axis but carries its own
+ *   `withFormat('integer')`, which overrides the axis's currency format in *its own* tooltip
+ *   row only — the axis ticks themselves are unaffected.
+ * - `withLocale(locale$)` is wired to a `BehaviorSubject<string>` so the two toggle buttons
+ *   re-format every tick and tooltip live, with no rebuild.
+ */
+export const FormattedAxes = () => {
+    const locale$ = new BehaviorSubject<string>('en-US');
+
+    const builder = new ChartBuilder<FormattedItem>()
+        .withData(of(formattedData))
+        .withCategoryField('month')
+        .withTitle(of('Monthly Revenue, Margin & Units Sold'))
+        .withHeight(400)
+        .withLocale(locale$)
+        .withCurrency('EUR');
+
+    builder.addBarChart('revenue')
+        .withLabel('Revenue')
+        .withColor('var(--md-sys-color-primary)');
+
+    builder.addLineChart('unitsSold')
+        .withLabel('Units Sold')
+        .withColor('var(--md-sys-color-tertiary)')
+        .withMarkers(true)
+        .withFormat('integer');
+
+    builder.addLineChart('margin')
+        .withLabel('Margin')
+        .withColor('var(--md-sys-color-secondary)')
+        .withMarkers(true)
+        .asDashed()
+        .asSecondaryAxis()
+        .withFormat('percentage');
+
+    builder.withYAxis().withLabel('Revenue / Units').withFormat('currency:EUR');
+    builder.withSecondaryYAxis().withLabel('Margin').withFormat('percentage').withGridLines(false);
+
+    const container = document.createElement('div');
+    container.className = 'flex flex-col gap-4 p-8';
+
+    const controls = createControlStrip([
+        createButton('en-US', () => locale$.next('en-US')).build(),
+        createButton('de-DE', () => locale$.next('de-DE')).build(),
+    ]);
+
+    container.appendChild(controls);
+    const chart = builder.build();
+    chart.style.width = '100%';
+    container.appendChild(chart);
+
+    return container;
+};
+
 export const IsolatedPoints = () => {
     const container = document.createElement('div');
     container.className = 'flex flex-col gap-4';
@@ -578,6 +657,235 @@ export const IsolatedPoints = () => {
         .withColor('var(--md-sys-color-primary)');
 
     container.appendChild(builder.build());
+
+    return container;
+};
+
+interface BarSeriesItem {
+    month: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+}
+
+const barSeriesData: BarSeriesItem[] = [
+    { month: 'Jan', revenue: 128400, expenses: 85600, profit: 42800 },
+    { month: 'Feb', revenue: 119800, expenses: 81200, profit: 38600 },
+    { month: 'Mar', revenue: 142650, expenses: 89450, profit: 53200 },
+    { month: 'Apr', revenue: 136200, expenses: 88700, profit: 47500 },
+    { month: 'May', revenue: 151300, expenses: 92700, profit: 58600 },
+    { month: 'Jun', revenue: 148900, expenses: 90800, profit: 58100 },
+    { month: 'Jul', revenue: 163750, expenses: 96250, profit: 67500 },
+];
+
+export const GroupedBars = () => {
+    const builder = new ChartBuilder<BarSeriesItem>()
+        .withData(of(barSeriesData))
+        .withCategoryField('month')
+        .withTitle(of('Monthly Revenue, Expenses & Profit'))
+        .withHeight(400)
+        .withCurrency('EUR');
+
+    builder.addBarChart('revenue')
+        .withLabel('Revenue')
+        .withColor('var(--md-sys-color-primary)')
+        .withBarWidth(0.25);
+
+    builder.addBarChart('expenses')
+        .withLabel('Expenses')
+        .withColor('var(--md-sys-color-error)')
+        .withBarWidth(0.25);
+
+    builder.addBarChart('profit')
+        .withLabel('Profit')
+        .withColor('var(--md-sys-color-tertiary)')
+        .withBarWidth(0.25);
+
+    builder.withYAxis().withFormat('currency:EUR');
+
+    return builder.build();
+};
+
+interface StackedBarItem {
+    quarter: string;
+    q1: number;
+    q2: number;
+    q3: number;
+}
+
+const stackedBarData: StackedBarItem[] = [
+    { quarter: '2024 Q1', q1: 12500, q2: 8300, q3: -2100 },
+    { quarter: '2024 Q2', q1: 14200, q2: 9700, q3: -1800 },
+    { quarter: '2024 Q3', q1: 15800, q2: 11200, q3: -3200 },
+    { quarter: '2024 Q4', q1: 18900, q2: 13500, q3: -2500 },
+];
+
+export const StackedBars = () => {
+    const builder = new ChartBuilder<StackedBarItem>()
+        .withData(of(stackedBarData))
+        .withCategoryField('quarter')
+        .withTitle(of('Stacked Revenue Components with Adjustments'))
+        .withHeight(400)
+        .withCurrency('EUR');
+
+    builder.addBarChart('q1')
+        .withLabel('Primary Revenue')
+        .withColor('var(--md-sys-color-primary)')
+        .asStacked();
+
+    builder.addBarChart('q2')
+        .withLabel('Secondary Revenue')
+        .withColor('var(--md-sys-color-secondary)')
+        .asStacked();
+
+    builder.addBarChart('q3')
+        .withLabel('Adjustments')
+        .withColor('var(--md-sys-color-error)')
+        .asStacked();
+
+    builder.withYAxis().withFormat('currency:EUR');
+
+    return builder.build();
+};
+
+interface MixedBarItem {
+    month: string;
+    revenue: number;
+    productA: number;
+    productB: number;
+}
+
+const mixedBarData: MixedBarItem[] = [
+    { month: 'Jan', revenue: 128400, productA: 76300, productB: 52100 },
+    { month: 'Feb', revenue: 119800, productA: 71200, productB: 48600 },
+    { month: 'Mar', revenue: 142650, productA: 85100, productB: 57550 },
+    { month: 'Apr', revenue: 136200, productA: 81300, productB: 54900 },
+    { month: 'May', revenue: 151300, productA: 90300, productB: 61000 },
+    { month: 'Jun', revenue: 148900, productA: 88900, productB: 60000 },
+    { month: 'Jul', revenue: 163750, productA: 97600, productB: 66150 },
+];
+
+export const MixedGroupedAndStacked = () => {
+    const builder = new ChartBuilder<MixedBarItem>()
+        .withData(of(mixedBarData))
+        .withCategoryField('month')
+        .withTitle(of('Total Revenue vs Stacked Product Mix'))
+        .withHeight(400)
+        .withCurrency('EUR');
+
+    builder.addBarChart('revenue')
+        .withLabel('Total Revenue')
+        .withColor('var(--md-sys-color-primary)')
+        .withBarWidth(0.3);
+
+    builder.addBarChart('productA')
+        .withLabel('Product A')
+        .withColor('var(--md-sys-color-secondary)')
+        .withBarWidth(0.35)
+        .asStacked();
+
+    builder.addBarChart('productB')
+        .withLabel('Product B')
+        .withColor('var(--md-sys-color-tertiary)')
+        .withBarWidth(0.35)
+        .asStacked();
+
+    builder.withYAxis().withFormat('currency:EUR');
+
+    return builder.build();
+};
+
+interface SparklineItem {
+    day: string;
+    value: number;
+}
+
+const sparklineData: SparklineItem[] = [
+    { day: 'Mon', value: 4200 },
+    { day: 'Tue', value: 3800 },
+    { day: 'Wed', value: 5100 },
+    { day: 'Thu', value: 4600 },
+    { day: 'Fri', value: 6200 },
+    { day: 'Sat', value: 5800 },
+    { day: 'Sun', value: 4900 },
+];
+
+export const Sparkline = () => {
+    const data$ = new BehaviorSubject<SparklineItem[]>(sparklineData);
+
+    const container = document.createElement('div');
+    container.className = 'flex flex-col gap-8 p-8';
+
+    const info = document.createElement('div');
+    info.className = 'text-body-medium text-on-surface-variant';
+    info.innerHTML = `
+        <p><strong>Sparklines</strong> are compact inline charts (default 32px height) that show trends at a glance without axes, legend, or tooltip.
+        Use them in tables, KPI cards, or inline within text. The <code>asSparkline()</code> method hides all chrome and sets a minimal height.</p>
+    `;
+    container.appendChild(info);
+
+    // Default sparkline at 32px
+    const sparklineDefault = new ChartBuilder<SparklineItem>()
+        .withData(data$)
+        .withCategoryField('day')
+        .asSparkline();
+
+    sparklineDefault.addLineChart('value')
+        .withLabel('Daily Revenue')
+        .withColor('var(--md-sys-color-primary)')
+        .withMarkers(false);
+
+    const defaultContainer = document.createElement('div');
+    defaultContainer.className = 'flex items-center gap-4';
+
+    const defaultLabel = document.createElement('span');
+    defaultLabel.className = 'text-label-small text-on-surface-variant w-24';
+    defaultLabel.textContent = 'Default (32px):';
+    defaultContainer.appendChild(defaultLabel);
+
+    const defaultChart = sparklineDefault.build();
+    defaultChart.style.flex = '1';
+    defaultContainer.appendChild(defaultChart);
+
+    container.appendChild(defaultContainer);
+
+    // Custom sparkline at 64px with area fill
+    const sparklineCustom = new ChartBuilder<SparklineItem>()
+        .withData(data$)
+        .withCategoryField('day')
+        .asSparkline()
+        .withHeight(64);
+
+    sparklineCustom.addAreaChart('value')
+        .withLabel('Daily Revenue')
+        .withColor('var(--md-sys-color-secondary)')
+        .withOpacity(0.3);
+
+    const customContainer = document.createElement('div');
+    customContainer.className = 'flex items-center gap-4';
+
+    const customLabel = document.createElement('span');
+    customLabel.className = 'text-label-small text-on-surface-variant w-24';
+    customLabel.textContent = 'Custom (64px):';
+    customContainer.appendChild(customLabel);
+
+    const customChart = sparklineCustom.build();
+    customChart.style.flex = '1';
+    customContainer.appendChild(customChart);
+
+    container.appendChild(customContainer);
+
+    // Control strip for reactive updates
+    const controls = createControlStrip([
+        createButton('Load New Data', () => {
+            const newData: SparklineItem[] = Array.from({ length: 7 }, (_, i) => ({
+                day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+                value: 3000 + Math.random() * 3000,
+            }));
+            data$.next(newData);
+        }).build(),
+    ]);
+    container.appendChild(controls);
 
     return container;
 };

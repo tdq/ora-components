@@ -209,6 +209,35 @@ describe('EnumColumnBuilder', () => {
             expect(editor.getValue()).toBe('INACTIVE');
         });
 
+        // Task 9 regression guard for THIS editor's dropdown specifically — see
+        // combobox.test.ts's "every visible dropdown option..." test for the full non-issue
+        // writeup (same ComboBoxBuilder/ListBoxBuilder code path, see the file header's #20 note).
+        it('every visible option in the open editor dropdown has role="option" and aria-selected', () => {
+            jest.useFakeTimers();
+            try {
+                const col = new EnumColumnBuilder<Item>('status').withOptions(options).asEditable().build();
+                const item: Item = { status: 'ACTIVE' };
+                const editor = col.renderEditor!(item, false)!;
+                document.body.appendChild(editor.element);
+
+                (globalThis as any).IntersectionObserverMock.triggerVisibility(editor.element, true);
+                jest.advanceTimersByTime(50);
+                (editor.element as unknown as ComboBoxElement<Option>).open();
+
+                const optionEls = Array.from(document.body.querySelectorAll('[role="option"]'));
+                expect(optionEls.length).toBe(options.length);
+                optionEls.forEach(opt => {
+                    expect(opt).toHaveAttribute('aria-selected');
+                });
+                const selected = optionEls.find(o => o.textContent === 'Active');
+                expect(selected).toHaveAttribute('aria-selected', 'true');
+
+                document.body.removeChild(editor.element);
+            } finally {
+                jest.useRealTimers();
+            }
+        });
+
         it('selecting a deliberately null-valued option commits null, not the previous raw value', () => {
             const optionsWithNull: Option[] = [
                 { value: 'ACTIVE', label: 'Active' },

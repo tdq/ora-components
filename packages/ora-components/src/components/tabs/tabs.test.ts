@@ -138,4 +138,32 @@ describe('Tabs Component', () => {
         document.body.removeChild(element);
     });
 
+
+    it('should set data-testid on the host', () => {
+        const el = new TabsBuilder().withTestId('my-tabs').build();
+        expect(el.getAttribute('data-testid')).toBe('my-tabs');
+    });
+
+    it('should keep data-testid on the host after selecting another tab', () => {
+        const tabs = new TabsBuilder().withTestId('my-tabs');
+        tabs.addTab().withCaption(of('Tab 1')).withContent(new LabelBuilder().withCaption(of('Content 1')));
+        tabs.addTab().withCaption(of('Tab 2')).withContent(new LabelBuilder().withCaption(of('Content 2')));
+
+        const element = tabs.build();
+        document.body.appendChild(element);
+
+        expect(element.getAttribute('data-testid')).toBe('my-tabs');
+
+        const buttons = element.querySelectorAll('button[role="tab"]') as NodeListOf<HTMLButtonElement>;
+        buttons[1].click();
+
+        expect(document.body.textContent).toContain('Content 2');
+        expect(element.getAttribute('data-testid')).toBe('my-tabs');
+        expect(document.querySelector('[data-testid="my-tabs"]')).toBe(element);
+
+        buttons[0].click();
+        expect(document.querySelector('[data-testid="my-tabs"]')).toBe(element);
+
+        document.body.removeChild(element);
+    });
 });

@@ -53,11 +53,9 @@
     padding: var(--md-sys-spacing-1);
     border-radius: 20px; /* Aura .sidebar-panel */
     overflow: visible;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    background: var(--ora-sidebar-bg);
+    border: 1px solid var(--ora-sidebar-border);
+    box-shadow: var(--ora-sidebar-shadow);
 }
 
 /*
@@ -307,8 +305,7 @@
         0 4px 14px color-mix(in srgb, var(--md-sys-color-primary) 14%, transparent);
 }
 
-[data-theme="dark"] .ora-sidebar-item--active,
-.dark .ora-sidebar-item--active {
+[data-theme="dark"] .ora-sidebar-item--active {
     background: linear-gradient(135deg,
         color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent),
         color-mix(in srgb, var(--md-sys-color-tertiary) 14%, transparent));
@@ -574,15 +571,10 @@
     white-space: nowrap;
     font-size: 12px; /* M3 label-medium */
     font-weight: 500;
-    /* Aura's `.sidebar-tooltip`, values verbatim: a translucent card on the app's own
-       surface (not an inverted pill). Light: white 95% / ink text / neutral hairline.
-       Dark (below): deep-purple 88% / lavender text / faint lavender hairline. Literal
-       colours rather than M3 token mixes — the tokens resolve to neutral grey in a
-       consuming app's dark theme and lose Aura's tint. */
-    color: rgba(30, 10, 60, 0.9);
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(30, 10, 60, 0.12);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    color: var(--ora-sidebar-tooltip-fg);
+    background: var(--ora-sidebar-tooltip-bg);
+    border: 1px solid var(--ora-sidebar-tooltip-border);
+    box-shadow: var(--ora-sidebar-tooltip-shadow);
     pointer-events: none;
     opacity: 0;
     transform: translateY(-50%) translateX(-4px);
@@ -594,13 +586,6 @@
     transform: translateY(-50%) translateX(0);
 }
 
-[data-theme="dark"] .ora-sidebar-tooltip,
-.dark .ora-sidebar-tooltip {
-    color: #f0e6ff;
-    background: rgba(30, 10, 60, 0.88);
-    border-color: rgba(167, 139, 250, 0.22);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-}
 
 /* ── Focus ──────────────────────────────────────────────────────────────── */
 

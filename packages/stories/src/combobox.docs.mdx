@@ -82,6 +82,9 @@ All builder methods return `this` for chaining. Pass RxJS observables into the r
 - **`withClass`** — `(className: Observable<string>): this`
   Appends additional CSS class names to the root container element.
 
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the combo box's `<input>` element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`withVisible`** — `(visible: Observable<boolean>): this`
   Controls visibility of the combobox container.
 

@@ -18,6 +18,7 @@ It has the following methods:
 - `withError(error: Observable<string>): this` — shows an error message below the panel and applies error border styling.
 - `asGlass(): this` — applies the glass-effect visual style (transparent with blur background).
 - `withSelectAll(show: boolean): this` — controls whether the "Select all" header row is rendered. Defaults to `true`. Pass `false` to hide the header and show only the item checkboxes.
+- `withTestId(id: string): this` — sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 
 ## Requirements
 

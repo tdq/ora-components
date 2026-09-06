@@ -774,4 +774,66 @@ describe('ChatPanelBuilder', () => {
             expect(messages$.observed).toBe(false);
         });
     });
+
+    it('withTestId sets data-testid on the host element', () => {
+        const panel = new ChatPanelBuilder()
+            .withMessages(of([]))
+            .withOnSend(() => undefined)
+            .withTestId('assistant-panel')
+            .build();
+        expect(panel.getAttribute('data-testid')).toBe('assistant-panel');
+    });
+
+    it('keeps data-testid on the host across a messages$ emission', () => {
+        const messages$ = new BehaviorSubject<ChatMessage[]>([USER]);
+        const panel = new ChatPanelBuilder()
+            .withMessages(messages$)
+            .withOnSend(() => undefined)
+            .withTestId('assistant-panel')
+            .build();
+        document.body.appendChild(panel);
+
+        expect(rows(panel).length).toBe(1);
+
+        messages$.next([USER, ASSISTANT]);
+
+        // The message list really re-rendered, and the host attribute survived it.
+        expect(rows(panel).length).toBe(2);
+        expect(panel.getAttribute('data-testid')).toBe('assistant-panel');
+
+        panel.remove();
+        messages$.complete();
+    });
+
+    it('should apply custom classes reactively and replace on new emission', () => {
+        const class$ = new BehaviorSubject('custom-class-1');
+        const panel = new ChatPanelBuilder()
+            .withMessages(of([]))
+            .withOnSend(() => undefined)
+            .withClass(class$)
+            .build();
+
+        expect(panel.classList.contains('custom-class-1')).toBe(true);
+
+        class$.next('custom-class-2');
+        expect(panel.classList.contains('custom-class-1')).toBe(false);
+        expect(panel.classList.contains('custom-class-2')).toBe(true);
+    });
+
+    it('should handle multiple space-separated classes in withClass', () => {
+        const class$ = new BehaviorSubject('class-1 class-2');
+        const panel = new ChatPanelBuilder()
+            .withMessages(of([]))
+            .withOnSend(() => undefined)
+            .withClass(class$)
+            .build();
+
+        expect(panel.classList.contains('class-1')).toBe(true);
+        expect(panel.classList.contains('class-2')).toBe(true);
+
+        class$.next('class-3');
+        expect(panel.classList.contains('class-1')).toBe(false);
+        expect(panel.classList.contains('class-2')).toBe(false);
+        expect(panel.classList.contains('class-3')).toBe(true);
+    });
 });

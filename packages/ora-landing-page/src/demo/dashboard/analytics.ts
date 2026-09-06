@@ -1,14 +1,19 @@
-import { PanelBuilder, PanelGap, ChartBuilder, LabelBuilder, registerDestroy } from '@tdq/ora-components';
+import { PanelBuilder, PanelGap, ChartBuilder, LabelBuilder, LayoutBuilder, LayoutGap, registerDestroy } from '@tdq/ora-components';
 import { of, timer, Subscription, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { themedColor$ } from './theme-tokens';
 
 export function createAnalytics(): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'flex-1 overflow-y-auto';
+    // The page scroller: asScrollable() adds the .ora-scroll-bleed gutter so panel/KPI
+    // shadows are not clipped at the edges (see .agent/components/layout.md).
+    const container = new LayoutBuilder()
+        .asVertical()
+        .withGap(LayoutGap.NONE)
+        .asScrollable()
+        .withClass(of('flex-1'));
 
     const grid = document.createElement('div');
-    grid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24';
+    grid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-px-24 w-full';
 
     grid.appendChild(createRevenueChart());
     grid.appendChild(createUsersChart());
@@ -17,9 +22,9 @@ export function createAnalytics(): HTMLElement {
     grid.appendChild(createSessionChart());
     grid.appendChild(createConversionChart());
 
-    container.appendChild(grid);
+    container.addSlot().withContent({ build: () => grid });
 
-    return container;
+    return container.build();
 }
 
 function buildChartPanel(title: string): HTMLElement {

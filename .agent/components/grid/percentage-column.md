@@ -14,6 +14,6 @@ Inherits all methods from [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-m
 - **Alignment**: Right-aligned by default (can be overridden via `withAlign()`).
 
 ## Editing
-Built-in editor is **NumberFieldBuilder** with `asInlineError()` modifier. It is not displaying any label.
-In case if grid has `asGlass()` modifier, the number field should be initialized with `asGlass()` modifier.
-It also should have `withSuffix(of('%'))` and enforces a precision of 2 decimal places.
+Built-in editor is **NumberFieldBuilder** with `NumberFieldBuilder.asInlineError()` modifier. It is not displaying any label.
+In case if grid has `GridBuilder.asGlass()` modifier, the number field should be initialized with `NumberFieldBuilder.asGlass()` modifier.
+It also should have `NumberFieldBuilder.withSuffix(of('%'))` and enforces a precision of 2 decimal places.

@@ -41,10 +41,15 @@ describe('GridStyles', () => {
             expect(GridStyles.header).not.toMatch(/\/80/);
         });
 
+        it('should use var(--ora-grid-header-bg) token for the wrapper', () => {
+            expect(GridStyles.headerWrapper).toContain('var(--ora-grid-header-bg)');
+        });
+
         it('should use surface-container-low colour (possibly semi-transparent via color-mix) on the wrapper', () => {
             const usesSurfaceColor =
                 GridStyles.headerWrapper.includes('bg-surface-container-low') ||
-                GridStyles.headerWrapper.includes('--md-sys-color-surface-container-low');
+                GridStyles.headerWrapper.includes('--md-sys-color-surface-container-low') ||
+                GridStyles.headerWrapper.includes('--ora-grid-header-bg');
             expect(usesSurfaceColor).toBe(true);
         });
     });

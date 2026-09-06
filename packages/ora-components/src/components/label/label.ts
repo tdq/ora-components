@@ -3,6 +3,7 @@ import { ComponentBuilder } from '../../core/component-builder';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '@/core/destroyable-element';
+import { applyTestId } from '@/core/test-id';
 
 export enum LabelSize {
     SMALL = 'small',
@@ -25,6 +26,7 @@ export class LabelBuilder implements ComponentBuilder {
     private size: LabelSize = LabelSize.MEDIUM;
     private className$?: Observable<string>;
     private isGlass = false;
+    private testId?: string;
 
     withCaption(caption: Observable<string>): LabelBuilder {
         this.caption$ = caption;
@@ -43,6 +45,12 @@ export class LabelBuilder implements ComponentBuilder {
 
     withGlass(): LabelBuilder {
         this.isGlass = true;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): LabelBuilder {
+        this.testId = id;
         return this;
     }
 
@@ -78,6 +86,8 @@ export class LabelBuilder implements ComponentBuilder {
                 sub.unsubscribe();
             });
         }
+
+        applyTestId(label, this.testId);
 
         return label;
     }

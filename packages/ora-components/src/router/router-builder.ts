@@ -5,6 +5,7 @@ import { RouteBuilder } from './route-builder';
 import { matchRoute } from './route-matcher';
 import { RouteDefinition, RouteMatch, RouteParams, RouterOptions } from './types';
 import { cn } from '@/components/combobox/styles';
+import { applyTestId } from '@/core/test-id';
 
 export class RouterBuilder implements ComponentBuilder {
     private routes: RouteDefinition[] = [];
@@ -13,6 +14,8 @@ export class RouterBuilder implements ComponentBuilder {
     private currentElement: HTMLElement | null = null;
     private currentDefinition: RouteDefinition | null = null;
     private outlet: HTMLElement | null = null;
+    private className$?: Observable<string>;
+    private testId?: string;
 
     // Navigation generation counter. Incremented by navigate() / replace() so that:
     //  - rapid back-to-back navigate() calls (same synchronous turn) can be coalesced,
@@ -34,6 +37,18 @@ export class RouterBuilder implements ComponentBuilder {
 
     withBase(base: string): this {
         this.options.base = base.endsWith('/') ? base.slice(0, -1) : base;
+        return this;
+    }
+
+    /** Extra classes merged with the outlet's base `w-full h-full`, recomputed on every emission. */
+    withClass(className: Observable<string>): this {
+        this.className$ = className;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered outlet element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -78,7 +93,8 @@ export class RouterBuilder implements ComponentBuilder {
     build(): HTMLElement {
         const outlet = document.createElement('div');
         this.outlet = outlet;
-        this.outlet.className = cn('w-full', 'h-full');
+        const baseClasses = cn('w-full', 'h-full');
+        outlet.className = baseClasses;
 
         const onPopState = () => {
             const pathname = this.stripBase(window.location.pathname);
@@ -87,14 +103,23 @@ export class RouterBuilder implements ComponentBuilder {
 
         window.addEventListener('popstate', onPopState);
 
+        const classSub = this.className$
+            ? this.className$.subscribe(extraClass => {
+                outlet.className = cn(baseClasses, extraClass);
+            })
+            : null;
+
         registerDestroy(outlet, () => {
             window.removeEventListener('popstate', onPopState);
+            classSub?.unsubscribe();
             this.routeSubject.complete();
         });
 
         // Fire initial navigation synchronously so that build() callers only need
         // a single await Promise.resolve() for a sync-factory route to be mounted.
         this.handleNavigation(this.stripBase(window.location.pathname));
+
+        applyTestId(outlet, this.testId);
 
         return outlet;
     }

@@ -59,7 +59,8 @@ Omitting `.withSize()` on a horizontal slot gives it `flex-1` (equal share of sp
 | `SlotSize.HALF` | 50% | Two-column split |
 | `SlotSize.TWO_THIRDS` | 66% | Chart with narrow aside panel |
 | `SlotSize.THREE_QUARTERS` | 75% | Wide main content + thin sidebar |
-| `SlotSize.FULL` | 100% | Slot spans the entire row |
+| `SlotSize.FULL` | 100% | `basis-full` — a fixed, equal share of the main axis |
+| `SlotSize.GROW` | remaining | `flex-1` + `min-h-0`/`min-w-0` — takes what is left after fixed/`FIT` siblings, and lets a scrollable child shrink below its content size. Use this for the content area next to a sidebar, and for any slot holding a grid, chart or router outlet |
 | `SlotSize.FIT` | content | Shrinks to content width (`flex-none`) — use for icons, badges, buttons |
 
 In **vertical** layouts, slot size is ignored (slots are always full width).
@@ -104,17 +105,30 @@ visible$.next(false);
 
 ### 1. Vertical Page Layout
 
-The default shape for any scrollable page.
+The default shape for any scrollable page. `asScrollable()` makes the layout the scroll
+container (`overflow-y-auto min-h-0`) and adds the `.ora-scroll-bleed` gutter — 12px of
+padding (`--ora-shadow-bleed`) pulled back by the same negative margin — so the cards'
+`shadow-level-*` shadows and focus rings paint into the gutter instead of being clipped at the
+edge, while the content stays aligned with its siblings. Never hand-write
+`withClass(of('overflow-y-auto'))` for a page: it clips shadows, and adding `w-full` on top
+of `asScrollable()` breaks the gutter (the class relies on `width: auto`).
 
 ```typescript
 const page = new LayoutBuilder()
     .asVertical()
     .withGap(LayoutGap.LARGE)
-    .withClass(of('flex-1 overflow-y-auto p-px-24'));
+    .asScrollable()
+    .withClass(of('flex-1'));
 
 page.addSlot().withContent(statsRow);
 page.addSlot().withContent(mainContent);
 ```
+
+Block content placed in a slot (a `div.grid`, a raw element) needs `w-full` on itself: the
+slot wrapper is a flex row, so a block child shrinks to its intrinsic width otherwise.
+
+The same toggle exists on a slot — `addSlot().withSize(SlotSize.GROW).asScrollable()` — for
+the "fixed header + scrollable body" shell where only the body scrolls.
 
 ### 2. App Shell — Sidebar + Content
 
@@ -129,9 +143,9 @@ shell.addSlot()
     .withSize(SlotSize.FIT)
     .withContent(sidebarLayout);
 
-// Main content: FULL = takes every remaining pixel
+// Main content: GROW = takes every remaining pixel and may shrink below its content
 shell.addSlot()
-    .withSize(SlotSize.FULL)
+    .withSize(SlotSize.GROW)
     .withContent(mainLayout);
 ```
 

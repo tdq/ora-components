@@ -144,7 +144,8 @@ describe('GridBuilder', () => {
         // Use .items-stretch to distinguish grid rows from checkbox icon containers
         // (both have .absolute.w-full, but only grid rows have .items-stretch)
         const firstRow = container.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
-        expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
+        // Token var(--ora-grid-row-selected-bg) replaces bg-primary/10
+        expect(firstRow.className).toContain('var(--ora-grid-row-selected-bg)');
 
         document.body.removeChild(container);
     });
@@ -169,7 +170,8 @@ describe('GridBuilder', () => {
         // Use .items-stretch to distinguish grid rows from checkbox icon containers
         const rows = container.querySelectorAll('.absolute.w-full.items-stretch');
         rows.forEach(row => {
-            expect(row.classList.contains('bg-primary/10')).toBe(true);
+            // Token var(--ora-grid-row-selected-bg) replaces bg-primary/10
+            expect((row as HTMLElement).className).toContain('var(--ora-grid-row-selected-bg)');
         });
 
         document.body.removeChild(container);
@@ -779,7 +781,7 @@ describe('GridBuilder', () => {
             const firstRowCheckbox = checkboxes[1] as HTMLInputElement;
             expect(firstRowCheckbox.checked).toBe(true);
             const firstRow = selContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
-            expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
+            expect((firstRow as HTMLElement).className).toContain('var(--ora-grid-row-selected-bg)');
         });
 
         it('pre-seed: BehaviorSubject initial value selects that row on initial render', () => {
@@ -797,7 +799,7 @@ describe('GridBuilder', () => {
             const firstRowCheckbox = checkboxes[1] as HTMLInputElement;
             expect(firstRowCheckbox.checked).toBe(true);
             const firstRow = selContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
-            expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
+            expect((firstRow as HTMLElement).className).toContain('var(--ora-grid-row-selected-bg)');
         });
 
         it('no feedback loop: a single checkbox click causes exactly one new outbound emission', () => {
@@ -827,7 +829,7 @@ describe('GridBuilder', () => {
             (checkboxes[1] as HTMLInputElement).click();
 
             const firstRow = selContainer.querySelector('.absolute.w-full.items-stretch') as HTMLElement;
-            expect(firstRow.classList.contains('bg-primary/10')).toBe(true);
+            expect((firstRow as HTMLElement).className).toContain('var(--ora-grid-row-selected-bg)');
         });
     });
 
@@ -1196,5 +1198,98 @@ describe('GridBuilder', () => {
 
             expect(options$.observers.length).toBe(0);
         });
+    });
+
+    it('withTestId sets data-testid on the host element', () => {
+        const grid = new GridBuilder<TestItem>().withItems(of(items)).withTestId('items-grid');
+        container = grid.build();
+        expect(container.getAttribute('data-testid')).toBe('items-grid');
+    });
+
+    it('keeps data-testid on the host across an items$ emission that re-renders the rows', () => {
+        const items$ = new BehaviorSubject<TestItem[]>(items);
+        const grid = new GridBuilder<TestItem>().withItems(items$).withTestId('items-grid');
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+        document.body.appendChild(container);
+
+        const rowsBefore = container.querySelectorAll('.absolute.w-full.items-stretch').length;
+
+        items$.next([...items, { id: 99, name: 'Zeta' }]);
+        jest.advanceTimersByTime(150);
+
+        // The re-render really happened, and the host attribute survived it.
+        expect(container.querySelectorAll('.absolute.w-full.items-stretch').length)
+            .not.toBe(rowsBefore);
+        expect(container.getAttribute('data-testid')).toBe('items-grid');
+
+        document.body.removeChild(container);
+    });
+
+    it('should apply custom classes reactively and replace on new emission', () => {
+        const class$ = new BehaviorSubject('custom-class-1');
+        const grid = new GridBuilder<TestItem>()
+            .withItems(of(items))
+            .withHeight(of(400))
+            .withClass(class$);
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+        document.body.appendChild(container);
+
+        expect(container.classList.contains('custom-class-1')).toBe(true);
+
+        class$.next('custom-class-2');
+        expect(container.classList.contains('custom-class-1')).toBe(false);
+        expect(container.classList.contains('custom-class-2')).toBe(true);
+
+        document.body.removeChild(container);
+    });
+
+    it('should preserve grid state classes through withClass emissions', () => {
+        const class$ = new BehaviorSubject('custom-1');
+        const grid = new GridBuilder<TestItem>()
+            .withItems(of(items))
+            .withHeight(of(400))
+            .withClass(class$);
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+        document.body.appendChild(container);
+
+        // Check that base classes are present
+        expect(container.className).toContain('custom-1');
+
+        // Emit a new class
+        class$.next('custom-2');
+        expect(container.className).toContain('custom-2');
+        expect(container.className).not.toContain('custom-1');
+
+        document.body.removeChild(container);
+    });
+
+    // S8a-1: assert var(--ora-grid-header-bg) once tokens land
+    it('should build grid header using var(--ora-grid-header-bg) token', () => {
+        const grid = new GridBuilder<TestItem>()
+            .withItems(of(items))
+            .withHeight(of(400));
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+
+        // Note: jsdom does not compute var() in computed styles from class-derived rules,
+        // so we assert on the class string itself. The headerWrapper should contain
+        // the arbitrary Tailwind class that references the token.
+        const headerWrapper = container.querySelector('[class*="sticky"][class*="top-0"]');
+        expect(headerWrapper?.className).toContain('var(--ora-grid-header-bg)');
+    });
+
+    it('should apply withClass to grid container', () => {
+        const class$ = of('t');
+        const grid = new GridBuilder<TestItem>()
+            .withItems(of(items))
+            .withHeight(of(400))
+            .withClass(class$);
+        grid.withColumns().addTextColumn('name');
+        container = grid.build();
+
+        expect(container.classList.contains('t')).toBe(true);
     });
 });

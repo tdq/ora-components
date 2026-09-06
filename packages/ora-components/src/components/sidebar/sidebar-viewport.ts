@@ -6,6 +6,7 @@ import { createLifecycleBoundary } from '../../core/lifecycle-boundary';
 import type { SidebarMenu } from './sidebar-menu';
 import { attachSidebarTooltip, hideSidebarTooltip } from './sidebar-tooltip';
 import { SidebarItemViewportConfig, buildSidebarItem } from './sidebar-item-viewport';
+import { applyTestId } from '../../core/test-id';
 
 export interface SidebarFooterViewportConfig {
     icon$?: Observable<string>;
@@ -13,6 +14,7 @@ export interface SidebarFooterViewportConfig {
     caption$?: Observable<string>;
     description$?: Observable<string>;
     menu?: SidebarMenu;
+    testId?: string;
 }
 
 export type SidebarEntry = SidebarItemViewportConfig | 'divider';
@@ -30,6 +32,8 @@ export interface SidebarViewportConfig {
     glass: boolean;
     /** Extra teardown owned by the builder (e.g. `SidebarLogic.destroy`). */
     onDestroy?: () => void;
+    testId?: string;
+    className$?: Observable<string>;
 }
 
 const PANEL_SOLID = 'ora-sidebar-panel--solid';
@@ -40,6 +44,9 @@ const ANIMATION_FALLBACK_MS = 400;
 
 /** Accessible name for the footer row when it has neither caption nor description. */
 const FOOTER_FALLBACK_NAME = 'Menu';
+
+/** Accessible name for the host `<nav>` before `caption$` has emitted (or if it never does). */
+const NAV_FALLBACK_LABEL = 'Navigation';
 
 /**
  * True when the operator asked the OS to minimise animation. The width
@@ -265,6 +272,8 @@ function buildFooter(
 
     subscription.add(attachSidebarTooltip(button, name$, config.expanded$));
 
+    applyTestId(button, footer.testId);
+
     wrapper.appendChild(button);
     return wrapper;
 }
@@ -283,8 +292,16 @@ function buildFooter(
 export function buildSidebarViewport(config: SidebarViewportConfig): HTMLElement {
     const subscription = new Subscription();
 
-    const wrapper = document.createElement('div');
+    // The host is a real `<nav>` (rules.md), not a decorative div — it is the application's
+    // navigation rail. Seeded with the fallback label before subscribing, same reasoning as
+    // buildBrand's caption handling: a plain Observable's first emission may be arbitrarily
+    // late, and an unlabeled landmark until then is a worse default than a generic one.
+    const wrapper = document.createElement('nav');
     wrapper.className = cn('ora-sidebar');
+    wrapper.setAttribute('aria-label', NAV_FALLBACK_LABEL);
+    subscription.add(config.caption$.subscribe(value => {
+        wrapper.setAttribute('aria-label', value || NAV_FALLBACK_LABEL);
+    }));
 
     const panel = document.createElement('div');
     panel.className = cn('ora-sidebar-panel', config.glass ? 'glass-effect' : PANEL_SOLID);
@@ -355,6 +372,27 @@ export function buildSidebarViewport(config: SidebarViewportConfig): HTMLElement
         animationTimer = setTimeout(endAnimation, ANIMATION_FALLBACK_MS);
     }));
 
+    // Track previous emission's extra classes to diff on next emission
+    // (preserves runtime state classes set by the sidebar)
+    let prevExtraClasses = '';
+    if (config.className$) {
+        subscription.add(config.className$.subscribe(extraClasses => {
+            // Remove previously added extra classes
+            if (prevExtraClasses) {
+                prevExtraClasses.split(/\s+/).forEach(cls => {
+                    if (cls) wrapper.classList.remove(cls);
+                });
+            }
+            // Add new extra classes
+            if (extraClasses) {
+                extraClasses.split(/\s+/).forEach(cls => {
+                    if (cls) wrapper.classList.add(cls);
+                });
+            }
+            prevExtraClasses = extraClasses;
+        }));
+    }
+
     // The width transition is gated on this attribute so the sidebar does not
     // animate from 0 on its first paint; it is stamped one frame after mount.
     const frame = typeof requestAnimationFrame === 'function'
@@ -372,6 +410,8 @@ export function buildSidebarViewport(config: SidebarViewportConfig): HTMLElement
         config.onDestroy?.();
     };
     wrapper.appendChild(boundary);
+
+    applyTestId(wrapper, config.testId);
 
     return wrapper;
 }

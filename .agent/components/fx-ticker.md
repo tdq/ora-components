@@ -4,7 +4,7 @@
 
 `FxTickerBuilder` is a reactive marquee component for streaming labelled numeric values that change over time — foreign-exchange pairs, asset prices, market quotes, or any other pair/value/delta data. Each row's value can be either a plain `number` (e.g. an FX rate `1.0843`) or a `Money` (e.g. a stock price `{ amount: 184.32, currencyId: 'USD' }`). It renders a single-line horizontal ticker that scrolls continuously, flashing per-item when an individual value changes between emissions. It is decorative by default (`aria-hidden="true"`) but exposes an opt-in announce mode for accessibility.
 
-It is a **Type 4** component (data-table family): the public surface is `withData(Observable<FxRate[]>)`. It implements `ComponentBuilder` and follows the builder pattern (see `.agent/builder-pattern.md`). It delegates internal sub-parts to `LayoutBuilder` and `LabelBuilder`, but **does not** wrap itself in a `PanelBuilder` — the ticker is a transparent, framed element. If a glass (or any other) surface is wanted, the caller composes it: `new PanelBuilder().asGlass().withContent(new FxTickerBuilder()…)`.
+It is a **Type 4** component (data-table family): the public surface is `withData(Observable<FxRate[]>)`. It implements `ComponentBuilder` and follows the builder pattern (see `.agent/builder-pattern.md`). It delegates internal sub-parts to `LayoutBuilder` and `LabelBuilder`, but **does not** wrap itself in a `PanelBuilder` — the ticker is a transparent, framed element. If a glass (or any other) surface is wanted, the caller composes it by wrapping the ticker in a glass `PanelBuilder` (see the "On a glass card" usage example below).
 
 ## Architecture
 
@@ -66,12 +66,15 @@ The following methods MUST be implemented. All `with*` / `as*` methods return `t
 | `withFlashDuration` | `(ms: number): this` | `600` | no | Per-item flash animation duration. Cleanup timer is `ms + 50`. |
 | `withFlashColors` | `(up: string, down: string): this` | `'flash-up'`, `'flash-down'` | no | Override flash color tokens. Must be theme-safelisted names, not raw hex. |
 | `withClass` | `(className: Observable<string>): this` | — | no | Merges extra Tailwind classes onto the root via `cn()`. |
+| `withTestId` | `(id: string): this` | — | no | Sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids). |
 | `asAnnouncing` | `(): this` | off (decorative) | no | Removes `aria-hidden` and adds a throttled `aria-live="polite"` region. |
 | `build` | `(): HTMLElement` | — | yes | Constructs and returns the final element. Must be called last. |
 
+- `withTestId(id: string): this` — sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
+
 Notes:
 
-- There is **no** `asGlass()`. The ticker is surface-less. Callers compose it inside a `PanelBuilder().asGlass()` if they want a glass card. See the "Inside a glass panel" usage example below.
+- There is **no** `asGlass` method on `FxTickerBuilder`. The ticker is surface-less. Callers compose it inside a glass `PanelBuilder` if they want a glass card. See the "Inside a glass panel" usage example below.
 - There is **no** `withValue` — this is a Type 4 data component, not a field.
 - `withRateFormatter` / `withDeltaFormatter` take plain functions (not Observables): they are pure formatting logic, set once at build time. Reactive value formatting belongs in the upstream `Observable<FxRate[]>`.
 - `withPauseOnHover` / `withDirection` take plain values (not Observables) because they map to a static CSS class chosen at build time. Other visual knobs that can change at runtime (`withScrollDuration`, `withLabelVisible`, etc.) take Observables.
@@ -86,7 +89,7 @@ Notes:
 - **Default formatting**: the built-in `withRateFormatter` default MUST handle both branches — plain `number` → `toFixed(decimals)`; `Money` → locale-formatted `amount` prefixed with the resolved currency symbol (reuse the same money-formatting helper used by `MoneyColumn` / `MoneyField` for consistency). Default `decimals` is `4` for `number` rates and `2` for `Money` rates.
 - **No post-build manipulation**: per `.agent/builder-pattern.md`, no `classList.add`, `style.xxx`, or `appendChild` on the built element from user code. All configuration flows through builder methods. The viewport's own animation-class toggles are internal to the component and are the standard exception.
 - **Reactive class composition**: `withScrollDuration`, `withLabelVisible`, etc. MUST be wired through `withClass` / `style` Observables internally; the viewport MUST NOT subscribe imperatively to user-facing inputs and mutate the DOM (use `LabelBuilder.withClass(observable)` style throughout).
-- **Composition over raw HTML**: the label pill MUST be built with `LabelBuilder`. The root layout MUST be assembled via `LayoutBuilder().asHorizontal()` with two slots (label pill | marquee viewport). The ticker MUST NOT instantiate `PanelBuilder` itself — surface chrome (glass, borders, shadow) is the caller's responsibility, applied by wrapping the ticker in their own panel.
+- **Composition over raw HTML**: the label pill MUST be built with `LabelBuilder`. The root layout MUST be assembled via a horizontal `LayoutBuilder` with two slots (label pill | marquee viewport). The ticker MUST NOT instantiate `PanelBuilder` itself — surface chrome (glass, borders, shadow) is the caller's responsibility, applied by wrapping the ticker in their own panel.
 - **Cleanup**: `FxTickerViewport` MUST use `registerDestroy(root, () => { sub.unsubscribe(); flashTimers.forEach(clearTimeout); })`.
 - **Pause-on-hover**: implemented via the `.marquee-paused-on-hover` utility class, NOT by toggling animation state in JS.
 - **Empty / single-pair states**: when the data array is empty, the track MUST be hidden (but the surface and label remain). When there is exactly one pair, doubling still applies (one duplicate). No special case.
@@ -103,7 +106,7 @@ Keyframes `flashGreen` / `flashRed` and utility classes `.flash-green` / `.flash
 
 ### Surface
 
-The ticker's own root is a transparent `LayoutBuilder().asHorizontal()` frame — no background, border, shadow, or padding. To put it on a glass card, wrap it:
+The ticker's own root is a transparent, horizontal `LayoutBuilder` frame — no background, border, shadow, or padding. To put it on a glass card, wrap it:
 
 ```typescript
 new PanelBuilder().asGlass().withContent(new FxTickerBuilder().withData(rates$));

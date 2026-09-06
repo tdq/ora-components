@@ -71,6 +71,9 @@ All methods on the `MoneyKPICardBuilder` return `this` for easy chaining, with t
 - **`asGlass`** — `(): this`
   Applies a frosted glass-effect visual styling layer with container transparency, backdrop-blur, and low-opacity outlines instead of solid cards. Best paired with vibrant gradient backdrops.
 
+- **`withTestId`** — `(id: string): this`
+  Sets `data-testid` on the rendered card host element for end-to-end tests. A static string — call once; it never changes at runtime.
+
 - **`build`** — `(): HTMLElement`
   Assembles and returns the fully compiled native `HTMLElement` structure. The builder wires up all RxJS subscriptions and establishes an automatic cleanup lifecycle on element destruction.
 

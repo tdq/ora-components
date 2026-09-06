@@ -21,5 +21,5 @@ In addition to [BaseColumnBuilder](grid.md#basecolumnbuilder-shared-methods) met
 - **Borders**: Inherits cell borders (`border-r border-border/50`).
 
 ## Editing
-Built-in editor is **CheckboxBuilder** with `asInlineError()` modifier. It is not displaying any label.
-In case if grid has `asGlass()` modifier, the checkbox should be initialized with `asGlass()` modifier.
+Built-in editor is **CheckboxBuilder**. It is not displaying any label. `CheckboxBuilder` has no inline-error modifier (unlike the text/number/money/percentage column editors), so a validation error on a boolean column falls back to the standard support-text error display.
+In case if grid has `GridBuilder.asGlass()` modifier, the checkbox should be initialized with `CheckboxBuilder.asGlass()` modifier.

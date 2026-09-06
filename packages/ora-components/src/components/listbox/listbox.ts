@@ -7,6 +7,7 @@ import { registerDestroy } from '../../core/destroyable-element';
 import { createOptimizedPipeline } from '../../utils/optimized-pipeline';
 import { VirtualRowsViewport } from '../../utils/virtual-rows-viewport';
 import { ListBoxStyle } from './types';
+import { applyTestId } from '../../core/test-id';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -26,6 +27,7 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
     private error$?: Observable<string>;
     private isGlass: boolean = false;
     private externalFocusedIndex$?: Observable<number>;
+    private testId?: string;
 
     withCaption(caption: Observable<string>): this {
         this.caption$ = caption;
@@ -100,6 +102,12 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
      */
     withFocusedIndex(index$: Observable<number>): this {
         this.externalFocusedIndex$ = index$;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -423,6 +431,8 @@ export class ListBoxBuilder<ITEM> implements ComponentBuilder {
             registerDestroy(container, () => errorSub.unsubscribe());
             container.appendChild(errorMsg);
         }
+
+        applyTestId(container, this.testId);
 
         return container;
     }

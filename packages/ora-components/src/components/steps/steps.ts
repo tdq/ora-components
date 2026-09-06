@@ -4,6 +4,7 @@ import { StepBuilder } from './step-builder';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { registerDestroy } from '../../core/destroyable-element';
+import { applyTestId } from '../../core/test-id';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -16,6 +17,7 @@ export class StepsBuilder implements ComponentBuilder {
     private isGlass: boolean = false;
     private isVertical: boolean = false;
     private className$?: Observable<string>;
+    private testId?: string;
 
     addStep(): StepBuilder {
         const step = new StepBuilder();
@@ -45,6 +47,12 @@ export class StepsBuilder implements ComponentBuilder {
 
     withClass(className: Observable<string>): this {
         this.className$ = className;
+        return this;
+    }
+
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
         return this;
     }
 
@@ -276,6 +284,8 @@ export class StepsBuilder implements ComponentBuilder {
                 container.appendChild(connectorElements[i]);
             }
         });
+
+        applyTestId(container, this.testId);
 
         return container;
     }

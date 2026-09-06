@@ -15,6 +15,7 @@ It has the following methods:
 - `withHeight(height: Observable<number>): this` - sets height for ListBox.
 - `withError(error: Observable<string>): this` - sets error of the ListBox.
 - `asGlass(): this` - sets special styling option for ListBox as transparent with blur background (glass effect).
+- `withTestId(id: string): this` - sets `data-testid` on the rendered host element. See [Test ids](../builder-pattern.md#test-ids).
 
 ListBox style is an enum with the following values:
 - `tonal` — panel with border; selected item uses secondary-container background

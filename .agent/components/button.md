@@ -11,6 +11,7 @@ It has the following methods:
 - `withClass(className: Observable<string>): this` - sets class css name of the button.
 - `withAriaLabel(label: Observable<string>): this` - sets an explicit `aria-label`, overriding the default (which is derived from `withCaption`). Required for icon-only buttons (no caption) to remain accessible.
 - `asGlass(): this` - sets special styling option for button as transparent with blur background (glass effect). 
+- `withTestId(id: string): this` - sets `data-testid` on the rendered `<button>`. See [Test ids](../builder-pattern.md#test-ids).
 
 ```typescript
 export type ClickListener<TYPE> = (value: TYPE) => void

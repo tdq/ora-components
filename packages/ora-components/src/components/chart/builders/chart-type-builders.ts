@@ -1,15 +1,16 @@
 import { Observable } from 'rxjs';
-import { 
-    AreaChartBuilder, 
-    AreaChartConfig, 
-    BarChartBuilder, 
-    BarChartConfig, 
-    CurveType, 
-    LineChartBuilder, 
-    LineChartConfig 
+import {
+    AreaChartBuilder,
+    AreaChartConfig,
+    BarChartBuilder,
+    BarChartConfig,
+    CurveType,
+    LineChartBuilder,
+    LineChartConfig,
+    ValueFormat
 } from '../types';
 
-abstract class IndividualChartBuilderImpl<ITEM, CONFIG extends { field: keyof ITEM | string; label: string; color?: string; color$?: Observable<string>; tooltipRenderer?: (item: ITEM) => string; useSecondaryAxis?: boolean }> {
+abstract class IndividualChartBuilderImpl<ITEM, CONFIG extends { field: keyof ITEM | string; label: string; color?: string; color$?: Observable<string>; tooltipRenderer?: (item: ITEM) => string; useSecondaryAxis?: boolean; format?: ValueFormat }> {
     protected config: CONFIG;
 
     constructor(field: keyof ITEM | string) {
@@ -41,6 +42,11 @@ abstract class IndividualChartBuilderImpl<ITEM, CONFIG extends { field: keyof IT
 
     asSecondaryAxis(): this {
         this.config.useSecondaryAxis = true;
+        return this;
+    }
+
+    withFormat(format: ValueFormat): this {
+        this.config.format = format;
         return this;
     }
 

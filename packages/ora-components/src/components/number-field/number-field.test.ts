@@ -590,4 +590,23 @@ describe('NumberFieldBuilder', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
         });
     });
+
+    it('should set data-testid on the input', () => {
+        const el = new NumberFieldBuilder().withTestId('my-number-field').build();
+        expect(el.querySelector('input')?.dataset.testid).toBe('my-number-field');
+    });
+
+    it('should put data-testid on the element that receives focus', () => {
+        const el = new NumberFieldBuilder().withTestId('my-number-field').build();
+        document.body.appendChild(el);
+
+        const tagged = el.querySelector('[data-testid="my-number-field"]') as HTMLElement;
+        expect(tagged.tagName).toBe('INPUT');
+        expect(el.querySelectorAll('input').length).toBe(1);
+
+        tagged.focus();
+        expect(document.activeElement).toBe(tagged);
+
+        document.body.removeChild(el);
+    });
 });

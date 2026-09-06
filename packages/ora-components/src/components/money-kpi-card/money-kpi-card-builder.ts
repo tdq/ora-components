@@ -4,6 +4,7 @@ import { Money } from '../../types/money';
 import { Trend } from '../../types/trend';
 import { MoneyKPICardViewport } from './money-kpi-card-viewport';
 import { CurrencyDisplay } from './money-kpi-card-logic';
+import { applyTestId } from '../../core/test-id';
 
 export type { CurrencyDisplay };
 
@@ -22,6 +23,7 @@ export class MoneyKPICardBuilder implements ComponentBuilder {
     private currencyDisplay$: Observable<CurrencyDisplay> = of(DEFAULTS.currencyDisplay);
     private extraClass$?: Observable<string>;
     private glass = false;
+    private testId?: string;
 
     withValue(value$: Observable<Money>): this {
         this.value$ = value$;
@@ -70,6 +72,12 @@ export class MoneyKPICardBuilder implements ComponentBuilder {
         return this;
     }
 
+    /** Sets `data-testid` on the rendered host element. */
+    withTestId(id: string): this {
+        this.testId = id;
+        return this;
+    }
+
     build(): HTMLElement {
         if (!this.value$) {
             throw new Error('MoneyKPICardBuilder: withValue() is required before build()');
@@ -87,6 +95,8 @@ export class MoneyKPICardBuilder implements ComponentBuilder {
             extraClass$: this.extraClass$,
         });
 
-        return viewport.build();
+        const element = viewport.build();
+        applyTestId(element, this.testId);
+        return element;
     }
 }

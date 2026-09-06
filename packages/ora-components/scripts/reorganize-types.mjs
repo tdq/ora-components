@@ -104,3 +104,9 @@ for (const entry of fs.readdirSync(distDir, { withFileTypes: true })) {
         console.log(`  rewrote imports in ${entry.name}`);
     }
 }
+
+// NodeNext-compatible relative specifiers (`.js`/`/index.js` extensions) are
+// added by scripts/add-nodenext-extensions.mjs, run *after*
+// generate-manifest.mjs in package.json's `build` script — generate-manifest.mjs
+// regex-parses `export * from './x'` in this file's output and expects the
+// bare, extensionless form, so extension-rewriting must happen last.

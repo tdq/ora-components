@@ -164,4 +164,47 @@ describe('ButtonBuilder', () => {
         caption$.next('Send');
         expect(button.getAttribute('aria-label')).toBe('Send');
     });
+
+    it('should set data-testid', () => {
+        const button = new ButtonBuilder().withCaption(new BehaviorSubject('Submit')).withTestId('save-btn').build();
+        expect(button.getAttribute('data-testid')).toBe('save-btn');
+    });
+
+    it('should not set data-testid when withTestId is never called', () => {
+        const button = new ButtonBuilder().withCaption(new BehaviorSubject('Submit')).build();
+        expect(button.hasAttribute('data-testid')).toBe(false);
+    });
+
+    it('should keep the last withTestId value when called twice', () => {
+        const button = new ButtonBuilder()
+            .withCaption(new BehaviorSubject('Submit'))
+            .withTestId('first')
+            .withTestId('second')
+            .build();
+        expect(button.getAttribute('data-testid')).toBe('second');
+    });
+
+    it('should keep data-testid after style and class emissions', () => {
+        const style$ = new BehaviorSubject(ButtonStyle.FILLED);
+        const class$ = new BehaviorSubject('w-10');
+        const button = new ButtonBuilder()
+            .withCaption(new BehaviorSubject('Submit'))
+            .withStyle(style$)
+            .withClass(class$)
+            .withTestId('save-btn')
+            .build();
+        document.body.appendChild(button);
+
+        expect(button.getAttribute('data-testid')).toBe('save-btn');
+
+        style$.next(ButtonStyle.OUTLINED);
+        class$.next('w-20');
+
+        expect(button.getAttribute('data-testid')).toBe('save-btn');
+        expect(document.querySelector('[data-testid="save-btn"]')).toBe(button);
+
+        style$.complete();
+        class$.complete();
+        document.body.removeChild(button);
+    });
 });

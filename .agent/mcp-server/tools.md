@@ -1,17 +1,18 @@
 # MCP Server Tools
 
-The server exposes **eight tools**, all declared in `src/tools-registry.ts`. Each is invoked via standard MCP `tools/call` with a `name` and `arguments` object; the result is returned as a single text content block containing pretty-printed JSON.
+The server exposes **nine tools**, all declared in `src/tools-registry.ts`. Each is invoked via standard MCP `tools/call` with a `name` and `arguments` object; the result is returned as a single text content block containing pretty-printed JSON.
 
 | Tool | Input | Returns | Data source |
 |------|-------|---------|-------------|
-| `list_components` | — | Array of `{ name, componentName, description, import }` for every component | Component manifest |
+| `list_components` | — | `{ hint, components: [] }` — hint directs users to start with `get_quickstart` | Component manifest |
 | `search_components` | `query: string` (optional) | Components ranked by relevance across names, descriptions, and method names | Component manifest |
-| `get_component_api` | `name: string` | Full `ComponentEntry`: methods, signatures, params, return types, enums | Component manifest |
+| `get_component_api` | `name: string` | Full `ComponentEntry`: methods, signatures, params, return types, enums, and optional `notes` array | Component manifest |
 | `get_component_guide` | `name: string` | `{ name, componentName, guide }` — the long-form markdown guide | `.agent/components/{name}.md` (flat or subdirectory) |
 | `get_usage_example` | `name: string` | `{ name, example, source, file? }` — a runnable snippet | ora-examples → Storybook story → manifest snippet (in order) |
 | `get_component_stories` | `name: string` | `{ name, componentName, stories: [{ file, storyNames, docs, source }] }` | `packages/stories/src/{name}*.stories.ts` (+ `.docs.mdx`) |
 | `get_router_docs` | — | `{ docs }` — full router markdown | `.agent/router.md` |
 | `get_architecture_guide` | `topic: string` | `{ topic, guide }` | `.agent/{topic}.md` |
+| `get_quickstart` | — | `{ content }` — installation, builder pattern, core patterns, and memory safety | `packages/ora-components/QUICKSTART.md` |
 
 Valid topics for `get_architecture_guide`: `architecture | builder-pattern | reactive | theme | glass-effects | icons | component | layout | app-shell`.
 
@@ -20,7 +21,7 @@ Valid topics for `get_architecture_guide`: `architecture | builder-pattern | rea
 ## Tool detail
 
 ### `list_components`
-Cheap, no-args overview. Returns a trimmed shape (no methods / enums / examples) so an agent can scan the catalogue in one call before drilling in.
+Cheap, no-args overview. Returns a trimmed shape (no methods / enums / examples) so an agent can scan the catalogue in one call before drilling in. The response includes a `hint` field that suggests starting with `get_quickstart`.
 
 ### `search_components`
 Scoring rules (see `tools/search-components.ts`):
@@ -32,7 +33,7 @@ Scoring rules (see `tools/search-components.ts`):
 Empty query returns the full catalogue (same trimmed shape as `list_components`).
 
 ### `get_component_api`
-Returns the full `ComponentEntry` straight from the manifest. Component lookup is case-insensitive and matches against both the registered `name` (e.g. `ButtonBuilder`) and the slug `componentName` (e.g. `button`).
+Returns the full `ComponentEntry` straight from the manifest. Component lookup is case-insensitive and matches against both the registered `name` (e.g. `ButtonBuilder`) and the slug `componentName` (e.g. `button`). For some components, an optional `notes` array provides special considerations, lifecycle patterns, or performance tips.
 
 ### `get_component_guide`
 Looks up the markdown guide for a component. Tries two patterns in order:
@@ -65,6 +66,18 @@ Returns the entire `.agent/router.md` (router builder API, link builder, route p
 
 ### `get_architecture_guide`
 Returns one of the top-level `.agent/*.md` guides. Topic is validated against an allowlist before reading.
+
+### `get_quickstart`
+Returns the full QUICKSTART.md guide covering:
+- Installation and import patterns
+- Builder grammar and fluent API
+- Layout strategies (SlotSize, LayoutGap)
+- App shell patterns (Router + SideBar)
+- Grid, form fields, dialogs, charts
+- Theming (CSS tokens, per-instance customization)
+- Memory safety and teardown patterns
+
+This is the entry point for new users or when an agent needs core concepts. Cheap, no-args.
 
 ---
 

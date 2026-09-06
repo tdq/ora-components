@@ -588,4 +588,92 @@ describe('LayoutBuilder — duplicate data-slot warning, edge cases', () => {
         expect(layout.classList.contains('h-full')).toBe(true);
         expect((layout.children[2] as HTMLElement).className).toBe('flex flex-1 w-full min-h-0');
     });
+
+    it('should set data-testid on the host and on a slot', () => {
+        const builder = new LayoutBuilder().withTestId('my-layout');
+        builder.addSlot().withTestId('my-slot');
+        const layout = builder.build();
+        expect(layout.getAttribute('data-testid')).toBe('my-layout');
+        expect(layout.querySelector('[data-testid="my-slot"]')).not.toBeNull();
+    });
+
+    it('keeps the host and slot data-testid after class, alignment and visibility emissions', () => {
+        const class$ = new BehaviorSubject('bg-red');
+        const alignment$ = new BehaviorSubject(Alignment.LEFT);
+        const visible$ = new BehaviorSubject(true);
+
+        const builder = new LayoutBuilder().withTestId('my-layout').withClass(class$);
+        builder
+            .addSlot()
+            .withTestId('my-slot')
+            .withAlignment(alignment$)
+            .withVisible(visible$)
+            .withContent({
+                build: () => {
+                    const child = document.createElement('span');
+                    child.textContent = 'Slot content';
+                    return child;
+                }
+            });
+
+        const layout = builder.build();
+        document.body.appendChild(layout);
+
+        const slot = layout.querySelector('[data-testid="my-slot"]') as HTMLElement;
+        expect(slot).not.toBeNull();
+
+        class$.next('bg-blue');
+        alignment$.next(Alignment.CENTER);
+        visible$.next(false);
+        visible$.next(true);
+
+        expect(layout.getAttribute('data-testid')).toBe('my-layout');
+        expect(layout.querySelector('[data-testid="my-slot"]')).toBe(slot);
+        expect(slot.textContent).toContain('Slot content');
+
+        class$.complete();
+        alignment$.complete();
+        visible$.complete();
+        document.body.removeChild(layout);
+    });
+});
+
+describe('asScrollable — shadow/focus-ring bleed gutter', () => {
+    const SCROLL_CLASSES = ['ora-scroll-bleed', 'overflow-y-auto', 'min-h-0'];
+
+    it('layout: adds the scroll classes and drops w-full', () => {
+        const layout = new LayoutBuilder().asVertical().asScrollable().build();
+        SCROLL_CLASSES.forEach(c => expect(layout.classList.contains(c)).toBe(true));
+        expect(layout.classList.contains('w-full')).toBe(false);
+    });
+
+    it('layout: default build keeps w-full and has no scroll classes', () => {
+        const layout = new LayoutBuilder().build();
+        expect(layout.classList.contains('w-full')).toBe(true);
+        SCROLL_CLASSES.forEach(c => expect(layout.classList.contains(c)).toBe(false));
+    });
+
+    it('slot in a vertical layout: adds the scroll classes and drops w-full', () => {
+        const builder = new LayoutBuilder().asVertical();
+        builder.addSlot().withSize(SlotSize.GROW).asScrollable().withContent(new MockBuilder());
+        const slot = builder.build().querySelector('[data-slot="0"]') as HTMLElement;
+        SCROLL_CLASSES.forEach(c => expect(slot.classList.contains(c)).toBe(true));
+        expect(slot.classList.contains('w-full')).toBe(false);
+    });
+
+    it('slot in a vertical layout: non-scrollable slot still has w-full', () => {
+        const builder = new LayoutBuilder().asVertical();
+        builder.addSlot().withContent(new MockBuilder());
+        const slot = builder.build().querySelector('[data-slot="0"]') as HTMLElement;
+        expect(slot.classList.contains('w-full')).toBe(true);
+        expect(slot.classList.contains('ora-scroll-bleed')).toBe(false);
+    });
+
+    it('slot in a horizontal layout: keeps flex-1 sizing alongside the scroll classes', () => {
+        const builder = new LayoutBuilder().asHorizontal();
+        builder.addSlot().asScrollable().withContent(new MockBuilder());
+        const slot = builder.build().querySelector('[data-slot="0"]') as HTMLElement;
+        expect(slot.classList.contains('flex-1')).toBe(true);
+        SCROLL_CLASSES.forEach(c => expect(slot.classList.contains(c)).toBe(true));
+    });
 });
