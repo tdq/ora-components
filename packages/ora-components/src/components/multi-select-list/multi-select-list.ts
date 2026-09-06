@@ -215,7 +215,7 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
 
         // Items list
         const list = document.createElement('div');
-        list.role = 'group';
+        list.role = 'list';
         list.className = 'w-full h-full overflow-y-auto py-0';
         if (captionId) {
             list.setAttribute('aria-labelledby', captionId);
@@ -261,6 +261,9 @@ export class MultiSelectListBuilder<ITEM> implements ComponentBuilder {
             const caption = this.itemCaptionProvider(item);
 
             const li = document.createElement('div');
+            // Rows carry aria-setsize/aria-posinset, which ARIA only permits on set roles
+            // (listitem, option, row…). The scroll container is role="list" so these are valid.
+            li.role = 'listitem';
             li.setAttribute('aria-setsize', String(currentItems.length));
             li.setAttribute('aria-posinset', String(index + 1));
 

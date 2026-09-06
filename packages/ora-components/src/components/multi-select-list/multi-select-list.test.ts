@@ -66,7 +66,7 @@ function buildDefault(overrides?: {
 
     document.body.appendChild(el);
 
-    const listEl = el.querySelector('div[role="group"]') as HTMLElement;
+    const listEl = el.querySelector('div[role="list"]') as HTMLElement;
     Object.defineProperty(listEl, 'clientHeight', { value: 1000, configurable: true, writable: true });
     Object.defineProperty(listEl, 'scrollTop', { value: 0, configurable: true, writable: true });
 
@@ -76,7 +76,7 @@ function buildDefault(overrides?: {
 }
 
 function getList(el: HTMLElement): HTMLDivElement {
-    return el.querySelector('div[role="group"]') as HTMLDivElement;
+    return el.querySelector('div[role="list"]') as HTMLDivElement;
 }
 
 function getRows(el: HTMLElement): HTMLDivElement[] {
@@ -253,7 +253,7 @@ describe('MultiSelectListBuilder', () => {
     // ── Req 1 & 2: DOM structure ─────────────────────────────────────────────
 
     describe('DOM structure', () => {
-        it('renders a <div role="group"> labelled for the checkbox group', () => {
+        it('renders a <div role="list"> labelled for the checkbox list', () => {
             const { el } = buildDefault();
             const list = getList(el);
             expect(list).not.toBeNull();
@@ -806,8 +806,8 @@ describe('MultiSelectListBuilder', () => {
 
         function getPanel(el: HTMLElement): HTMLDivElement {
             // The panel is the first direct child div of the container that
-            // holds the items div[role="group"]
-            return el.querySelector('div:has(> div[role="group"])') as HTMLDivElement;
+            // holds the items div[role="list"]
+            return el.querySelector('div:has(> div[role="list"])') as HTMLDivElement;
         }
 
         // Spec 1: no border classes on the panel
@@ -889,7 +889,7 @@ describe('MultiSelectListBuilder', () => {
         it('panel still has rounded-large border border-outline with default TONAL style', () => {
             const { el } = buildDefault();
             // Locate panel via the items group it contains
-            const panel = el.querySelector('div:has(> div[role="group"])') as HTMLDivElement;
+            const panel = el.querySelector('div:has(> div[role="list"])') as HTMLDivElement;
             expect(panel).toHaveClass('rounded-large');
             expect(panel).toHaveClass('border');
             expect(panel).toHaveClass('border-outline');
@@ -906,7 +906,7 @@ describe('MultiSelectListBuilder', () => {
             .withItemCaptionProvider(i => i.name)
             .build();
         document.body.appendChild(el);
-        const listEl = el.querySelector('div[role="group"]') as HTMLElement;
+        const listEl = el.querySelector('div[role="list"]') as HTMLElement;
         Object.defineProperty(listEl, 'clientHeight', { value: 200, configurable: true, writable: true });
         Object.defineProperty(listEl, 'scrollTop', { value: 0, configurable: true, writable: true });
         triggerVisibleAndWait(el);
@@ -942,7 +942,7 @@ describe('MultiSelectListBuilder', () => {
             .withValue(value$)
             .build();
         document.body.appendChild(el);
-        const listEl = el.querySelector('div[role="group"]') as HTMLElement;
+        const listEl = el.querySelector('div[role="list"]') as HTMLElement;
         Object.defineProperty(listEl, 'clientHeight', { value: 200, configurable: true, writable: true });
         Object.defineProperty(listEl, 'scrollTop', { value: 0, configurable: true, writable: true });
         triggerVisibleAndWait(el);
