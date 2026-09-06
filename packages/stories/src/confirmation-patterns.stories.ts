@@ -432,8 +432,8 @@ export const BulkAction = () => {
 
     // Custom checkbox column
     columns.addCustomColumn()
-        .withHeader('')
-        .withWidth('50px')
+        .withHeader('Select')
+        .withWidth('70px')
         .withRenderer((product) => {
             const entry = checkboxMap.get(product.id);
             return entry ? entry.element : document.createElement('div');
